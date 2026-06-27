@@ -1,0 +1,306 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Control de Mantenimiento — Flota</title>
+<style>
+  :root{
+    --steel:#1c232b;
+    --steel-2:#2a333d;
+    --bg:#eef0f2;
+    --card:#ffffff;
+    --line:#d3d8dd;
+    --ink:#1a1d21;
+    --muted:#6b747d;
+    --amber:#f2a900;
+    --ok:#15803d;       --ok-bg:#dcfce7;
+    --warn:#b45309;     --warn-bg:#fef3c7;
+    --bad:#b91c1c;      --bad-bg:#fee2e2;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
+    background:var(--bg); color:var(--ink); font-size:14px;
+  }
+  .mono{font-family:"SF Mono",ui-monospace,"Roboto Mono",Menlo,Consolas,monospace}
+
+  /* Header */
+  header{
+    background:var(--steel); color:#fff; padding:14px 18px;
+    display:flex; flex-wrap:wrap; gap:14px; align-items:center; justify-content:space-between;
+    border-bottom:3px solid var(--amber);
+  }
+  .brand{display:flex; align-items:center; gap:12px}
+  .brand .bar{width:6px; height:34px; background:var(--amber); border-radius:2px}
+  .brand h1{font-size:17px; font-weight:700; letter-spacing:.2px}
+  .brand p{font-size:11px; color:#9aa4ad; text-transform:uppercase; letter-spacing:1.5px}
+  .chips{display:flex; gap:8px; flex-wrap:wrap}
+  .chip{
+    background:var(--steel-2); padding:7px 12px; border-radius:999px;
+    font-size:12px; display:flex; align-items:center; gap:7px; font-weight:600;
+  }
+  .dot{width:9px; height:9px; border-radius:50%}
+  .dot.ok{background:#22c55e} .dot.warn{background:#f59e0b} .dot.bad{background:#ef4444}
+
+  /* Toolbar */
+  .toolbar{
+    display:flex; flex-wrap:wrap; gap:10px; align-items:center;
+    padding:12px 18px; background:var(--card); border-bottom:1px solid var(--line);
+  }
+  .toolbar input[type=search], .toolbar select{
+    padding:8px 11px; border:1px solid var(--line); border-radius:8px; font-size:13px; background:#fff;
+  }
+  .toolbar input[type=search]{min-width:200px; flex:1}
+  .spacer{flex:1}
+  button.act{
+    border:none; border-radius:8px; padding:9px 14px; font-size:13px; font-weight:600;
+    cursor:pointer; display:inline-flex; align-items:center; gap:6px;
+  }
+  .act.primary{background:var(--amber); color:#1a1200}
+  .act.primary:hover{background:#d99700}
+  .act.ghost{background:#eef0f2; color:var(--ink)}
+  .act.ghost:hover{background:#e0e4e8}
+
+  /* Table */
+  .wrap{padding:16px 18px; overflow-x:auto}
+  table{width:100%; border-collapse:collapse; background:var(--card); border-radius:10px; overflow:hidden;
+    box-shadow:0 1px 3px rgba(0,0,0,.06); min-width:920px}
+  thead th{
+    background:var(--steel-2); color:#fff; font-size:11px; text-transform:uppercase;
+    letter-spacing:.6px; font-weight:600; padding:11px 10px; text-align:left; white-space:nowrap;
+  }
+  tbody td{border-bottom:1px solid #eceef1; padding:0; vertical-align:middle}
+  tbody tr:hover{background:#f9fafb}
+  td input, td select{
+    width:100%; border:none; background:transparent; padding:11px 10px; font-size:13px;
+    font-family:inherit; color:var(--ink); outline:none;
+  }
+  td.num input{font-family:"SF Mono",ui-monospace,monospace; text-align:right}
+  td input:focus, td select:focus{background:#fff7e6; box-shadow:inset 0 0 0 2px var(--amber)}
+  td.calc{padding:11px 10px; text-align:right; color:var(--muted); font-family:"SF Mono",ui-monospace,monospace}
+  .estado{display:inline-flex; align-items:center; gap:6px; padding:5px 10px; border-radius:999px;
+    font-size:12px; font-weight:700; white-space:nowrap}
+  .estado.ok{background:var(--ok-bg); color:var(--ok)}
+  .estado.warn{background:var(--warn-bg); color:var(--warn)}
+  .estado.bad{background:var(--bad-bg); color:var(--bad)}
+  td.center{text-align:center; padding:0 6px}
+  .del{background:none; border:none; cursor:pointer; color:#c0c6cc; font-size:18px; padding:6px}
+  .del:hover{color:var(--bad)}
+  .empty{padding:40px; text-align:center; color:var(--muted)}
+  footer{padding:14px 18px; color:var(--muted); font-size:12px; text-align:center}
+  .save-note{font-size:11px; color:var(--muted)}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="brand">
+    <div class="bar"></div>
+    <div>
+      <h1>Control de Mantenimiento — Flota</h1>
+      <p>Unidad de Equipos · UDE</p>
+    </div>
+  </div>
+  <div class="chips" id="resumen"></div>
+</header>
+
+<div class="toolbar">
+  <input type="search" id="buscar" placeholder="Buscar por código, equipo o tipo…">
+  <select id="filtro">
+    <option value="">Todos los estados</option>
+    <option value="bad">Vencido</option>
+    <option value="warn">Próximo</option>
+    <option value="ok">En regla</option>
+  </select>
+  <div class="spacer"></div>
+  <button class="act ghost" id="btnExport">⬇ Exportar CSV</button>
+  <button class="act primary" id="btnAdd">＋ Agregar equipo</button>
+</div>
+
+<div class="wrap">
+  <table>
+    <thead>
+      <tr>
+        <th>Código</th>
+        <th>Equipo</th>
+        <th>Tipo</th>
+        <th style="text-align:right">Horóm. actual</th>
+        <th style="text-align:right">Mant. cada (h)</th>
+        <th style="text-align:right">Último (h)</th>
+        <th style="text-align:right">Próximo (h)</th>
+        <th style="text-align:right">Restante</th>
+        <th>Estado</th>
+        <th>Observaciones</th>
+        <th></th>
+      </tr>
+    </thead>
+    <tbody id="cuerpo"></tbody>
+  </table>
+</div>
+
+<footer>
+  <span class="save-note" id="saveNote">Los cambios se guardan solos.</span>
+</footer>
+
+<script>
+const CLAVE = "mantenimiento:equipos";
+
+const SEMILLA = [
+  {id:1, codigo:"ETO-036/T036", equipo:"Tractor oruga D6T", tipo:"Tractor", horometro:4820, intervalo:250, ultimo:4750, obs:"Filtro de aire por revisar"},
+  {id:2, codigo:"GH0024", equipo:"Grúa Terex RT555-1", tipo:"Grúa", horometro:2310, intervalo:500, ultimo:2050, obs:"Próxima inspección ASME B30.5"},
+  {id:3, codigo:"CHS-886", equipo:"Sprinter (MATPEL)", tipo:"Camioneta", horometro:38500, intervalo:5000, ultimo:38000, obs:"Contrato CMP 089.2026 — Diveimport"},
+  {id:4, codigo:"CHD-884", equipo:"Sprinter (MATPEL)", tipo:"Camioneta", horometro:41200, intervalo:5000, ultimo:35000, obs:"Cambio de aceite vencido"},
+  {id:5, codigo:"P-0158-EX1", equipo:"Excavadora Huarón", tipo:"Excavadora", horometro:1180, intervalo:250, ultimo:1100, obs:""},
+];
+
+let datos = [];
+
+/* ---------- Persistencia (window.storage del artefacto) ---------- */
+async function cargar(){
+  try{
+    const r = await window.storage.get(CLAVE);
+    datos = r ? JSON.parse(r.value) : SEMILLA.slice();
+  }catch(e){
+    datos = SEMILLA.slice(); // sin almacenamiento: arranca con la muestra
+  }
+  render();
+}
+async function guardar(){
+  try{
+    await window.storage.set(CLAVE, JSON.stringify(datos));
+    flashNota("Guardado ✓");
+  }catch(e){
+    flashNota("Vista de demostración (los cambios no se guardarán al cerrar)");
+  }
+}
+let notaTimer;
+function flashNota(t){
+  const n = document.getElementById("saveNote");
+  n.textContent = t; clearTimeout(notaTimer);
+  notaTimer = setTimeout(()=> n.textContent = "Los cambios se guardan solos.", 1800);
+}
+
+/* ---------- Lógica de estado ---------- */
+function calcula(e){
+  const proximo = (Number(e.ultimo)||0) + (Number(e.intervalo)||0);
+  const restante = proximo - (Number(e.horometro)||0);
+  const margen = Math.max((Number(e.intervalo)||0)*0.15, 25);
+  let estado = "ok";
+  if(restante <= 0) estado = "bad";
+  else if(restante <= margen) estado = "warn";
+  return {proximo, restante, estado};
+}
+const ETIQUETA = {ok:"En regla", warn:"Próximo", bad:"Vencido"};
+
+/* ---------- Render ---------- */
+function render(){
+  const q = document.getElementById("buscar").value.toLowerCase().trim();
+  const f = document.getElementById("filtro").value;
+  const cuerpo = document.getElementById("cuerpo");
+  cuerpo.innerHTML = "";
+
+  const visibles = datos.filter(e=>{
+    const txt = (e.codigo+" "+e.equipo+" "+e.tipo).toLowerCase();
+    const okQ = !q || txt.includes(q);
+    const okF = !f || calcula(e).estado === f;
+    return okQ && okF;
+  });
+
+  if(visibles.length === 0){
+    cuerpo.innerHTML = `<tr><td colspan="11" class="empty">No hay equipos que coincidan. Usa “＋ Agregar equipo” para empezar.</td></tr>`;
+    actualizaResumen(); return;
+  }
+
+  for(const e of visibles){
+    const c = calcula(e);
+    const tr = document.createElement("tr");
+    tr.innerHTML = `
+      <td><input value="${esc(e.codigo)}" data-id="${e.id}" data-k="codigo"></td>
+      <td><input value="${esc(e.equipo)}" data-id="${e.id}" data-k="equipo"></td>
+      <td><input value="${esc(e.tipo)}" data-id="${e.id}" data-k="tipo"></td>
+      <td class="num"><input type="number" value="${e.horometro}" data-id="${e.id}" data-k="horometro"></td>
+      <td class="num"><input type="number" value="${e.intervalo}" data-id="${e.id}" data-k="intervalo"></td>
+      <td class="num"><input type="number" value="${e.ultimo}" data-id="${e.id}" data-k="ultimo"></td>
+      <td class="calc">${c.proximo.toLocaleString()}</td>
+      <td class="calc" style="color:${c.restante<=0?'#b91c1c':'inherit'}">${c.restante.toLocaleString()}</td>
+      <td><span class="estado ${c.estado}">${ETIQUETA[c.estado]}</span></td>
+      <td><input value="${esc(e.obs)}" data-id="${e.id}" data-k="obs" placeholder="—"></td>
+      <td class="center"><button class="del" data-del="${e.id}" title="Eliminar">×</button></td>
+    `;
+    cuerpo.appendChild(tr);
+  }
+  actualizaResumen();
+}
+
+function actualizaResumen(){
+  let ok=0, warn=0, bad=0;
+  datos.forEach(e=>{ const s=calcula(e).estado; if(s==="ok")ok++; else if(s==="warn")warn++; else bad++; });
+  document.getElementById("resumen").innerHTML = `
+    <span class="chip"><span class="dot bad"></span> Vencidos: ${bad}</span>
+    <span class="chip"><span class="dot warn"></span> Próximos: ${warn}</span>
+    <span class="chip"><span class="dot ok"></span> En regla: ${ok}</span>`;
+}
+
+function esc(s){return String(s??"").replace(/"/g,"&quot;").replace(/</g,"&lt;")}
+
+/* ---------- Edición ---------- */
+document.getElementById("cuerpo").addEventListener("input", ev=>{
+  const inp = ev.target;
+  if(!inp.dataset.id) return;
+  const e = datos.find(x=>x.id == inp.dataset.id);
+  const k = inp.dataset.k;
+  e[k] = (inp.type==="number") ? Number(inp.value) : inp.value;
+  // recalcula solo las celdas dependientes de esa fila, sin perder el foco
+  const c = calcula(e);
+  const fila = inp.closest("tr");
+  fila.children[6].textContent = c.proximo.toLocaleString();
+  fila.children[7].textContent = c.restante.toLocaleString();
+  fila.children[7].style.color = c.restante<=0 ? "#b91c1c" : "inherit";
+  const badge = fila.children[8].querySelector(".estado");
+  badge.className = "estado "+c.estado; badge.textContent = ETIQUETA[c.estado];
+  actualizaResumen();
+  guardar();
+});
+
+document.getElementById("cuerpo").addEventListener("click", ev=>{
+  const id = ev.target.dataset.del;
+  if(!id) return;
+  const e = datos.find(x=>x.id==id);
+  if(confirm(`¿Eliminar "${e.equipo}" (${e.codigo})?`)){
+    datos = datos.filter(x=>x.id!=id);
+    render(); guardar();
+  }
+});
+
+/* ---------- Botones ---------- */
+document.getElementById("btnAdd").addEventListener("click", ()=>{
+  const nuevoId = datos.length ? Math.max(...datos.map(d=>d.id))+1 : 1;
+  datos.push({id:nuevoId, codigo:"", equipo:"Nuevo equipo", tipo:"", horometro:0, intervalo:250, ultimo:0, obs:""});
+  document.getElementById("buscar").value=""; document.getElementById("filtro").value="";
+  render(); guardar();
+  const inputs = document.querySelectorAll('#cuerpo input[data-k="codigo"]');
+  inputs[inputs.length-1]?.focus();
+});
+
+document.getElementById("buscar").addEventListener("input", render);
+document.getElementById("filtro").addEventListener("change", render);
+
+document.getElementById("btnExport").addEventListener("click", ()=>{
+  const cab = ["Código","Equipo","Tipo","Horómetro","Intervalo","Último","Próximo","Restante","Estado","Observaciones"];
+  const filas = datos.map(e=>{
+    const c = calcula(e);
+    return [e.codigo,e.equipo,e.tipo,e.horometro,e.intervalo,e.ultimo,c.proximo,c.restante,ETIQUETA[c.estado],e.obs];
+  });
+  const csv = [cab, ...filas].map(r=>r.map(v=>`"${String(v??"").replace(/"/g,'""')}"`).join(",")).join("\n");
+  const blob = new Blob(["\ufeff"+csv], {type:"text/csv;charset=utf-8;"});
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = "control_mantenimiento.csv";
+  a.click();
+});
+
+cargar();
+</script>
+</body>
+</html>
