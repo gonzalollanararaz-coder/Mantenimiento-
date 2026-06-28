@@ -3,219 +3,320 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Control de Mantenimiento — Flota</title>
+<title>Control de Mantenimiento — UDE</title>
 <style>
   :root{
-    --steel:#1c232b;
-    --steel-2:#2a333d;
-    --bg:#eef0f2;
-    --card:#ffffff;
-    --line:#d3d8dd;
-    --ink:#1a1d21;
-    --muted:#6b747d;
-    --amber:#f2a900;
-    --ok:#15803d;       --ok-bg:#dcfce7;
-    --warn:#b45309;     --warn-bg:#fef3c7;
-    --bad:#b91c1c;      --bad-bg:#fee2e2;
+    --steel:#1c232b; --steel-2:#2a333d; --bg:#eef0f2; --card:#fff;
+    --line:#d3d8dd; --ink:#1a1d21; --muted:#6b747d; --amber:#f2a900;
+    --ok:#15803d; --ok-bg:#dcfce7; --warn:#b45309; --warn-bg:#fef3c7;
+    --bad:#b91c1c; --bad-bg:#fee2e2;
   }
   *{box-sizing:border-box;margin:0;padding:0}
-  body{
-    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
-    background:var(--bg); color:var(--ink); font-size:14px;
-  }
-  .mono{font-family:"SF Mono",ui-monospace,"Roboto Mono",Menlo,Consolas,monospace}
+  body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;background:var(--bg);color:var(--ink);font-size:14px}
+  .hide{display:none !important}
 
-  /* Header */
-  header{
-    background:var(--steel); color:#fff; padding:14px 18px;
-    display:flex; flex-wrap:wrap; gap:14px; align-items:center; justify-content:space-between;
-    border-bottom:3px solid var(--amber);
-  }
-  .brand{display:flex; align-items:center; gap:12px}
-  .brand .bar{width:6px; height:34px; background:var(--amber); border-radius:2px}
-  .brand h1{font-size:17px; font-weight:700; letter-spacing:.2px}
-  .brand p{font-size:11px; color:#9aa4ad; text-transform:uppercase; letter-spacing:1.5px}
-  .chips{display:flex; gap:8px; flex-wrap:wrap}
-  .chip{
-    background:var(--steel-2); padding:7px 12px; border-radius:999px;
-    font-size:12px; display:flex; align-items:center; gap:7px; font-weight:600;
-  }
-  .dot{width:9px; height:9px; border-radius:50%}
-  .dot.ok{background:#22c55e} .dot.warn{background:#f59e0b} .dot.bad{background:#ef4444}
+  /* ---------- Login ---------- */
+  .auth-wrap{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px;
+    background:linear-gradient(135deg,#1c232b,#2a333d)}
+  .auth-card{background:#fff;border-radius:14px;padding:32px;width:100%;max-width:380px;
+    box-shadow:0 12px 40px rgba(0,0,0,.3);border-top:4px solid var(--amber)}
+  .auth-card h1{font-size:19px;margin-bottom:4px}
+  .auth-card .sub{color:var(--muted);font-size:13px;margin-bottom:22px}
+  .field{margin-bottom:14px}
+  .field label{display:block;font-size:12px;font-weight:600;color:var(--muted);margin-bottom:5px;text-transform:uppercase;letter-spacing:.4px}
+  .field input{width:100%;padding:11px;border:1px solid var(--line);border-radius:8px;font-size:14px}
+  .field input:focus{outline:none;border-color:var(--amber);box-shadow:0 0 0 3px rgba(242,169,0,.15)}
+  .btn{width:100%;border:none;border-radius:8px;padding:12px;font-size:14px;font-weight:700;cursor:pointer;background:var(--amber);color:#1a1200}
+  .btn:hover{background:#d99700}
+  .btn:disabled{opacity:.6;cursor:wait}
+  .toggle{text-align:center;margin-top:16px;font-size:13px;color:var(--muted)}
+  .toggle a{color:#1d4ed8;cursor:pointer;font-weight:600}
+  .msg{padding:10px 12px;border-radius:8px;font-size:13px;margin-bottom:14px}
+  .msg.err{background:var(--bad-bg);color:var(--bad)}
+  .msg.ok{background:var(--ok-bg);color:var(--ok)}
 
-  /* Toolbar */
-  .toolbar{
-    display:flex; flex-wrap:wrap; gap:10px; align-items:center;
-    padding:12px 18px; background:var(--card); border-bottom:1px solid var(--line);
-  }
-  .toolbar input[type=search], .toolbar select{
-    padding:8px 11px; border:1px solid var(--line); border-radius:8px; font-size:13px; background:#fff;
-  }
-  .toolbar input[type=search]{min-width:200px; flex:1}
+  /* ---------- Pantalla pendiente ---------- */
+  .gate{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px;text-align:center}
+  .gate-box{background:#fff;border-radius:14px;padding:36px;max-width:420px;box-shadow:0 4px 20px rgba(0,0,0,.08)}
+  .gate-box .ico{font-size:42px;margin-bottom:10px}
+  .gate-box h2{font-size:18px;margin-bottom:8px}
+  .gate-box p{color:var(--muted);line-height:1.5;margin-bottom:18px}
+  .link-btn{background:none;border:1px solid var(--line);border-radius:8px;padding:9px 16px;cursor:pointer;font-weight:600}
+
+  /* ---------- App ---------- */
+  header{background:var(--steel);color:#fff;padding:12px 18px;display:flex;flex-wrap:wrap;gap:12px;align-items:center;justify-content:space-between;border-bottom:3px solid var(--amber)}
+  .brand{display:flex;align-items:center;gap:11px}
+  .brand .bar{width:6px;height:32px;background:var(--amber);border-radius:2px}
+  .brand h1{font-size:16px;font-weight:700}
+  .brand p{font-size:10px;color:#9aa4ad;text-transform:uppercase;letter-spacing:1.5px}
+  .userbox{display:flex;align-items:center;gap:12px;font-size:13px}
+  .userbox .who{color:#cdd4da}
+  .userbox button{background:var(--steel-2);color:#fff;border:none;border-radius:7px;padding:8px 12px;cursor:pointer;font-size:12px;font-weight:600}
+  .userbox button:hover{background:#374350}
+
+  nav{background:#fff;border-bottom:1px solid var(--line);padding:0 18px;display:flex;gap:4px}
+  nav button{background:none;border:none;padding:13px 16px;cursor:pointer;font-size:13px;font-weight:600;color:var(--muted);border-bottom:3px solid transparent}
+  nav button.on{color:var(--ink);border-bottom-color:var(--amber)}
+
+  .toolbar{display:flex;flex-wrap:wrap;gap:10px;align-items:center;padding:12px 18px;background:#fff;border-bottom:1px solid var(--line)}
+  .toolbar input[type=search],.toolbar select{padding:8px 11px;border:1px solid var(--line);border-radius:8px;font-size:13px}
+  .toolbar input[type=search]{min-width:200px;flex:1}
   .spacer{flex:1}
-  button.act{
-    border:none; border-radius:8px; padding:9px 14px; font-size:13px; font-weight:600;
-    cursor:pointer; display:inline-flex; align-items:center; gap:6px;
-  }
-  .act.primary{background:var(--amber); color:#1a1200}
-  .act.primary:hover{background:#d99700}
-  .act.ghost{background:#eef0f2; color:var(--ink)}
-  .act.ghost:hover{background:#e0e4e8}
+  .chip{background:#eef0f2;padding:7px 12px;border-radius:999px;font-size:12px;display:inline-flex;align-items:center;gap:7px;font-weight:600}
+  .dot{width:9px;height:9px;border-radius:50%}
+  .dot.ok{background:#22c55e}.dot.warn{background:#f59e0b}.dot.bad{background:#ef4444}
+  .act{border:none;border-radius:8px;padding:9px 14px;font-size:13px;font-weight:600;cursor:pointer}
+  .act.primary{background:var(--amber);color:#1a1200}.act.primary:hover{background:#d99700}
+  .act.ghost{background:#eef0f2;color:var(--ink)}.act.ghost:hover{background:#e0e4e8}
 
-  /* Table */
-  .wrap{padding:16px 18px; overflow-x:auto}
-  table{width:100%; border-collapse:collapse; background:var(--card); border-radius:10px; overflow:hidden;
-    box-shadow:0 1px 3px rgba(0,0,0,.06); min-width:920px}
-  thead th{
-    background:var(--steel-2); color:#fff; font-size:11px; text-transform:uppercase;
-    letter-spacing:.6px; font-weight:600; padding:11px 10px; text-align:left; white-space:nowrap;
-  }
-  tbody td{border-bottom:1px solid #eceef1; padding:0; vertical-align:middle}
+  .wrap{padding:16px 18px;overflow-x:auto}
+  table{width:100%;border-collapse:collapse;background:#fff;border-radius:10px;overflow:hidden;box-shadow:0 1px 3px rgba(0,0,0,.06);min-width:900px}
+  thead th{background:var(--steel-2);color:#fff;font-size:11px;text-transform:uppercase;letter-spacing:.6px;font-weight:600;padding:11px 10px;text-align:left;white-space:nowrap}
+  tbody td{border-bottom:1px solid #eceef1;padding:0;vertical-align:middle}
   tbody tr:hover{background:#f9fafb}
-  td input, td select{
-    width:100%; border:none; background:transparent; padding:11px 10px; font-size:13px;
-    font-family:inherit; color:var(--ink); outline:none;
-  }
-  td.num input{font-family:"SF Mono",ui-monospace,monospace; text-align:right}
-  td input:focus, td select:focus{background:#fff7e6; box-shadow:inset 0 0 0 2px var(--amber)}
-  td.calc{padding:11px 10px; text-align:right; color:var(--muted); font-family:"SF Mono",ui-monospace,monospace}
-  .estado{display:inline-flex; align-items:center; gap:6px; padding:5px 10px; border-radius:999px;
-    font-size:12px; font-weight:700; white-space:nowrap}
-  .estado.ok{background:var(--ok-bg); color:var(--ok)}
-  .estado.warn{background:var(--warn-bg); color:var(--warn)}
-  .estado.bad{background:var(--bad-bg); color:var(--bad)}
-  td.center{text-align:center; padding:0 6px}
-  .del{background:none; border:none; cursor:pointer; color:#c0c6cc; font-size:18px; padding:6px}
-  .del:hover{color:var(--bad)}
-  .empty{padding:40px; text-align:center; color:var(--muted)}
-  footer{padding:14px 18px; color:var(--muted); font-size:12px; text-align:center}
-  .save-note{font-size:11px; color:var(--muted)}
+  td input{width:100%;border:none;background:transparent;padding:11px 10px;font-size:13px;font-family:inherit;color:var(--ink);outline:none}
+  td.num input{font-family:"SF Mono",ui-monospace,monospace;text-align:right}
+  td input:focus{background:#fff7e6;box-shadow:inset 0 0 0 2px var(--amber)}
+  td.calc{padding:11px 10px;text-align:right;color:var(--muted);font-family:"SF Mono",ui-monospace,monospace}
+  .estado{display:inline-flex;align-items:center;gap:6px;padding:5px 10px;border-radius:999px;font-size:12px;font-weight:700;white-space:nowrap}
+  .estado.ok{background:var(--ok-bg);color:var(--ok)}.estado.warn{background:var(--warn-bg);color:var(--warn)}.estado.bad{background:var(--bad-bg);color:var(--bad)}
+  td.center{text-align:center;padding:0 6px}
+  .del{background:none;border:none;cursor:pointer;color:#c0c6cc;font-size:18px;padding:6px}.del:hover{color:var(--bad)}
+  .empty{padding:40px;text-align:center;color:var(--muted)}
+
+  /* admin */
+  .badge{padding:4px 9px;border-radius:999px;font-size:11px;font-weight:700}
+  .badge.pendiente{background:var(--warn-bg);color:var(--warn)}
+  .badge.aprobado{background:var(--ok-bg);color:var(--ok)}
+  .badge.bloqueado{background:var(--bad-bg);color:var(--bad)}
+  .mini{border:none;border-radius:6px;padding:6px 11px;font-size:12px;font-weight:600;cursor:pointer;margin-right:6px}
+  .mini.ap{background:var(--ok-bg);color:var(--ok)}
+  .mini.bl{background:var(--bad-bg);color:var(--bad)}
+  .mini.adm{background:#e0e7ff;color:#3730a3}
+  footer{padding:14px;color:var(--muted);font-size:12px;text-align:center}
 </style>
 </head>
 <body>
 
-<header>
-  <div class="brand">
-    <div class="bar"></div>
-    <div>
-      <h1>Control de Mantenimiento — Flota</h1>
-      <p>Unidad de Equipos · UDE</p>
+<!-- ========================= LOGIN ========================= -->
+<div id="vAuth" class="auth-wrap">
+  <div class="auth-card">
+    <h1>Control de Mantenimiento</h1>
+    <p class="sub" id="authSub">Inicia sesión para continuar</p>
+    <div id="authMsg"></div>
+    <div class="field" id="fldNombre" style="display:none">
+      <label>Nombre completo</label>
+      <input id="inNombre" type="text" placeholder="Tu nombre">
     </div>
+    <div class="field">
+      <label>Correo</label>
+      <input id="inEmail" type="email" placeholder="tucorreo@ejemplo.com">
+    </div>
+    <div class="field">
+      <label>Contraseña</label>
+      <input id="inPass" type="password" placeholder="Mínimo 6 caracteres">
+    </div>
+    <button class="btn" id="btnAuth">Ingresar</button>
+    <p class="toggle" id="authToggle">¿No tienes cuenta? <a id="lnkToggle">Regístrate</a></p>
   </div>
-  <div class="chips" id="resumen"></div>
-</header>
-
-<div class="toolbar">
-  <input type="search" id="buscar" placeholder="Buscar por código, equipo o tipo…">
-  <select id="filtro">
-    <option value="">Todos los estados</option>
-    <option value="bad">Vencido</option>
-    <option value="warn">Próximo</option>
-    <option value="ok">En regla</option>
-  </select>
-  <div class="spacer"></div>
-  <button class="act ghost" id="btnExport">⬇ Exportar CSV</button>
-  <button class="act primary" id="btnAdd">＋ Agregar equipo</button>
 </div>
 
-<div class="wrap">
-  <table>
-    <thead>
-      <tr>
-        <th>Código</th>
-        <th>Equipo</th>
-        <th>Tipo</th>
-        <th style="text-align:right">Horóm. actual</th>
-        <th style="text-align:right">Mant. cada (h)</th>
-        <th style="text-align:right">Último (h)</th>
-        <th style="text-align:right">Próximo (h)</th>
-        <th style="text-align:right">Restante</th>
-        <th>Estado</th>
-        <th>Observaciones</th>
-        <th></th>
-      </tr>
-    </thead>
-    <tbody id="cuerpo"></tbody>
-  </table>
+<!-- ===================== PENDIENTE ====================== -->
+<div id="vGate" class="gate hide">
+  <div class="gate-box">
+    <div class="ico">⏳</div>
+    <h2 id="gateTitle">Cuenta pendiente de aprobación</h2>
+    <p id="gateText">Tu registro fue recibido. Un administrador debe aprobar tu acceso antes de que puedas ver la información. Vuelve a intentar más tarde.</p>
+    <button class="link-btn" id="gateOut">Cerrar sesión</button>
+  </div>
 </div>
 
-<footer>
-  <span class="save-note" id="saveNote">Los cambios se guardan solos.</span>
-</footer>
+<!-- ======================== APP ========================= -->
+<div id="vApp" class="hide">
+  <header>
+    <div class="brand">
+      <div class="bar"></div>
+      <div><h1>Control de Mantenimiento — Flota</h1><p>Unidad de Equipos · UDE</p></div>
+    </div>
+    <div class="userbox">
+      <span class="who" id="who"></span>
+      <button id="btnOut">Cerrar sesión</button>
+    </div>
+  </header>
 
+  <nav>
+    <button class="on" id="tabEq" data-tab="eq">Equipos</button>
+    <button id="tabUsers" data-tab="users" style="display:none">Usuarios</button>
+  </nav>
+
+  <!-- Pestaña Equipos -->
+  <section id="paneEq">
+    <div class="toolbar">
+      <input type="search" id="buscar" placeholder="Buscar por código, equipo o tipo…">
+      <select id="filtro">
+        <option value="">Todos los estados</option>
+        <option value="bad">Vencido</option>
+        <option value="warn">Próximo</option>
+        <option value="ok">En regla</option>
+      </select>
+      <span class="chip"><span class="dot bad"></span> Vencidos: <b id="cBad">0</b></span>
+      <span class="chip"><span class="dot warn"></span> Próximos: <b id="cWarn">0</b></span>
+      <span class="chip"><span class="dot ok"></span> En regla: <b id="cOk">0</b></span>
+      <div class="spacer"></div>
+      <button class="act ghost" id="btnRefresh">↻ Actualizar</button>
+      <button class="act primary" id="btnAdd">＋ Agregar equipo</button>
+    </div>
+    <div class="wrap">
+      <table>
+        <thead><tr>
+          <th>Código</th><th>Equipo</th><th>Tipo</th>
+          <th style="text-align:right">Horóm.</th><th style="text-align:right">Cada (h)</th>
+          <th style="text-align:right">Último</th><th style="text-align:right">Próximo</th>
+          <th style="text-align:right">Restante</th><th>Estado</th><th>Observaciones</th><th></th>
+        </tr></thead>
+        <tbody id="cuerpo"></tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- Pestaña Usuarios (solo admin) -->
+  <section id="paneUsers" class="hide">
+    <div class="wrap">
+      <table>
+        <thead><tr><th>Nombre</th><th>Correo</th><th>Rol</th><th>Estado</th><th>Acciones</th></tr></thead>
+        <tbody id="cuerpoUsers"></tbody>
+      </table>
+    </div>
+  </section>
+
+  <footer id="appFoot">Los cambios se guardan en la base de datos.</footer>
+</div>
+
+<!-- ================= SUPABASE ================= -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
-const CLAVE = "mantenimiento:equipos";
+/* ╔══════════════════════════════════════════════════════════════╗
+   ║  PASO ÚNICO: pega aquí tus DOS datos de Supabase y guarda.     ║
+   ║  (Settings → API Keys del panel de Supabase)                  ║
+   ╚══════════════════════════════════════════════════════════════╝ */
+const SUPABASE_URL = "https://TU-PROYECTO.supabase.co";   // ← reemplaza
+const SUPABASE_KEY = "TU-PUBLISHABLE-KEY";                 // ← reemplaza
+/* ────────────────────────────────────────────────────────────── */
 
-const SEMILLA = [
-  {id:1, codigo:"ETO-036/T036", equipo:"Tractor oruga D6T", tipo:"Tractor", horometro:4820, intervalo:250, ultimo:4750, obs:"Filtro de aire por revisar"},
-  {id:2, codigo:"GH0024", equipo:"Grúa Terex RT555-1", tipo:"Grúa", horometro:2310, intervalo:500, ultimo:2050, obs:"Próxima inspección ASME B30.5"},
-  {id:3, codigo:"CHS-886", equipo:"Sprinter (MATPEL)", tipo:"Camioneta", horometro:38500, intervalo:5000, ultimo:38000, obs:"Contrato CMP 089.2026 — Diveimport"},
-  {id:4, codigo:"CHD-884", equipo:"Sprinter (MATPEL)", tipo:"Camioneta", horometro:41200, intervalo:5000, ultimo:35000, obs:"Cambio de aceite vencido"},
-  {id:5, codigo:"P-0158-EX1", equipo:"Excavadora Huarón", tipo:"Excavadora", horometro:1180, intervalo:250, ultimo:1100, obs:""},
-];
+const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-let datos = [];
+let perfil = null;       // perfil del usuario actual
+let equipos = [];        // datos de la grilla
+let modoRegistro = false;
+let pollTimer = null;
 
-/* ---------- Persistencia (window.storage del artefacto) ---------- */
-async function cargar(){
-  try{
-    const r = await window.storage.get(CLAVE);
-    datos = r ? JSON.parse(r.value) : SEMILLA.slice();
-  }catch(e){
-    datos = SEMILLA.slice(); // sin almacenamiento: arranca con la muestra
+/* ---------- arranque / sesión ---------- */
+async function init(){
+  const { data:{ session } } = await sb.auth.getSession();
+  if(session) await trasLogin();
+  else mostrar("auth");
+}
+sb.auth.onAuthStateChange((_e, session)=>{
+  if(session) trasLogin();
+  else { detenerPoll(); mostrar("auth"); }
+});
+
+async function trasLogin(){
+  const { data:{ user } } = await sb.auth.getUser();
+  const { data, error } = await sb.from("profiles").select("*").eq("id", user.id).single();
+  if(error){ console.error(error); return; }
+  perfil = data;
+  if(perfil.estado === "aprobado") entrarApp();
+  else mostrarGate();
+}
+
+/* ---------- mostrar vistas ---------- */
+function mostrar(v){
+  vAuth.classList.toggle("hide", v!=="auth");
+  vGate.classList.toggle("hide", v!=="gate");
+  vApp.classList.toggle("hide",  v!=="app");
+}
+function mostrarGate(){
+  if(perfil.estado === "bloqueado"){
+    gateTitle.textContent = "Acceso bloqueado";
+    gateText.textContent  = "Tu acceso fue suspendido por un administrador. Contáctalo si crees que es un error.";
+    document.querySelector("#vGate .ico").textContent = "🚫";
   }
-  render();
+  mostrar("gate");
 }
-async function guardar(){
-  try{
-    await window.storage.set(CLAVE, JSON.stringify(datos));
-    flashNota("Guardado ✓");
-  }catch(e){
-    flashNota("Vista de demostración (los cambios no se guardarán al cerrar)");
-  }
-}
-let notaTimer;
-function flashNota(t){
-  const n = document.getElementById("saveNote");
-  n.textContent = t; clearTimeout(notaTimer);
-  notaTimer = setTimeout(()=> n.textContent = "Los cambios se guardan solos.", 1800);
+async function entrarApp(){
+  mostrar("app");
+  who.textContent = (perfil.nombre || perfil.email) + (perfil.rol==="admin" ? " · Admin" : "");
+  if(perfil.rol === "admin"){ tabUsers.style.display="inline-block"; }
+  await cargarEquipos();
+  iniciarPoll();
 }
 
-/* ---------- Lógica de estado ---------- */
+/* ============ AUTENTICACIÓN ============ */
+lnkToggle.onclick = ()=>{
+  modoRegistro = !modoRegistro;
+  fldNombre.style.display = modoRegistro ? "block" : "none";
+  authSub.textContent = modoRegistro ? "Crea tu cuenta" : "Inicia sesión para continuar";
+  btnAuth.textContent = modoRegistro ? "Registrarme" : "Ingresar";
+  authToggle.innerHTML = modoRegistro
+    ? '¿Ya tienes cuenta? <a id="lnkToggle">Inicia sesión</a>'
+    : '¿No tienes cuenta? <a id="lnkToggle">Regístrate</a>';
+  document.getElementById("lnkToggle").onclick = lnkToggle.onclick;
+  authMsg.innerHTML = "";
+};
+btnAuth.onclick = async ()=>{
+  const email = inEmail.value.trim(), pass = inPass.value, nombre = inNombre.value.trim();
+  if(!email || !pass){ return showAuthMsg("Completa correo y contraseña.","err"); }
+  btnAuth.disabled = true;
+  try{
+    if(modoRegistro){
+      const { error } = await sb.auth.signUp({ email, password:pass, options:{ data:{ nombre } } });
+      if(error) throw error;
+      showAuthMsg("¡Registro exitoso! Tu cuenta queda pendiente de aprobación. Ya puedes iniciar sesión.","ok");
+      modoRegistro=false; fldNombre.style.display="none";
+      btnAuth.textContent="Ingresar"; authSub.textContent="Inicia sesión para continuar";
+    }else{
+      const { error } = await sb.auth.signInWithPassword({ email, password:pass });
+      if(error) throw error;
+    }
+  }catch(e){
+    showAuthMsg(traducir(e.message),"err");
+  }finally{ btnAuth.disabled=false; }
+};
+function showAuthMsg(t,tipo){ authMsg.innerHTML = `<div class="msg ${tipo}">${t}</div>`; }
+function traducir(m){
+  if(/Invalid login/i.test(m)) return "Correo o contraseña incorrectos.";
+  if(/already registered/i.test(m)) return "Ese correo ya está registrado. Inicia sesión.";
+  if(/at least 6/i.test(m)) return "La contraseña debe tener al menos 6 caracteres.";
+  return m;
+}
+btnOut.onclick = gateOut.onclick = ()=> sb.auth.signOut();
+
+/* ============ GRILLA DE EQUIPOS ============ */
+async function cargarEquipos(){
+  const { data, error } = await sb.from("equipos").select("*").order("id");
+  if(error){ console.error(error); return; }
+  equipos = data; render();
+}
 function calcula(e){
-  const proximo = (Number(e.ultimo)||0) + (Number(e.intervalo)||0);
-  const restante = proximo - (Number(e.horometro)||0);
-  const margen = Math.max((Number(e.intervalo)||0)*0.15, 25);
-  let estado = "ok";
-  if(restante <= 0) estado = "bad";
-  else if(restante <= margen) estado = "warn";
-  return {proximo, restante, estado};
+  const proximo=(+e.ultimo||0)+(+e.intervalo||0);
+  const restante=proximo-(+e.horometro||0);
+  const margen=Math.max((+e.intervalo||0)*0.15,25);
+  let est="ok"; if(restante<=0)est="bad"; else if(restante<=margen)est="warn";
+  return {proximo,restante,estado:est};
 }
-const ETIQUETA = {ok:"En regla", warn:"Próximo", bad:"Vencido"};
-
-/* ---------- Render ---------- */
+const ETI={ok:"En regla",warn:"Próximo",bad:"Vencido"};
 function render(){
-  const q = document.getElementById("buscar").value.toLowerCase().trim();
-  const f = document.getElementById("filtro").value;
-  const cuerpo = document.getElementById("cuerpo");
-  cuerpo.innerHTML = "";
-
-  const visibles = datos.filter(e=>{
-    const txt = (e.codigo+" "+e.equipo+" "+e.tipo).toLowerCase();
-    const okQ = !q || txt.includes(q);
-    const okF = !f || calcula(e).estado === f;
-    return okQ && okF;
+  const q=buscar.value.toLowerCase().trim(), f=filtro.value;
+  cuerpo.innerHTML="";
+  const vis=equipos.filter(e=>{
+    const t=((e.codigo||"")+" "+(e.equipo||"")+" "+(e.tipo||"")).toLowerCase();
+    return (!q||t.includes(q)) && (!f||calcula(e).estado===f);
   });
-
-  if(visibles.length === 0){
-    cuerpo.innerHTML = `<tr><td colspan="11" class="empty">No hay equipos que coincidan. Usa “＋ Agregar equipo” para empezar.</td></tr>`;
-    actualizaResumen(); return;
-  }
-
-  for(const e of visibles){
-    const c = calcula(e);
-    const tr = document.createElement("tr");
-    tr.innerHTML = `
+  if(!vis.length){ cuerpo.innerHTML=`<tr><td colspan="11" class="empty">Sin equipos que coincidan.</td></tr>`; resumen(); return; }
+  for(const e of vis){
+    const c=calcula(e), tr=document.createElement("tr");
+    tr.innerHTML=`
       <td><input value="${esc(e.codigo)}" data-id="${e.id}" data-k="codigo"></td>
       <td><input value="${esc(e.equipo)}" data-id="${e.id}" data-k="equipo"></td>
       <td><input value="${esc(e.tipo)}" data-id="${e.id}" data-k="tipo"></td>
@@ -224,83 +325,109 @@ function render(){
       <td class="num"><input type="number" value="${e.ultimo}" data-id="${e.id}" data-k="ultimo"></td>
       <td class="calc">${c.proximo.toLocaleString()}</td>
       <td class="calc" style="color:${c.restante<=0?'#b91c1c':'inherit'}">${c.restante.toLocaleString()}</td>
-      <td><span class="estado ${c.estado}">${ETIQUETA[c.estado]}</span></td>
+      <td><span class="estado ${c.estado}">${ETI[c.estado]}</span></td>
       <td><input value="${esc(e.obs)}" data-id="${e.id}" data-k="obs" placeholder="—"></td>
-      <td class="center"><button class="del" data-del="${e.id}" title="Eliminar">×</button></td>
-    `;
+      <td class="center"><button class="del" data-del="${e.id}">×</button></td>`;
     cuerpo.appendChild(tr);
   }
-  actualizaResumen();
+  resumen();
 }
-
-function actualizaResumen(){
-  let ok=0, warn=0, bad=0;
-  datos.forEach(e=>{ const s=calcula(e).estado; if(s==="ok")ok++; else if(s==="warn")warn++; else bad++; });
-  document.getElementById("resumen").innerHTML = `
-    <span class="chip"><span class="dot bad"></span> Vencidos: ${bad}</span>
-    <span class="chip"><span class="dot warn"></span> Próximos: ${warn}</span>
-    <span class="chip"><span class="dot ok"></span> En regla: ${ok}</span>`;
+function resumen(){
+  let ok=0,w=0,b=0; equipos.forEach(e=>{const s=calcula(e).estado;s==="ok"?ok++:s==="warn"?w++:b++;});
+  cOk.textContent=ok; cWarn.textContent=w; cBad.textContent=b;
 }
-
 function esc(s){return String(s??"").replace(/"/g,"&quot;").replace(/</g,"&lt;")}
 
-/* ---------- Edición ---------- */
-document.getElementById("cuerpo").addEventListener("input", ev=>{
-  const inp = ev.target;
-  if(!inp.dataset.id) return;
-  const e = datos.find(x=>x.id == inp.dataset.id);
-  const k = inp.dataset.k;
-  e[k] = (inp.type==="number") ? Number(inp.value) : inp.value;
-  // recalcula solo las celdas dependientes de esa fila, sin perder el foco
-  const c = calcula(e);
-  const fila = inp.closest("tr");
-  fila.children[6].textContent = c.proximo.toLocaleString();
-  fila.children[7].textContent = c.restante.toLocaleString();
-  fila.children[7].style.color = c.restante<=0 ? "#b91c1c" : "inherit";
-  const badge = fila.children[8].querySelector(".estado");
-  badge.className = "estado "+c.estado; badge.textContent = ETIQUETA[c.estado];
-  actualizaResumen();
-  guardar();
+let guardarTimer={};
+cuerpo.addEventListener("input", ev=>{
+  const inp=ev.target; if(!inp.dataset.id) return;
+  const e=equipos.find(x=>x.id==inp.dataset.id), k=inp.dataset.k;
+  e[k]=(inp.type==="number")?Number(inp.value):inp.value;
+  const c=calcula(e), fila=inp.closest("tr");
+  fila.children[6].textContent=c.proximo.toLocaleString();
+  fila.children[7].textContent=c.restante.toLocaleString();
+  fila.children[7].style.color=c.restante<=0?"#b91c1c":"inherit";
+  const bg=fila.children[8].querySelector(".estado");
+  bg.className="estado "+c.estado; bg.textContent=ETI[c.estado];
+  resumen();
+  clearTimeout(guardarTimer[e.id]);
+  guardarTimer[e.id]=setTimeout(()=>guardarFila(e),600); // guarda 0.6s después de dejar de escribir
 });
-
-document.getElementById("cuerpo").addEventListener("click", ev=>{
-  const id = ev.target.dataset.del;
-  if(!id) return;
-  const e = datos.find(x=>x.id==id);
+async function guardarFila(e){
+  const { error } = await sb.from("equipos").update({
+    codigo:e.codigo, equipo:e.equipo, tipo:e.tipo,
+    horometro:e.horometro, intervalo:e.intervalo, ultimo:e.ultimo, obs:e.obs
+  }).eq("id", e.id);
+  if(error){ appFoot.textContent="⚠️ No se pudo guardar: "+error.message; }
+  else { appFoot.textContent="Guardado ✓"; setTimeout(()=>appFoot.textContent="Los cambios se guardan en la base de datos.",1500); }
+}
+cuerpo.addEventListener("click", async ev=>{
+  const id=ev.target.dataset.del; if(!id) return;
+  const e=equipos.find(x=>x.id==id);
   if(confirm(`¿Eliminar "${e.equipo}" (${e.codigo})?`)){
-    datos = datos.filter(x=>x.id!=id);
-    render(); guardar();
+    const { error } = await sb.from("equipos").delete().eq("id", id);
+    if(error) return alert("No se pudo eliminar: "+error.message);
+    equipos=equipos.filter(x=>x.id!=id); render();
   }
 });
+btnAdd.onclick = async ()=>{
+  const { data, error } = await sb.from("equipos")
+    .insert({equipo:"Nuevo equipo", intervalo:250}).select().single();
+  if(error) return alert("No se pudo agregar: "+error.message);
+  equipos.push(data); buscar.value=""; filtro.value=""; render();
+};
+btnRefresh.onclick = cargarEquipos;
+buscar.oninput = render; filtro.onchange = render;
 
-/* ---------- Botones ---------- */
-document.getElementById("btnAdd").addEventListener("click", ()=>{
-  const nuevoId = datos.length ? Math.max(...datos.map(d=>d.id))+1 : 1;
-  datos.push({id:nuevoId, codigo:"", equipo:"Nuevo equipo", tipo:"", horometro:0, intervalo:250, ultimo:0, obs:""});
-  document.getElementById("buscar").value=""; document.getElementById("filtro").value="";
-  render(); guardar();
-  const inputs = document.querySelectorAll('#cuerpo input[data-k="codigo"]');
-  inputs[inputs.length-1]?.focus();
+/* sincronización ligera: refresca cada 20s si no estás escribiendo */
+function iniciarPoll(){ detenerPoll(); pollTimer=setInterval(()=>{
+  const a=document.activeElement;
+  if(a && a.closest && a.closest("#cuerpo")) return; // no interrumpir edición
+  if(paneEq.classList.contains("hide")) return;
+  cargarEquipos();
+}, 20000); }
+function detenerPoll(){ if(pollTimer) clearInterval(pollTimer); }
+
+/* ============ PESTAÑAS ============ */
+document.querySelectorAll("nav button").forEach(b=> b.onclick=()=>{
+  document.querySelectorAll("nav button").forEach(x=>x.classList.remove("on"));
+  b.classList.add("on");
+  const t=b.dataset.tab;
+  paneEq.classList.toggle("hide", t!=="eq");
+  paneUsers.classList.toggle("hide", t!=="users");
+  if(t==="users") cargarUsuarios();
 });
 
-document.getElementById("buscar").addEventListener("input", render);
-document.getElementById("filtro").addEventListener("change", render);
-
-document.getElementById("btnExport").addEventListener("click", ()=>{
-  const cab = ["Código","Equipo","Tipo","Horómetro","Intervalo","Último","Próximo","Restante","Estado","Observaciones"];
-  const filas = datos.map(e=>{
-    const c = calcula(e);
-    return [e.codigo,e.equipo,e.tipo,e.horometro,e.intervalo,e.ultimo,c.proximo,c.restante,ETIQUETA[c.estado],e.obs];
+/* ============ PANEL ADMIN ============ */
+async function cargarUsuarios(){
+  const { data, error } = await sb.from("profiles").select("*").order("created_at");
+  if(error){ cuerpoUsers.innerHTML=`<tr><td colspan="5" class="empty">${error.message}</td></tr>`; return; }
+  cuerpoUsers.innerHTML="";
+  data.forEach(u=>{
+    const tr=document.createElement("tr");
+    const yo = u.id===perfil.id;
+    tr.innerHTML=`
+      <td style="padding:11px 10px">${esc(u.nombre||"—")}${yo?' <span style="color:#999">(tú)</span>':''}</td>
+      <td style="padding:11px 10px">${esc(u.email)}</td>
+      <td style="padding:11px 10px">${u.rol}</td>
+      <td style="padding:11px 10px"><span class="badge ${u.estado}">${u.estado}</span></td>
+      <td style="padding:11px 10px">
+        ${u.estado!=="aprobado"?`<button class="mini ap" data-act="aprobar" data-id="${u.id}">Aprobar</button>`:""}
+        ${u.estado!=="bloqueado"&&!yo?`<button class="mini bl" data-act="bloquear" data-id="${u.id}">Bloquear</button>`:""}
+        ${u.rol!=="admin"?`<button class="mini adm" data-act="admin" data-id="${u.id}">Hacer admin</button>`:""}
+      </td>`;
+    cuerpoUsers.appendChild(tr);
   });
-  const csv = [cab, ...filas].map(r=>r.map(v=>`"${String(v??"").replace(/"/g,'""')}"`).join(",")).join("\n");
-  const blob = new Blob(["\ufeff"+csv], {type:"text/csv;charset=utf-8;"});
-  const a = document.createElement("a");
-  a.href = URL.createObjectURL(blob);
-  a.download = "control_mantenimiento.csv";
-  a.click();
+}
+cuerpoUsers.addEventListener("click", async ev=>{
+  const btn=ev.target; const id=btn.dataset.id, act=btn.dataset.act; if(!id) return;
+  const cambio = act==="aprobar"?{estado:"aprobado"} : act==="bloquear"?{estado:"bloqueado"} : {rol:"admin"};
+  const { error } = await sb.from("profiles").update(cambio).eq("id", id);
+  if(error) return alert("No se pudo: "+error.message);
+  cargarUsuarios();
 });
 
-cargar();
+init();
 </script>
 </body>
 </html>
