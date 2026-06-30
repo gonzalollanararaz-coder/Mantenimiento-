@@ -15,96 +15,82 @@
   .hide{display:none !important}
   .mono{font-family:"SF Mono",ui-monospace,monospace}
 
-  /* Login */
+  /* Login / gate (igual que antes) */
   .auth-wrap{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px;background:linear-gradient(135deg,#1c232b,#2a333d)}
   .auth-card{background:#fff;border-radius:14px;padding:32px;width:100%;max-width:380px;box-shadow:0 12px 40px rgba(0,0,0,.3);border-top:4px solid var(--amber)}
-  .auth-card h1{font-size:19px;margin-bottom:4px}
-  .auth-card .sub{color:var(--muted);font-size:13px;margin-bottom:22px}
+  .auth-card h1{font-size:19px;margin-bottom:4px}.auth-card .sub{color:var(--muted);font-size:13px;margin-bottom:22px}
   .field{margin-bottom:14px}
   .field label{display:block;font-size:12px;font-weight:600;color:var(--muted);margin-bottom:5px;text-transform:uppercase;letter-spacing:.4px}
-  .field input,.field select{width:100%;padding:11px;border:1px solid var(--line);border-radius:8px;font-size:14px;background:#fff}
+  .field input{width:100%;padding:11px;border:1px solid var(--line);border-radius:8px;font-size:14px}
   .field input:focus{outline:none;border-color:var(--amber);box-shadow:0 0 0 3px rgba(242,169,0,.15)}
   .btn{width:100%;border:none;border-radius:8px;padding:12px;font-size:14px;font-weight:700;cursor:pointer;background:var(--amber);color:#1a1200}
   .btn:hover{background:#d99700}.btn:disabled{opacity:.6;cursor:wait}
-  .toggle{text-align:center;margin-top:16px;font-size:13px;color:var(--muted)}
-  .toggle a{color:var(--blue);cursor:pointer;font-weight:600}
-  .msg{padding:10px 12px;border-radius:8px;font-size:13px;margin-bottom:14px}
-  .msg.err{background:var(--bad-bg);color:var(--bad)}.msg.ok{background:var(--ok-bg);color:var(--ok)}
-
-  /* Gate */
+  .toggle{text-align:center;margin-top:16px;font-size:13px;color:var(--muted)}.toggle a{color:var(--blue);cursor:pointer;font-weight:600}
+  .msg{padding:10px 12px;border-radius:8px;font-size:13px;margin-bottom:14px}.msg.err{background:var(--bad-bg);color:var(--bad)}.msg.ok{background:var(--ok-bg);color:var(--ok)}
   .gate{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px;text-align:center}
   .gate-box{background:#fff;border-radius:14px;padding:36px;max-width:420px;box-shadow:0 4px 20px rgba(0,0,0,.08)}
-  .gate-box .ico{font-size:42px;margin-bottom:10px}
-  .gate-box h2{font-size:18px;margin-bottom:8px}.gate-box p{color:var(--muted);line-height:1.5;margin-bottom:18px}
+  .gate-box .ico{font-size:42px;margin-bottom:10px}.gate-box h2{font-size:18px;margin-bottom:8px}.gate-box p{color:var(--muted);line-height:1.5;margin-bottom:18px}
   .link-btn{background:none;border:1px solid var(--line);border-radius:8px;padding:9px 16px;cursor:pointer;font-weight:600;margin:0 4px}
 
-  /* App */
-  header{background:var(--steel);color:#fff;padding:12px 18px;display:flex;flex-wrap:wrap;gap:12px;align-items:center;justify-content:space-between;border-bottom:3px solid var(--amber)}
-  .brand{display:flex;align-items:center;gap:11px}
-  .brand .bar{width:6px;height:32px;background:var(--amber);border-radius:2px}
-  .brand h1{font-size:16px;font-weight:700}.brand p{font-size:10px;color:#9aa4ad;text-transform:uppercase;letter-spacing:1.5px}
-  .userbox{display:flex;align-items:center;gap:12px;font-size:13px}
-  .userbox .who{color:#cdd4da}
-  .userbox button{background:var(--steel-2);color:#fff;border:none;border-radius:7px;padding:8px 12px;cursor:pointer;font-size:12px;font-weight:600}
-  .userbox button:hover{background:#374350}
-  nav{background:#fff;border-bottom:1px solid var(--line);padding:0 18px;display:flex;gap:4px}
-  nav button{background:none;border:none;padding:13px 16px;cursor:pointer;font-size:13px;font-weight:600;color:var(--muted);border-bottom:3px solid transparent}
+  /* Header con logo */
+  header{background:var(--steel);color:#fff;padding:10px 16px;display:flex;flex-wrap:wrap;gap:12px;align-items:center;justify-content:space-between;border-bottom:3px solid var(--amber)}
+  .brand{display:flex;align-items:center;gap:12px}
+  #logo{height:40px;max-width:130px;object-fit:contain;background:#fff;border-radius:6px;padding:3px}
+  .logo-fb{height:40px;width:80px;border:1px dashed #5b6672;border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:10px;color:#8a949e;letter-spacing:1px}
+  .brand h1{font-size:15px;font-weight:700}.brand p{font-size:10px;color:#9aa4ad;text-transform:uppercase;letter-spacing:1.5px}
+  .userbox{display:flex;align-items:center;gap:12px;font-size:13px}.userbox .who{color:#cdd4da}
+  .userbox button{background:var(--steel-2);color:#fff;border:none;border-radius:7px;padding:8px 12px;cursor:pointer;font-size:12px;font-weight:600}.userbox button:hover{background:#374350}
+  nav{background:#fff;border-bottom:1px solid var(--line);padding:0 16px;display:flex;gap:4px}
+  nav button{background:none;border:none;padding:12px 16px;cursor:pointer;font-size:13px;font-weight:600;color:var(--muted);border-bottom:3px solid transparent}
   nav button.on{color:var(--ink);border-bottom-color:var(--amber)}
 
-  .toolbar{display:flex;flex-wrap:wrap;gap:10px;align-items:center;padding:12px 18px;background:#fff;border-bottom:1px solid var(--line)}
-  .toolbar input[type=search],.toolbar select{padding:8px 11px;border:1px solid var(--line);border-radius:8px;font-size:13px}
+  .toolbar{display:flex;flex-wrap:wrap;gap:9px;align-items:center;padding:10px 16px;background:#fff;border-bottom:1px solid var(--line)}
+  .toolbar input[type=search],.toolbar select{padding:7px 10px;border:1px solid var(--line);border-radius:8px;font-size:13px}
   .toolbar input[type=search]{min-width:200px;flex:1}
   .spacer{flex:1}
-  .chip{background:#eef0f2;padding:7px 12px;border-radius:999px;font-size:12px;display:inline-flex;align-items:center;gap:7px;font-weight:600}
+  .chip{background:#eef0f2;padding:6px 11px;border-radius:999px;font-size:12px;display:inline-flex;align-items:center;gap:6px;font-weight:600}
   .dot{width:9px;height:9px;border-radius:50%;display:inline-block}
   .dot.ok{background:#22c55e}.dot.warn{background:#f59e0b}.dot.bad{background:#ef4444}.dot.na{background:#cbd5e1}
-  .act{border:none;border-radius:8px;padding:9px 14px;font-size:13px;font-weight:600;cursor:pointer}
+  .act{border:none;border-radius:8px;padding:8px 13px;font-size:13px;font-weight:600;cursor:pointer}
   .act.primary{background:var(--amber);color:#1a1200}.act.primary:hover{background:#d99700}
   .act.ghost{background:#eef0f2;color:var(--ink)}.act.ghost:hover{background:#e0e4e8}
 
-  .wrap{padding:16px 18px;overflow-x:auto}
-  table{width:100%;border-collapse:collapse;background:#fff;border-radius:10px;overflow:hidden;box-shadow:0 1px 3px rgba(0,0,0,.06);min-width:880px}
-  thead th{background:var(--steel-2);color:#fff;font-size:11px;text-transform:uppercase;letter-spacing:.5px;font-weight:600;padding:11px 10px;text-align:left;white-space:nowrap}
-  tbody td{border-bottom:1px solid #eceef1;padding:10px;white-space:nowrap}
-  tbody tr{cursor:pointer}tbody tr:hover{background:#f9fafb}
-  td.num{text-align:right;font-family:"SF Mono",ui-monospace,monospace}
-  .pill{display:inline-flex;align-items:center;gap:6px;padding:4px 9px;border-radius:999px;font-size:11px;font-weight:700;white-space:nowrap}
+  /* Tabla estilo Excel */
+  .wrap{padding:0;overflow:auto;max-height:calc(100vh - 165px)}
+  table.mx{border-collapse:separate;border-spacing:0;font-size:12px;background:#fff}
+  .mx th,.mx td{border-bottom:1px solid #e6e8eb;border-right:1px solid #eef0f2;white-space:nowrap}
+  .mx thead th{position:sticky;color:#fff;font-size:10px;font-weight:700;letter-spacing:.3px;padding:4px 6px;text-align:center;z-index:5}
+  .mx thead tr.bands th{top:0;height:22px;cursor:pointer;user-select:none}
+  .mx thead tr.cols th{top:22px;background:#42505d;font-weight:600;text-transform:none}
+  .mx tbody td{padding:0;height:23px}
+  .mx tbody td.idx{padding:0 6px;text-align:center;color:var(--muted);font-family:"SF Mono",monospace;background:#f8fafc}
+  .mx td input,.mx td select{width:100%;border:none;background:transparent;font:inherit;color:var(--ink);padding:2px 6px;outline:none;min-width:64px}
+  .mx td.n input{text-align:right;font-family:"SF Mono",ui-monospace,monospace}
+  .mx td input:focus,.mx td select:focus{background:#fff7e6;box-shadow:inset 0 0 0 2px var(--amber)}
+  .mx tbody tr:hover td{background:#f9fafb}
+  .mx td.calc{padding:2px 6px;text-align:right;font-family:"SF Mono",monospace;color:var(--muted);background:#fbfbfc}
+  /* congelados */
+  .frz{position:sticky;background:#fff;z-index:6}
+  .mx thead .frz{z-index:9}
+  .mx tbody tr:hover td.frz{background:#f9fafb}
+  /* estado / semáforos */
+  .pill{display:inline-block;padding:2px 7px;border-radius:999px;font-size:10px;font-weight:700}
   .pill.ok{background:var(--ok-bg);color:var(--ok)}.pill.warn{background:var(--warn-bg);color:var(--warn)}
   .pill.bad{background:var(--bad-bg);color:var(--bad)}.pill.na{background:var(--gray-bg);color:var(--gray)}
-  .st-OPERATIVO{background:var(--ok-bg);color:var(--ok)}
-  .st-INOPERATIVO{background:var(--bad-bg);color:var(--bad)}
-  .st-HABILITACION{background:var(--warn-bg);color:var(--warn)}
-  .st-DESMOVILIZADO{background:var(--gray-bg);color:var(--gray)}
-  .empty{padding:40px;text-align:center;color:var(--muted)}
-  footer{padding:14px;color:var(--muted);font-size:12px;text-align:center}
-
-  /* Drawer detalle */
-  .backdrop{position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:40}
-  .drawer{position:fixed;top:0;right:0;height:100%;width:480px;max-width:94vw;background:#fff;z-index:50;box-shadow:-6px 0 24px rgba(0,0,0,.2);display:flex;flex-direction:column}
-  .drawer-head{background:var(--steel);color:#fff;padding:16px 18px;display:flex;justify-content:space-between;align-items:flex-start;gap:10px}
-  .drawer-head h3{font-size:16px}.drawer-head .sap{font-size:12px;color:#9aa4ad;margin-top:2px}
-  .drawer-head .x{background:none;border:none;color:#fff;font-size:24px;cursor:pointer;line-height:1}
-  .drawer-body{overflow-y:auto;padding:6px 18px 24px}
-  .grp{margin-top:18px}
-  .grp h4{font-size:11px;text-transform:uppercase;letter-spacing:.6px;color:var(--amber);font-weight:700;border-bottom:1px solid var(--line);padding-bottom:5px;margin-bottom:10px}
-  .frow{display:flex;align-items:center;gap:10px;margin-bottom:9px}
-  .frow label{flex:0 0 42%;font-size:12px;color:var(--muted)}
-  .frow input,.frow select{flex:1;padding:8px 9px;border:1px solid var(--line);border-radius:7px;font-size:13px;background:#fff;min-width:0}
-  .frow input:focus,.frow select:focus{outline:none;border-color:var(--amber);box-shadow:0 0 0 2px rgba(242,169,0,.15)}
-  .frow input.exp-bad{border-color:var(--bad);background:var(--bad-bg)}
-  .frow input.exp-warn{border-color:var(--warn);background:var(--warn-bg)}
-  .frow input.exp-ok{border-color:#86efac}
-  .calc-box{background:#f8fafc;border:1px solid var(--line);border-radius:10px;padding:12px;margin-top:8px;display:grid;grid-template-columns:1fr 1fr;gap:8px}
-  .calc-box .c{font-size:12px}.calc-box .c b{display:block;font-size:16px;font-family:"SF Mono",monospace;margin-top:2px}
-  .save-pill{font-size:11px;color:var(--muted);padding:4px 0}
+  select.st-OPERATIVO{color:var(--ok);font-weight:700}select.st-INOPERATIVO{color:var(--bad);font-weight:700}
+  select.st-HABILITACION{color:var(--warn);font-weight:700}select.st-DESMOVILIZADO{color:var(--gray);font-weight:700}
+  td.exp-bad input{background:var(--bad-bg);color:var(--bad);font-weight:600}
+  td.exp-warn input{background:var(--warn-bg);color:var(--warn)}
+  td.exp-ok input{background:#f0fdf4}
+  .collapsed-cell{background:#eef1f4;text-align:center;color:#94a3b8;font-weight:700;cursor:pointer}
+  footer{padding:10px 16px;color:var(--muted);font-size:12px;text-align:center}
 
   /* admin */
   .badge{padding:4px 9px;border-radius:999px;font-size:11px;font-weight:700}
-  .badge.pendiente{background:var(--warn-bg);color:var(--warn)}
-  .badge.aprobado{background:var(--ok-bg);color:var(--ok)}
-  .badge.bloqueado{background:var(--bad-bg);color:var(--bad)}
+  .badge.pendiente{background:var(--warn-bg);color:var(--warn)}.badge.aprobado{background:var(--ok-bg);color:var(--ok)}.badge.bloqueado{background:var(--bad-bg);color:var(--bad)}
   .mini{border:none;border-radius:6px;padding:6px 11px;font-size:12px;font-weight:600;cursor:pointer;margin-right:6px}
   .mini.ap{background:var(--ok-bg);color:var(--ok)}.mini.bl{background:var(--bad-bg);color:var(--bad)}.mini.adm{background:#e0e7ff;color:#3730a3}
+  .padwrap{padding:16px 18px;overflow-x:auto}
 </style>
 </head>
 <body>
@@ -137,7 +123,11 @@
 <!-- APP -->
 <div id="vApp" class="hide">
   <header>
-    <div class="brand"><div class="bar"></div><div><h1>Maestro de Equipos — Flota</h1><p>Unidad de Equipos · UDE</p></div></div>
+    <div class="brand">
+      <img id="logo" src="logo.png" alt="" onload="document.getElementById('logoFb').style.display='none'" onerror="this.remove()">
+      <div id="logoFb" class="logo-fb">LOGO</div>
+      <div><h1>Maestro de Equipos — Flota</h1><p>Unidad de Equipos · UDE</p></div>
+    </div>
     <div class="userbox"><span class="who" id="who"></span><button id="btnOut">Cerrar sesión</button></div>
   </header>
   <nav>
@@ -147,35 +137,31 @@
 
   <section id="paneEq">
     <div class="toolbar">
-      <input type="search" id="buscar" placeholder="Buscar SAP, equipo, marca, modelo, placa…">
+      <input type="search" id="buscar" placeholder="Buscar proyecto, SAP, equipo, marca, modelo, serie/placa…">
       <select id="fStatus">
         <option value="">Todos los status</option>
         <option>OPERATIVO</option><option>INOPERATIVO</option><option>HABILITACION</option><option>DESMOVILIZADO</option>
+      </select>
+      <select id="fDocs">
+        <option value="">Todos los documentos</option>
+        <option value="bad">Solo con doc. vencido</option>
+        <option value="warn">Solo con doc. por vencer</option>
       </select>
       <span class="chip"><span class="dot bad"></span> Mntto vencido: <b id="cBad">0</b></span>
       <span class="chip"><span class="dot warn"></span> Próximo: <b id="cWarn">0</b></span>
       <span class="chip"><span class="dot bad"></span> Docs vencidos: <b id="cDoc">0</b></span>
       <div class="spacer"></div>
+      <button class="act ghost" id="btnExpand">Expandir todo</button>
       <button class="act ghost" id="btnRefresh">↻ Actualizar</button>
-      <button class="act primary" id="btnAdd">＋ Agregar equipo</button>
+      <button class="act primary" id="btnAdd">＋ Equipo</button>
     </div>
-    <div class="wrap">
-      <table>
-        <thead><tr>
-          <th>Cód. SAP</th><th>Equipo</th><th>Marca</th><th>Status</th>
-          <th style="text-align:right">HR/KM actual</th><th style="text-align:right">Próx. PM</th>
-          <th style="text-align:right">Restante</th><th>Alerta</th><th style="text-align:right">Próx. fecha</th>
-          <th style="text-align:center">Sem.</th><th style="text-align:center">Docs</th>
-        </tr></thead>
-        <tbody id="cuerpo"></tbody>
-      </table>
-    </div>
+    <div class="wrap"><table class="mx"><thead id="thead"></thead><tbody id="cuerpo"></tbody></table></div>
   </section>
 
   <section id="paneUsers" class="hide">
-    <div class="wrap">
-      <table>
-        <thead><tr><th>Nombre</th><th>Correo</th><th>Rol</th><th>Estado</th><th>Acciones</th></tr></thead>
+    <div class="padwrap">
+      <table style="width:100%;border-collapse:collapse;background:#fff;border-radius:10px;overflow:hidden">
+        <thead><tr><th style="background:#2a333d;color:#fff;padding:11px;text-align:left">Nombre</th><th style="background:#2a333d;color:#fff;padding:11px;text-align:left">Correo</th><th style="background:#2a333d;color:#fff;padding:11px;text-align:left">Rol</th><th style="background:#2a333d;color:#fff;padding:11px;text-align:left">Estado</th><th style="background:#2a333d;color:#fff;padding:11px;text-align:left">Acciones</th></tr></thead>
         <tbody id="cuerpoUsers"></tbody>
       </table>
     </div>
@@ -183,51 +169,46 @@
   <footer id="appFoot">Los cambios se guardan en la base de datos.</footer>
 </div>
 
-<!-- DRAWER -->
-<div id="backdrop" class="backdrop hide"></div>
-<div id="drawer" class="drawer hide">
-  <div class="drawer-head">
-    <div><h3 id="dTitle">Equipo</h3><div class="sap" id="dSap"></div></div>
-    <button class="x" id="dClose">×</button>
-  </div>
-  <div class="drawer-body" id="dBody"></div>
-</div>
-
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
-/* ╔══ pega aquí tus DOS datos (los mismos de tu archivo actual, líneas SUPABASE_URL/KEY) ══╗ */
-const SUPABASE_URL = "https://hklwvdhzltjsbfvlewbu.supabase.co";   // ← reemplaza
-const SUPABASE_KEY = "sb_publishable_NgDfyDHDI_KByR-qf35EpA_ZuKI5E0K";                 // ← reemplaza
-/* ──────────────────────────────────────────────────────────────────────────────────────── */
-
+/* ╔══ pega aquí tus DOS datos (los mismos de tu archivo actual) ══╗ */
+const SUPABASE_URL = "https://TU-PROYECTO.supabase.co";   // ← reemplaza
+const SUPABASE_KEY = "TU-PUBLISHABLE-KEY";                 // ← reemplaza
+/* ──────────────────────────────────────────────────────────────── */
 const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-let perfil=null, datos=[], modoRegistro=false, pollTimer=null, gateTimer=null, abierto=null;
+let perfil=null, datos=[], modoRegistro=false, pollTimer=null, gateTimer=null;
 
-/* ===== definición de campos para el panel de detalle ===== */
-const GRUPOS = [
- ["Códigos",[["cod_proyec","Proyecto","t"],["cod_sap","Cód. SAP JJC","t"],["cod_cliente","Cód. Cliente","t"],["cod_fotocheck","Cód. Fotocheck","t"],["cod_provee","Cód. Proveedor","t"],["familia","Familia","t"]]],
- ["Datos técnicos",[["equipo","Equipo / Vehículo","t"],["marca","Marca","t"],["modelo","Modelo","t"],["serie_placa","Serie / Placa","t"],["anio","Año fab.","t"],["color","Color","t"],["potencia","Potencia","t"],["capacidad","Capacidad","t"],["peso_bruto","Peso bruto","t"],["medidas","Medidas (L×A×H)","t"],["tanque_comb","Tanque comb. (gln)","t"]]],
- ["Estado y movilización",[["status","Status","status"],["fecha_traslado","Fecha traslado","d"],["fecha_aprobac","Fecha aprob. fotochek","d"],["hrkm_ingreso","HR/KM ingreso","n"],["nivel_comb_ing","Nivel comb. ingreso","n"],["chk_ingreso","Checklist ingreso","sino"],["inf_ingreso","Informe ingreso","sino"],["ubic_ingreso","Ubic. SAP ingreso","t"]]],
- ["Desmovilización",[["fecha_desmov","Fecha desmov.","d"],["hrkm_salida","HR/KM salida","n"],["nivel_comb_sal","Nivel comb. salida","n"],["chk_salida","Checklist salida","sino"],["inf_salida","Informe salida","sino"],["ubic_salida","Ubic. SAP salida","t"]]],
- ["Proveedor",[["propietario","Propietario","t"],["ruc","RUC","t"],["direccion","Dirección","t"],["email","E-mail contacto","t"],["celular","Celular contacto","t"]]],
- ["Control documentario (vencimientos)",[["insp_anual","Inspección anual","de"],["venc_permiso","Permiso cliente","de"],["certif_operat","Certif. operatividad","de"],["soat","SOAT","de"],["poliza","Póliza","de"],["rev_tec","Rev. técnica (CITV)","de"],["tarjeta_circ","Tarjeta circ. (TUC)","de"],["extintor","Extintor","de"],["radio_serie","Radio (N° serie)","t"]]],
- ["Mantenimiento",[["hrkm_actual","HR/KM actual","n"],["fecha_lectura","Fecha de lectura","d"],["hr_dia","Promedio HR/día","n"],["hrkm_ult_mntto","HR/KM último mntto","n"],["fecha_ult_mntto","Fecha último mntto","d"],["pm_realizado","Último PM realizado","t"],["frecuencia","Frecuencia mntto (h)","n"]]],
- ["Observaciones",[["obs","Observaciones","t"]]],
+/* ===== columnas congeladas + grupos (estilo Excel) ===== */
+const FROZEN=[
+  {k:'_idx',lab:'#',w:38,type:'idx'},
+  {k:'cod_sap',lab:'Cód. SAP',w:96,type:'t'},
+  {k:'equipo',lab:'Equipo / Vehículo',w:180,type:'t'},
+  {k:'status',lab:'Status',w:120,type:'status'},
+];
+const GROUPS=[
+ {key:'cod',lab:'CÓDIGOS',color:'#b45309',cols:[['cod_proyec','Proyecto','t'],['cod_cliente','Cliente','t'],['cod_fotocheck','Fotocheck','t'],['cod_provee','Proveedor','t'],['familia','Familia','t']]},
+ {key:'tec',lab:'DATOS TÉCNICOS',color:'#1d4ed8',cols:[['marca','Marca','t'],['modelo','Modelo','t'],['serie_placa','Serie/Placa','t'],['anio','Año','t'],['color','Color','t'],['potencia','Potencia','t'],['capacidad','Capacidad','t'],['peso_bruto','Peso','t'],['medidas','Medidas','t'],['tanque_comb','Tanque','t']]},
+ {key:'mov',lab:'MOVILIZACIÓN',color:'#0f766e',cols:[['fecha_traslado','F. traslado','d'],['fecha_aprobac','F. aprob.','d'],['hrkm_ingreso','HR/KM ing.','n'],['nivel_comb_ing','Comb. ing.','n'],['chk_ingreso','Chk ing.','sino'],['inf_ingreso','Inf. ing.','sino'],['ubic_ingreso','Ubic. ing.','t']]},
+ {key:'des',lab:'DESMOVILIZACIÓN',color:'#6d28d9',cols:[['fecha_desmov','F. desmov.','d'],['hrkm_salida','HR/KM sal.','n'],['nivel_comb_sal','Comb. sal.','n'],['chk_salida','Chk sal.','sino'],['inf_salida','Inf. sal.','sino'],['ubic_salida','Ubic. sal.','t']]},
+ {key:'prov',lab:'PROVEEDOR',color:'#9333ea',cols:[['propietario','Propietario','t'],['ruc','RUC','t'],['direccion','Dirección','t'],['email','E-mail','t'],['celular','Celular','t']]},
+ {key:'doc',lab:'CONTROL DOCUMENTARIO',color:'#be123c',cols:[['insp_anual','Insp. anual','de'],['venc_permiso','Permiso','de'],['certif_operat','Certif. oper.','de'],['soat','SOAT','de'],['poliza','Póliza','de'],['rev_tec','Rev. téc.','de'],['tarjeta_circ','T. circ.','de']]},
+ {key:'imp',lab:'IMPLEMENTACIÓN',color:'#a16207',cols:[['extintor','Extintor','de'],['radio_serie','Radio N° serie','t']]},
+ {key:'act',lab:'DATOS ACTUALES',color:'#15803d',cols:[['hrkm_actual','HR/KM actual','n'],['fecha_lectura','F. lectura','d'],['hr_dia','HR/día','n']]},
+ {key:'ult',lab:'ÚLTIMO MNTTO',color:'#0369a1',cols:[['hrkm_ult_mntto','HR/KM últ.','n'],['fecha_ult_mntto','F. últ.','d'],['pm_realizado','PM real.','t'],['frecuencia','Frecuenc.','n']]},
+ {key:'ctrl',lab:'CONTROL DE HORAS Y MNTTO',color:'#111827',calc:true,cols:[['_proximo','Próx. PM','c'],['_restante','Restante','c'],['_alerta','Alerta','c'],['_fprox','Próx. fecha','c'],['_sem','Sem.','c']]},
+ {key:'obs',lab:'OBSERVACIONES',color:'#525252',cols:[['obs','Observaciones','t']]},
 ];
 const DOCS=['insp_anual','venc_permiso','certif_operat','soat','poliza','rev_tec','tarjeta_circ','extintor'];
+const collapsed={};
 
-/* ===== arranque ===== */
-async function init(){
-  const {data:{session}}=await sb.auth.getSession();
-  if(session) await trasLogin(); else mostrar("auth");
-}
-sb.auth.onAuthStateChange((_e,s)=>{ if(s) trasLogin(); else {stopPoll();stopGate();mostrar("auth");} });
+/* ===== arranque / sesión ===== */
+async function init(){const {data:{session}}=await sb.auth.getSession();if(session)await trasLogin();else mostrar("auth");}
+sb.auth.onAuthStateChange((_e,s)=>{if(s)trasLogin();else{stopPoll();stopGate();mostrar("auth");}});
 async function trasLogin(){
   const {data:{user}}=await sb.auth.getUser();
   const {data,error}=await sb.from("profiles").select("*").eq("id",user.id).single();
   if(error){console.error(error);return;}
-  perfil=data;
-  if(perfil.estado==="aprobado") entrarApp(); else mostrarGate();
+  perfil=data; if(perfil.estado==="aprobado")entrarApp();else mostrarGate();
 }
 function mostrar(v){vAuth.classList.toggle("hide",v!=="auth");vGate.classList.toggle("hide",v!=="gate");vApp.classList.toggle("hide",v!=="app");}
 function mostrarGate(){
@@ -236,215 +217,181 @@ function mostrarGate(){
   mostrar("gate");
 }
 async function entrarApp(){
-  stopGate(); mostrar("app");
+  stopGate();mostrar("app");
   who.textContent=(perfil.nombre||perfil.email)+(perfil.rol==="admin"?" · Admin":"");
-  if(perfil.rol==="admin") tabUsers.style.display="inline-block";
-  await cargar(); startPoll();
+  if(perfil.rol==="admin")tabUsers.style.display="inline-block";
+  await cargar();startPoll();
 }
-/* auto-revisión del estado en pantalla pendiente */
-function startGate(){ stopGate(); gateTimer=setInterval(checkGate,8000); }
-function stopGate(){ if(gateTimer)clearInterval(gateTimer); }
-async function checkGate(){
-  const {data:{user}}=await sb.auth.getUser(); if(!user)return;
-  const {data}=await sb.from("profiles").select("*").eq("id",user.id).single();
-  if(data){ perfil=data; if(perfil.estado==="aprobado") entrarApp(); }
-}
+function startGate(){stopGate();gateTimer=setInterval(checkGate,8000);}
+function stopGate(){if(gateTimer)clearInterval(gateTimer);}
+async function checkGate(){const {data:{user}}=await sb.auth.getUser();if(!user)return;const {data}=await sb.from("profiles").select("*").eq("id",user.id).single();if(data){perfil=data;if(perfil.estado==="aprobado")entrarApp();}}
 gateRetry.onclick=checkGate;
 
 /* ===== auth ===== */
-lnkToggle.onclick=()=>{
-  modoRegistro=!modoRegistro;
-  fldNombre.style.display=modoRegistro?"block":"none";
-  authSub.textContent=modoRegistro?"Crea tu cuenta":"Inicia sesión para continuar";
-  btnAuth.textContent=modoRegistro?"Registrarme":"Ingresar";
-  authToggle.innerHTML=modoRegistro?'¿Ya tienes cuenta? <a id="lnkToggle">Inicia sesión</a>':'¿No tienes cuenta? <a id="lnkToggle">Regístrate</a>';
-  document.getElementById("lnkToggle").onclick=lnkToggle.onclick; authMsg.innerHTML="";
-};
+lnkToggle.onclick=()=>{modoRegistro=!modoRegistro;fldNombre.style.display=modoRegistro?"block":"none";authSub.textContent=modoRegistro?"Crea tu cuenta":"Inicia sesión para continuar";btnAuth.textContent=modoRegistro?"Registrarme":"Ingresar";authToggle.innerHTML=modoRegistro?'¿Ya tienes cuenta? <a id="lnkToggle">Inicia sesión</a>':'¿No tienes cuenta? <a id="lnkToggle">Regístrate</a>';document.getElementById("lnkToggle").onclick=lnkToggle.onclick;authMsg.innerHTML="";};
 btnAuth.onclick=async()=>{
   const email=inEmail.value.trim(),pass=inPass.value,nombre=inNombre.value.trim();
   if(!email||!pass)return amsg("Completa correo y contraseña.","err");
   btnAuth.disabled=true;
   try{
-    if(modoRegistro){
-      const {error}=await sb.auth.signUp({email,password:pass,options:{data:{nombre}}});
-      if(error)throw error;
-      amsg("¡Registro exitoso! Tu cuenta queda pendiente de aprobación. Ya puedes iniciar sesión.","ok");
-      modoRegistro=false;fldNombre.style.display="none";btnAuth.textContent="Ingresar";authSub.textContent="Inicia sesión para continuar";
-    }else{ const {error}=await sb.auth.signInWithPassword({email,password:pass}); if(error)throw error; }
-  }catch(e){ amsg(trad(e.message),"err"); } finally{ btnAuth.disabled=false; }
+    if(modoRegistro){const {error}=await sb.auth.signUp({email,password:pass,options:{data:{nombre}}});if(error)throw error;amsg("¡Registro exitoso! Tu cuenta queda pendiente de aprobación. Ya puedes iniciar sesión.","ok");modoRegistro=false;fldNombre.style.display="none";btnAuth.textContent="Ingresar";authSub.textContent="Inicia sesión para continuar";}
+    else{const {error}=await sb.auth.signInWithPassword({email,password:pass});if(error)throw error;}
+  }catch(e){amsg(trad(e.message),"err");}finally{btnAuth.disabled=false;}
 };
 function amsg(t,k){authMsg.innerHTML=`<div class="msg ${k}">${t}</div>`;}
 function trad(m){if(/Invalid login/i.test(m))return"Correo o contraseña incorrectos.";if(/already registered/i.test(m))return"Ese correo ya está registrado.";if(/Email not confirmed/i.test(m))return"Correo sin confirmar. Pide al admin que lo confirme.";if(/at least 6/i.test(m))return"La contraseña debe tener mínimo 6 caracteres.";return m;}
 btnOut.onclick=gateOut.onclick=()=>sb.auth.signOut();
 
-/* ===== cálculo de mantenimiento (réplica de tu Excel) ===== */
+/* ===== cálculo mantenimiento (réplica Excel) ===== */
 function hoy0(){const d=new Date();d.setHours(0,0,0,0);return d;}
 function dias(a,b){return Math.round((a-b)/86400000);}
-function isoWeek(d){const t=new Date(Date.UTC(d.getFullYear(),d.getMonth(),d.getDate()));const dn=t.getUTCDay()||7;t.setUTCDate(t.getUTCDate()+4-dn);const y=new Date(Date.UTC(t.getUTCFullYear(),0,1));return Math.ceil((((t-y)/86400000)+1)/7);}
+function isoWeek(d){const t=new Date(Date.UTC(d.getFullYear(),d.getMonth(),d.getDate()));const dn=t.getUTCDay()||7;t.setUTCDate(t.getUTCDate()+4-dn);const y=new Date(Date.UTC(t.getUTCFullYear(),0,1));return Math.ceil(((t-y)/86400000+1)/7);}
 function mant(e){
   const H=hoy0(),freq=+e.frecuencia||0,ult=+e.hrkm_ult_mntto||0,act=+e.hrkm_actual||0,hd=+e.hr_dia||0;
-  let proy=act;
-  if(e.fecha_lectura){const dd=Math.max(0,dias(H,new Date(e.fecha_lectura)));proy=act+dd*hd;}
-  const m=0.2*freq;
-  const proximo=freq?Math.round((ult+freq)/m)*m:0;
-  const restante=proximo-proy;
+  let proy=act; if(e.fecha_lectura){const dd=Math.max(0,dias(H,new Date(e.fecha_lectura)));proy=act+dd*hd;}
+  const m=0.2*freq; const proximo=freq?Math.round((ult+freq)/m)*m:0; const restante=proximo-proy;
   let est="na";const margen=Math.max(freq*0.15,25);
-  if(freq){est=restante<=0?"bad":(restante<=margen?"warn":"ok");}
+  if(freq)est=restante<=0?"bad":(restante<=margen?"warn":"ok");
   let fprox="",sem="";
   if(hd>0&&freq){const dd=Math.floor(restante/hd)+1;const f=new Date(H.getTime()+dd*86400000);fprox=f.toLocaleDateString("es-PE",{day:"2-digit",month:"short"});sem=isoWeek(f);}
   return {proy:Math.round(proy),proximo:Math.round(proximo),restante:Math.round(restante),est,fprox,sem};
 }
 function docState(v){if(!v)return"na";const d=dias(new Date(v),hoy0());if(d<0)return"bad";if(d<=30)return"warn";return"ok";}
 function docsWorst(e){let w="na";for(const f of DOCS){if(!e[f])continue;const s=docState(e[f]);if(s==="bad")return"bad";if(s==="warn")w="warn";else if(w==="na")w="ok";}return w;}
-
-/* ===== tabla principal ===== */
-async function cargar(){
-  const {data,error}=await sb.from("maestro").select("*").order("id");
-  if(error){console.error(error);appFoot.textContent="⚠️ "+error.message;return;}
-  datos=data; render();
-}
 const ETI={ok:"En regla",warn:"Próximo",bad:"Vencido",na:"—"};
-function render(){
-  const q=buscar.value.toLowerCase().trim(),fs=fStatus.value;
-  cuerpo.innerHTML="";
-  const vis=datos.filter(e=>{
-    const t=[e.cod_sap,e.equipo,e.marca,e.modelo,e.serie_placa].join(" ").toLowerCase();
-    return (!q||t.includes(q))&&(!fs||e.status===fs);
-  });
-  if(!vis.length){cuerpo.innerHTML=`<tr><td colspan="11" class="empty">Sin equipos que coincidan.</td></tr>`;resumen();return;}
-  for(const e of vis){
-    const c=mant(e),dw=docsWorst(e),tr=document.createElement("tr");
-    tr.onclick=()=>abrir(e.id);
-    tr.innerHTML=`
-      <td class="mono">${esc(e.cod_sap)}</td>
-      <td>${esc(e.equipo)}</td>
-      <td>${esc(e.marca)}</td>
-      <td><span class="pill st-${esc(e.status||"")}">${esc(e.status||"—")}</span></td>
-      <td class="num">${c.proy?c.proy.toLocaleString():"—"}</td>
-      <td class="num">${c.proximo?c.proximo.toLocaleString():"—"}</td>
-      <td class="num" style="color:${c.est==="bad"?"#b91c1c":"inherit"}">${c.est==="na"?"—":c.restante.toLocaleString()}</td>
-      <td><span class="pill ${c.est}">${ETI[c.est]}</span></td>
-      <td class="num">${c.fprox||"—"}</td>
-      <td style="text-align:center" class="mono">${c.sem||"—"}</td>
-      <td style="text-align:center"><span class="dot ${dw}" title="Documentos"></span></td>`;
-    cuerpo.appendChild(tr);
-  }
-  resumen();
-}
-function resumen(){
-  let b=0,w=0,dv=0;
-  datos.forEach(e=>{const c=mant(e);if(c.est==="bad")b++;else if(c.est==="warn")w++;if(docsWorst(e)==="bad")dv++;});
-  cBad.textContent=b;cWarn.textContent=w;cDoc.textContent=dv;
-}
+
+/* ===== datos ===== */
+async function cargar(){const {data,error}=await sb.from("maestro").select("*").order("id");if(error){console.error(error);appFoot.textContent="⚠️ "+error.message;return;}datos=data;render();}
+
+function frozenLeft(i){let x=0;for(let j=0;j<i;j++)x+=FROZEN[j].w;return x;}
 function esc(s){return String(s??"").replace(/&/g,"&amp;").replace(/"/g,"&quot;").replace(/</g,"&lt;")}
 
-/* ===== panel de detalle ===== */
-function abrir(id){
-  abierto=datos.find(x=>x.id===id); if(!abierto)return;
-  dTitle.textContent=abierto.equipo||"Equipo";
-  dSap.textContent=(abierto.cod_sap||"")+(abierto.serie_placa?" · "+abierto.serie_placa:"");
-  let html="";
-  for(const [titulo,campos] of GRUPOS){
-    html+=`<div class="grp"><h4>${titulo}</h4>`;
-    for(const [k,lab,tipo] of campos) html+=fila(abierto,k,lab,tipo);
-    if(titulo==="Mantenimiento") html+=calcBox(abierto);
-    html+=`</div>`;
+function render(){
+  const q=buscar.value.toLowerCase().trim(),fs=fStatus.value,fd=fDocs.value;
+  const vis=datos.filter(e=>{
+    const t=[e.cod_proyec,e.cod_sap,e.equipo,e.marca,e.modelo,e.serie_placa].join(" ").toLowerCase();
+    if(q&&!t.includes(q))return false;
+    if(fs&&e.status!==fs)return false;
+    if(fd&&docsWorst(e)!==fd)return false;
+    return true;
+  });
+  /* ---- encabezado (2 filas) ---- */
+  let b1='<tr class="bands">',b2='<tr class="cols">';
+  FROZEN.forEach((f,i)=>{ b1+=`<th class="frz" rowspan="2" style="left:${frozenLeft(i)}px;min-width:${f.w}px;width:${f.w}px;background:#2a333d">${f.lab}</th>`; });
+  for(const g of GROUPS){
+    if(collapsed[g.key]){
+      b1+=`<th class="bands" data-collapse="${g.key}" style="background:${g.color};min-width:26px" title="Expandir ${g.lab}">＋</th>`;
+      b2+=`<th style="background:#42505d">·</th>`;
+    }else{
+      b1+=`<th class="bands" data-collapse="${g.key}" colspan="${g.cols.length}" style="background:${g.color}">${g.lab} －</th>`;
+      for(const c of g.cols) b2+=`<th>${c[1]}</th>`;
+    }
   }
-  dBody.innerHTML=html;
-  backdrop.classList.remove("hide"); drawer.classList.remove("hide");
-}
-function fila(e,k,lab,tipo){
-  const v=e[k]; let ctrl;
-  if(tipo==="status") ctrl=`<select data-k="${k}">${["OPERATIVO","INOPERATIVO","HABILITACION","DESMOVILIZADO"].map(o=>`<option ${v===o?"selected":""}>${o}</option>`).join("")}</select>`;
-  else if(tipo==="sino") ctrl=`<select data-k="${k}"><option value=""></option>${["SI","NO","FALTA"].map(o=>`<option ${v===o?"selected":""}>${o}</option>`).join("")}</select>`;
-  else if(tipo==="n") ctrl=`<input type="number" data-k="${k}" value="${v??""}">`;
-  else if(tipo==="d") ctrl=`<input type="date" data-k="${k}" value="${v??""}">`;
-  else if(tipo==="de"){const cls="exp-"+docState(v);ctrl=`<input type="date" data-k="${k}" class="${v?cls:""}" value="${v??""}">`;}
-  else ctrl=`<input type="text" data-k="${k}" value="${esc(v)}">`;
-  return `<div class="frow"><label>${lab}</label>${ctrl}</div>`;
-}
-function calcBox(e){
-  const c=mant(e);
-  return `<div class="calc-box">
-    <div class="c">Próximo PM (h)<b>${c.proximo?c.proximo.toLocaleString():"—"}</b></div>
-    <div class="c">Horas restantes<b style="color:${c.est==="bad"?"#b91c1c":c.est==="warn"?"#b45309":"#15803d"}">${c.est==="na"?"—":c.restante.toLocaleString()}</b></div>
-    <div class="c">Fecha proyectada<b>${c.fprox||"—"}</b></div>
-    <div class="c">Semana proyect.<b>${c.sem||"—"}</b></div>
-  </div><div class="save-pill" id="savePill">Calculado automáticamente.</div>`;
-}
-let saveT={};
-dBody.addEventListener("input",ev=>{
-  const inp=ev.target,k=inp.dataset.k; if(!k||!abierto)return;
-  let val=inp.value;
-  if(inp.type==="number") val=val===""?null:Number(val);
-  if(inp.type==="date") val=val===""?null:val;
-  abierto[k]=val;
-  if(inp.classList.contains("exp-bad")||inp.classList.contains("exp-warn")||inp.classList.contains("exp-ok")||inp.type==="date"){
-    inp.classList.remove("exp-bad","exp-warn","exp-ok");
-    const grp=inp.closest(".grp"); if(grp&&grp.querySelector("h4").textContent.startsWith("Control")&&val) inp.classList.add("exp-"+docState(val));
-  }
-  // refrescar caja de cálculo si cambió algo de mantenimiento
-  const cb=document.querySelector(".calc-box");
-  if(cb && ["frecuencia","hrkm_ult_mntto","hrkm_actual","hr_dia","fecha_lectura"].includes(k)){
-    const c=mant(abierto);const bs=cb.querySelectorAll("b");
-    bs[0].textContent=c.proximo?c.proximo.toLocaleString():"—";
-    bs[1].textContent=c.est==="na"?"—":c.restante.toLocaleString();
-    bs[1].style.color=c.est==="bad"?"#b91c1c":c.est==="warn"?"#b45309":"#15803d";
-    bs[2].textContent=c.fprox||"—"; bs[3].textContent=c.sem||"—";
-  }
-  clearTimeout(saveT[k]);
-  saveT[k]=setTimeout(()=>guardar(abierto,k,val),600);
-});
-async function guardar(e,k,val){
-  const {error}=await sb.from("maestro").update({[k]:val}).eq("id",e.id);
-  const sp=document.getElementById("savePill");
-  if(error){appFoot.textContent="⚠️ "+error.message; if(sp){sp.textContent="⚠️ No se guardó: "+error.message;}}
-  else{ if(sp){sp.textContent="Guardado ✓";setTimeout(()=>{if(sp)sp.textContent="Calculado automáticamente.";},1200);} render(); }
-}
-function cerrar(){backdrop.classList.add("hide");drawer.classList.add("hide");abierto=null;}
-dClose.onclick=cerrar; backdrop.onclick=cerrar;
+  b1+='</tr>';b2+='</tr>';
+  thead.innerHTML=b1+b2;
 
-btnAdd.onclick=async()=>{
-  const {data,error}=await sb.from("maestro").insert({equipo:"Nuevo equipo",status:"OPERATIVO",frecuencia:250}).select().single();
-  if(error)return alert("No se pudo agregar: "+error.message);
-  datos.push(data);render();abrir(data.id);
-};
-btnRefresh.onclick=cargar; buscar.oninput=render; fStatus.onchange=render;
+  /* ---- cuerpo ---- */
+  let html="";
+  if(!vis.length){ const span=FROZEN.length+GROUPS.reduce((a,g)=>a+(collapsed[g.key]?1:g.cols.length),0); html=`<tr><td colspan="${span}" style="padding:30px;text-align:center;color:#6b747d">Sin equipos que coincidan.</td></tr>`; }
+  vis.forEach((e,idx)=>{
+    const c=mant(e);
+    let tr='<tr>';
+    FROZEN.forEach((f,i)=>{
+      const style=`left:${frozenLeft(i)}px;min-width:${f.w}px;width:${f.w}px`;
+      if(f.type==='idx') tr+=`<td class="frz idx" style="${style}">${idx+1}</td>`;
+      else if(f.type==='status') tr+=`<td class="frz" style="${style}">${selStatus(e)}</td>`;
+      else tr+=`<td class="frz" style="${style}"><input data-id="${e.id}" data-k="${f.k}" value="${esc(e[f.k])}"></td>`;
+    });
+    for(const g of GROUPS){
+      if(collapsed[g.key]){ tr+=`<td class="collapsed-cell" data-collapse="${g.key}" title="Expandir ${g.lab}">＋</td>`; continue; }
+      for(const [k,lab,tipo] of g.cols) tr+=celda(e,k,tipo,c);
+    }
+    tr+='</tr>'; html+=tr;
+  });
+  cuerpo.innerHTML=html;
+  resumen();
+}
+function selStatus(e){
+  const v=e.status||""; const opts=["OPERATIVO","INOPERATIVO","HABILITACION","DESMOVILIZADO"];
+  return `<select class="st-${esc(v)}" data-id="${e.id}" data-k="status"><option value=""></option>${opts.map(o=>`<option ${v===o?"selected":""}>${o}</option>`).join("")}</select>`;
+}
+function celda(e,k,tipo,c){
+  if(tipo==='c'){
+    const map={_proximo:c.proximo?c.proximo.toLocaleString():"—",_restante:c.est==="na"?"—":c.restante.toLocaleString(),_alerta:`<span class="pill ${c.est}">${ETI[c.est]}</span>`,_fprox:c.fprox||"—",_sem:c.sem||"—"};
+    const col=k==='_restante'&&c.est==='bad'?'color:#b91c1c':'';
+    return `<td class="calc" data-id="${e.id}" data-calc="${k}" style="${col}">${map[k]}</td>`;
+  }
+  if(tipo==='sino') return `<td><select data-id="${e.id}" data-k="${k}"><option value=""></option>${["SI","NO","FALTA"].map(o=>`<option ${e[k]===o?"selected":""}>${o}</option>`).join("")}</select></td>`;
+  if(tipo==='n') return `<td class="n"><input type="number" data-id="${e.id}" data-k="${k}" value="${e[k]??""}"></td>`;
+  if(tipo==='d') return `<td><input type="date" data-id="${e.id}" data-k="${k}" value="${e[k]??""}"></td>`;
+  if(tipo==='de'){const cls=e[k]?("exp-"+docState(e[k])):"";return `<td class="${cls}"><input type="date" data-id="${e.id}" data-k="${k}" value="${e[k]??""}"></td>`;}
+  return `<td><input data-id="${e.id}" data-k="${k}" value="${esc(e[k])}"></td>`;
+}
+function resumen(){let b=0,w=0,dv=0;datos.forEach(e=>{const c=mant(e);if(c.est==="bad")b++;else if(c.est==="warn")w++;if(docsWorst(e)==="bad")dv++;});cBad.textContent=b;cWarn.textContent=w;cDoc.textContent=dv;}
+
+/* ---- colapsar/expandir grupos ---- */
+thead.addEventListener("click",ev=>{const k=ev.target.dataset.collapse;if(!k)return;collapsed[k]=!collapsed[k];render();});
+cuerpo.addEventListener("click",ev=>{const k=ev.target.dataset.collapse;if(k){collapsed[k]=false;render();}});
+btnExpand.onclick=()=>{let any=Object.values(collapsed).some(v=>v);GROUPS.forEach(g=>collapsed[g.key]=!any?true:false);btnExpand.textContent=!any?"Expandir todo":"Colapsar todo";render();};
+
+/* ---- edición inline ---- */
+let saveT={};
+cuerpo.addEventListener("input",ev=>{
+  const inp=ev.target,k=inp.dataset.k,id=inp.dataset.id; if(!k||!id)return;
+  const e=datos.find(x=>x.id==id); if(!e)return;
+  let val=inp.value;
+  if(inp.type==="number")val=val===""?null:Number(val);
+  if(inp.type==="date")val=val===""?null:val;
+  e[k]=val;
+  if(k==="status"){inp.className="st-"+(val||"");}
+  if(inp.type==="date"){const td=inp.closest("td");if(td&&td.className.startsWith("exp")){td.className=val?("exp-"+docState(val)):"";}}
+  // refrescar columnas calculadas de esa fila si cambió algo de mntto
+  if(["frecuencia","hrkm_ult_mntto","hrkm_actual","hr_dia","fecha_lectura"].includes(k)){
+    const c=mant(e);
+    const set=(cc,txt,col)=>{const td=cuerpo.querySelector(`td[data-id="${id}"][data-calc="${cc}"]`);if(td){td.innerHTML=txt;if(col!==undefined)td.style.color=col;}};
+    set("_proximo",c.proximo?c.proximo.toLocaleString():"—");
+    set("_restante",c.est==="na"?"—":c.restante.toLocaleString(),c.est==="bad"?"#b91c1c":"");
+    set("_alerta",`<span class="pill ${c.est}">${ETI[c.est]}</span>`);
+    set("_fprox",c.fprox||"—"); set("_sem",c.sem||"—");
+  }
+  resumen();
+  clearTimeout(saveT[id+k]); saveT[id+k]=setTimeout(()=>guardar(id,k,val),600);
+});
+cuerpo.addEventListener("change",ev=>{ // selects (status, sino) guardan al cambiar
+  const sel=ev.target; if(sel.tagName!=="SELECT")return;
+  const k=sel.dataset.k,id=sel.dataset.id;const e=datos.find(x=>x.id==id);if(!e)return;
+  e[k]=sel.value; if(k==="status")sel.className="st-"+sel.value;
+  guardar(id,k,sel.value);
+});
+async function guardar(id,k,val){
+  const {error}=await sb.from("maestro").update({[k]:val}).eq("id",id);
+  if(error){appFoot.textContent="⚠️ No se guardó: "+error.message;}
+  else{appFoot.textContent="Guardado ✓";setTimeout(()=>appFoot.textContent="Los cambios se guardan en la base de datos.",1200);}
+}
+btnAdd.onclick=async()=>{const {data,error}=await sb.from("maestro").insert({equipo:"NUEVO EQUIPO",status:"OPERATIVO",frecuencia:250}).select().single();if(error)return alert("No se pudo agregar: "+error.message);datos.push(data);buscar.value="";fStatus.value="";fDocs.value="";render();};
+btnRefresh.onclick=cargar; buscar.oninput=render; fStatus.onchange=render; fDocs.onchange=render;
 
 /* sincronización ligera */
-function startPoll(){stopPoll();pollTimer=setInterval(()=>{if(drawer.classList.contains("hide")&&!paneEq.classList.contains("hide"))cargar();},25000);}
+function startPoll(){stopPoll();pollTimer=setInterval(()=>{const a=document.activeElement;if(a&&a.closest&&a.closest("#cuerpo"))return;if(!paneEq.classList.contains("hide"))cargar();},25000);}
 function stopPoll(){if(pollTimer)clearInterval(pollTimer);}
 
 /* pestañas */
-document.querySelectorAll("nav button").forEach(b=>b.onclick=()=>{
-  document.querySelectorAll("nav button").forEach(x=>x.classList.remove("on"));b.classList.add("on");
-  const t=b.dataset.tab;paneEq.classList.toggle("hide",t!=="eq");paneUsers.classList.toggle("hide",t!=="users");
-  if(t==="users")cargarUsuarios();
-});
+document.querySelectorAll("nav button").forEach(b=>b.onclick=()=>{document.querySelectorAll("nav button").forEach(x=>x.classList.remove("on"));b.classList.add("on");const t=b.dataset.tab;paneEq.classList.toggle("hide",t!=="eq");paneUsers.classList.toggle("hide",t!=="users");if(t==="users")cargarUsuarios();});
 
 /* admin */
 async function cargarUsuarios(){
   const {data,error}=await sb.from("profiles").select("*").order("created_at");
-  if(error){cuerpoUsers.innerHTML=`<tr><td colspan="5" class="empty">${error.message}</td></tr>`;return;}
+  if(error){cuerpoUsers.innerHTML=`<tr><td colspan="5" style="padding:20px">${error.message}</td></tr>`;return;}
   cuerpoUsers.innerHTML="";
-  data.forEach(u=>{
-    const yo=u.id===perfil.id,tr=document.createElement("tr");
-    tr.innerHTML=`<td>${esc(u.nombre||"—")}${yo?' <span style="color:#999">(tú)</span>':''}</td>
-      <td>${esc(u.email)}</td><td>${u.rol}</td>
-      <td><span class="badge ${u.estado}">${u.estado}</span></td>
-      <td>${u.estado!=="aprobado"?`<button class="mini ap" data-act="aprobar" data-id="${u.id}">Aprobar</button>`:""}
-      ${u.estado!=="bloqueado"&&!yo?`<button class="mini bl" data-act="bloquear" data-id="${u.id}">Bloquear</button>`:""}
-      ${u.rol!=="admin"?`<button class="mini adm" data-act="admin" data-id="${u.id}">Hacer admin</button>`:""}</td>`;
-    cuerpoUsers.appendChild(tr);
-  });
+  data.forEach(u=>{const yo=u.id===perfil.id,tr=document.createElement("tr");
+    tr.innerHTML=`<td style="padding:11px;border-bottom:1px solid #eceef1">${esc(u.nombre||"—")}${yo?' <span style="color:#999">(tú)</span>':''}</td>
+      <td style="padding:11px;border-bottom:1px solid #eceef1">${esc(u.email)}</td>
+      <td style="padding:11px;border-bottom:1px solid #eceef1">${u.rol}</td>
+      <td style="padding:11px;border-bottom:1px solid #eceef1"><span class="badge ${u.estado}">${u.estado}</span></td>
+      <td style="padding:11px;border-bottom:1px solid #eceef1">${u.estado!=="aprobado"?`<button class="mini ap" data-act="aprobar" data-id="${u.id}">Aprobar</button>`:""}${u.estado!=="bloqueado"&&!yo?`<button class="mini bl" data-act="bloquear" data-id="${u.id}">Bloquear</button>`:""}${u.rol!=="admin"?`<button class="mini adm" data-act="admin" data-id="${u.id}">Hacer admin</button>`:""}</td>`;
+    cuerpoUsers.appendChild(tr);});
 }
-cuerpoUsers.addEventListener("click",async ev=>{
-  const id=ev.target.dataset.id,act=ev.target.dataset.act;if(!id)return;
-  const cambio=act==="aprobar"?{estado:"aprobado"}:act==="bloquear"?{estado:"bloqueado"}:{rol:"admin"};
-  const {error}=await sb.from("profiles").update(cambio).eq("id",id);
-  if(error)return alert("No se pudo: "+error.message);
-  cargarUsuarios();
-});
+cuerpoUsers.addEventListener("click",async ev=>{const id=ev.target.dataset.id,act=ev.target.dataset.act;if(!id)return;const cambio=act==="aprobar"?{estado:"aprobado"}:act==="bloquear"?{estado:"bloqueado"}:{rol:"admin"};const {error}=await sb.from("profiles").update(cambio).eq("id",id);if(error)return alert("No se pudo: "+error.message);cargarUsuarios();});
 
 init();
 </script>
