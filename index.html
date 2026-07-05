@@ -84,6 +84,13 @@
   td.st-DESMOVILIZADO{background:#fce7f3}td.st-DESMOVILIZADO select{color:#be123c;font-weight:700}
   .delrow{border:none;background:none;color:#cbd2d9;cursor:pointer;font-size:13px;padding:0 2px;line-height:1}
   .delrow:hover{color:var(--bad)}
+  .mx td.cell{padding:2px 6px;cursor:cell}
+  .mx td.cell:hover{background:#fff7e6;box-shadow:inset 0 0 0 1px #f0d68a}
+  .mx td[data-editing]{padding:0;box-shadow:inset 0 0 0 2px var(--amber)}
+  .mx td[data-editing] input,.mx td[data-editing] select{width:100%;border:none;background:#fff;font:inherit;padding:2px 5px;outline:none}
+  .mx td.idx{position:relative}
+  .mx td.idx .delrow{position:absolute;right:1px;top:50%;transform:translateY(-50%);opacity:0}
+  .mx tbody tr:hover td.idx .delrow{opacity:1}
   td.exp-bad input{background:var(--bad-bg);color:var(--bad);font-weight:600}
   td.exp-warn input{background:var(--warn-bg);color:var(--warn)}
   td.exp-ok input{background:#f0fdf4}
@@ -197,8 +204,8 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
 /* ╔══ pega aquí tus DOS datos (los mismos de tu archivo actual) ══╗ */
-const SUPABASE_URL = "https://hklwvdhzltjsbfvlewbu.supabase.co";   // ← reemplaza
-const SUPABASE_KEY = "sb_publishable_NgDfyDHDI_KByR-qf35EpA_ZuKI5E0K";                 // ← reemplaza
+const SUPABASE_URL = "https://TU-PROYECTO.supabase.co";   // ← reemplaza
+const SUPABASE_KEY = "TU-PUBLISHABLE-KEY";                 // ← reemplaza
 /* ──────────────────────────────────────────────────────────────── */
 const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 let perfil=null, datos=[], modoRegistro=false, pollTimer=null, gateTimer=null;
@@ -220,9 +227,10 @@ const GROUPS=[
  {key:'act',lab:'DATOS ACTUALES',color:'#15803d',cols:[['hrkm_actual','HR/KM actual','n'],['fecha_lectura','F. lectura','d'],['hr_dia','HR/día','n']]},
  {key:'ult',lab:'ÚLTIMO MNTTO',color:'#0369a1',cols:[['hrkm_ult_mntto','HR/KM últ.','n'],['fecha_ult_mntto','F. últ.','d'],['pm_realizado','PM real.','t'],['frecuencia','Frecuenc.','n']]},
  {key:'ctrl',lab:'CONTROL DE HORAS Y MNTTO',color:'#111827',calc:true,cols:[['_proximo','Próx. PM','c'],['_restante','Restante','c'],['_alerta','Alerta','c'],['_fprox','Próx. fecha','c'],['_sem','Sem.','c']]},
- {key:'obs',lab:'OBSERVACIONES',color:'#525252',cols:[['obs','Observaciones','t']]},
+ {key:'alm',lab:'ALERTA DE MNTTO',color:'#7c2d12',calc:true,cols:[['_alertamntto','Alerta de Mntto','c']]},
 ];
 const DOCS=['certif_operat','soat','poliza','rev_tec','tarjeta_circ'];
+const FCALC=['_alerta','_sem','_alertamntto']; // columnas calculadas con filtro
 const ST_RANK={MOVILIZADO:1,DESMOVILIZADO:2};
 const collapsed={}, colFilters={};
 
@@ -277,9 +285,20 @@ function mant(e){
   const m=0.2*freq; const proximo=freq?Math.round((ult+freq)/m)*m:0; const restante=proximo-proy;
   let est="na";const margen=Math.max(freq*0.15,25);
   if(freq)est=restante<=0?"bad":(restante<=margen?"warn":"ok");
-  let fprox="",sem="";
-  if(hd>0&&freq){const dd=Math.floor(restante/hd)+1;const f=new Date(H.getTime()+dd*86400000);fprox=f.toLocaleDateString("es-PE",{day:"2-digit",month:"short"});sem=isoWeek(f);}
-  return {proy:Math.round(proy),proximo:Math.round(proximo),restante:Math.round(restante),est,fprox,sem};
+  let fprox="",sem="",fproxDate=null;
+  if(hd>0&&freq){const dd=Math.floor(restante/hd)+1;fproxDate=new Date(H.getTime()+dd*86400000);fprox=fproxDate.toLocaleDateString("es-PE",{day:"2-digit",month:"short"});sem=isoWeek(fproxDate);}
+  return {proy:Math.round(proy),proximo:Math.round(proximo),restante:Math.round(restante),est,fprox,sem,fproxDate};
+}
+/* ALERTA DE MNTTO — réplica de la fórmula del Excel:
+   =IF(AO <= (HOY - DÍA_SEMANA + 13), "MNTTO", IF(AZ > AX, "Verif. Valor", "")) */
+function alertaMntto(e){
+  const c=mant(e),freq=+e.frecuencia||0;
+  if(!freq||!c.fproxDate) return "";
+  const H=hoy0(),dow=(H.getDay()+6)%7;               // lunes=0 … domingo=6
+  const finProxSemana=new Date(H.getTime()+(13-dow)*86400000); finProxSemana.setHours(23,59,59,999);
+  if(c.fproxDate<=finProxSemana) return "MNTTO";
+  if(c.restante>freq) return "Verif. Valor";
+  return "";
 }
 function docState(v){if(!v)return"na";const d=dias(new Date(v),hoy0());if(d<0)return"bad";if(d<=30)return"warn";return"ok";}
 function docsWorst(e){let w="na";for(const f of DOCS){if(!e[f])continue;const s=docState(e[f]);if(s==="bad")return"bad";if(s==="warn")w="warn";else if(w==="na")w="ok";}return w;}
@@ -291,7 +310,7 @@ async function cargar(){const {data,error}=await sb.from("maestro").select("*").
 function frozenLeft(i){let x=0;for(let j=0;j<i;j++)x+=FROZEN[j].w;return x;}
 function esc(s){return String(s??"").replace(/&/g,"&amp;").replace(/"/g,"&quot;").replace(/</g,"&lt;")}
 
-function render(){buildHead();buildBody();}
+function render(){buildHead();buildBody();applyFilters();}
 function buildHead(){
   let b1='<tr class="bands">',b2='<tr class="cols">',b3='<tr class="filters">';
   FROZEN.forEach((f,i)=>{
@@ -309,34 +328,32 @@ function buildHead(){
       b1+=`<th class="bands" data-collapse="${g.key}" colspan="${g.cols.length}" style="background:${g.color}">${g.lab} －</th>`;
       for(const [k,lab,tipo] of g.cols){
         b2+=`<th>${lab}</th>`;
-        b3+= tipo==='c' ? `<th></th>` : `<th><input data-fcol="${k}" placeholder="🔍" value="${esc(colFilters[k]||'')}"></th>`;
+        const filtrable = tipo!=='c' || FCALC.includes(k);
+        b3+= filtrable ? `<th><input data-fcol="${k}" placeholder="🔍" value="${esc(colFilters[k]||'')}"></th>` : `<th></th>`;
       }
     }
   }
   thead.innerHTML=b1+'</tr>'+b2+'</tr>'+b3+'</tr>';
 }
+function famNum(e){const m=String(e.familia||'').match(/\d+/);return m?+m[0]:99;}
 function buildBody(){
-  const q=buscar.value.toLowerCase().trim(),fs=fStatus.value,fd=fDocs.value;
-  let vis=datos.filter(e=>{
-    const t=[e.cod_proyec,e.cod_sap,e.equipo,e.marca,e.modelo,e.serie_placa].join(" ").toLowerCase();
-    if(q&&!t.includes(q))return false;
-    if(fs&&e.status!==fs)return false;
-    if(fd&&docsWorst(e)!==fd)return false;
-    for(const k in colFilters){const fv=(colFilters[k]||"").toLowerCase();if(fv&&!String(e[k]??"").toLowerCase().includes(fv))return false;}
-    return true;
+  // ORDEN DE 4 NIVELES: 1) status (MOVILIZADO arriba) 2) Proyecto A-Z 3) ID-Familia 1-10 4) Equipo A-Z
+  const vis=datos.slice().sort((a,b)=>{
+    const ra=ST_RANK[a.status]||9,rb=ST_RANK[b.status]||9; if(ra!==rb)return ra-rb;
+    const p=String(a.cod_proyec||'').localeCompare(String(b.cod_proyec||'')); if(p)return p;
+    const f=famNum(a)-famNum(b); if(f)return f;
+    return String(a.equipo||'').localeCompare(String(b.equipo||''));
   });
-  // ORDEN POR NIVEL DE ESTATUS: MOVILIZADO arriba, DESMOVILIZADO abajo
-  vis.sort((a,b)=>{const ra=ST_RANK[a.status]||9,rb=ST_RANK[b.status]||9;if(ra!==rb)return ra-rb;return String(a.cod_sap||"").localeCompare(String(b.cod_sap||""));});
+  const span=FROZEN.length+GROUPS.reduce((a,g)=>a+(collapsed[g.key]?1:g.cols.length),0);
   let html="";
-  if(!vis.length){const span=FROZEN.length+GROUPS.reduce((a,g)=>a+(collapsed[g.key]?1:g.cols.length),0);html=`<tr><td colspan="${span}" style="padding:30px;text-align:center;color:#6b747d">Sin equipos que coincidan.</td></tr>`;}
-  vis.forEach((e,idx)=>{
+  vis.forEach(e=>{
     const c=mant(e);
-    let tr='<tr>';
+    let tr=`<tr data-id="${e.id}">`;
     FROZEN.forEach((f,i)=>{
       const style=`left:${frozenLeft(i)}px;min-width:${f.w}px;width:${f.w}px`;
-      if(f.type==='idx') tr+=`<td class="frz idx" style="${style}">${idx+1}<button class="delrow" data-del="${e.id}" title="Eliminar fila">✕</button></td>`;
-      else if(f.type==='status') tr+=`<td class="frz st-${esc(e.status||'')}" style="${style}">${selStatus(e)}</td>`;
-      else tr+=`<td class="frz" style="${style}"><input data-id="${e.id}" data-k="${f.k}" value="${esc(e[f.k])}"></td>`;
+      if(f.type==='idx') tr+=`<td class="frz idx" style="${style}"><span class="rn">0</span><button class="delrow" data-del="${e.id}" title="Eliminar fila">✕</button></td>`;
+      else if(f.type==='status') tr+=`<td class="frz cell st-${esc(e.status||'')}" data-id="${e.id}" data-k="status" data-type="status" style="${style}">${esc(e.status)}</td>`;
+      else tr+=`<td class="frz cell" data-id="${e.id}" data-k="${f.k}" data-type="t" style="${style}">${esc(e[f.k])}</td>`;
     });
     for(const g of GROUPS){
       if(collapsed[g.key]){tr+=`<td class="collapsed-cell" data-collapse="${g.key}" title="Expandir ${g.lab}">＋</td>`;continue;}
@@ -344,30 +361,56 @@ function buildBody(){
     }
     tr+='</tr>';html+=tr;
   });
+  html+=`<tr id="emptyRow" style="display:none"><td colspan="${span}" style="padding:30px;text-align:center;color:#6b747d">Sin equipos que coincidan.</td></tr>`;
   cuerpo.innerHTML=html;
   resumen();
 }
-function selStatus(e){
-  const v=e.status||""; const opts=["MOVILIZADO","DESMOVILIZADO"];
-  return `<select data-id="${e.id}" data-k="status"><option value=""></option>${opts.map(o=>`<option ${v===o?"selected":""}>${o}</option>`).join("")}</select>`;
+/* ---- helpers de visualización ---- */
+function fmtDate(v){if(!v)return"";const p=String(v).split("-");return p.length===3?`${p[2]}/${p[1]}/${p[0].slice(2)}`:String(v);}
+function dispVal(e,k,type){const v=e[k];if(type==='n')return(v==null||v==='')?"":Number(v).toLocaleString('es-PE');if(type==='d'||type==='de')return fmtDate(v);return v==null?"":esc(v);}
+function calcHTML(e,k,c){
+  if(k==='_alertamntto'){const a=alertaMntto(e);return a?`<span class="pill ${a==='MNTTO'?'bad':'warn'}">${a}</span>`:"";}
+  const map={_proximo:c.proximo?c.proximo.toLocaleString():"—",_restante:c.est==="na"?"—":c.restante.toLocaleString(),_alerta:`<span class="pill ${c.est}">${ETI[c.est]}</span>`,_fprox:c.fprox||"—",_sem:c.sem||"—"};
+  return map[k];
+}
+function calcVal(e,k){ // para filtros de columnas calculadas
+  if(k==='_alerta')return ETI[mant(e).est];
+  if(k==='_sem')return mant(e).sem;
+  if(k==='_alertamntto')return alertaMntto(e);
+  return "";
 }
 function celda(e,k,tipo,c){
   if(tipo==='c'){
-    const map={_proximo:c.proximo?c.proximo.toLocaleString():"—",_restante:c.est==="na"?"—":c.restante.toLocaleString(),_alerta:`<span class="pill ${c.est}">${ETI[c.est]}</span>`,_fprox:c.fprox||"—",_sem:c.sem||"—"};
     const col=k==='_restante'&&c.est==='bad'?'color:#b91c1c':'';
-    return `<td class="calc" data-id="${e.id}" data-calc="${k}" style="${col}">${map[k]}</td>`;
+    return `<td class="calc" data-id="${e.id}" data-calc="${k}" style="${col}">${calcHTML(e,k,c)}</td>`;
   }
-  if(tipo==='sino') return `<td><select data-id="${e.id}" data-k="${k}"><option value=""></option>${["SI","NO","FALTA"].map(o=>`<option ${e[k]===o?"selected":""}>${o}</option>`).join("")}</select></td>`;
-  if(tipo==='n') return `<td class="n"><input type="number" data-id="${e.id}" data-k="${k}" value="${e[k]??""}"></td>`;
-  if(tipo==='d') return `<td><input type="date" data-id="${e.id}" data-k="${k}" value="${e[k]??""}"></td>`;
-  if(tipo==='de'){const cls=e[k]?("exp-"+docState(e[k])):"";return `<td class="${cls}"><input type="date" data-id="${e.id}" data-k="${k}" value="${e[k]??""}"></td>`;}
-  return `<td><input data-id="${e.id}" data-k="${k}" value="${esc(e[k])}"></td>`;
+  let cls='cell';
+  if(tipo==='de') cls+= e[k]?(' exp-'+docState(e[k])):'';
+  return `<td class="${cls}" data-id="${e.id}" data-k="${k}" data-type="${tipo}">${dispVal(e,k,tipo)}</td>`;
+}
+/* ---- filtrar SIN reconstruir la tabla (ocultar/mostrar filas) ---- */
+function applyFilters(){
+  const q=buscar.value.toLowerCase().trim(),fs=fStatus.value,fd=fDocs.value;
+  let n=0;
+  cuerpo.querySelectorAll('tr[data-id]').forEach(tr=>{
+    const e=datos.find(x=>x.id==tr.dataset.id); if(!e){tr.style.display='none';return;}
+    let ok=true;
+    const t=[e.cod_proyec,e.cod_sap,e.equipo,e.marca,e.modelo,e.serie_placa].join(" ").toLowerCase();
+    if(q&&!t.includes(q))ok=false;
+    if(ok&&fs&&e.status!==fs)ok=false;
+    if(ok&&fd&&docsWorst(e)!==fd)ok=false;
+    if(ok)for(const k in colFilters){const fv=(colFilters[k]||"").toLowerCase();if(!fv)continue;const val=FCALC.includes(k)?String(calcVal(e,k)??""):String(e[k]??"");if(!val.toLowerCase().includes(fv)){ok=false;break;}}
+    tr.style.display=ok?"":"none";
+    if(ok){n++;const rn=tr.querySelector('.rn');if(rn)rn.textContent=n;}
+  });
+  const er=document.getElementById('emptyRow'); if(er)er.style.display=n?"none":"";
+  resumen();
 }
 function resumen(){let b=0,w=0,dv=0;datos.forEach(e=>{const c=mant(e);if(c.est==="bad")b++;else if(c.est==="warn")w++;if(docsWorst(e)==="bad")dv++;});cBad.textContent=b;cWarn.textContent=w;cDoc.textContent=dv;}
 
 /* ---- colapsar/expandir grupos ---- */
 thead.addEventListener("click",ev=>{const k=ev.target.dataset.collapse;if(!k)return;collapsed[k]=!collapsed[k];render();});
-thead.addEventListener("input",ev=>{const fc=ev.target.dataset.fcol;if(!fc)return;colFilters[fc]=ev.target.value;buildBody();});
+thead.addEventListener("input",ev=>{const fc=ev.target.dataset.fcol;if(!fc)return;colFilters[fc]=ev.target.value;applyFilters();});
 cuerpo.addEventListener("click",async ev=>{
   const k=ev.target.dataset.collapse; if(k){collapsed[k]=false;render();return;}
   const del=ev.target.dataset.del;
@@ -415,42 +458,64 @@ btnExcel.onclick=()=>{
   }catch(err){alert("No se pudo exportar: "+err.message);}
 };
 
-/* ---- edición inline ---- */
-let saveT={};
-cuerpo.addEventListener("input",ev=>{
-  const inp=ev.target,k=inp.dataset.k,id=inp.dataset.id; if(!k||!id)return;
+/* ---- edición al DOBLE CLIC (celdas de solo lectura hasta que las editas) ---- */
+cuerpo.addEventListener("dblclick",ev=>{
+  const td=ev.target.closest('td[data-k]'); if(!td||td.dataset.editing)return;
+  const id=td.dataset.id,k=td.dataset.k,type=td.dataset.type;
   const e=datos.find(x=>x.id==id); if(!e)return;
+  const cur=e[k]??"";
+  let ctrl;
+  if(type==='status') ctrl=`<select>${["","MOVILIZADO","DESMOVILIZADO"].map(o=>`<option ${cur===o?"selected":""}>${o}</option>`).join("")}</select>`;
+  else if(type==='sino') ctrl=`<select>${["","SI","NO","FALTA"].map(o=>`<option ${cur===o?"selected":""}>${o}</option>`).join("")}</select>`;
+  else if(type==='n') ctrl=`<input type="number" value="${cur}">`;
+  else if(type==='d'||type==='de') ctrl=`<input type="date" value="${cur}">`;
+  else ctrl=`<input type="text" value="${esc(cur)}">`;
+  td.dataset.editing="1"; td.innerHTML=ctrl;
+  const inp=td.querySelector("input,select"); inp.focus(); try{inp.select&&inp.select();}catch(_){}
+});
+cuerpo.addEventListener("focusout",ev=>{
+  const td=ev.target.closest&&ev.target.closest('td[data-editing]'); if(!td)return;
+  finishEdit(td,ev.target);
+});
+cuerpo.addEventListener("keydown",ev=>{
+  const td=ev.target.closest&&ev.target.closest('td[data-editing]'); if(!td)return;
+  if(ev.key==="Enter"){ev.preventDefault();ev.target.blur();}
+  else if(ev.key==="Escape"){delete td.dataset.editing;redrawCell(td,datos.find(x=>x.id==td.dataset.id));}
+});
+function finishEdit(td,inp){
+  const id=td.dataset.id,k=td.dataset.k,type=td.dataset.type;
+  const e=datos.find(x=>x.id==id); if(!e){delete td.dataset.editing;return;}
   let val=inp.value;
-  if(inp.type==="number")val=val===""?null:Number(val);
-  if(inp.type==="date")val=val===""?null:val;
-  e[k]=val;
-  if(inp.type==="date"){const td=inp.closest("td");if(td&&td.className.startsWith("exp")){td.className=val?("exp-"+docState(val)):"";}}
-  if(["frecuencia","hrkm_ult_mntto","hrkm_actual","hr_dia","fecha_lectura"].includes(k)){
-    const c=mant(e);
-    const set=(cc,txt,col)=>{const td=cuerpo.querySelector(`td[data-id="${id}"][data-calc="${cc}"]`);if(td){td.innerHTML=txt;if(col!==undefined)td.style.color=col;}};
-    set("_proximo",c.proximo?c.proximo.toLocaleString():"—");
-    set("_restante",c.est==="na"?"—":c.restante.toLocaleString(),c.est==="bad"?"#b91c1c":"");
-    set("_alerta",`<span class="pill ${c.est}">${ETI[c.est]}</span>`);
-    set("_fprox",c.fprox||"—"); set("_sem",c.sem||"—");
-  }
-  resumen();
-  clearTimeout(saveT[id+k]); saveT[id+k]=setTimeout(()=>guardar(id,k,val),600);
-});
-cuerpo.addEventListener("change",ev=>{
-  const sel=ev.target; if(sel.tagName!=="SELECT")return;
-  const k=sel.dataset.k,id=sel.dataset.id;const e=datos.find(x=>x.id==id);if(!e)return;
-  e[k]=sel.value;
-  guardar(id,k,sel.value);
-  if(k==="status")buildBody(); // reordena por nivel y recolorea
-});
+  if(type==='n')val=(val===""?null:Number(val));
+  else if(type==='d'||type==='de')val=(val===""?null:val);
+  else if(val==="")val=null;
+  const changed=(e[k]??null)!==(val??null);
+  e[k]=val; delete td.dataset.editing; redrawCell(td,e);
+  if(!changed)return;
+  guardar(id,k,val);
+  if(["frecuencia","hrkm_ult_mntto","hrkm_actual","hr_dia","fecha_lectura"].includes(k)) redrawCalc(id);
+  if(k==='status'){ buildBody(); applyFilters(); }   // reordena por niveles y recolorea
+}
+function redrawCell(td,e){
+  const k=td.dataset.k,type=td.dataset.type,isFrz=td.classList.contains('frz');
+  let cls=isFrz?'frz cell':'cell';
+  if(type==='status') cls+=' st-'+(e.status||'');
+  if(type==='de') cls+= e[k]?(' exp-'+docState(e[k])):'';
+  td.className=cls; td.innerHTML=dispVal(e,k,type);
+}
+function redrawCalc(id){
+  const e=datos.find(x=>x.id==id); if(!e)return; const c=mant(e);
+  const set=(cc)=>{const td=cuerpo.querySelector(`td[data-id="${id}"][data-calc="${cc}"]`);if(td){td.innerHTML=calcHTML(e,cc,c);td.style.color=(cc==='_restante'&&c.est==='bad')?'#b91c1c':'';}};
+  ['_proximo','_restante','_alerta','_fprox','_sem','_alertamntto'].forEach(set);
+}
 
 async function guardar(id,k,val){
   const {error}=await sb.from("maestro").update({[k]:val}).eq("id",id);
   if(error){appFoot.textContent="⚠️ No se guardó: "+error.message;}
-  else{appFoot.textContent="Guardado ✓";setTimeout(()=>appFoot.textContent="Los cambios se guardan en la base de datos.",1200);}
+  else{appFoot.textContent="Guardado ✓";setTimeout(()=>appFoot.textContent="Doble clic en una celda para editar · los cambios se guardan solos.",1200);}
 }
 btnAdd.onclick=async()=>{const {data,error}=await sb.from("maestro").insert({equipo:"NUEVO EQUIPO",status:"MOVILIZADO",frecuencia:250}).select().single();if(error)return alert("No se pudo agregar: "+error.message);datos.push(data);buscar.value="";fStatus.value="";fDocs.value="";render();};
-btnRefresh.onclick=cargar; buscar.oninput=buildBody; fStatus.onchange=buildBody; fDocs.onchange=buildBody;
+btnRefresh.onclick=cargar; buscar.oninput=applyFilters; fStatus.onchange=applyFilters; fDocs.onchange=applyFilters;
 
 /* sincronización ligera */
 function startPoll(){stopPoll();pollTimer=setInterval(()=>{const a=document.activeElement;if(a&&a.closest&&a.closest("#cuerpo"))return;if(!paneEq.classList.contains("hide"))cargar();},25000);}
