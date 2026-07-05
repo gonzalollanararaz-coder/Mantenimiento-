@@ -77,8 +77,13 @@
   .pill{display:inline-block;padding:2px 7px;border-radius:999px;font-size:10px;font-weight:700}
   .pill.ok{background:var(--ok-bg);color:var(--ok)}.pill.warn{background:var(--warn-bg);color:var(--warn)}
   .pill.bad{background:var(--bad-bg);color:var(--bad)}.pill.na{background:var(--gray-bg);color:var(--gray)}
-  select.st-OPERATIVO{color:var(--ok);font-weight:700}select.st-INOPERATIVO{color:var(--bad);font-weight:700}
-  select.st-HABILITACION{color:var(--warn);font-weight:700}select.st-DESMOVILIZADO{color:var(--gray);font-weight:700}
+  .mx thead tr.filters th{top:44px;background:#eef1f4;padding:2px;z-index:5}
+  .mx thead tr.filters input{width:100%;border:1px solid #cfd6dd;border-radius:5px;padding:2px 5px;font-size:11px;background:#fff}
+  .mx thead tr.filters .frz{background:#eef1f4}
+  td.st-MOVILIZADO{background:#dbeafe}td.st-MOVILIZADO select{color:#1d4ed8;font-weight:700}
+  td.st-DESMOVILIZADO{background:#fce7f3}td.st-DESMOVILIZADO select{color:#be123c;font-weight:700}
+  .delrow{border:none;background:none;color:#cbd2d9;cursor:pointer;font-size:13px;padding:0 2px;line-height:1}
+  .delrow:hover{color:var(--bad)}
   td.exp-bad input{background:var(--bad-bg);color:var(--bad);font-weight:600}
   td.exp-warn input{background:var(--warn-bg);color:var(--warn)}
   td.exp-ok input{background:#f0fdf4}
@@ -132,6 +137,7 @@
   </header>
   <nav>
     <button class="on" id="tabEq" data-tab="eq">Equipos</button>
+    <button id="tabPms" data-tab="pms">PM-S</button>
     <button id="tabUsers" data-tab="users" style="display:none">Usuarios</button>
   </nav>
 
@@ -140,22 +146,40 @@
       <input type="search" id="buscar" placeholder="Buscar proyecto, SAP, equipo, marca, modelo, serie/placa…">
       <select id="fStatus">
         <option value="">Todos los status</option>
-        <option>OPERATIVO</option><option>INOPERATIVO</option><option>HABILITACION</option><option>DESMOVILIZADO</option>
+        <option>MOVILIZADO</option><option>DESMOVILIZADO</option>
       </select>
       <select id="fDocs">
         <option value="">Todos los documentos</option>
         <option value="bad">Solo con doc. vencido</option>
         <option value="warn">Solo con doc. por vencer</option>
       </select>
+      <button class="act ghost" id="btnClear">✕ Borrar filtros</button>
       <span class="chip"><span class="dot bad"></span> Mntto vencido: <b id="cBad">0</b></span>
       <span class="chip"><span class="dot warn"></span> Próximo: <b id="cWarn">0</b></span>
       <span class="chip"><span class="dot bad"></span> Docs vencidos: <b id="cDoc">0</b></span>
       <div class="spacer"></div>
-      <button class="act ghost" id="btnExpand">Expandir todo</button>
+      <button class="act ghost" id="btnAgrupar">⊟ Agrupar</button>
+      <button class="act ghost" id="btnDesagrupar">⊞ Desagrupar</button>
+      <button class="act ghost" id="btnExcel">⬇ Excel</button>
       <button class="act ghost" id="btnRefresh">↻ Actualizar</button>
       <button class="act primary" id="btnAdd">＋ Equipo</button>
     </div>
     <div class="wrap"><table class="mx"><thead id="thead"></thead><tbody id="cuerpo"></tbody></table></div>
+  </section>
+
+  <section id="panePMS" class="hide">
+    <div class="toolbar">
+      <label style="font-weight:600">Semana N°</label>
+      <input type="number" id="pmSemana" min="1" max="53" style="width:78px;padding:7px 10px;border:1px solid var(--line);border-radius:8px">
+      <label style="font-weight:600">Año</label>
+      <input type="number" id="pmAnio" style="width:92px;padding:7px 10px;border:1px solid var(--line);border-radius:8px">
+      <button class="act primary" id="pmVer">Ver programa</button>
+      <span class="chip" id="pmCount">—</span>
+      <div class="spacer"></div>
+      <button class="act ghost" id="pmToggleHist">Ver historial</button>
+    </div>
+    <div id="pmProgramaWrap" class="padwrap"></div>
+    <div id="pmHistWrap" class="padwrap hide"></div>
   </section>
 
   <section id="paneUsers" class="hide">
@@ -169,11 +193,12 @@
   <footer id="appFoot">Los cambios se guardan en la base de datos.</footer>
 </div>
 
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
 /* ╔══ pega aquí tus DOS datos (los mismos de tu archivo actual) ══╗ */
-const SUPABASE_URL = "https://hklwvdhzltjsbfvlewbu.supabase.co";   // ← reemplaza
-const SUPABASE_KEY = "sb_publishable_NgDfyDHDI_KByR-qf35EpA_ZuKI5E0K";                 // ← reemplaza
+const SUPABASE_URL = "https://TU-PROYECTO.supabase.co";   // ← reemplaza
+const SUPABASE_KEY = "TU-PUBLISHABLE-KEY";                 // ← reemplaza
 /* ──────────────────────────────────────────────────────────────── */
 const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 let perfil=null, datos=[], modoRegistro=false, pollTimer=null, gateTimer=null;
@@ -186,20 +211,20 @@ const FROZEN=[
   {k:'status',lab:'Status',w:120,type:'status'},
 ];
 const GROUPS=[
- {key:'cod',lab:'CÓDIGOS',color:'#b45309',cols:[['cod_proyec','Proyecto','t'],['cod_cliente','Cliente','t'],['cod_fotocheck','Fotocheck','t'],['cod_provee','Proveedor','t'],['familia','Familia','t']]},
- {key:'tec',lab:'DATOS TÉCNICOS',color:'#1d4ed8',cols:[['marca','Marca','t'],['modelo','Modelo','t'],['serie_placa','Serie/Placa','t'],['anio','Año','t'],['color','Color','t'],['potencia','Potencia','t'],['capacidad','Capacidad','t'],['peso_bruto','Peso','t'],['medidas','Medidas','t'],['tanque_comb','Tanque','t']]},
- {key:'mov',lab:'MOVILIZACIÓN',color:'#0f766e',cols:[['fecha_traslado','F. traslado','d'],['fecha_aprobac','F. aprob.','d'],['hrkm_ingreso','HR/KM ing.','n'],['nivel_comb_ing','Comb. ing.','n'],['chk_ingreso','Chk ing.','sino'],['inf_ingreso','Inf. ing.','sino'],['ubic_ingreso','Ubic. ing.','t']]},
- {key:'des',lab:'DESMOVILIZACIÓN',color:'#6d28d9',cols:[['fecha_desmov','F. desmov.','d'],['hrkm_salida','HR/KM sal.','n'],['nivel_comb_sal','Comb. sal.','n'],['chk_salida','Chk sal.','sino'],['inf_salida','Inf. sal.','sino'],['ubic_salida','Ubic. sal.','t']]},
- {key:'prov',lab:'PROVEEDOR',color:'#9333ea',cols:[['propietario','Propietario','t'],['ruc','RUC','t'],['direccion','Dirección','t'],['email','E-mail','t'],['celular','Celular','t']]},
- {key:'doc',lab:'CONTROL DOCUMENTARIO',color:'#be123c',cols:[['insp_anual','Insp. anual','de'],['venc_permiso','Permiso','de'],['certif_operat','Certif. oper.','de'],['soat','SOAT','de'],['poliza','Póliza','de'],['rev_tec','Rev. téc.','de'],['tarjeta_circ','T. circ.','de']]},
- {key:'imp',lab:'IMPLEMENTACIÓN',color:'#a16207',cols:[['extintor','Extintor','de'],['radio_serie','Radio N° serie','t']]},
+ {key:'cod',lab:'CÓDIGOS',color:'#b45309',cols:[['cod_proyec','Proyecto','t'],['familia','ID Familia','t']]},
+ {key:'tec',lab:'DATOS TÉCNICOS',color:'#1d4ed8',cols:[['marca','Marca','t'],['modelo','Modelo','t'],['serie_placa','Serie/Placa','t'],['anio','Año','t'],['color','Color','t'],['potencia','Potencia','t'],['capacidad','Capacidad','t'],['peso_bruto','Peso (Ton)','t'],['tanque_comb','Tanque','t']]},
+ {key:'mov',lab:'DATOS DE MOVILIZACIÓN',color:'#0f766e',cols:[['fecha_ingreso','F. ingreso','d'],['hrkm_ingreso','HR/KM ing.','n'],['nivel_comb_ing','Comb. ing.','n'],['chk_ingreso','Chk ing.','sino'],['inf_ingreso','Inf. ing.','sino'],['ubic_ingreso','Ubic. SAP ing.','t']]},
+ {key:'des',lab:'DATOS DESMOVILIZACIÓN',color:'#6d28d9',cols:[['fecha_desmov','F. desmov.','d'],['hrkm_salida','HR/KM sal.','n'],['nivel_comb_sal','Comb. sal.','n'],['chk_salida','Chk sal.','sino'],['inf_salida','Inf. sal.','sino'],['ubic_salida','Ubic. SAP sal.','t']]},
+ {key:'prov',lab:'DATOS DE PROVEEDOR',color:'#9333ea',cols:[['propietario','Propietario','t']]},
+ {key:'doc',lab:'CONTROL DOCUMENTARIO',color:'#be123c',cols:[['certif_operat','Certif. oper.','de'],['soat','SOAT','de'],['poliza','Póliza','de'],['rev_tec','Rev. téc.','de'],['tarjeta_circ','T. circ.','de']]},
  {key:'act',lab:'DATOS ACTUALES',color:'#15803d',cols:[['hrkm_actual','HR/KM actual','n'],['fecha_lectura','F. lectura','d'],['hr_dia','HR/día','n']]},
  {key:'ult',lab:'ÚLTIMO MNTTO',color:'#0369a1',cols:[['hrkm_ult_mntto','HR/KM últ.','n'],['fecha_ult_mntto','F. últ.','d'],['pm_realizado','PM real.','t'],['frecuencia','Frecuenc.','n']]},
  {key:'ctrl',lab:'CONTROL DE HORAS Y MNTTO',color:'#111827',calc:true,cols:[['_proximo','Próx. PM','c'],['_restante','Restante','c'],['_alerta','Alerta','c'],['_fprox','Próx. fecha','c'],['_sem','Sem.','c']]},
  {key:'obs',lab:'OBSERVACIONES',color:'#525252',cols:[['obs','Observaciones','t']]},
 ];
-const DOCS=['insp_anual','venc_permiso','certif_operat','soat','poliza','rev_tec','tarjeta_circ','extintor'];
-const collapsed={};
+const DOCS=['certif_operat','soat','poliza','rev_tec','tarjeta_circ'];
+const ST_RANK={MOVILIZADO:1,DESMOVILIZADO:2};
+const collapsed={}, colFilters={};
 
 /* ===== arranque / sesión ===== */
 async function init(){const {data:{session}}=await sb.auth.getSession();if(session)await trasLogin();else mostrar("auth");}
@@ -266,54 +291,65 @@ async function cargar(){const {data,error}=await sb.from("maestro").select("*").
 function frozenLeft(i){let x=0;for(let j=0;j<i;j++)x+=FROZEN[j].w;return x;}
 function esc(s){return String(s??"").replace(/&/g,"&amp;").replace(/"/g,"&quot;").replace(/</g,"&lt;")}
 
-function render(){
+function render(){buildHead();buildBody();}
+function buildHead(){
+  let b1='<tr class="bands">',b2='<tr class="cols">',b3='<tr class="filters">';
+  FROZEN.forEach((f,i)=>{
+    const L=frozenLeft(i),st=`left:${L}px;min-width:${f.w}px;width:${f.w}px`;
+    b1+=`<th class="frz" rowspan="2" style="${st};background:#2a333d">${f.lab}</th>`;
+    b3+= f.type==='idx'
+      ? `<th class="frz" style="${st}"></th>`
+      : `<th class="frz" style="${st}"><input data-fcol="${f.k}" placeholder="🔍" value="${esc(colFilters[f.k]||'')}"></th>`;
+  });
+  for(const g of GROUPS){
+    if(collapsed[g.key]){
+      b1+=`<th class="bands" data-collapse="${g.key}" style="background:${g.color};min-width:26px" title="Expandir ${g.lab}">＋</th>`;
+      b2+=`<th style="background:#42505d">·</th>`; b3+=`<th></th>`;
+    }else{
+      b1+=`<th class="bands" data-collapse="${g.key}" colspan="${g.cols.length}" style="background:${g.color}">${g.lab} －</th>`;
+      for(const [k,lab,tipo] of g.cols){
+        b2+=`<th>${lab}</th>`;
+        b3+= tipo==='c' ? `<th></th>` : `<th><input data-fcol="${k}" placeholder="🔍" value="${esc(colFilters[k]||'')}"></th>`;
+      }
+    }
+  }
+  thead.innerHTML=b1+'</tr>'+b2+'</tr>'+b3+'</tr>';
+}
+function buildBody(){
   const q=buscar.value.toLowerCase().trim(),fs=fStatus.value,fd=fDocs.value;
-  const vis=datos.filter(e=>{
+  let vis=datos.filter(e=>{
     const t=[e.cod_proyec,e.cod_sap,e.equipo,e.marca,e.modelo,e.serie_placa].join(" ").toLowerCase();
     if(q&&!t.includes(q))return false;
     if(fs&&e.status!==fs)return false;
     if(fd&&docsWorst(e)!==fd)return false;
+    for(const k in colFilters){const fv=(colFilters[k]||"").toLowerCase();if(fv&&!String(e[k]??"").toLowerCase().includes(fv))return false;}
     return true;
   });
-  /* ---- encabezado (2 filas) ---- */
-  let b1='<tr class="bands">',b2='<tr class="cols">';
-  FROZEN.forEach((f,i)=>{ b1+=`<th class="frz" rowspan="2" style="left:${frozenLeft(i)}px;min-width:${f.w}px;width:${f.w}px;background:#2a333d">${f.lab}</th>`; });
-  for(const g of GROUPS){
-    if(collapsed[g.key]){
-      b1+=`<th class="bands" data-collapse="${g.key}" style="background:${g.color};min-width:26px" title="Expandir ${g.lab}">＋</th>`;
-      b2+=`<th style="background:#42505d">·</th>`;
-    }else{
-      b1+=`<th class="bands" data-collapse="${g.key}" colspan="${g.cols.length}" style="background:${g.color}">${g.lab} －</th>`;
-      for(const c of g.cols) b2+=`<th>${c[1]}</th>`;
-    }
-  }
-  b1+='</tr>';b2+='</tr>';
-  thead.innerHTML=b1+b2;
-
-  /* ---- cuerpo ---- */
+  // ORDEN POR NIVEL DE ESTATUS: MOVILIZADO arriba, DESMOVILIZADO abajo
+  vis.sort((a,b)=>{const ra=ST_RANK[a.status]||9,rb=ST_RANK[b.status]||9;if(ra!==rb)return ra-rb;return String(a.cod_sap||"").localeCompare(String(b.cod_sap||""));});
   let html="";
-  if(!vis.length){ const span=FROZEN.length+GROUPS.reduce((a,g)=>a+(collapsed[g.key]?1:g.cols.length),0); html=`<tr><td colspan="${span}" style="padding:30px;text-align:center;color:#6b747d">Sin equipos que coincidan.</td></tr>`; }
+  if(!vis.length){const span=FROZEN.length+GROUPS.reduce((a,g)=>a+(collapsed[g.key]?1:g.cols.length),0);html=`<tr><td colspan="${span}" style="padding:30px;text-align:center;color:#6b747d">Sin equipos que coincidan.</td></tr>`;}
   vis.forEach((e,idx)=>{
     const c=mant(e);
     let tr='<tr>';
     FROZEN.forEach((f,i)=>{
       const style=`left:${frozenLeft(i)}px;min-width:${f.w}px;width:${f.w}px`;
-      if(f.type==='idx') tr+=`<td class="frz idx" style="${style}">${idx+1}</td>`;
-      else if(f.type==='status') tr+=`<td class="frz" style="${style}">${selStatus(e)}</td>`;
+      if(f.type==='idx') tr+=`<td class="frz idx" style="${style}">${idx+1}<button class="delrow" data-del="${e.id}" title="Eliminar fila">✕</button></td>`;
+      else if(f.type==='status') tr+=`<td class="frz st-${esc(e.status||'')}" style="${style}">${selStatus(e)}</td>`;
       else tr+=`<td class="frz" style="${style}"><input data-id="${e.id}" data-k="${f.k}" value="${esc(e[f.k])}"></td>`;
     });
     for(const g of GROUPS){
-      if(collapsed[g.key]){ tr+=`<td class="collapsed-cell" data-collapse="${g.key}" title="Expandir ${g.lab}">＋</td>`; continue; }
+      if(collapsed[g.key]){tr+=`<td class="collapsed-cell" data-collapse="${g.key}" title="Expandir ${g.lab}">＋</td>`;continue;}
       for(const [k,lab,tipo] of g.cols) tr+=celda(e,k,tipo,c);
     }
-    tr+='</tr>'; html+=tr;
+    tr+='</tr>';html+=tr;
   });
   cuerpo.innerHTML=html;
   resumen();
 }
 function selStatus(e){
-  const v=e.status||""; const opts=["OPERATIVO","INOPERATIVO","HABILITACION","DESMOVILIZADO"];
-  return `<select class="st-${esc(v)}" data-id="${e.id}" data-k="status"><option value=""></option>${opts.map(o=>`<option ${v===o?"selected":""}>${o}</option>`).join("")}</select>`;
+  const v=e.status||""; const opts=["MOVILIZADO","DESMOVILIZADO"];
+  return `<select data-id="${e.id}" data-k="status"><option value=""></option>${opts.map(o=>`<option ${v===o?"selected":""}>${o}</option>`).join("")}</select>`;
 }
 function celda(e,k,tipo,c){
   if(tipo==='c'){
@@ -331,8 +367,53 @@ function resumen(){let b=0,w=0,dv=0;datos.forEach(e=>{const c=mant(e);if(c.est==
 
 /* ---- colapsar/expandir grupos ---- */
 thead.addEventListener("click",ev=>{const k=ev.target.dataset.collapse;if(!k)return;collapsed[k]=!collapsed[k];render();});
-cuerpo.addEventListener("click",ev=>{const k=ev.target.dataset.collapse;if(k){collapsed[k]=false;render();}});
-btnExpand.onclick=()=>{let any=Object.values(collapsed).some(v=>v);GROUPS.forEach(g=>collapsed[g.key]=!any?true:false);btnExpand.textContent=!any?"Expandir todo":"Colapsar todo";render();};
+thead.addEventListener("input",ev=>{const fc=ev.target.dataset.fcol;if(!fc)return;colFilters[fc]=ev.target.value;buildBody();});
+cuerpo.addEventListener("click",async ev=>{
+  const k=ev.target.dataset.collapse; if(k){collapsed[k]=false;render();return;}
+  const del=ev.target.dataset.del;
+  if(del){
+    const e=datos.find(x=>x.id==del);
+    if(confirm(`¿Eliminar el equipo "${e.equipo||""}" (${e.cod_sap||""})?\n\nEsto borra la fila del Maestro. El historial de PM no se toca.`)){
+      const {error}=await sb.from("maestro").delete().eq("id",del);
+      if(error)return alert("No se pudo eliminar: "+error.message);
+      datos=datos.filter(x=>x.id!=del); buildBody();
+    }
+  }
+});
+/* Agrupar / Desagrupar (colapsar / expandir todo) */
+btnAgrupar.onclick=()=>{GROUPS.forEach(g=>collapsed[g.key]=true);render();};
+btnDesagrupar.onclick=()=>{GROUPS.forEach(g=>collapsed[g.key]=false);render();};
+/* Borrar todos los filtros */
+btnClear.onclick=()=>{buscar.value="";fStatus.value="";fDocs.value="";for(const k in colFilters)delete colFilters[k];render();};
+/* Exportar a Excel */
+btnExcel.onclick=()=>{
+  try{
+    const flat=[]; flat.push({k:'_idx',lab:'ITEM',band:''});
+    FROZEN.filter(f=>f.type!=='idx').forEach(f=>flat.push({k:f.k,lab:f.lab,band:'IDENTIFICACIÓN',calc:false}));
+    GROUPS.forEach(g=>g.cols.forEach(([k,lab,tipo])=>flat.push({k,lab,band:g.lab,tipo})));
+    const bandRow=[],colRow=[],merges=[]; let ci=0,bandStart=0,curBand=null;
+    flat.forEach(col=>{ colRow.push(col.lab);
+      if(col.band!==curBand){ if(curBand!==null&&ci-1>bandStart)merges.push({s:{r:0,c:bandStart},e:{r:0,c:ci-1}}); curBand=col.band;bandStart=ci; }
+      bandRow.push(col.band); ci++;
+    });
+    if(ci-1>bandStart)merges.push({s:{r:0,c:bandStart},e:{r:0,c:ci-1}});
+    const aoa=[bandRow,colRow];
+    datos.slice().sort((a,b)=>{const ra=ST_RANK[a.status]||9,rb=ST_RANK[b.status]||9;return ra-rb||String(a.cod_sap||"").localeCompare(String(b.cod_sap||""));}).forEach((e,idx)=>{
+      const c=mant(e);
+      const row=flat.map(col=>{
+        if(col.k==='_idx')return idx+1;
+        if(col.tipo==='c'){const m={_proximo:c.proximo||"",_restante:c.est==="na"?"":c.restante,_alerta:ETI[c.est],_fprox:c.fprox||"",_sem:c.sem||""};return m[col.k];}
+        return e[col.k]??"";
+      });
+      aoa.push(row);
+    });
+    const ws=XLSX.utils.aoa_to_sheet(aoa); ws['!merges']=merges;
+    ws['!cols']=flat.map(col=>({wch:col.k==='_idx'?6:16}));
+    const wb=XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb,ws,"MASTER DE EQ");
+    const hoy=new Date().toISOString().slice(0,10);
+    XLSX.writeFile(wb,`Maestro_de_Equipos_${hoy}.xlsx`);
+  }catch(err){alert("No se pudo exportar: "+err.message);}
+};
 
 /* ---- edición inline ---- */
 let saveT={};
@@ -343,9 +424,7 @@ cuerpo.addEventListener("input",ev=>{
   if(inp.type==="number")val=val===""?null:Number(val);
   if(inp.type==="date")val=val===""?null:val;
   e[k]=val;
-  if(k==="status"){inp.className="st-"+(val||"");}
   if(inp.type==="date"){const td=inp.closest("td");if(td&&td.className.startsWith("exp")){td.className=val?("exp-"+docState(val)):"";}}
-  // refrescar columnas calculadas de esa fila si cambió algo de mntto
   if(["frecuencia","hrkm_ult_mntto","hrkm_actual","hr_dia","fecha_lectura"].includes(k)){
     const c=mant(e);
     const set=(cc,txt,col)=>{const td=cuerpo.querySelector(`td[data-id="${id}"][data-calc="${cc}"]`);if(td){td.innerHTML=txt;if(col!==undefined)td.style.color=col;}};
@@ -357,26 +436,28 @@ cuerpo.addEventListener("input",ev=>{
   resumen();
   clearTimeout(saveT[id+k]); saveT[id+k]=setTimeout(()=>guardar(id,k,val),600);
 });
-cuerpo.addEventListener("change",ev=>{ // selects (status, sino) guardan al cambiar
+cuerpo.addEventListener("change",ev=>{
   const sel=ev.target; if(sel.tagName!=="SELECT")return;
   const k=sel.dataset.k,id=sel.dataset.id;const e=datos.find(x=>x.id==id);if(!e)return;
-  e[k]=sel.value; if(k==="status")sel.className="st-"+sel.value;
+  e[k]=sel.value;
   guardar(id,k,sel.value);
+  if(k==="status")buildBody(); // reordena por nivel y recolorea
 });
+
 async function guardar(id,k,val){
   const {error}=await sb.from("maestro").update({[k]:val}).eq("id",id);
   if(error){appFoot.textContent="⚠️ No se guardó: "+error.message;}
   else{appFoot.textContent="Guardado ✓";setTimeout(()=>appFoot.textContent="Los cambios se guardan en la base de datos.",1200);}
 }
-btnAdd.onclick=async()=>{const {data,error}=await sb.from("maestro").insert({equipo:"NUEVO EQUIPO",status:"OPERATIVO",frecuencia:250}).select().single();if(error)return alert("No se pudo agregar: "+error.message);datos.push(data);buscar.value="";fStatus.value="";fDocs.value="";render();};
-btnRefresh.onclick=cargar; buscar.oninput=render; fStatus.onchange=render; fDocs.onchange=render;
+btnAdd.onclick=async()=>{const {data,error}=await sb.from("maestro").insert({equipo:"NUEVO EQUIPO",status:"MOVILIZADO",frecuencia:250}).select().single();if(error)return alert("No se pudo agregar: "+error.message);datos.push(data);buscar.value="";fStatus.value="";fDocs.value="";render();};
+btnRefresh.onclick=cargar; buscar.oninput=buildBody; fStatus.onchange=buildBody; fDocs.onchange=buildBody;
 
 /* sincronización ligera */
 function startPoll(){stopPoll();pollTimer=setInterval(()=>{const a=document.activeElement;if(a&&a.closest&&a.closest("#cuerpo"))return;if(!paneEq.classList.contains("hide"))cargar();},25000);}
 function stopPoll(){if(pollTimer)clearInterval(pollTimer);}
 
 /* pestañas */
-document.querySelectorAll("nav button").forEach(b=>b.onclick=()=>{document.querySelectorAll("nav button").forEach(x=>x.classList.remove("on"));b.classList.add("on");const t=b.dataset.tab;paneEq.classList.toggle("hide",t!=="eq");paneUsers.classList.toggle("hide",t!=="users");if(t==="users")cargarUsuarios();});
+document.querySelectorAll("nav button").forEach(b=>b.onclick=()=>{document.querySelectorAll("nav button").forEach(x=>x.classList.remove("on"));b.classList.add("on");const t=b.dataset.tab;paneEq.classList.toggle("hide",t!=="eq");panePMS.classList.toggle("hide",t!=="pms");paneUsers.classList.toggle("hide",t!=="users");if(t==="users")cargarUsuarios();if(t==="pms")initPMS();});
 
 /* admin */
 async function cargarUsuarios(){
@@ -392,6 +473,108 @@ async function cargarUsuarios(){
     cuerpoUsers.appendChild(tr);});
 }
 cuerpoUsers.addEventListener("click",async ev=>{const id=ev.target.dataset.id,act=ev.target.dataset.act;if(!id)return;const cambio=act==="aprobar"?{estado:"aprobado"}:act==="bloquear"?{estado:"bloqueado"}:{rol:"admin"};const {error}=await sb.from("profiles").update(cambio).eq("id",id);if(error)return alert("No se pudo: "+error.message);cargarUsuarios();});
+
+/* ===================== PM-S (programa semanal) ===================== */
+let pmVista="programa", pmHist=[];
+function initPMS(){ if(!pmSemana.value){const H=hoy0();pmSemana.value=isoWeek(H);pmAnio.value=H.getFullYear();} verPrograma(); }
+function isoWeekSunday(year,week){
+  const jan4=new Date(Date.UTC(year,0,4)),dow=jan4.getUTCDay()||7;
+  const mon=new Date(jan4);mon.setUTCDate(jan4.getUTCDate()-(dow-1)+(week-1)*7);
+  const sun=new Date(mon);sun.setUTCDate(mon.getUTCDate()+6);sun.setUTCHours(23,59,59,999);return sun;
+}
+function tipoPM(prox,freq){ if(!prox||!freq)return"PM"; if(freq>=2000)return"PM"; if(prox%2000===0)return"PM4"; if(prox%1000===0)return"PM3"; if(prox%500===0)return"PM2"; return"PM1"; }
+function fechaProx(e){ const H=hoy0(),freq=+e.frecuencia||0,hd=+e.hr_dia||0; if(!freq||hd<=0)return null; const c=mant(e); const dd=Math.floor(c.restante/hd)+1; return new Date(H.getTime()+dd*86400000); }
+
+function verPrograma(){
+  pmVista="programa"; pmProgramaWrap.classList.remove("hide"); pmHistWrap.classList.add("hide"); pmToggleHist.textContent="Ver historial";
+  const wk=+pmSemana.value, yr=+pmAnio.value;
+  if(!wk||!yr){pmProgramaWrap.innerHTML='<p style="color:#6b747d">Indica semana y año.</p>';pmCount.textContent="—";return;}
+  const sun=isoWeekSunday(yr,wk);
+  const due=[];
+  for(const e of datos){
+    const f=fechaProx(e); if(!f)continue;
+    if(f<=sun){ const c=mant(e); due.push({e,c,f,tp:tipoPM(c.proximo,+e.frecuencia||0)}); }
+  }
+  due.sort((a,b)=>a.f-b.f);
+  pmCount.textContent=due.length+" equipo(s)";
+  if(!due.length){pmProgramaWrap.innerHTML=`<p style="padding:10px;color:#6b747d">No hay equipos con PM pendiente hasta la semana ${wk} de ${yr}.</p>`;return;}
+  let h=`<table style="width:100%;border-collapse:collapse;background:#fff;border-radius:10px;overflow:hidden;font-size:12px">
+    <thead><tr>${["Cód. SAP","Equipo","Tipo PM","HR/KM prog.","Fecha prog.","Estado","OT","HR/KM ejec.","Fecha ejec.",""].map(x=>`<th style="background:#2a333d;color:#fff;padding:8px;text-align:left;white-space:nowrap">${x}</th>`).join("")}</tr></thead><tbody>`;
+  for(const {e,c,f,tp} of due){
+    const fiso=f.toISOString().slice(0,10);
+    const venc=c.est==="bad";
+    h+=`<tr data-row="${e.id}" style="border-bottom:1px solid #eceef1">
+      <td class="mono" style="padding:6px 8px">${esc(e.cod_sap)}</td>
+      <td style="padding:6px 8px">${esc(e.equipo)}</td>
+      <td style="padding:4px 6px"><select data-f="tipo_pm" style="border:1px solid var(--line);border-radius:6px;padding:4px">${["PM1","PM2","PM3","PM4","PM"].map(o=>`<option ${o===tp?"selected":""}>${o}</option>`).join("")}</select></td>
+      <td style="padding:4px 6px"><input type="number" data-f="hrkm_prog" value="${c.proximo||""}" style="width:90px;border:1px solid var(--line);border-radius:6px;padding:4px;text-align:right"></td>
+      <td style="padding:4px 6px"><input type="date" data-f="fecha_prog" value="${fiso}" style="border:1px solid var(--line);border-radius:6px;padding:4px"></td>
+      <td style="padding:6px 8px"><span class="pill ${c.est}">${venc?"VENCIDO":ETI[c.est]}</span></td>
+      <td style="padding:4px 6px"><input type="text" data-f="ot" placeholder="OT" style="width:90px;border:1px solid var(--line);border-radius:6px;padding:4px"></td>
+      <td style="padding:4px 6px"><input type="number" data-f="hrkm_ejec" placeholder="HR/KM" style="width:90px;border:1px solid var(--line);border-radius:6px;padding:4px;text-align:right"></td>
+      <td style="padding:4px 6px"><input type="date" data-f="fecha_ejec" style="border:1px solid var(--line);border-radius:6px;padding:4px"></td>
+      <td style="padding:4px 6px"><button class="act primary" data-confirm="${e.id}" style="padding:6px 10px">Confirmar</button></td>
+    </tr>`;
+  }
+  h+="</tbody></table><p style='color:#6b747d;font-size:11px;margin-top:8px'>Al confirmar, el registro pasa al historial permanente (no se puede borrar) y se actualiza el último mantenimiento del equipo.</p>";
+  pmProgramaWrap.innerHTML=h;
+}
+pmVer.onclick=verPrograma;
+pmSemana.onchange=verPrograma; pmAnio.onchange=verPrograma;
+
+pmProgramaWrap.addEventListener("click",async ev=>{
+  const id=ev.target.dataset.confirm; if(!id)return;
+  const e=datos.find(x=>x.id==id); if(!e)return;
+  const tr=ev.target.closest("tr[data-row]");
+  const val=f=>tr.querySelector(`[data-f="${f}"]`).value;
+  const hrkm_ejec=val("hrkm_ejec"), fecha_ejec=val("fecha_ejec");
+  if(!hrkm_ejec||!fecha_ejec){alert("Ingresa HR/KM de ejecución y fecha de ejecución para confirmar.");return;}
+  if(!confirm(`¿Confirmar la ejecución del ${val("tipo_pm")} de ${e.equipo} (${e.cod_sap})?\n\nEste registro quedará PERMANENTE en el historial y no se podrá borrar.`))return;
+  ev.target.disabled=true; ev.target.textContent="Guardando…";
+  const registro={
+    maestro_id:e.id, cod_sap:e.cod_sap, equipo:e.equipo,
+    tipo_pm:val("tipo_pm"), semana:+pmSemana.value, anio:+pmAnio.value,
+    hrkm_programado:val("hrkm_prog")?Number(val("hrkm_prog")):null,
+    fecha_programada:val("fecha_prog")||null,
+    ot:val("ot")||null, hrkm_ejecucion:Number(hrkm_ejec), fecha_ejecucion:fecha_ejec,
+    ejecutado_por:(perfil.nombre||perfil.email)
+  };
+  const {error:e1}=await sb.from("pm_historial").insert(registro);
+  if(e1){alert("No se pudo guardar el historial: "+e1.message);ev.target.disabled=false;ev.target.textContent="Confirmar";return;}
+  // actualizar el Maestro: último mantenimiento -> el próximo PM se recalcula solo
+  const {error:e2}=await sb.from("maestro").update({hrkm_ult_mntto:Number(hrkm_ejec),fecha_ult_mntto:fecha_ejec,pm_realizado:val("tipo_pm")}).eq("id",e.id);
+  if(e2){alert("Historial guardado, pero no se pudo actualizar el Maestro: "+e2.message);}
+  await cargar();          // recarga datos del maestro
+  verPrograma();           // el equipo ejecutado sale de la lista
+});
+
+/* historial (solo lectura, inalterable) */
+pmToggleHist.onclick=()=>{ if(pmVista==="programa")verHistorial(); else verPrograma(); };
+async function verHistorial(){
+  pmVista="historial"; pmProgramaWrap.classList.add("hide"); pmHistWrap.classList.remove("hide"); pmToggleHist.textContent="Ver programa"; pmCount.textContent="—";
+  pmHistWrap.innerHTML='<p style="color:#6b747d;padding:10px">Cargando historial…</p>';
+  const {data,error}=await sb.from("pm_historial").select("*").order("fecha_ejecucion",{ascending:false});
+  if(error){pmHistWrap.innerHTML=`<p style="color:#b91c1c;padding:10px">${error.message}</p>`;return;}
+  pmHist=data;
+  if(!data.length){pmHistWrap.innerHTML='<p style="color:#6b747d;padding:10px">Aún no hay mantenimientos registrados.</p>';return;}
+  let h=`<table style="width:100%;border-collapse:collapse;background:#fff;border-radius:10px;overflow:hidden;font-size:12px">
+    <thead><tr>${["Fecha ejec.","Cód. SAP","Equipo","Tipo PM","HR/KM ejec.","OT","Sem.","Año","Ejecutado por"].map(x=>`<th style="background:#2a333d;color:#fff;padding:8px;text-align:left;white-space:nowrap">${x}</th>`).join("")}</tr></thead><tbody>`;
+  for(const r of data){
+    h+=`<tr style="border-bottom:1px solid #eceef1">
+      <td style="padding:6px 8px" class="mono">${r.fecha_ejecucion||"—"}</td>
+      <td style="padding:6px 8px" class="mono">${esc(r.cod_sap)}</td>
+      <td style="padding:6px 8px">${esc(r.equipo)}</td>
+      <td style="padding:6px 8px"><span class="pill ok">${esc(r.tipo_pm)}</span></td>
+      <td style="padding:6px 8px" class="mono" style="text-align:right">${r.hrkm_ejecucion?.toLocaleString?.()||"—"}</td>
+      <td style="padding:6px 8px">${esc(r.ot)||"—"}</td>
+      <td style="padding:6px 8px;text-align:center">${r.semana||"—"}</td>
+      <td style="padding:6px 8px;text-align:center">${r.anio||"—"}</td>
+      <td style="padding:6px 8px">${esc(r.ejecutado_por)||"—"}</td>
+    </tr>`;
+  }
+  h+="</tbody></table><p style='color:#6b747d;font-size:11px;margin-top:8px'>🔒 Bitácora permanente. Los registros no se pueden editar ni borrar.</p>";
+  pmHistWrap.innerHTML=h;
+}
 
 init();
 </script>
