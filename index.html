@@ -60,9 +60,12 @@
   .wrap{padding:0;overflow:auto;max-height:calc(100vh - 165px)}
   table.mx{border-collapse:separate;border-spacing:0;font-size:11px;background:#fff}
   .mx th,.mx td{border-bottom:1px solid #e6e8eb;border-right:1px solid #eef0f2;white-space:nowrap}
-  .mx thead th{position:sticky;color:#fff;font-size:11px;font-weight:400;letter-spacing:0;padding:2px 5px;text-align:center;z-index:5;height:22px;line-height:1.1;overflow:hidden;border:none;border-right:1px solid #fff;border-bottom:1px solid #fff}
-  .mx thead tr.bands th{top:0;cursor:pointer;user-select:none;font-weight:600}
-  .mx thead tr.cols th{top:22px;font-weight:400;text-transform:none}
+  .mx thead th{position:sticky;color:#fff;font-size:11px;font-weight:400;letter-spacing:0;padding:2px 4px;text-align:center;z-index:5;overflow:hidden;border:none;border-right:1px solid #fff;border-bottom:1px solid #fff}
+  .mx thead tr.bands th{top:0;height:22px;cursor:pointer;user-select:none;font-weight:600}
+  .mx thead tr.cols th{top:22px;font-weight:400;text-transform:none;vertical-align:top}
+  .mx thead .hlab{padding:2px 0 3px;line-height:1.05}
+  .mx thead .colf{width:100%;border:1px solid #cfd6dd;border-radius:4px;padding:1px 4px;font-size:10px;height:17px;background:#fff;color:#1a1d21;outline:none}
+  .mx thead .colf:focus{border-color:var(--amber);box-shadow:0 0 0 2px rgba(242,169,0,.2)}
   .mx tbody td{padding:0;height:22px}
   .mx tbody td.idx{padding:0 4px;text-align:center;color:var(--muted);font-family:"SF Mono",monospace;background:#f8fafc;font-size:10px}
   .mx td input,.mx td select{width:100%;border:none;background:transparent;font:inherit;color:var(--ink);padding:1px 5px;outline:none;min-width:60px}
@@ -78,9 +81,6 @@
   .pill{display:inline-block;padding:1px 6px;border-radius:999px;font-size:10px;font-weight:700}
   .pill.ok{background:var(--ok-bg);color:var(--ok)}.pill.warn{background:var(--warn-bg);color:var(--warn)}
   .pill.bad{background:var(--bad-bg);color:var(--bad)}.pill.na{background:var(--gray-bg);color:var(--gray)}
-  .mx thead tr.filters th{top:44px;background:#eef1f4;padding:1px 2px;z-index:5;height:22px}
-  .mx thead tr.filters input{width:100%;border:1px solid #cfd6dd;border-radius:4px;padding:1px 4px;font-size:10px;background:#fff;height:18px}
-  .mx thead tr.filters .frz{background:#eef1f4}
   td.st-MOVILIZADO{background:#dbeafe !important;color:#1d4ed8;font-weight:700}
   td.st-DESMOVILIZADO{background:#fce7f3 !important;color:#be123c;font-weight:700}
   .delrow{border:none;background:none;color:#cbd2d9;cursor:pointer;font-size:13px;padding:0 2px;line-height:1}
@@ -206,18 +206,18 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
 /* ╔══ pega aquí tus DOS datos (los mismos de tu archivo actual) ══╗ */
-const SUPABASE_URL = "https://hklwvdhzltjsbfvlewbu.supabase.co";   // ← reemplaza
-const SUPABASE_KEY = "sb_publishable_NgDfyDHDI_KByR-qf35EpA_ZuKI5E0K";                 // ← reemplaza
+const SUPABASE_URL = "https://TU-PROYECTO.supabase.co";   // ← reemplaza
+const SUPABASE_KEY = "TU-PUBLISHABLE-KEY";                 // ← reemplaza
 /* ──────────────────────────────────────────────────────────────── */
 const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 let perfil=null, datos=[], modoRegistro=false, pollTimer=null, gateTimer=null;
 
 /* ===== columnas congeladas + grupos (estilo Excel) ===== */
 const FROZEN=[
-  {k:'_idx',lab:'#',w:32,type:'idx'},
+  {k:'status',lab:'Status',w:98,type:'status'},
+  {k:'_idx',lab:'#',w:30,type:'idx'},
   {k:'cod_sap',lab:'Cód. SAP',w:74,type:'t'},
   {k:'equipo',lab:'Equipo / Vehículo',w:150,type:'t'},
-  {k:'status',lab:'Status',w:96,type:'status'},
   {k:'marca',lab:'Marca',w:82,type:'t'},
   {k:'modelo',lab:'Modelo',w:88,type:'t'},
 ];
@@ -304,7 +304,7 @@ function alertaMntto(e){
   if(c.restante>freq) return "Verif. Valor";
   return "";
 }
-function docState(v){if(!v)return"na";const d=dias(new Date(v),hoy0());if(d<=5)return"bad";if(d<=10)return"warn";return"ok";}
+function docState(v){if(!v)return"na";const d=dias(new Date(v),hoy0());if(d<=7)return"bad";if(d<=15)return"warn";return"ok";}
 function staleLectura(v){if(!v)return false;return new Date(v)<=new Date(hoy0().getTime()-20*86400000);} // fórmula Excel: AI<=HOY()-20
 function docsWorst(e){let w="na";for(const f of DOCS){if(!e[f])continue;const s=docState(e[f]);if(s==="bad")return"bad";if(s==="warn")w="warn";else if(w==="na")w="ok";}return w;}
 const ETI={ok:"En regla",warn:"Próximo",bad:"Vencido",na:"—"};
@@ -316,33 +316,31 @@ function frozenLeft(i){let x=0;for(let j=0;j<i;j++)x+=FROZEN[j].w;return x;}
 function esc(s){return String(s??"").replace(/&/g,"&amp;").replace(/"/g,"&quot;").replace(/</g,"&lt;")}
 
 function render(){buildHead();buildBody();applyFilters();}
+function filterInput(k,ph){return `<input class="colf" data-fcol="${k}" placeholder="${ph||'🔍'}" value="${esc(colFilters[k]||'')}">`;}
 function buildHead(){
   const totW=FROZEN.reduce((a,f)=>a+f.w,0), semHoy=isoWeek(hoy0());
-  let b1='<tr class="bands">',b2='<tr class="cols">',b3='<tr class="filters">';
-  // Banda IDENTIFICACIÓN sobre las columnas congeladas (también fija)
+  let b1='<tr class="bands">',b2='<tr class="cols">';
+  // Banda IDENTIFICACIÓN sobre las columnas congeladas
   b1+=`<th class="frz" colspan="${FROZEN.length}" style="left:0;min-width:${totW}px;width:${totW}px;background:${ID_BAND}">IDENTIFICACIÓN</th>`;
   FROZEN.forEach((f,i)=>{
     const L=frozenLeft(i),st=`left:${L}px;min-width:${f.w}px;width:${f.w}px`;
-    b2+=`<th class="frz" style="${st};background:${FROZEN_HCOL}">${f.lab}</th>`;
-    b3+= f.type==='idx'
-      ? `<th class="frz" style="${st}"></th>`
-      : `<th class="frz" style="${st}"><input data-fcol="${f.k}" placeholder="🔍" value="${esc(colFilters[f.k]||'')}"></th>`;
+    const inp = f.type==='idx' ? '' : filterInput(f.k);
+    b2+=`<th class="frz" style="${st};background:${FROZEN_HCOL}"><div class="hlab">${f.lab}</div>${inp}</th>`;
   });
   for(const g of GROUPS){
     if(collapsed[g.key]){
       b1+=`<th class="bands" data-collapse="${g.key}" style="background:${g.color};min-width:26px" title="Expandir ${g.lab}">＋</th>`;
-      b2+=`<th style="background:${g.hcol}">·</th>`; b3+=`<th></th>`;
+      b2+=`<th style="background:${g.hcol}">·</th>`;
     }else{
       b1+=`<th class="bands" data-collapse="${g.key}" colspan="${g.cols.length}" style="background:${g.color}">${g.lab} －</th>`;
       for(const [k,lab,tipo] of g.cols){
-        b2+=`<th style="background:${g.hcol}">${lab}</th>`;
         const filtrable = tipo!=='c' || FCALC.includes(k);
-        const ph = k==='_sem' ? `Actual: ${semHoy}` : "🔍";
-        b3+= filtrable ? `<th><input data-fcol="${k}" placeholder="${ph}" value="${esc(colFilters[k]||'')}"></th>` : `<th></th>`;
+        const inp = filtrable ? filterInput(k, k==='_sem'?`Sem ${semHoy}`:'') : '';
+        b2+=`<th style="background:${g.hcol}"><div class="hlab">${lab}</div>${inp}</th>`;
       }
     }
   }
-  thead.innerHTML=b1+'</tr>'+b2+'</tr>'+b3+'</tr>';
+  thead.innerHTML=b1+'</tr>'+b2+'</tr>';
 }
 function famNum(e){const m=String(e.familia||'').match(/\d+/);return m?+m[0]:99;}
 function cellCls(e,k,type,isFrz){
