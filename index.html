@@ -54,14 +54,15 @@
   .act{border:none;border-radius:8px;padding:8px 13px;font-size:13px;font-weight:600;cursor:pointer}
   .act.primary{background:var(--amber);color:#1a1200}.act.primary:hover{background:#d99700}
   .act.ghost{background:#eef0f2;color:var(--ink)}.act.ghost:hover{background:#e0e4e8}
+  .act.clear{background:#fee2e2;color:#b91c1c;border:1.5px solid #f87171;font-weight:700}.act.clear:hover{background:#fecaca}
 
   /* Tabla estilo Excel */
   .wrap{padding:0;overflow:auto;max-height:calc(100vh - 165px)}
   table.mx{border-collapse:separate;border-spacing:0;font-size:12px;background:#fff}
   .mx th,.mx td{border-bottom:1px solid #e6e8eb;border-right:1px solid #eef0f2;white-space:nowrap}
-  .mx thead th{position:sticky;color:#fff;font-size:10px;font-weight:700;letter-spacing:.3px;padding:4px 6px;text-align:center;z-index:5}
+  .mx thead th{position:sticky;color:#fff;font-size:10px;font-weight:700;letter-spacing:.3px;padding:4px 6px;text-align:center;z-index:5;border:1px solid #fff}
   .mx thead tr.bands th{top:0;height:22px;cursor:pointer;user-select:none}
-  .mx thead tr.cols th{top:22px;background:#42505d;font-weight:600;text-transform:none}
+  .mx thead tr.cols th{top:22px;font-weight:700;text-transform:none}
   .mx tbody td{padding:0;height:23px}
   .mx tbody td.idx{padding:0 6px;text-align:center;color:var(--muted);font-family:"SF Mono",monospace;background:#f8fafc}
   .mx td input,.mx td select{width:100%;border:none;background:transparent;font:inherit;color:var(--ink);padding:2px 6px;outline:none;min-width:64px}
@@ -80,8 +81,8 @@
   .mx thead tr.filters th{top:44px;background:#eef1f4;padding:2px;z-index:5}
   .mx thead tr.filters input{width:100%;border:1px solid #cfd6dd;border-radius:5px;padding:2px 5px;font-size:11px;background:#fff}
   .mx thead tr.filters .frz{background:#eef1f4}
-  td.st-MOVILIZADO{background:#dbeafe}td.st-MOVILIZADO select{color:#1d4ed8;font-weight:700}
-  td.st-DESMOVILIZADO{background:#fce7f3}td.st-DESMOVILIZADO select{color:#be123c;font-weight:700}
+  td.st-MOVILIZADO{background:#dbeafe !important;color:#1d4ed8;font-weight:700}
+  td.st-DESMOVILIZADO{background:#fce7f3 !important;color:#be123c;font-weight:700}
   .delrow{border:none;background:none;color:#cbd2d9;cursor:pointer;font-size:13px;padding:0 2px;line-height:1}
   .delrow:hover{color:var(--bad)}
   .mx td.cell{padding:2px 6px;cursor:cell}
@@ -91,9 +92,10 @@
   .mx td.idx{position:relative}
   .mx td.idx .delrow{position:absolute;right:1px;top:50%;transform:translateY(-50%);opacity:0}
   .mx tbody tr:hover td.idx .delrow{opacity:1}
-  td.exp-bad input{background:var(--bad-bg);color:var(--bad);font-weight:600}
-  td.exp-warn input{background:var(--warn-bg);color:var(--warn)}
-  td.exp-ok input{background:#f0fdf4}
+  td.exp-bad{background:#FF0000 !important;color:#fff;font-weight:700}
+  td.exp-warn{background:#FFFF00 !important;color:#7a5900;font-weight:700}
+  td.stale{background:#ffedd5 !important;color:#9a3412;font-weight:700}
+  .mx tbody tr.grp-top td{border-top:3px solid #0F243E}
   .collapsed-cell{background:#eef1f4;text-align:center;color:#94a3b8;font-weight:700;cursor:pointer}
   footer{padding:10px 16px;color:var(--muted);font-size:12px;text-align:center}
 
@@ -160,7 +162,7 @@
         <option value="bad">Solo con doc. vencido</option>
         <option value="warn">Solo con doc. por vencer</option>
       </select>
-      <button class="act ghost" id="btnClear">✕ Borrar filtros</button>
+      <button class="act clear" id="btnClear">✕ Borrar filtros</button>
       <span class="chip"><span class="dot bad"></span> Mntto vencido: <b id="cBad">0</b></span>
       <span class="chip"><span class="dot warn"></span> Próximo: <b id="cWarn">0</b></span>
       <span class="chip"><span class="dot bad"></span> Docs vencidos: <b id="cDoc">0</b></span>
@@ -204,8 +206,8 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
 /* ╔══ pega aquí tus DOS datos (los mismos de tu archivo actual) ══╗ */
-const SUPABASE_URL = "https://hklwvdhzltjsbfvlewbu.supabase.co";   // ← reemplaza
-const SUPABASE_KEY = "sb_publishable_NgDfyDHDI_KByR-qf35EpA_ZuKI5E0K";                 // ← reemplaza
+const SUPABASE_URL = "https://TU-PROYECTO.supabase.co";   // ← reemplaza
+const SUPABASE_KEY = "TU-PUBLISHABLE-KEY";                 // ← reemplaza
 /* ──────────────────────────────────────────────────────────────── */
 const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 let perfil=null, datos=[], modoRegistro=false, pollTimer=null, gateTimer=null;
@@ -218,17 +220,17 @@ const FROZEN=[
   {k:'status',lab:'Status',w:120,type:'status'},
 ];
 const GROUPS=[
- {key:'cod',lab:'CÓDIGOS',color:'#b45309',cols:[['cod_proyec','Proyecto','t'],['familia','ID Familia','t']]},
- {key:'tec',lab:'DATOS TÉCNICOS',color:'#1d4ed8',cols:[['marca','Marca','t'],['modelo','Modelo','t'],['serie_placa','Serie/Placa','t'],['anio','Año','t'],['color','Color','t'],['potencia','Potencia','t'],['capacidad','Capacidad','t'],['peso_bruto','Peso (Ton)','t'],['tanque_comb','Tanque','t']]},
- {key:'mov',lab:'DATOS DE MOVILIZACIÓN',color:'#0f766e',cols:[['fecha_ingreso','F. ingreso','d'],['hrkm_ingreso','HR/KM ing.','n'],['nivel_comb_ing','Comb. ing.','n'],['chk_ingreso','Chk ing.','sino'],['inf_ingreso','Inf. ing.','sino'],['ubic_ingreso','Ubic. SAP ing.','t']]},
- {key:'des',lab:'DATOS DESMOVILIZACIÓN',color:'#6d28d9',cols:[['fecha_desmov','F. desmov.','d'],['hrkm_salida','HR/KM sal.','n'],['nivel_comb_sal','Comb. sal.','n'],['chk_salida','Chk sal.','sino'],['inf_salida','Inf. sal.','sino'],['ubic_salida','Ubic. SAP sal.','t']]},
- {key:'prov',lab:'DATOS DE PROVEEDOR',color:'#9333ea',cols:[['propietario','Propietario','t']]},
- {key:'doc',lab:'CONTROL DOCUMENTARIO',color:'#be123c',cols:[['certif_operat','Certif. oper.','de'],['soat','SOAT','de'],['poliza','Póliza','de'],['rev_tec','Rev. téc.','de'],['tarjeta_circ','T. circ.','de']]},
- {key:'act',lab:'DATOS ACTUALES',color:'#15803d',cols:[['hrkm_actual','HR/KM actual','n'],['fecha_lectura','F. lectura','d'],['hr_dia','HR/día','n']]},
- {key:'ult',lab:'ÚLTIMO MNTTO',color:'#0369a1',cols:[['hrkm_ult_mntto','HR/KM últ.','n'],['fecha_ult_mntto','F. últ.','d'],['pm_realizado','PM real.','t'],['frecuencia','Frecuenc.','n']]},
- {key:'ctrl',lab:'CONTROL DE HORAS Y MNTTO',color:'#111827',calc:true,cols:[['_proximo','Próx. PM','c'],['_restante','Restante','c'],['_alerta','Alerta','c'],['_fprox','Próx. fecha','c'],['_sem','Sem.','c']]},
- {key:'alm',lab:'ALERTA DE MNTTO',color:'#7c2d12',calc:true,cols:[['_alertamntto','Alerta de Mntto','c']]},
+ {key:'cod',lab:'CÓDIGOS',color:'#0F243E',hcol:'#002060',cols:[['cod_proyec','Proyecto','t'],['familia','ID Familia','t']]},
+ {key:'tec',lab:'DATOS TÉCNICOS',color:'#0F243E',hcol:'#002060',cols:[['marca','Marca','t'],['modelo','Modelo','t'],['serie_placa','Serie/Placa','t'],['anio','Año','t'],['color','Color','t'],['potencia','Potencia','t'],['capacidad','Capacidad','t'],['peso_bruto','Peso (Ton)','t'],['tanque_comb','Tanque','t']]},
+ {key:'mov',lab:'DATOS DE MOVILIZACIÓN',color:'#006600',hcol:'#009900',cols:[['fecha_ingreso','F. ingreso','d'],['hrkm_ingreso','HR/KM ing.','n'],['nivel_comb_ing','Comb. ing.','n'],['chk_ingreso','Chk ing.','sino'],['inf_ingreso','Inf. ing.','sino'],['ubic_ingreso','Ubic. SAP ing.','t']]},
+ {key:'des',lab:'DATOS DESMOVILIZACIÓN',color:'#C00000',hcol:'#FF0000',cols:[['fecha_desmov','F. desmov.','d'],['hrkm_salida','HR/KM sal.','n'],['nivel_comb_sal','Comb. sal.','n'],['chk_salida','Chk sal.','sino'],['inf_salida','Inf. sal.','sino'],['ubic_salida','Ubic. SAP sal.','t']]},
+ {key:'prov',lab:'DATOS DE PROVEEDOR',color:'#0F243E',hcol:'#002060',cols:[['propietario','Propietario','t']]},
+ {key:'doc',lab:'CONTROL DOCUMENTARIO',color:'#595959',hcol:'#808080',cols:[['certif_operat','Certif. oper.','de'],['soat','SOAT','de'],['poliza','Póliza','de'],['rev_tec','Rev. téc.','de'],['tarjeta_circ','T. circ.','de']]},
+ {key:'act',lab:'DATOS ACTUALES',color:'#0F243E',hcol:'#002060',cols:[['hrkm_actual','HR/KM actual','n'],['fecha_lectura','F. lectura','d'],['hr_dia','HR/día','n']]},
+ {key:'ult',lab:'ÚLTIMO MNTTO',color:'#595959',hcol:'#808080',cols:[['hrkm_ult_mntto','HR/KM últ.','n'],['fecha_ult_mntto','F. últ.','d'],['pm_realizado','PM real.','t'],['frecuencia','Frecuenc.','n']]},
+ {key:'ctrl',lab:'CONTROL DE HORAS Y MNTTO',color:'#C00000',hcol:'#FF0000',calc:true,cols:[['_proximo','Próx. PM','c'],['_restante','Restante','c'],['_alerta','Alerta','c'],['_fprox','Próx. fecha','c'],['_sem','Sem.','c'],['_alertamntto','Alerta de Mntto','c']]},
 ];
+const FROZEN_HCOL='#002060', ID_BAND='#0F243E';
 const DOCS=['certif_operat','soat','poliza','rev_tec','tarjeta_circ'];
 const FCALC=['_alerta','_sem','_alertamntto']; // columnas calculadas con filtro
 const ST_RANK={MOVILIZADO:1,DESMOVILIZADO:2};
@@ -300,7 +302,8 @@ function alertaMntto(e){
   if(c.restante>freq) return "Verif. Valor";
   return "";
 }
-function docState(v){if(!v)return"na";const d=dias(new Date(v),hoy0());if(d<0)return"bad";if(d<=30)return"warn";return"ok";}
+function docState(v){if(!v)return"na";const d=dias(new Date(v),hoy0());if(d<=7)return"bad";if(d<=15)return"warn";return"ok";}
+function staleLectura(v){if(!v)return false;return new Date(v)<=new Date(hoy0().getTime()-20*86400000);} // fórmula Excel: AI<=HOY()-20
 function docsWorst(e){let w="na";for(const f of DOCS){if(!e[f])continue;const s=docState(e[f]);if(s==="bad")return"bad";if(s==="warn")w="warn";else if(w==="na")w="ok";}return w;}
 const ETI={ok:"En regla",warn:"Próximo",bad:"Vencido",na:"—"};
 
@@ -312,10 +315,13 @@ function esc(s){return String(s??"").replace(/&/g,"&amp;").replace(/"/g,"&quot;"
 
 function render(){buildHead();buildBody();applyFilters();}
 function buildHead(){
+  const totW=FROZEN.reduce((a,f)=>a+f.w,0), semHoy=isoWeek(hoy0());
   let b1='<tr class="bands">',b2='<tr class="cols">',b3='<tr class="filters">';
+  // Banda IDENTIFICACIÓN sobre las columnas congeladas (también fija)
+  b1+=`<th class="frz" colspan="${FROZEN.length}" style="left:0;min-width:${totW}px;width:${totW}px;background:${ID_BAND}">IDENTIFICACIÓN</th>`;
   FROZEN.forEach((f,i)=>{
     const L=frozenLeft(i),st=`left:${L}px;min-width:${f.w}px;width:${f.w}px`;
-    b1+=`<th class="frz" rowspan="2" style="${st};background:#2a333d">${f.lab}</th>`;
+    b2+=`<th class="frz" style="${st};background:${FROZEN_HCOL}">${f.lab}</th>`;
     b3+= f.type==='idx'
       ? `<th class="frz" style="${st}"></th>`
       : `<th class="frz" style="${st}"><input data-fcol="${f.k}" placeholder="🔍" value="${esc(colFilters[f.k]||'')}"></th>`;
@@ -323,11 +329,12 @@ function buildHead(){
   for(const g of GROUPS){
     if(collapsed[g.key]){
       b1+=`<th class="bands" data-collapse="${g.key}" style="background:${g.color};min-width:26px" title="Expandir ${g.lab}">＋</th>`;
-      b2+=`<th style="background:#42505d">·</th>`; b3+=`<th></th>`;
+      b2+=`<th style="background:${g.hcol}">·</th>`; b3+=`<th></th>`;
     }else{
       b1+=`<th class="bands" data-collapse="${g.key}" colspan="${g.cols.length}" style="background:${g.color}">${g.lab} －</th>`;
       for(const [k,lab,tipo] of g.cols){
-        b2+=`<th>${lab}</th>`;
+        const etq = k==='_sem' ? `${lab}<br><span style="font-weight:400;font-size:9px">Actual: ${semHoy}</span>` : lab;
+        b2+=`<th style="background:${g.hcol}">${etq}</th>`;
         const filtrable = tipo!=='c' || FCALC.includes(k);
         b3+= filtrable ? `<th><input data-fcol="${k}" placeholder="🔍" value="${esc(colFilters[k]||'')}"></th>` : `<th></th>`;
       }
@@ -336,6 +343,13 @@ function buildHead(){
   thead.innerHTML=b1+'</tr>'+b2+'</tr>'+b3+'</tr>';
 }
 function famNum(e){const m=String(e.familia||'').match(/\d+/);return m?+m[0]:99;}
+function cellCls(e,k,type,isFrz){
+  let cls=isFrz?'frz cell':'cell';
+  if(type==='status')cls+=' st-'+(e.status||'');
+  if(type==='de'){const s=docState(e[k]);if(e[k]&&(s==='bad'||s==='warn'))cls+=' exp-'+s;}
+  if(k==='fecha_lectura'&&staleLectura(e[k]))cls+=' stale';
+  return cls;
+}
 function buildBody(){
   // ORDEN DE 4 NIVELES: 1) status (MOVILIZADO arriba) 2) Proyecto A-Z 3) ID-Familia 1-10 4) Equipo A-Z
   const vis=datos.slice().sort((a,b)=>{
@@ -345,15 +359,18 @@ function buildBody(){
     return String(a.equipo||'').localeCompare(String(b.equipo||''));
   });
   const span=FROZEN.length+GROUPS.reduce((a,g)=>a+(collapsed[g.key]?1:g.cols.length),0);
-  let html="";
+  let html="",prevProy=null,prevSt=null;
   vis.forEach(e=>{
     const c=mant(e);
-    let tr=`<tr data-id="${e.id}">`;
+    // divisor más grueso al cambiar de Proyecto (o de status)
+    const divi=(prevProy!==null && (e.cod_proyec!==prevProy || e.status!==prevSt))?' grp-top':'';
+    prevProy=e.cod_proyec; prevSt=e.status;
+    let tr=`<tr data-id="${e.id}" class="${divi.trim()}">`;
     FROZEN.forEach((f,i)=>{
       const style=`left:${frozenLeft(i)}px;min-width:${f.w}px;width:${f.w}px`;
       if(f.type==='idx') tr+=`<td class="frz idx" style="${style}"><span class="rn">0</span><button class="delrow" data-del="${e.id}" title="Eliminar fila">✕</button></td>`;
-      else if(f.type==='status') tr+=`<td class="frz cell st-${esc(e.status||'')}" data-id="${e.id}" data-k="status" data-type="status" style="${style}">${esc(e.status)}</td>`;
-      else tr+=`<td class="frz cell" data-id="${e.id}" data-k="${f.k}" data-type="t" style="${style}">${esc(e[f.k])}</td>`;
+      else if(f.type==='status') tr+=`<td class="${cellCls(e,'status','status',true)}" data-id="${e.id}" data-k="status" data-type="status" style="${style}">${esc(e.status)}</td>`;
+      else tr+=`<td class="${cellCls(e,f.k,'t',true)}" data-id="${e.id}" data-k="${f.k}" data-type="t" style="${style}">${esc(e[f.k])}</td>`;
     });
     for(const g of GROUPS){
       if(collapsed[g.key]){tr+=`<td class="collapsed-cell" data-collapse="${g.key}" title="Expandir ${g.lab}">＋</td>`;continue;}
@@ -384,9 +401,7 @@ function celda(e,k,tipo,c){
     const col=k==='_restante'&&c.est==='bad'?'color:#b91c1c':'';
     return `<td class="calc" data-id="${e.id}" data-calc="${k}" style="${col}">${calcHTML(e,k,c)}</td>`;
   }
-  let cls='cell';
-  if(tipo==='de') cls+= e[k]?(' exp-'+docState(e[k])):'';
-  return `<td class="${cls}" data-id="${e.id}" data-k="${k}" data-type="${tipo}">${dispVal(e,k,tipo)}</td>`;
+  return `<td class="${cellCls(e,k,tipo,false)}" data-id="${e.id}" data-k="${k}" data-type="${tipo}">${dispVal(e,k,tipo)}</td>`;
 }
 /* ---- filtrar SIN reconstruir la tabla (ocultar/mostrar filas) ---- */
 function applyFilters(){
@@ -498,10 +513,7 @@ function finishEdit(td,inp){
 }
 function redrawCell(td,e){
   const k=td.dataset.k,type=td.dataset.type,isFrz=td.classList.contains('frz');
-  let cls=isFrz?'frz cell':'cell';
-  if(type==='status') cls+=' st-'+(e.status||'');
-  if(type==='de') cls+= e[k]?(' exp-'+docState(e[k])):'';
-  td.className=cls; td.innerHTML=dispVal(e,k,type);
+  td.className=cellCls(e,k,type,isFrz); td.innerHTML=dispVal(e,k,type);
 }
 function redrawCalc(id){
   const e=datos.find(x=>x.id==id); if(!e)return; const c=mant(e);
