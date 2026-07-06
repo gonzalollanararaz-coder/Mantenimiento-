@@ -91,12 +91,15 @@
   .mx td.cell:hover{background:#fff7e6;box-shadow:inset 0 0 0 1px #f0d68a}
   .mx td[data-editing]{padding:0;box-shadow:inset 0 0 0 2px var(--amber)}
   .mx td[data-editing] input,.mx td[data-editing] select{width:100%;border:none;background:#fff;font:inherit;padding:1px 4px;outline:none}
-  .mx td.idx{position:relative}
-  .mx td.idx .delrow{position:absolute;right:1px;top:50%;transform:translateY(-50%);opacity:0}
+  .mx td.idx{white-space:nowrap;text-align:center}
+  .mx td.idx .rn{cursor:pointer;font-weight:600}
+  .mx td.idx .delrow{opacity:0;vertical-align:middle}
   .mx tbody tr:hover td.idx .delrow{opacity:1}
+  .mx tbody tr.rowsel td{background:#bfe3ff !important}
   td.exp-bad{background:#FEE2E2 !important;color:#B91C1C;font-weight:700}
   td.exp-warn{background:#FEF3C7 !important;color:#B45309;font-weight:700}
   td.stale{background:#ffedd5 !important;color:#9a3412;font-weight:700}
+  .mx tbody tr.rowsel td.frz,.mx tbody tr:hover.rowsel td{background:#bfe3ff !important}
   .mx tbody tr.grp-top td{border-top:2px solid #595959}
   .collapsed-cell{background:#eef1f4;text-align:center;color:#94a3b8;font-weight:700;cursor:pointer}
   footer{padding:10px 16px;color:var(--muted);font-size:12px;text-align:center}
@@ -169,6 +172,8 @@
       <span class="chip"><span class="dot warn"></span> Próximo: <b id="cWarn">0</b></span>
       <span class="chip"><span class="dot bad"></span> Docs vencidos: <b id="cDoc">0</b></span>
       <div class="spacer"></div>
+      <button class="act ghost" id="btnUndo" disabled>↶ Deshacer</button>
+      <button class="act ghost" id="btnProg">📅 Programar mntto</button>
       <button class="act ghost" id="btnAgrupar">⊟ Agrupar</button>
       <button class="act ghost" id="btnDesagrupar">⊞ Desagrupar</button>
       <button class="act ghost" id="btnExcel">⬇ Excel</button>
@@ -208,8 +213,8 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
 /* ╔══ pega aquí tus DOS datos (los mismos de tu archivo actual) ══╗ */
-const SUPABASE_URL = "https://hklwvdhzltjsbfvlewbu.supabase.co";   // ← reemplaza
-const SUPABASE_KEY = "sb_publishable_NgDfyDHDI_KByR-qf35EpA_ZuKI5E0K";                 // ← reemplaza
+const SUPABASE_URL = "https://TU-PROYECTO.supabase.co";   // ← reemplaza
+const SUPABASE_KEY = "TU-PUBLISHABLE-KEY";                 // ← reemplaza
 /* ──────────────────────────────────────────────────────────────── */
 const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
@@ -229,7 +234,7 @@ let perfil=null, datos=[], modoRegistro=false, pollTimer=null, gateTimer=null;
 
 /* ===== columnas congeladas + grupos (estilo Excel) ===== */
 const FROZEN=[
-  {k:'_idx',lab:'#',w:30,type:'idx'},
+  {k:'_idx',lab:'#',w:42,type:'idx'},
   {k:'status',lab:'Status',w:98,type:'status'},
   {k:'cod_sap',lab:'Cód. SAP',w:74,type:'t'},
   {k:'equipo',lab:'Equipo / Vehículo',w:150,type:'t'},
@@ -246,12 +251,14 @@ const GROUPS=[
  {key:'act',lab:'DATOS ACTUALES',color:'#0F243E',hcol:'#002060',cols:[['hrkm_actual','HR/KM actual','n'],['fecha_lectura','F. lectura','d'],['hr_dia','HR/día','n']]},
  {key:'ult',lab:'ÚLTIMO MNTTO',color:'#595959',hcol:'#808080',cols:[['hrkm_ult_mntto','HR/KM últ.','n'],['fecha_ult_mntto','F. últ.','d'],['pm_realizado','PM real.','t'],['frecuencia','Frecuenc.','n']]},
  {key:'ctrl',lab:'CONTROL DE HORAS Y MNTTO',color:'#C00000',hcol:'#FF0000',calc:true,cols:[['_proximo','Próx. PM','c'],['_restante','Restante','c'],['_alerta','Alerta','c'],['_fprox','Próx. fecha','c'],['_sem','Sem.','c'],['_alertamntto','Alerta de Mntto','c']]},
+ {key:'com',lab:'COMENTARIOS',color:'#334155',hcol:'#475569',cols:[['obs','Comentarios','t']]},
 ];
 const FROZEN_HCOL='#002060', ID_BAND='#0F243E';
 const DOCS=['certif_operat','soat','poliza','rev_tec','tarjeta_circ'];
 const FCALC=['_alerta','_sem','_alertamntto']; // columnas calculadas con filtro
 const ST_RANK={MOVILIZADO:1,DESMOVILIZADO:2};
 const collapsed={}, colFilters={};
+let selId=null, undoStack=[];
 
 /* ===== arranque / sesión ===== */
 async function init(){const {data:{session}}=await sb.auth.getSession();if(session)await trasLogin();else mostrar("auth");}
@@ -381,7 +388,8 @@ function buildBody(){
     // divisor entre proyectos, solo en equipos MOVILIZADOS
     const divi=(prevProy!==null && e.status!=='DESMOVILIZADO' && (e.cod_proyec!==prevProy || e.status!==prevSt))?'grp-top':'';
     prevProy=e.cod_proyec; prevSt=e.status;
-    let tr=`<tr data-id="${e.id}" class="${divi}">`;
+    const selCls=(selId&&String(e.id)===String(selId))?' rowsel':'';
+    let tr=`<tr data-id="${e.id}" class="${divi}${selCls}">`;
     FROZEN.forEach((f,i)=>{
       const style=`left:${frozenLeft(i)}px;min-width:${f.w}px;width:${f.w}px`;
       if(f.type==='idx') tr+=`<td class="frz idx" style="${style}"><span class="rn">0</span><button class="delrow" data-del="${e.id}" title="Eliminar fila">✕</button></td>`;
@@ -462,12 +470,56 @@ cuerpo.addEventListener("click",async ev=>{
   if(del){
     const e=datos.find(x=>x.id==del);
     if(confirm(`¿Eliminar el equipo "${e.equipo||""}" (${e.cod_sap||""})?\n\nEsto borra la fila del Maestro. El historial de PM no se toca.`)){
+      const rec={...e};
       const {error}=await sb.from("maestro").delete().eq("id",del);
       if(error)return alert("No se pudo eliminar: "+error.message);
-      datos=datos.filter(x=>x.id!=del); buildBody();
+      datos=datos.filter(x=>x.id!=del); pushUndo({type:'delete',record:rec}); buildBody();
     }
+    return;
+  }
+  const idxCell=ev.target.closest('td.idx');
+  if(idxCell){
+    const tr=idxCell.closest('tr'); tr.classList.toggle('rowsel');
+    selId = tr.classList.contains('rowsel') ? tr.dataset.id : null;
   }
 });
+/* ===== Deshacer (Ctrl+Z) ===== */
+function pushUndo(a){undoStack.push(a);if(undoStack.length>50)undoStack.shift();btnUndo.disabled=undoStack.length===0;}
+async function deshacer(){
+  const a=undoStack.pop(); if(!a)return; btnUndo.disabled=undoStack.length===0;
+  try{
+    if(a.type==='edit'){
+      const e=datos.find(x=>x.id==a.id);
+      await sb.from("maestro").update({[a.k]:a.old}).eq("id",a.id);
+      if(e){e[a.k]=a.old;} render();
+    }else if(a.type==='add'){
+      await sb.from("maestro").delete().eq("id",a.id);
+      datos=datos.filter(x=>x.id!=a.id); render();
+    }else if(a.type==='delete'){
+      const rec={...a.record}; delete rec.id; delete rec.created_at;
+      const {data,error}=await sb.from("maestro").insert(rec).select().single();
+      if(error)throw error; if(data)datos.push(data); render();
+    }
+    appFoot.textContent="Cambio deshecho ✓"; setTimeout(()=>appFoot.textContent="Doble clic en una celda para editar · los cambios se guardan solos.",1200);
+  }catch(err){alert("No se pudo deshacer: "+err.message);}
+}
+btnUndo.onclick=deshacer;
+document.addEventListener("keydown",ev=>{
+  if((ev.ctrlKey||ev.metaKey)&&(ev.key==='z'||ev.key==='Z')){
+    const ae=document.activeElement;
+    if(ae&&/^(INPUT|SELECT|TEXTAREA)$/.test(ae.tagName))return; // no interferir al editar
+    ev.preventDefault(); deshacer();
+  }
+});
+/* ===== Programar mntto → pasa el equipo seleccionado a la pestaña PM-S ===== */
+btnProg.onclick=()=>{
+  if(!selId){alert("Primero selecciona un equipo haciendo clic en su número (#).");return;}
+  const e=datos.find(x=>x.id==selId); if(!e)return;
+  const c=mant(e);
+  if(!c.fproxDate){alert("Este equipo no tiene datos suficientes (frecuencia y HR/día) para calcular su programación.");return;}
+  document.querySelector('nav button[data-tab="pms"]').click();
+  pmSemana.value=isoWeek(c.fproxDate); pmAnio.value=c.fproxDate.getFullYear(); verPrograma();
+};
 /* Agrupar / Desagrupar (colapsar / expandir todo) */
 btnAgrupar.onclick=()=>{GROUPS.forEach(g=>collapsed[g.key]=true);render();};
 btnDesagrupar.onclick=()=>{GROUPS.forEach(g=>collapsed[g.key]=false);render();};
@@ -530,6 +582,7 @@ cuerpo.addEventListener("keydown",ev=>{
 function finishEdit(td,inp){
   const id=td.dataset.id,k=td.dataset.k,type=td.dataset.type;
   const e=datos.find(x=>x.id==id); if(!e){delete td.dataset.editing;return;}
+  const old=e[k];
   let val=inp.value;
   if(type==='n')val=(val===""?null:Number(val));
   else if(type==='d'||type==='de')val=(val===""?null:val);
@@ -537,6 +590,7 @@ function finishEdit(td,inp){
   const changed=(e[k]??null)!==(val??null);
   e[k]=val; delete td.dataset.editing; redrawCell(td,e);
   if(!changed)return;
+  pushUndo({type:'edit',id,k,old});
   guardar(id,k,val);
   if(["frecuencia","hrkm_ult_mntto","hrkm_actual","hr_dia","fecha_lectura"].includes(k)) redrawCalc(id);
   if(k==='status'){ buildBody(); applyFilters(); return; }   // reordena por niveles y recolorea
@@ -561,7 +615,7 @@ async function guardar(id,k,val){
   if(error){appFoot.textContent="⚠️ No se guardó: "+error.message;}
   else{appFoot.textContent="Guardado ✓";setTimeout(()=>appFoot.textContent="Doble clic en una celda para editar · los cambios se guardan solos.",1200);}
 }
-btnAdd.onclick=async()=>{const {data,error}=await sb.from("maestro").insert({equipo:"NUEVO EQUIPO",status:"MOVILIZADO",frecuencia:250}).select().single();if(error)return alert("No se pudo agregar: "+error.message);datos.push(data);buscar.value="";fStatus.value="";fDocs.value="";render();};
+btnAdd.onclick=async()=>{const {data,error}=await sb.from("maestro").insert({equipo:"NUEVO EQUIPO",status:"MOVILIZADO",frecuencia:250}).select().single();if(error)return alert("No se pudo agregar: "+error.message);datos.push(data);pushUndo({type:'add',id:data.id});buscar.value="";fStatus.value="";fDocs.value="";render();};
 btnRefresh.onclick=cargar; buscar.oninput=applyFiltersD; fStatus.onchange=applyFilters; fDocs.onchange=applyFilters;
 
 /* sincronización ligera */
