@@ -83,6 +83,8 @@
   .pill.bad{background:var(--bad-bg);color:var(--bad)}.pill.na{background:var(--gray-bg);color:var(--gray)}
   td.st-MOVILIZADO{background:#dbeafe !important;color:#1d4ed8;font-weight:700}
   td.st-DESMOVILIZADO{background:#fce7f3 !important;color:#be123c;font-weight:700}
+  td.sap-MOVILIZADO{color:#1d4ed8;font-weight:700}
+  td.sap-DESMOVILIZADO{color:#be123c;font-weight:700}
   .delrow{border:none;background:none;color:#cbd2d9;cursor:pointer;font-size:13px;padding:0 2px;line-height:1}
   .delrow:hover{color:var(--bad)}
   .mx td.cell{padding:1px 5px;cursor:cell}
@@ -138,7 +140,7 @@
 <div id="vApp" class="hide">
   <header>
     <div class="brand">
-      <img id="logo" src="logo.png" alt="" onload="document.getElementById('logoFb').style.display='none'" onerror="this.remove()">
+      <img id="logo" alt="" style="display:none">
       <div id="logoFb" class="logo-fb">LOGO</div>
       <div><h1>Maestro de Equipos — Flota</h1><p>Unidad de Equipos · UDE</p></div>
     </div>
@@ -162,7 +164,7 @@
         <option value="bad">Solo con doc. vencido</option>
         <option value="warn">Solo con doc. por vencer</option>
       </select>
-      <button class="act clear" id="btnClear">✕ Borrar filtros</button>
+      <button class="act primary" id="btnClear">✕ Borrar filtros</button>
       <span class="chip"><span class="dot bad"></span> Mntto vencido: <b id="cBad">0</b></span>
       <span class="chip"><span class="dot warn"></span> Próximo: <b id="cWarn">0</b></span>
       <span class="chip"><span class="dot bad"></span> Docs vencidos: <b id="cDoc">0</b></span>
@@ -206,16 +208,29 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
 /* ╔══ pega aquí tus DOS datos (los mismos de tu archivo actual) ══╗ */
-const SUPABASE_URL = "https://hklwvdhzltjsbfvlewbu.supabase.co";   // ← reemplaza
-const SUPABASE_KEY = "sb_publishable_NgDfyDHDI_KByR-qf35EpA_ZuKI5E0K";                 // ← reemplaza
+const SUPABASE_URL = "https://TU-PROYECTO.supabase.co";   // ← reemplaza
+const SUPABASE_KEY = "TU-PUBLISHABLE-KEY";                 // ← reemplaza
 /* ──────────────────────────────────────────────────────────────── */
 const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+/* Carga el logo probando varios nombres/formatos comunes (logo.png, .jpg, .svg, LOGO.png…) */
+(function(){
+  const nombres=['logo.png','logo.jpg','logo.jpeg','logo.svg','logo.webp','LOGO.png','LOGO.jpg','Logo.png'];
+  const img=document.getElementById('logo'),fb=document.getElementById('logoFb');let i=0;
+  function probar(){
+    if(i>=nombres.length)return;                 // ninguno existe → queda el recuadro LOGO
+    img.onload=()=>{img.style.display='';fb.style.display='none';};
+    img.onerror=()=>{i++;probar();};
+    img.src=nombres[i];
+  }
+  probar();
+})();
 let perfil=null, datos=[], modoRegistro=false, pollTimer=null, gateTimer=null;
 
 /* ===== columnas congeladas + grupos (estilo Excel) ===== */
 const FROZEN=[
-  {k:'status',lab:'Status',w:98,type:'status'},
   {k:'_idx',lab:'#',w:30,type:'idx'},
+  {k:'status',lab:'Status',w:98,type:'status'},
   {k:'cod_sap',lab:'Cód. SAP',w:74,type:'t'},
   {k:'equipo',lab:'Equipo / Vehículo',w:150,type:'t'},
   {k:'marca',lab:'Marca',w:82,type:'t'},
@@ -345,7 +360,8 @@ function buildHead(){
 function famNum(e){const m=String(e.familia||'').match(/\d+/);return m?+m[0]:99;}
 function cellCls(e,k,type,isFrz){
   let cls=isFrz?'frz cell':'cell';
-  if(type==='status'||k==='cod_sap')cls+=' st-'+(e.status||'');
+  if(type==='status')cls+=' st-'+(e.status||'');
+  if(k==='cod_sap')cls+=' sap-'+(e.status||'');
   if(type==='de'){const s=docState(e[k]);if(e[k]&&(s==='bad'||s==='warn'))cls+=' exp-'+s;}
   if(k==='fecha_lectura'&&staleLectura(e[k]))cls+=' stale';
   return cls;
