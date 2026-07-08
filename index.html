@@ -205,7 +205,7 @@
   <section id="paneUsers" class="hide">
     <div class="padwrap">
       <table style="width:100%;border-collapse:collapse;background:#fff;border-radius:10px;overflow:hidden">
-        <thead><tr><th style="background:#2a333d;color:#fff;padding:11px;text-align:left">Nombre</th><th style="background:#2a333d;color:#fff;padding:11px;text-align:left">Correo</th><th style="background:#2a333d;color:#fff;padding:11px;text-align:left">Rol</th><th style="background:#2a333d;color:#fff;padding:11px;text-align:left">Estado</th><th style="background:#2a333d;color:#fff;padding:11px;text-align:left">Acciones</th></tr></thead>
+        <thead><tr><th style="background:#2a333d;color:#fff;padding:11px;text-align:left">Nombre</th><th style="background:#2a333d;color:#fff;padding:11px;text-align:left">Correo</th><th style="background:#2a333d;color:#fff;padding:11px;text-align:left">Rol</th><th style="background:#2a333d;color:#fff;padding:11px;text-align:left">Estado</th><th style="background:#2a333d;color:#fff;padding:11px;text-align:left">Obras (proyectos)</th><th style="background:#2a333d;color:#fff;padding:11px;text-align:left">Acciones</th></tr></thead>
         <tbody id="cuerpoUsers"></tbody>
       </table>
     </div>
@@ -217,8 +217,8 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
 /* ╔══ pega aquí tus DOS datos (los mismos de tu archivo actual) ══╗ */
-const SUPABASE_URL = "https://hklwvdhzltjsbfvlewbu.supabase.co";   // ← reemplaza
-const SUPABASE_KEY = "sb_publishable_NgDfyDHDI_KByR-qf35EpA_ZuKI5E0K";                 // ← reemplaza
+const SUPABASE_URL = "https://TU-PROYECTO.supabase.co";   // ← reemplaza
+const SUPABASE_KEY = "TU-PUBLISHABLE-KEY";                 // ← reemplaza
 /* ──────────────────────────────────────────────────────────────── */
 const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
@@ -313,14 +313,15 @@ function hoy0(){const d=new Date();d.setHours(0,0,0,0);return d;}
 function dias(a,b){return Math.round((a-b)/86400000);}
 function isoWeek(d){const t=new Date(Date.UTC(d.getFullYear(),d.getMonth(),d.getDate()));const dn=t.getUTCDay()||7;t.setUTCDate(t.getUTCDate()+4-dn);const y=new Date(Date.UTC(t.getUTCFullYear(),0,1));return Math.ceil(((t-y)/86400000+1)/7);}
 function mant(e){
+  if(e.__mant)return e.__mant;              // caché: se recalcula solo al editar el equipo
   const H=hoy0(),freq=+e.frecuencia||0,pmr=+e.pm_realizado||0,act=+e.hrkm_actual||0,hd=+e.hr_dia||0;
   let proy=act; if(e.fecha_lectura){const dd=Math.max(0,dias(H,new Date(e.fecha_lectura)));proy=act+dd*hd;}
-  const proximo=freq?(pmr+freq):0; const restante=proximo-proy;   // Próx. PM = PM realizado + Frecuencia
+  const proximo=freq?(pmr+freq):0; const restante=proximo-proy;
   let est="na";const margen=Math.max(freq*0.15,25);
   if(freq)est=restante<=0?"bad":(restante<=margen?"warn":"ok");
   let fprox="",sem="",fproxDate=null;
   if(hd>0&&freq){const dd=Math.floor(restante/hd)+1;fproxDate=new Date(H.getTime()+dd*86400000);fprox=fmtDate(fproxDate.toISOString().slice(0,10));sem=isoWeek(fproxDate);}
-  return {proy:Math.round(proy),proximo:Math.round(proximo),restante:Math.round(restante),est,fprox,sem,fproxDate};
+  return (e.__mant={proy:Math.round(proy),proximo:Math.round(proximo),restante:Math.round(restante),est,fprox,sem,fproxDate});
 }
 /* ALERTA DE MNTTO — réplica de la fórmula del Excel:
    =IF(AO <= (HOY - DÍA_SEMANA + 13), "MNTTO", IF(AZ > AX, "Verif. Valor", "")) */
@@ -434,7 +435,7 @@ function rowMeta(e,tr){
 function indexRows(){
   ROWX=[];
   const byId=new Map(datos.map(e=>[String(e.id),e]));
-  cuerpo.querySelectorAll('tr[data-id]').forEach(tr=>{const e=byId.get(tr.dataset.id);if(e)ROWX.push(rowMeta(e,tr));});
+  cuerpo.querySelectorAll('tr[data-id]').forEach(tr=>{const e=byId.get(tr.dataset.id);if(e){const m=rowMeta(e,tr);tr._meta=m;ROWX.push(m);}});
 }
 /* ---- helpers de visualización ---- */
 function fmtDate(v){if(!v)return"";const p=String(v).split("-");return p.length===3?`${p[2]}/${p[1]}/${p[0].slice(2)}`:String(v);}
@@ -511,7 +512,7 @@ async function deshacer(){
     if(a.type==='edit'){
       const e=datos.find(x=>x.id==a.id);
       await sb.from("maestro").update({[a.k]:a.old}).eq("id",a.id);
-      if(e){e[a.k]=a.old;} render();
+      if(e){e[a.k]=a.old; delete e.__mant;} render();
     }else if(a.type==='add'){
       await sb.from("maestro").delete().eq("id",a.id);
       datos=datos.filter(x=>x.id!=a.id); render();
@@ -622,7 +623,7 @@ function commitEdit(td,val){
   }
   const old=e[k];
   const changed=(old??null)!==(val??null);
-  e[k]=val; delete td.dataset.editing; redrawCell(td,e);
+  e[k]=val; delete e.__mant; delete td.dataset.editing; redrawCell(td,e);
   if(!changed)return;
   pushUndo({type:'edit',id,k,old});
   guardar(id,k,val);
@@ -630,7 +631,7 @@ function commitEdit(td,val){
   if(k==='status'){ buildBody(); applyFilters(); return; }
   const tr=td.closest('tr'); if(tr){
     const sapTd=tr.querySelector('td[data-k="cod_sap"]'); if(sapTd)redrawCell(sapTd,e);
-    const m=ROWX.find(x=>x.tr===tr); if(m)Object.assign(m,rowMeta(e,tr));
+    if(tr._meta)Object.assign(tr._meta,rowMeta(e,tr));
   }
 }
 function redrawCell(td,e){
@@ -648,7 +649,13 @@ async function guardar(id,k,val){
   if(error){appFoot.textContent="⚠️ No se guardó: "+error.message;}
   else{appFoot.textContent="Guardado ✓";setTimeout(()=>appFoot.textContent="Doble clic en una celda para editar · los cambios se guardan solos.",1200);}
 }
-btnAdd.onclick=async()=>{const {data,error}=await sb.from("maestro").insert({equipo:"NUEVO EQUIPO",status:"MOVILIZADO",frecuencia:250}).select().single();if(error)return alert("No se pudo agregar: "+error.message);datos.push(data);pushUndo({type:'add',id:data.id});buscar.value="";fStatus.value="";fDocs.value="";render();};
+btnAdd.onclick=async()=>{
+  const nuevo={equipo:"NUEVO EQUIPO",status:"MOVILIZADO",frecuencia:250};
+  if(perfil.rol!=="admin" && Array.isArray(perfil.proyectos) && perfil.proyectos.length) nuevo.cod_proyec=perfil.proyectos[0];
+  const {data,error}=await sb.from("maestro").insert(nuevo).select().single();
+  if(error)return alert("No se pudo agregar: "+error.message);
+  datos.push(data);pushUndo({type:'add',id:data.id});buscar.value="";fStatus.value="";fDocs.value="";render();
+};
 btnRefresh.onclick=cargar; buscar.oninput=applyFiltersD; fStatus.onchange=applyFilters; fDocs.onchange=applyFilters;
 
 /* sincronización ligera */
@@ -661,17 +668,31 @@ document.querySelectorAll("nav button").forEach(b=>b.onclick=()=>{document.query
 /* admin */
 async function cargarUsuarios(){
   const {data,error}=await sb.from("profiles").select("*").order("created_at");
-  if(error){cuerpoUsers.innerHTML=`<tr><td colspan="5" style="padding:20px">${error.message}</td></tr>`;return;}
+  if(error){cuerpoUsers.innerHTML=`<tr><td colspan="6" style="padding:20px">${error.message}</td></tr>`;return;}
+  const PROY=[...new Set(datos.map(e=>e.cod_proyec).filter(Boolean))].sort();
   cuerpoUsers.innerHTML="";
   data.forEach(u=>{const yo=u.id===perfil.id,tr=document.createElement("tr");
+    const asign=Array.isArray(u.proyectos)?u.proyectos:[];
+    const obrasCell = u.rol==="admin"
+      ? `<span style="color:#15803d;font-weight:600">Ve todas las obras</span>`
+      : (PROY.length
+          ? PROY.map(p=>`<label style="display:inline-flex;align-items:center;gap:3px;margin:0 8px 4px 0;font-size:12px"><input type="checkbox" data-uid="${u.id}" data-proy="${esc(p)}" ${asign.includes(p)?"checked":""}> ${esc(p)}</label>`).join("")
+          : `<span style="color:#999">Aún no hay proyectos cargados</span>`);
     tr.innerHTML=`<td style="padding:11px;border-bottom:1px solid #eceef1">${esc(u.nombre||"—")}${yo?' <span style="color:#999">(tú)</span>':''}</td>
       <td style="padding:11px;border-bottom:1px solid #eceef1">${esc(u.email)}</td>
       <td style="padding:11px;border-bottom:1px solid #eceef1">${u.rol}</td>
       <td style="padding:11px;border-bottom:1px solid #eceef1"><span class="badge ${u.estado}">${u.estado}</span></td>
-      <td style="padding:11px;border-bottom:1px solid #eceef1">${u.estado!=="aprobado"?`<button class="mini ap" data-act="aprobar" data-id="${u.id}">Aprobar</button>`:""}${u.estado!=="bloqueado"&&!yo?`<button class="mini bl" data-act="bloquear" data-id="${u.id}">Bloquear</button>`:""}${u.rol!=="admin"?`<button class="mini adm" data-act="admin" data-id="${u.id}">Hacer admin</button>`:""}</td>`;
+      <td style="padding:11px;border-bottom:1px solid #eceef1;max-width:320px">${obrasCell}</td>
+      <td style="padding:11px;border-bottom:1px solid #eceef1;white-space:nowrap">${u.estado!=="aprobado"?`<button class="mini ap" data-act="aprobar" data-id="${u.id}">Aprobar</button>`:""}${u.estado!=="bloqueado"&&!yo?`<button class="mini bl" data-act="bloquear" data-id="${u.id}">Bloquear</button>`:""}${u.rol!=="admin"?`<button class="mini adm" data-act="admin" data-id="${u.id}">Hacer admin</button>`:""}</td>`;
     cuerpoUsers.appendChild(tr);});
 }
 cuerpoUsers.addEventListener("click",async ev=>{const id=ev.target.dataset.id,act=ev.target.dataset.act;if(!id)return;const cambio=act==="aprobar"?{estado:"aprobado"}:act==="bloquear"?{estado:"bloqueado"}:{rol:"admin"};const {error}=await sb.from("profiles").update(cambio).eq("id",id);if(error)return alert("No se pudo: "+error.message);cargarUsuarios();});
+cuerpoUsers.addEventListener("change",async ev=>{
+  const cb=ev.target; const uid=cb.dataset.uid; if(!uid||cb.type!=="checkbox")return;
+  const marcadas=[...cuerpoUsers.querySelectorAll(`input[type=checkbox][data-uid="${uid}"]:checked`)].map(x=>x.dataset.proy);
+  const {error}=await sb.from("profiles").update({proyectos:marcadas}).eq("id",uid);
+  if(error){alert("No se pudo guardar la obra: "+error.message);cb.checked=!cb.checked;}
+});
 
 /* ===================== PM-S (programa semanal) ===================== */
 let pmVista="programa", pmHist=[];
