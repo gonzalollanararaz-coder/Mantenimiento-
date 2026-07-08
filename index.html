@@ -57,7 +57,7 @@
   .act.clear{background:#fee2e2;color:#b91c1c;border:1.5px solid #f87171;font-weight:700}.act.clear:hover{background:#fecaca}
 
   /* Tabla estilo Excel */
-  .wrap{padding:0;overflow:auto;max-height:calc(100vh - 165px)}
+  .wrap{padding:0;overflow:auto;max-height:calc(100vh - 165px);contain:paint}
   table.mx{border-collapse:separate;border-spacing:0;font-size:11px;background:#fff}
   .mx th,.mx td{border-bottom:1px solid #e6e8eb;border-right:1px solid #eef0f2;white-space:nowrap}
   .mx thead th{position:sticky;color:#fff;font-size:11px;font-weight:400;letter-spacing:0;padding:2px 4px;text-align:center;z-index:5;overflow:hidden;border:none;border-right:1px solid #fff;border-bottom:1px solid #fff}
@@ -67,6 +67,7 @@
   .mx thead .colf{width:100%;border:1px solid #cfd6dd;border-radius:4px;padding:1px 4px;font-size:10px;height:17px;background:#fff;color:#1a1d21;outline:none}
   .mx thead .colf:focus{border-color:var(--amber);box-shadow:0 0 0 2px rgba(242,169,0,.2)}
   .mx tbody td{padding:0;height:22px}
+  .mx tbody tr{content-visibility:auto;contain-intrinsic-size:auto 22px}
   .mx tbody td.idx{padding:0 4px;text-align:center;color:var(--muted);font-family:"SF Mono",monospace;background:#f8fafc;font-size:10px}
   .mx td input,.mx td select{width:100%;border:none;background:transparent;font:inherit;color:var(--ink);padding:1px 5px;outline:none;min-width:60px}
   .mx td.n input{text-align:right;font-family:"SF Mono",ui-monospace,monospace}
@@ -217,8 +218,8 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
 /* ╔══ pega aquí tus DOS datos (los mismos de tu archivo actual) ══╗ */
-const SUPABASE_URL = "https://hklwvdhzltjsbfvlewbu.supabase.co";   // ← reemplaza
-const SUPABASE_KEY = "sb_publishable_NgDfyDHDI_KByR-qf35EpA_ZuKI5E0K";                 // ← reemplaza
+const SUPABASE_URL = "https://TU-PROYECTO.supabase.co";   // ← reemplaza
+const SUPABASE_KEY = "TU-PUBLISHABLE-KEY";                 // ← reemplaza
 /* ──────────────────────────────────────────────────────────────── */
 const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
@@ -659,7 +660,7 @@ btnAdd.onclick=async()=>{
 btnRefresh.onclick=cargar; buscar.oninput=applyFiltersD; fStatus.onchange=applyFilters; fDocs.onchange=applyFilters;
 
 /* sincronización ligera */
-function startPoll(){stopPoll();pollTimer=setInterval(()=>{const a=document.activeElement;if(a&&a.closest&&a.closest("#cuerpo"))return;if(!paneEq.classList.contains("hide"))cargar();},25000);}
+function startPoll(){stopPoll();pollTimer=setInterval(()=>{const a=document.activeElement;if(a&&a.closest&&a.closest("#cuerpo"))return;if(selId)return;if(!paneEq.classList.contains("hide"))cargar();},60000);}
 function stopPoll(){if(pollTimer)clearInterval(pollTimer);}
 
 /* pestañas */
