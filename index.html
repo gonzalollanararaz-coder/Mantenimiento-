@@ -218,8 +218,8 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
 /* ╔══ pega aquí tus DOS datos (los mismos de tu archivo actual) ══╗ */
-const SUPABASE_URL = "https://hklwvdhzltjsbfvlewbu.supabase.co";   // ← reemplaza
-const SUPABASE_KEY = "sb_publishable_NgDfyDHDI_KByR-qf35EpA_ZuKI5E0K";                 // ← reemplaza
+const SUPABASE_URL = "https://TU-PROYECTO.supabase.co";   // ← reemplaza
+const SUPABASE_KEY = "TU-PUBLISHABLE-KEY";                 // ← reemplaza
 /* ──────────────────────────────────────────────────────────────── */
 const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
@@ -341,7 +341,16 @@ function docsWorst(e){let w="na";for(const f of DOCS){if(!e[f])continue;const s=
 const ETI={ok:"En regla",warn:"Próximo",bad:"Vencido",na:"—"};
 
 /* ===== datos ===== */
-async function cargar(){const {data,error}=await sb.from("maestro").select("*").order("id");if(error){console.error(error);appFoot.textContent="⚠️ "+error.message;return;}datos=data;render();}
+async function cargar(){
+  const campos = "id,status,cod_proyec,familia,cod_sap,equipo,marca,modelo,serie_placa,anio,color,potencia,capacidad,peso_bruto,tanque_comb,fecha_ingreso,hrkm_ingreso,nivel_comb_ing,chk_ingreso,inf_ingreso,ubic_ingreso,fecha_desmov,hrkm_salida,nivel_comb_sal,chk_salida,inf_salida,ubic_salida,propietario,certif_operat,soat,poliza,rev_tec,tarjeta_circ,hrkm_actual,fecha_lectura,hr_dia,hrkm_ult_mntto,fecha_ult_mntto,pm_realizado,frecuencia,obs,updated_at";
+  const {data,error}=await sb.from("maestro").select(campos).order("cod_proyec").order("id");
+  if(error){console.error(error);appFoot.textContent="⚠️ "+error.message;return;}
+  datos=data;
+  // guardar timestamp para poll inteligente
+  const tsList=data.map(e=>e.updated_at).filter(Boolean).sort().reverse();
+  if(tsList.length)_lastPollTs=tsList[0];
+  render();
+}
 
 function frozenLeft(i){let x=0;for(let j=0;j<i;j++)x+=fw(FROZEN[j]);return x;}
 function esc(s){return String(s??"").replace(/&/g,"&amp;").replace(/"/g,"&quot;").replace(/</g,"&lt;")}
@@ -659,8 +668,21 @@ btnAdd.onclick=async()=>{
 };
 btnRefresh.onclick=cargar; buscar.oninput=applyFiltersD; fStatus.onchange=applyFilters; fDocs.onchange=applyFilters;
 
-/* sincronización ligera */
-function startPoll(){stopPoll();pollTimer=setInterval(()=>{const a=document.activeElement;if(a&&a.closest&&a.closest("#cuerpo"))return;if(selId)return;if(!paneEq.classList.contains("hide"))cargar();},60000);}
+/* sincronización ligera con detección de cambios */
+let _lastPollTs = null;
+async function pollInteligente(){
+  const a=document.activeElement;
+  if(a&&a.closest&&a.closest("#cuerpo"))return;  // usuario editando
+  if(selId)return;                                 // fila seleccionada
+  if(paneEq.classList.contains("hide"))return;    // pestaña no visible
+  // consultar solo el updated_at más reciente — si no cambió, no recarga
+  const {data}=await sb.from("maestro").select("updated_at").order("updated_at",{ascending:false}).limit(1);
+  const ts=data?.[0]?.updated_at;
+  if(ts && ts===_lastPollTs)return;               // sin cambios → skip
+  _lastPollTs=ts;
+  await cargar();
+}
+function startPoll(){stopPoll();pollTimer=setInterval(pollInteligente,60000);}
 function stopPoll(){if(pollTimer)clearInterval(pollTimer);}
 
 /* pestañas */
@@ -668,7 +690,7 @@ document.querySelectorAll("nav button").forEach(b=>b.onclick=()=>{document.query
 
 /* admin */
 async function cargarUsuarios(){
-  const {data,error}=await sb.from("profiles").select("*").order("created_at");
+  const {data,error}=await sb.from("profiles").select("id,nombre,email,rol,estado,proyectos,created_at").order("created_at");
   if(error){cuerpoUsers.innerHTML=`<tr><td colspan="6" style="padding:20px">${error.message}</td></tr>`;return;}
   const PROY=[...new Set(datos.map(e=>e.cod_proyec).filter(Boolean))].sort();
   cuerpoUsers.innerHTML="";
@@ -769,32 +791,41 @@ pmProgramaWrap.addEventListener("click",async ev=>{
   verPrograma();           // el equipo ejecutado sale de la lista
 });
 
-/* historial (solo lectura, inalterable) */
+/* historial (solo lectura, inalterable) con paginación */
+let _histPage=0; const _histLimit=100;
 pmToggleHist.onclick=()=>{ if(pmVista==="programa")verHistorial(); else verPrograma(); };
-async function verHistorial(){
+async function verHistorial(page=0){
   pmVista="historial"; pmProgramaWrap.classList.add("hide"); pmHistWrap.classList.remove("hide"); pmToggleHist.textContent="Ver programa"; pmCount.textContent="—";
-  pmHistWrap.innerHTML='<p style="color:#6b747d;padding:10px">Cargando historial…</p>';
-  const {data,error}=await sb.from("pm_historial").select("*").order("fecha_ejecucion",{ascending:false});
+  if(page===0)pmHistWrap.innerHTML='<p style="color:#6b747d;padding:10px">Cargando historial…</p>';
+  _histPage=page;
+  const desde=page*_histLimit, hasta=desde+_histLimit-1;
+  const {data,error,count}=await sb.from("pm_historial").select("*",{count:"exact"}).order("fecha_ejecucion",{ascending:false}).range(desde,hasta);
   if(error){pmHistWrap.innerHTML=`<p style="color:#b91c1c;padding:10px">${error.message}</p>`;return;}
-  pmHist=data;
-  if(!data.length){pmHistWrap.innerHTML='<p style="color:#6b747d;padding:10px">Aún no hay mantenimientos registrados.</p>';return;}
+  if(page===0)pmHist=data; else pmHist=[...pmHist,...data];
+  if(!pmHist.length){pmHistWrap.innerHTML='<p style="color:#6b747d;padding:10px">Aún no hay mantenimientos registrados.</p>';return;}
+  pmCount.textContent=`${pmHist.length} de ${count||'?'} registros`;
   let h=`<table style="width:100%;border-collapse:collapse;background:#fff;border-radius:10px;overflow:hidden;font-size:12px">
     <thead><tr>${["Fecha ejec.","Cód. SAP","Equipo","Tipo PM","HR/KM ejec.","OT","Sem.","Año","Ejecutado por"].map(x=>`<th style="background:#2a333d;color:#fff;padding:8px;text-align:left;white-space:nowrap">${x}</th>`).join("")}</tr></thead><tbody>`;
-  for(const r of data){
+  for(const r of pmHist){
     h+=`<tr style="border-bottom:1px solid #eceef1">
       <td style="padding:6px 8px" class="mono">${r.fecha_ejecucion||"—"}</td>
       <td style="padding:6px 8px" class="mono">${esc(r.cod_sap)}</td>
       <td style="padding:6px 8px">${esc(r.equipo)}</td>
       <td style="padding:6px 8px"><span class="pill ok">${esc(r.tipo_pm)}</span></td>
-      <td style="padding:6px 8px" class="mono" style="text-align:right">${r.hrkm_ejecucion?.toLocaleString?.()||"—"}</td>
+      <td style="padding:6px 8px;text-align:right" class="mono">${r.hrkm_ejecucion?.toLocaleString?.()||"—"}</td>
       <td style="padding:6px 8px">${esc(r.ot)||"—"}</td>
       <td style="padding:6px 8px;text-align:center">${r.semana||"—"}</td>
       <td style="padding:6px 8px;text-align:center">${r.anio||"—"}</td>
       <td style="padding:6px 8px">${esc(r.ejecutado_por)||"—"}</td>
     </tr>`;
   }
-  h+="</tbody></table><p style='color:#6b747d;font-size:11px;margin-top:8px'>🔒 Bitácora permanente. Los registros no se pueden editar ni borrar.</p>";
+  h+="</tbody></table>";
+  // botón "cargar más" si hay más registros
+  const hayMas = count && pmHist.length < count;
+  if(hayMas) h+=`<div style="text-align:center;padding:12px"><button class="act ghost" id="btnHistMas">⬇ Cargar más (${count-pmHist.length} restantes)</button></div>`;
+  h+="<p style='color:#6b747d;font-size:11px;margin-top:8px'>🔒 Bitácora permanente. Los registros no se pueden editar ni borrar.</p>";
   pmHistWrap.innerHTML=h;
+  if(hayMas) document.getElementById("btnHistMas").onclick=()=>verHistorial(_histPage+1);
 }
 
 init();
