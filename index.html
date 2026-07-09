@@ -218,8 +218,8 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
 /* ╔══ pega aquí tus DOS datos (los mismos de tu archivo actual) ══╗ */
-const SUPABASE_URL = "https://hklwvdhzltjsbfvlewbu.supabase.co";   // ← reemplaza
-const SUPABASE_KEY = "sb_publishable_NgDfyDHDI_KByR-qf35EpA_ZuKI5E0K";                 // ← reemplaza
+const SUPABASE_URL = "https://TU-PROYECTO.supabase.co";   // ← reemplaza
+const SUPABASE_KEY = "TU-PUBLISHABLE-KEY";                 // ← reemplaza
 /* ──────────────────────────────────────────────────────────────── */
 const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
@@ -342,14 +342,10 @@ const ETI={ok:"En regla",warn:"Próximo",bad:"Vencido",na:"—"};
 
 /* ===== datos ===== */
 async function cargar(){
-  const campos = "id,status,cod_proyec,familia,cod_sap,equipo,marca,modelo,serie_placa,anio,color,potencia,capacidad,peso_bruto,tanque_comb,fecha_ingreso,hrkm_ingreso,nivel_comb_ing,chk_ingreso,inf_ingreso,ubic_ingreso,fecha_desmov,hrkm_salida,nivel_comb_sal,chk_salida,inf_salida,ubic_salida,propietario,certif_operat,soat,poliza,rev_tec,tarjeta_circ,hrkm_actual,fecha_lectura,hr_dia,hrkm_ult_mntto,fecha_ult_mntto,pm_realizado,frecuencia,obs,updated_at";
+  const campos = "id,status,cod_proyec,familia,cod_sap,equipo,marca,modelo,serie_placa,anio,color,potencia,capacidad,peso_bruto,tanque_comb,fecha_ingreso,hrkm_ingreso,nivel_comb_ing,chk_ingreso,inf_ingreso,ubic_ingreso,fecha_desmov,hrkm_salida,nivel_comb_sal,chk_salida,inf_salida,ubic_salida,propietario,certif_operat,soat,poliza,rev_tec,tarjeta_circ,hrkm_actual,fecha_lectura,hr_dia,hrkm_ult_mntto,fecha_ult_mntto,pm_realizado,frecuencia,obs";
   const {data,error}=await sb.from("maestro").select(campos).order("cod_proyec").order("id");
   if(error){console.error(error);appFoot.textContent="⚠️ "+error.message;return;}
-  datos=data;
-  // guardar timestamp para poll inteligente
-  const tsList=data.map(e=>e.updated_at).filter(Boolean).sort().reverse();
-  if(tsList.length)_lastPollTs=tsList[0];
-  render();
+  datos=data;render();
 }
 
 function frozenLeft(i){let x=0;for(let j=0;j<i;j++)x+=fw(FROZEN[j]);return x;}
@@ -668,21 +664,8 @@ btnAdd.onclick=async()=>{
 };
 btnRefresh.onclick=cargar; buscar.oninput=applyFiltersD; fStatus.onchange=applyFilters; fDocs.onchange=applyFilters;
 
-/* sincronización ligera con detección de cambios */
-let _lastPollTs = null;
-async function pollInteligente(){
-  const a=document.activeElement;
-  if(a&&a.closest&&a.closest("#cuerpo"))return;  // usuario editando
-  if(selId)return;                                 // fila seleccionada
-  if(paneEq.classList.contains("hide"))return;    // pestaña no visible
-  // consultar solo el updated_at más reciente — si no cambió, no recarga
-  const {data}=await sb.from("maestro").select("updated_at").order("updated_at",{ascending:false}).limit(1);
-  const ts=data?.[0]?.updated_at;
-  if(ts && ts===_lastPollTs)return;               // sin cambios → skip
-  _lastPollTs=ts;
-  await cargar();
-}
-function startPoll(){stopPoll();pollTimer=setInterval(pollInteligente,60000);}
+/* sincronización ligera */
+function startPoll(){stopPoll();pollTimer=setInterval(()=>{const a=document.activeElement;if(a&&a.closest&&a.closest("#cuerpo"))return;if(selId)return;if(!paneEq.classList.contains("hide"))cargar();},60000);}
 function stopPoll(){if(pollTimer)clearInterval(pollTimer);}
 
 /* pestañas */
