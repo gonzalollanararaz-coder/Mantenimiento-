@@ -118,14 +118,14 @@
 
 /* === STICKY LAYOUT === */
 #vApp { display:flex; flex-direction:column; height:100vh; overflow:hidden; }
-header { flex-shrink:0; }
-nav { flex-shrink:0; }
-.toolbar { flex-shrink:0; }
-section { flex:1; overflow:hidden; display:flex; flex-direction:column; }
-section.hide { display:none; }
-#pmProgramaWrap { flex:1; overflow:auto; }
-
+#vApp > header { flex-shrink:0; }
+#vApp > nav { flex-shrink:0; }
+#vApp > section { flex:1; overflow:hidden; display:flex; flex-direction:column; min-height:0; }
+#vApp > section.hide { display:none !important; }
+#panePMS > .toolbar { flex-shrink:0; }
+#pmProgramaWrap { flex:1; overflow:auto; min-height:0; }
 #pmProgramaWrap.hide { display:none; }
+#pmHistWrap { flex:1; overflow:auto; min-height:0; }
 </style>
 </head>
 <body>
@@ -242,8 +242,8 @@ section.hide { display:none; }
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
 /* ╔══ pega aquí tus DOS datos (los mismos de tu archivo actual) ══╗ */
-const SUPABASE_URL = "hhttps://hklwvdhzltjsbfvlewbu.supabase.co";   // ← reemplaza
-const SUPABASE_KEY = "sb_publishable_NgDfyDHDI_KByR-qf35EpA_ZuKI5E0K";                 // ← reemplaza
+const SUPABASE_URL = "https://TU-PROYECTO.supabase.co";   // ← reemplaza
+const SUPABASE_KEY = "TU-PUBLISHABLE-KEY";                 // ← reemplaza
 /* ──────────────────────────────────────────────────────────────── */
 const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
@@ -327,7 +327,7 @@ btnAuth.onclick=async()=>{
   try{
     if(modoRegistro){const {error}=await sb.auth.signUp({email,password:pass,options:{data:{nombre}}});if(error)throw error;amsg("¡Registro exitoso! Tu cuenta queda pendiente de aprobación. Ya puedes iniciar sesión.","ok");modoRegistro=false;fldNombre.style.display="none";btnAuth.textContent="Ingresar";authSub.textContent="Inicia sesión para continuar";}
     else{const {error}=await sb.auth.signInWithPassword({email,password:pass});if(error)throw error;}
-  }catch(e){amsg(trad(e.message),"err");}finally{btnAuth.disabled=false;}
+  }catch(e){amsg(trad(e.message),"err");}finally{btnAuth.disabled=false;}finally{btnAuth.disabled=false;}
 };
 function amsg(t,k){authMsg.innerHTML=`<div class="msg ${k}">${t}</div>`;}
 function trad(m){if(/Invalid login/i.test(m))return"Correo o contraseña incorrectos.";if(/already registered/i.test(m))return"Ese correo ya está registrado.";if(/Email not confirmed/i.test(m))return"Correo sin confirmar. Pide al admin que lo confirme.";if(/at least 6/i.test(m))return"La contraseña debe tener mínimo 6 caracteres.";return m;}
