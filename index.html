@@ -57,8 +57,8 @@
   .act.clear{background:#fee2e2;color:#b91c1c;border:1.5px solid #f87171;font-weight:700}.act.clear:hover{background:#fecaca}
 
   /* Tabla estilo Excel */
-  .wrap{padding:0;overflow:auto;max-height:calc(100vh - 165px);contain:paint}
-  table.mx{border-collapse:separate;border-spacing:0;font-size:11px;background:#fff}
+  .wrap{padding:0;overflow:auto;overflow-x:auto;max-height:calc(100vh - 165px);contain:paint}
+  table.mx{border-collapse:separate;border-spacing:0;font-size:11px;background:#fff;min-width:1200px}
   .mx th,.mx td{border-bottom:1px solid #e6e8eb;border-right:1px solid #eef0f2;white-space:nowrap}
   .mx thead th{position:sticky;color:#fff;font-size:11px;font-weight:400;letter-spacing:0;padding:2px 4px;text-align:center;z-index:5;overflow:hidden;border:none;border-right:1px solid #fff;border-bottom:1px solid #fff}
   .mx thead tr.bands th{top:0;height:22px;cursor:pointer;user-select:none;font-weight:600}
@@ -213,7 +213,7 @@
       <div class="spacer"></div>
       <button class="act ghost" id="pmToggleProg">Ver programa</button>
     </div>
-    <div id="pmProgramaWrap" style="padding:0;overflow:auto;max-height:calc(100vh - 148px)"></div>
+    <div id="pmProgramaWrap" style="padding:0;overflow:auto;max-height:calc(100vh - 148px);will-change:scroll-position"></div>
     <div id="pmHistWrap" class="padwrap hide"></div>
   </section>
   <section id="paneUsers" class="hide">
@@ -231,8 +231,8 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
 /* ╔══ pega aquí tus DOS datos (los mismos de tu archivo actual) ══╗ */
-const SUPABASE_URL = "https://hklwvdhzltjsbfvlewbu.supabase.co";   // ← reemplaza
-const SUPABASE_KEY = "sb_publishable_NgDfyDHDI_KByR-qf35EpA_ZuKI5E0K";                 // ← reemplaza
+const SUPABASE_URL = "https://TU-PROYECTO.supabase.co";   // ← reemplaza
+const SUPABASE_KEY = "TU-PUBLISHABLE-KEY";                 // ← reemplaza
 /* ──────────────────────────────────────────────────────────────── */
 const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
@@ -742,9 +742,10 @@ function calcTipoPM(marca,modelo,hrkm){
 }
 function tiempoReq(tipo){return{PM1:'2 hrs',PM2:'4 hrs',PM3:'8 hrs',PM4:'1.5 dias'}[tipo]||'--';}
 const MESES=['ENERO','FEBRERO','MARZO','ABRIL','MAYO','JUNIO','JULIO','AGOSTO','SETIEMBRE','OCTUBRE','NOVIEMBRE','DICIEMBRE'];
+function fmtDMY(iso){if(!iso)return'--';const[y,m,d]=iso.split('-');return`${d}/${m}/${y.slice(2)}`;}
 
 let pmVista='programa',pmHist=[];
-function initPMS(){if(!pmSemana.value){const H=hoy0();pmSemana.value=isoWeek(H);pmAnio.value=H.getFullYear();}verPrograma();}
+function initPMS(){if(!pmSemana.value){const H=hoy0();pmSemana.value=isoWeek(H);pmAnio.value=H.getFullYear();}if(!pmProgramaWrap.innerHTML.trim()||pmProgramaWrap.dataset.semRend!==pmSemana.value+'_'+pmAnio.value)verPrograma();}
 function isoWeekSunday(y,w){const j=new Date(Date.UTC(y,0,4)),dw=j.getUTCDay()||7,m=new Date(j);m.setUTCDate(j.getUTCDate()-(dw-1)+(w-1)*7);const s=new Date(m);s.setUTCDate(m.getUTCDate()+6);s.setUTCHours(23,59,59,999);return s;}
 function isoWeekMonday(y,w){const j=new Date(Date.UTC(y,0,4)),dw=j.getUTCDay()||7,m=new Date(j);m.setUTCDate(j.getUTCDate()-(dw-1)+(w-1)*7);m.setUTCHours(0,0,0,0);return m;}
 function fechaProxEquipo(e){const H=hoy0(),freq=+e.frecuencia||0,hd=+e.hr_dia||0;if(!freq||hd<=0)return null;const c=mant(e),dd=Math.floor(c.restante/hd)+1;return new Date(H.getTime()+dd*86400000);}
@@ -758,11 +759,13 @@ pmToggleHist.onclick=()=>verHistorial();
 const _pmColF={};
 function pmColFilter(inp){_pmColF[inp.dataset.pmfcol]=inp.value.toLowerCase().trim();pmApplyAll();}
 function pmApplyAll(){
+  requestAnimationFrame(()=>{
   const q=(pmBuscar.value||'').toLowerCase().trim(),s=(pmBuscarSemana.value||'').trim();
   document.querySelectorAll('#pmTable tbody tr[data-pm-row]').forEach(tr=>{
     let ok=(!q||(tr.dataset.search||'').includes(q))&&(!s||tr.dataset.semana===s);
     if(ok)for(const[k,v] of Object.entries(_pmColF)){if(!v)continue;const c=tr.querySelector(`[data-pmcol="${k}"]`);if(!c||(c.textContent||'').toLowerCase().indexOf(v)<0){ok=false;break;}}
     tr.style.display=ok?'':'none';
+  });
   });
 }
 
@@ -778,8 +781,24 @@ function verPrograma(){
   const DIAS_LAB=['lun','mar','mie','jue','vie','sab','dom'],hoyD=hoy0();
   const mesLabel=MESES[mon.getUTCMonth()];
   const due=[];
-  for(const e of datos){const f=fechaProxEquipo(e);if(!f)continue;if(f<=sun){const c=mant(e),hp=c.proximo||0,tipo=calcTipoPM(e.marca||'',e.modelo||'',hp);due.push({e,c,f,tipo,hp});}}
-  due.sort((a,b)=>a.f-b.f);
+  for(const e of datos){
+    // Excluir DESMOVILIZADOS y sin hr_dia
+    if((e.status||'').toUpperCase().includes('DESMOV'))continue;
+    if(!e.hr_dia||+e.hr_dia<=0)continue;
+    if(!e.hrkm_actual&&!e.pm_realizado)continue;
+    const f=fechaProxEquipo(e);if(!f)continue;
+    if(f<=sun){const c=mant(e),hp=c.proximo||0,tipo=calcTipoPM(e.marca||'',e.modelo||'',hp);due.push({e,c,f,tipo,hp});}
+  }
+  // Ordenamiento: 1°sem, 2°proyecto, 3°familia, 4°equipo
+  due.sort((a,b)=>{
+    const sa=isoWeek(a.f),sb=isoWeek(b.f);
+    if(sa!==sb)return sa-sb;
+    const pa=(a.e.cod_proyec||''),pb=(b.e.cod_proyec||'');
+    if(pa!==pb)return pa.localeCompare(pb);
+    const fa=+(a.e.familia||99),fb=+(b.e.familia||99);
+    if(fa!==fb)return fa-fb;
+    return(a.e.equipo||'').localeCompare(b.e.equipo||'');
+  });
   pmCount.textContent=due.length+' equipo(s)';
   if(!due.length){pmProgramaWrap.innerHTML=`<p style="padding:16px;color:#6b747d">No hay equipos con PM pendiente hasta la semana ${wk}/${yr}.</p>`;return;}
 
@@ -788,19 +807,19 @@ function verPrograma(){
   const thDias=dias.map((d,i)=>{
     const dd=String(d.getUTCDate()).padStart(2,'0'),esDom=i===6;
     const esHoy=d.getUTCFullYear()===hoyD.getFullYear()&&d.getUTCMonth()===hoyD.getMonth()&&d.getUTCDate()===hoyD.getDate();
-    const bg=esDom?'#b91c1c':esHoy?'#1d4ed8':B4;
-    return `<th style="${thBase};background:${bg};color:#fff;text-align:center;min-width:28px;top:44px">${DIAS_LAB[i]}<br>${dd}</th>`;
+    const bg=esDom?'#b91c1c':esHoy?'#1d4ed8':'#002D86';
+    return `<th style="${thBase};background:${bg};color:#fff;text-align:center;min-width:28px;top:63px">${DIAS_LAB[i]}<br>${dd}</th>`;
   }).join('');
 
-  const mkH=(bg,txt,extra='')=>`<th style="${thBase};background:${bg};color:#fff;top:44px${extra}">${txt}</th>`;
-  const mkHE=(bg,txt)=>`<th style="${thBase};background:${bg};color:#bfdbfe;top:44px" title="Editar: doble clic">${txt}*</th>`;
+  const mkH=(bg,txt,extra='')=>`<th style="${thBase};background:${bg};color:#fff;top:63px${extra}">${txt}</th>`;
+  const mkHE=(bg,txt)=>`<th style="${thBase};background:${bg};color:#bfdbfe;top:63px" title="Editar: doble clic">${txt}*</th>`;
   const fInp=(k,ph)=>`<input data-pmfcol="${k}" placeholder="${ph}" style="width:100%;box-sizing:border-box;border:1px solid #9ca3af;border-radius:3px;padding:1px 3px;font-size:9px" oninput="pmColFilter(this)">`;
-  const thF=(k,ph)=>`<th style="background:#e8eaf0;padding:2px;position:sticky;top:66px;z-index:3;border:1px solid #d1d5db">${k?fInp(k,ph):''}</th>`;
+  const thF=(k,ph)=>`<th style="background:#e8eaf0;padding:2px;position:sticky;top:85px;z-index:3;border:1px solid #d1d5db">${k?fInp(k,ph):''}</th>`;
 
   let h=`<div style="overflow-x:auto">
-  <div style="background:#1c232b;color:#fff;text-align:center;padding:3px 8px;font-size:10px;font-weight:700;letter-spacing:1px;position:sticky;top:0;z-index:5">AREA DE CONTROL DE EQUIPOS</div>
-  <div style="background:#f2f2f2;color:#002060;text-align:center;padding:5px 8px;font-size:12px;font-weight:700;position:sticky;top:22px;z-index:5">PROGRAMA DE MANTENIMIENTO PREVENTIVO SEMANAL &mdash; EQUIPOS &nbsp;|&nbsp; Semana ${wk} &middot; ${mesLabel} ${yr}</div>
-  <table id="pmTable" style="width:100%;border-collapse:collapse;background:#fff;font-size:11px">
+  <div style="background:#1c232b;color:#fff;text-align:center;padding:3px 8px;font-size:10px;font-weight:700;letter-spacing:1px;position:sticky;top:0;z-index:5;height:22px">AREA DE CONTROL DE EQUIPOS</div>
+  <div style="background:#f2f2f2;color:#002060;text-align:center;padding:10px 8px;font-size:16px;font-weight:800;position:sticky;top:22px;z-index:5;line-height:1.3">PROGRAMA DE MANTENIMIENTO PREVENTIVO SEMANAL &mdash; EQUIPOS &nbsp;|&nbsp; Semana ${wk} &middot; ${mesLabel} ${yr}</div>
+  <table id="pmTable" style="width:100%;border-collapse:collapse;background:#fff;font-size:11px;table-layout:fixed">
     <thead>
       <tr>
         ${mkH(B4,'#',';min-width:26px;text-align:center')}
@@ -833,12 +852,12 @@ function verPrograma(){
   due.forEach(({e,c,f,tipo,hp},idx)=>{
     const fiso=f.toISOString().slice(0,10),sem=isoWeek(f);
     const fDia=f.getUTCDay(),diaIdx=fDia===0?6:fDia-1;
-    const celdaDias=dias.map((_,i)=>{const match=i===diaIdx;return`<td style="background:${match?'#fef08a':''};text-align:center;border:1px solid #e5e7eb;padding:1px;font-size:10px;font-weight:${match?700:400}">${match?'PM':''}</td>`;}).join('');
+    const celdaDias=dias.map((_,i)=>{const match=i===diaIdx,esDomC=i===6;const bgC=match?'#fef08a':esDomC?'#fee2e2':'';return`<td style="background:${bgC};text-align:center;border:1px solid #e5e7eb;padding:1px;font-size:10px;font-weight:${match?700:400}">${match?'PM':''}</td>`;}).join('');
     const srch=[e.cod_proyec,e.cod_sap,e.equipo,e.marca,e.modelo].join(' ').toLowerCase();
     const trBg=idx%2===0?'#fff':'#f8fafc';
     const pillC=tipo==='PM4'?'bad':tipo==='PM3'?'warn':tipo==='PM2'?'ok':'na';
-    const TD='padding:2px 4px;border:1px solid #e5e7eb';
-    const tdE=(f,tipo2,val,ph='')=>`<td style="${TD}" ondblclick="pmEditCell(this,'${tipo2}')"><span class="pm-disp">${val||'--'}</span><input class="pm-inp" type="${tipo2==='sel'?'text':tipo2==='n'?'number':'date'}" data-f="${f}" ${val?`value="${val}"`:`placeholder="${ph}"`} style="display:none;width:${tipo2==='d'?'auto':'70px'};border:1px solid var(--amber);border-radius:4px;padding:1px 3px;font-size:11px${tipo2==='n'?';text-align:right':''}"></td>`;
+    const TD='padding:1px 3px;border:1px solid #e5e7eb;height:22px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap';
+    const tdE=(f,tipo2,val,ph='')=>{const disp=tipo2==='d'?fmtDMY(val):val;return`<td style="${TD}" ondblclick="pmEditCell(this,'${tipo2}')"><span class="pm-disp">${disp||'--'}</span><input class="pm-inp" type="${tipo2==='sel'?'text':tipo2==='n'?'number':'date'}" data-f="${f}" ${val?`value="${val}"`:`placeholder="${ph}"`} style="display:none;width:${tipo2==='d'?'auto':'70px'};border:1px solid var(--amber);border-radius:4px;padding:1px 3px;font-size:11px${tipo2==='n'?';text-align:right':''}"></td>`;};
     const tdSel=(f,val)=>`<td style="${TD}" data-pmcol="estado" ondblclick="pmEditCell(this,'sel')"><span class="pm-disp">${val||'--'}</span><select class="pm-inp" data-f="${f}" style="display:none;border:1px solid var(--amber);border-radius:4px;padding:1px 3px;font-size:11px"><option value="">--</option><option>EJECUT.</option><option>REPROG.</option></select></td>`;
     h+=`<tr data-pm-row="${e.id}" data-pm-id="${e.id}" data-search="${srch}" data-semana="${sem}" style="background:${trBg};cursor:pointer" onclick="pmSelRow(this)">
       <td style="${TD};text-align:center;color:#9ca3af;font-size:10px">${idx+1}</td>
@@ -867,6 +886,7 @@ function verPrograma(){
     <p style="color:#6b747d;font-size:11px;margin:0">* Doble clic para editar. Llena HR/KM ejec. y fecha ejec., luego confirma.</p>
   </div></div>`;
   pmProgramaWrap.innerHTML=h;
+  pmProgramaWrap.dataset.semRend=wk+'_'+yr;
   document.getElementById('btnConfirmarPMs').onclick=confirmarPMs;
 }
 
