@@ -231,8 +231,8 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
 /* ╔══ pega aquí tus DOS datos (los mismos de tu archivo actual) ══╗ */
-const SUPABASE_URL = "https://hklwvdhzltjsbfvlewbu.supabase.co";   // ← reemplaza
-const SUPABASE_KEY = "sb_publishable_NgDfyDHDI_KByR-qf35EpA_ZuKI5E0K";                 // ← reemplaza
+const SUPABASE_URL = "https://TU-PROYECTO.supabase.co";   // ← reemplaza
+const SUPABASE_KEY = "TU-PUBLISHABLE-KEY";                 // ← reemplaza
 /* ──────────────────────────────────────────────────────────────── */
 const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
@@ -808,27 +808,27 @@ function verPrograma(){
     const dd=String(d.getUTCDate()).padStart(2,'0'),esDom=i===6;
     const esHoy=d.getUTCFullYear()===hoyD.getFullYear()&&d.getUTCMonth()===hoyD.getMonth()&&d.getUTCDate()===hoyD.getDate();
     const bg=esDom?'#b91c1c':esHoy?'#1d4ed8':'#002D86';
-    return `<th style="${thBase};background:${bg};color:#fff;text-align:center;min-width:28px;top:63px">${DIAS_LAB[i]}<br>${dd}</th>`;
+    return `<th style="${thBase};background:${bg};color:#fff;text-align:center;min-width:28px;top:95px">${DIAS_LAB[i]}<br>${dd}</th>`;
   }).join('');
 
-  const mkH=(bg,txt,extra='')=>`<th style="${thBase};background:${bg};color:#fff;top:63px${extra}">${txt}</th>`;
-  const mkHE=(bg,txt)=>`<th style="${thBase};background:${bg};color:#bfdbfe;top:63px" title="Editar: doble clic">${txt}*</th>`;
+  const mkH=(bg,txt,extra='')=>`<th style="${thBase};background:${bg};color:#fff;top:95px${extra}">${txt}</th>`;
+  const mkHE=(bg,txt)=>`<th style="${thBase};background:${bg};color:#bfdbfe;top:95px" title="Editar: doble clic">${txt}*</th>`;
   const fInp=(k,ph)=>`<input data-pmfcol="${k}" placeholder="${ph}" style="width:100%;box-sizing:border-box;border:1px solid #9ca3af;border-radius:3px;padding:1px 3px;font-size:9px" oninput="pmColFilter(this)">`;
-  const thF=(k,ph)=>`<th style="background:#e8eaf0;padding:2px;position:sticky;top:79px;z-index:3;border:1px solid #d1d5db">${k?fInp(k,ph):''}</th>`;
+  const thF=(k,ph)=>`<th style="background:#e8eaf0;padding:2px;position:sticky;top:111px;z-index:3;border:1px solid #d1d5db">${k?fInp(k,ph):''}</th>`;
 
   let h=`<div style="overflow:auto;max-height:calc(100vh - 148px)">
-  <div style="background:#1c232b;color:#fff;text-align:center;padding:3px 8px;font-size:10px;font-weight:700;letter-spacing:1px;position:sticky;top:0;z-index:5;height:22px">AREA DE CONTROL DE EQUIPOS</div>
-  <div style="background:#f2f2f2;color:#002060;text-align:center;padding:10px 8px;font-size:16px;font-weight:800;position:sticky;top:22px;z-index:5;line-height:1.3">PROGRAMA DE MANTENIMIENTO PREVENTIVO SEMANAL &mdash; EQUIPOS &nbsp;|&nbsp; Semana ${wk} &middot; ${mesLabel} ${yr}</div>
-  <table id="pmTable" style="width:100%;border-collapse:collapse;background:#fff;font-size:11px;table-layout:fixed">
+  <table id="pmTable" style="width:100%;border-collapse:collapse;background:#fff;font-size:11px">
     <thead>
+      <tr><th colspan="23" style="background:#1c232b;color:#fff;text-align:center;padding:4px 8px;font-size:10px;font-weight:700;letter-spacing:1px;position:sticky;top:0;z-index:6">AREA DE CONTROL DE EQUIPOS</th></tr>
+      <tr><th colspan="23" style="background:#f2f2f2;color:#002060;text-align:center;padding:10px 8px;font-size:16px;font-weight:800;position:sticky;top:25px;z-index:6;line-height:1.3">PROGRAMA DE MANTENIMIENTO PREVENTIVO SEMANAL &mdash; EQUIPOS &nbsp;|&nbsp; Semana ${wk} &middot; ${mesLabel} ${yr}</th></tr>
       <tr>
         ${mkH(B4,'#',';min-width:26px;text-align:center')}
         ${mkH(B1,'Proyecto',';min-width:72px')}
         ${mkH(B1,'Cod. SAP',';min-width:72px;font-family:monospace')}
         ${mkH(B1,'Equipo / Vehiculo',';min-width:130px;width:auto;white-space:nowrap')}
-        ${mkH(B1,'Marca',';min-width:70px')}
-        ${mkH(B1,'Modelo',';min-width:78px')}
-        ${mkH(B1,'Serie/Placa',';min-width:70px')}
+        ${mkH(B1,'Marca',';white-space:nowrap')}
+        ${mkH(B1,'Modelo',';white-space:nowrap')}
+        ${mkH(B1,'Serie/Placa',';white-space:nowrap')}
         ${mkH(B1,'T.Req.',';min-width:50px;text-align:center')}
         ${mkH(B1,'Tipo PM',';min-width:50px;text-align:center')}
         ${mkHE(B1,'HR/KM')}
@@ -860,13 +860,13 @@ function verPrograma(){
     const tdE=(f,tipo2,val,ph='')=>{const disp=tipo2==='date'||tipo2==='d'?fmtDMY(val):val;return`<td style="${TD}" ondblclick="pmEditCell(this,'${tipo2}')"><span class="pm-disp">${disp||'--'}</span><input class="pm-inp" type="${tipo2==='sel'?'text':tipo2==='n'?'number':'date'}" data-f="${f}" ${val?`value="${val}"`:`placeholder="${ph}"`} style="display:none;width:${tipo2==='d'?'auto':'70px'};border:1px solid var(--amber);border-radius:4px;padding:1px 3px;font-size:11px${tipo2==='n'?';text-align:right':''}"></td>`;};
     const tdSel=(f,val)=>`<td style="${TD}" data-pmcol="estado" ondblclick="pmEditCell(this,'sel')"><span class="pm-disp">${val||'--'}</span><select class="pm-inp" data-f="${f}" style="display:none;border:1px solid var(--amber);border-radius:4px;padding:1px 3px;font-size:11px"><option value="">--</option><option>EJECUT.</option><option>REPROG.</option></select></td>`;
     h+=`<tr data-pm-row="${e.id}" data-pm-id="${e.id}" data-search="${srch}" data-semana="${sem}" style="background:${trBg};cursor:pointer" onclick="pmSelRow(this)">
-      <td style="${TD};text-align:center;color:#9ca3af;font-size:10px;cursor:pointer;position:relative" title="Clic para eliminar fila" onclick="pmDelRow(event,'${e.id}')" onmouseenter="this.style.background='#fee2e2';this.style.color='#b91c1c'" onmouseleave="this.style.background='';this.style.color='#9ca3af'">${idx+1}<span style="display:none;position:absolute;right:1px;top:1px;font-size:9px;font-weight:700">✕</span></td>
+      <td style="${TD};text-align:center;color:#6b747d;font-size:10px;cursor:default;white-space:nowrap">${idx+1}&nbsp;<button onclick="pmDelRow(event,'${e.id}')" style="border:none;background:none;color:#e53e3e;cursor:pointer;font-size:11px;font-weight:900;padding:0;line-height:1;vertical-align:middle" title="Eliminar fila">&#10005;</button></td>
       <td style="${TD};font-weight:600;color:#1d4ed8" data-pmcol="proyec">${esc(e.cod_proyec||'')}</td>
       <td style="${TD};font-family:monospace;font-size:10px" data-pmcol="sap">${esc(e.cod_sap||'')}</td>
       <td style="${TD};white-space:nowrap;min-width:130px" data-pmcol="equipo">${esc(e.equipo||'')}</td>
-      <td style="${TD};font-size:10px" data-pmcol="marca">${esc(e.marca||'')}</td>
-      <td style="${TD};font-size:10px" data-pmcol="modelo">${esc(e.modelo||'')}</td>
-      <td style="${TD};font-size:10px">${esc(e.serie_placa||'')}</td>
+      <td style="${TD};font-size:10px;white-space:nowrap" data-pmcol="marca">${esc(e.marca||'')}</td>
+      <td style="${TD};font-size:10px;white-space:nowrap" data-pmcol="modelo">${esc(e.modelo||'')}</td>
+      <td style="${TD};font-size:10px;white-space:nowrap">${esc(e.serie_placa||'')}</td>
       <td style="${TD};text-align:center;font-size:10px">${tiempoReq(tipo)}</td>
       <td style="${TD};text-align:center"><span class="pill ${pillC}" style="font-size:9px">${tipo}</span></td>
       ${tdE('hrkm_prog','n',hp,'HR/KM')}
@@ -914,7 +914,7 @@ function pmEditCell(td,tipo){
 function pmDelRow(ev,id){
   ev.stopPropagation();
   const tr=ev.target.closest('tr'),e=datos.find(x=>String(x.id)===String(id));
-  if(!confirm('Quitar "'+(e?.equipo||id)+'" del programa esta semana?\n\nNo se borra ningun dato del Maestro.'))return;
+  if(!confirm('\u00bfAnular fila de "'+(e?.equipo||id)+'"?\n\nSe quitara del programa de esta semana.\nNingún dato del Maestro de Equipos se borra.'))return;
   tr.remove();let n=0;
   document.querySelectorAll('#pmTable tbody tr[data-pm-row]').forEach(r=>{const c=r.querySelector('td:first-child');if(c&&r.style.display!=='none')c.textContent=++n;});
   pmCount.textContent=n+' equipo(s)';
