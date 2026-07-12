@@ -115,6 +115,17 @@
   .mini{border:none;border-radius:6px;padding:6px 11px;font-size:12px;font-weight:600;cursor:pointer;margin-right:6px}
   .mini.ap{background:var(--ok-bg);color:var(--ok)}.mini.bl{background:var(--bad-bg);color:var(--bad)}.mini.adm{background:#e0e7ff;color:#3730a3}
   .padwrap{padding:16px 18px;overflow-x:auto}
+
+/* === STICKY LAYOUT === */
+#vApp { display:flex; flex-direction:column; height:100vh; overflow:hidden; }
+header { flex-shrink:0; }
+nav { flex-shrink:0; }
+.toolbar { flex-shrink:0; }
+section { flex:1; overflow:hidden; display:flex; flex-direction:column; }
+section.hide { display:none; }
+#pmProgramaWrap { flex:1; overflow:auto; }
+
+#pmProgramaWrap.hide { display:none; }
 </style>
 </head>
 <body>
@@ -214,7 +225,7 @@
       <button class="act ghost" id="pmToggleProg">Ver programa</button>
     </div>
     <div id="pmProgramaWrap" style="padding:0"></div>
-    <div id="pmHistWrap" class="padwrap hide"></div>
+    <div id="pmHistWrap" class="padwrap hide" style="flex:1;overflow:auto"></div>
   </section>
   <section id="paneUsers" class="hide">
     <div class="padwrap">
@@ -231,8 +242,8 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
 /* ╔══ pega aquí tus DOS datos (los mismos de tu archivo actual) ══╗ */
-const SUPABASE_URL = "https://hklwvdhzltjsbfvlewbu.supabase.co";   // ← reemplaza
-const SUPABASE_KEY = "sb_publishable_NgDfyDHDI_KByR-qf35EpA_ZuKI5E0K";                 // ← reemplaza
+const SUPABASE_URL = "https://TU-PROYECTO.supabase.co";   // ← reemplaza
+const SUPABASE_KEY = "TU-PUBLISHABLE-KEY";                 // ← reemplaza
 /* ──────────────────────────────────────────────────────────────── */
 const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
@@ -816,7 +827,7 @@ function verPrograma(){
   const fInp=(k,ph)=>`<input data-pmfcol="${k}" placeholder="${ph}" style="width:100%;box-sizing:border-box;border:1px solid #9ca3af;border-radius:3px;padding:1px 3px;font-size:9px" oninput="pmColFilter(this)">`;
   const thF=(k,ph)=>`<th style="background:#e8eaf0;padding:2px;position:sticky;top:111px;z-index:3;border:1px solid #d1d5db">${k?fInp(k,ph):''}</th>`;
 
-  let h=`<div style="overflow:auto;max-height:calc(100vh - 148px)">
+  let h=`<div>
   <table id="pmTable" style="width:100%;border-collapse:collapse;background:#fff;font-size:11px">
     <thead>
       <tr><th colspan="23" style="background:#1c232b;color:#fff;text-align:center;padding:4px 8px;font-size:10px;font-weight:700;letter-spacing:1px;position:sticky;top:0;z-index:6">AREA DE CONTROL DE EQUIPOS</th></tr>
@@ -860,7 +871,7 @@ function verPrograma(){
     const tdE=(f,tipo2,val,ph='')=>{const disp=tipo2==='date'||tipo2==='d'?fmtDMY(val):val;return`<td style="${TD}" ondblclick="pmEditCell(this,'${tipo2}')"><span class="pm-disp">${disp||'--'}</span><input class="pm-inp" type="${tipo2==='sel'?'text':tipo2==='n'?'number':'date'}" data-f="${f}" ${val?`value="${val}"`:`placeholder="${ph}"`} style="display:none;width:${tipo2==='d'?'auto':'70px'};border:1px solid var(--amber);border-radius:4px;padding:1px 3px;font-size:11px${tipo2==='n'?';text-align:right':''}"></td>`;};
     const tdSel=(f,val)=>`<td style="${TD}" data-pmcol="estado" ondblclick="pmEditCell(this,'sel')"><span class="pm-disp">${val||'--'}</span><select class="pm-inp" data-f="${f}" style="display:none;border:1px solid var(--amber);border-radius:4px;padding:1px 3px;font-size:11px"><option value="">--</option><option>EJECUT.</option><option>REPROG.</option></select></td>`;
     h+=`<tr data-pm-row="${e.id}" data-pm-id="${e.id}" data-search="${srch}" data-semana="${sem}" style="background:${trBg};cursor:pointer" onclick="pmSelRow(this)">
-      <td style="${TD};text-align:center;color:#6b747d;font-size:10px;cursor:default;white-space:nowrap">${idx+1}&nbsp;<button onclick="pmDelRow(event,'${e.id}')" style="border:none;background:none;color:#e53e3e;cursor:pointer;font-size:11px;font-weight:900;padding:0;line-height:1;vertical-align:middle" title="Eliminar fila">&#10005;</button></td>
+      <td style="${TD};text-align:center;color:#6b747d;font-size:10px;cursor:default;white-space:nowrap"><button onclick="pmDelRow(event,'${e.id}')" style="border:none;background:none;color:#cbd2d9;cursor:pointer;font-size:10px;font-weight:600;padding:0 2px 0 0;line-height:1;vertical-align:middle;opacity:.6" title="Eliminar fila" onmouseenter="this.style.opacity='1';this.style.color='#e53e3e'" onmouseleave="this.style.opacity='.6';this.style.color='#cbd2d9'">&#10005;</button>${idx+1}</td>
       <td style="${TD};font-weight:600;color:#1d4ed8" data-pmcol="proyec">${esc(e.cod_proyec||'')}</td>
       <td style="${TD};font-family:monospace;font-size:10px" data-pmcol="sap">${esc(e.cod_sap||'')}</td>
       <td style="${TD};white-space:nowrap;min-width:130px" data-pmcol="equipo">${esc(e.equipo||'')}</td>
