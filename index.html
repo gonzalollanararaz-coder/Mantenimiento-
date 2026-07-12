@@ -192,7 +192,7 @@
     <div class="toolbar" id="pmToolbarProg">
       <label style="font-weight:600;font-size:13px">Semana</label>
       <input type="number" id="pmSemana" min="1" max="53" style="width:68px;padding:6px 8px;border:1px solid var(--line);border-radius:8px;font-size:13px">
-      <label style="font-weight:600;font-size:13px">Anio</label>
+      <label style="font-weight:600;font-size:13px">Año</label>
       <input type="number" id="pmAnio" style="width:80px;padding:6px 8px;border:1px solid var(--line);border-radius:8px;font-size:13px">
       <button class="act primary" id="pmVer">Ver programa</button>
       <span class="chip" id="pmCount">--</span>
@@ -213,7 +213,7 @@
       <div class="spacer"></div>
       <button class="act ghost" id="pmToggleProg">Ver programa</button>
     </div>
-    <div id="pmProgramaWrap" style="padding:0;overflow:auto;max-height:calc(100vh - 148px);will-change:scroll-position"></div>
+    <div id="pmProgramaWrap" style="padding:0"></div>
     <div id="pmHistWrap" class="padwrap hide"></div>
   </section>
   <section id="paneUsers" class="hide">
@@ -231,8 +231,8 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
 /* ╔══ pega aquí tus DOS datos (los mismos de tu archivo actual) ══╗ */
-const SUPABASE_URL = "https://hklwvdhzltjsbfvlewbu.supabase.co";   // ← reemplaza
-const SUPABASE_KEY = "sb_publishable_NgDfyDHDI_KByR-qf35EpA_ZuKI5E0K";                 // ← reemplaza
+const SUPABASE_URL = "https://TU-PROYECTO.supabase.co";   // ← reemplaza
+const SUPABASE_KEY = "TU-PUBLISHABLE-KEY";                 // ← reemplaza
 /* ──────────────────────────────────────────────────────────────── */
 const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
@@ -745,7 +745,7 @@ const MESES=['ENERO','FEBRERO','MARZO','ABRIL','MAYO','JUNIO','JULIO','AGOSTO','
 function fmtDMY(iso){if(!iso)return'--';const[y,m,d]=iso.split('-');return`${d}/${m}/${y.slice(2)}`;}
 
 let pmVista='programa',pmHist=[];
-function initPMS(){if(!pmSemana.value){const H=hoy0();pmSemana.value=isoWeek(H);pmAnio.value=H.getFullYear();}if(!pmProgramaWrap.innerHTML.trim()||pmProgramaWrap.dataset.semRend!==pmSemana.value+'_'+pmAnio.value)verPrograma();}
+function initPMS(){const H=hoy0(),wkHoy=isoWeek(H);if(!pmSemana.value){pmSemana.value=wkHoy;pmAnio.value=H.getFullYear();}document.getElementById('pmBuscarSemana').placeholder='Sem. actual: '+wkHoy;if(!pmProgramaWrap.innerHTML.trim()||pmProgramaWrap.dataset.semRend!==pmSemana.value+'_'+pmAnio.value)verPrograma();}
 function isoWeekSunday(y,w){const j=new Date(Date.UTC(y,0,4)),dw=j.getUTCDay()||7,m=new Date(j);m.setUTCDate(j.getUTCDate()-(dw-1)+(w-1)*7);const s=new Date(m);s.setUTCDate(m.getUTCDate()+6);s.setUTCHours(23,59,59,999);return s;}
 function isoWeekMonday(y,w){const j=new Date(Date.UTC(y,0,4)),dw=j.getUTCDay()||7,m=new Date(j);m.setUTCDate(j.getUTCDate()-(dw-1)+(w-1)*7);m.setUTCHours(0,0,0,0);return m;}
 function fechaProxEquipo(e){const H=hoy0(),freq=+e.frecuencia||0,hd=+e.hr_dia||0;if(!freq||hd<=0)return null;const c=mant(e),dd=Math.floor(c.restante/hd)+1;return new Date(H.getTime()+dd*86400000);}
@@ -814,9 +814,9 @@ function verPrograma(){
   const mkH=(bg,txt,extra='')=>`<th style="${thBase};background:${bg};color:#fff;top:63px${extra}">${txt}</th>`;
   const mkHE=(bg,txt)=>`<th style="${thBase};background:${bg};color:#bfdbfe;top:63px" title="Editar: doble clic">${txt}*</th>`;
   const fInp=(k,ph)=>`<input data-pmfcol="${k}" placeholder="${ph}" style="width:100%;box-sizing:border-box;border:1px solid #9ca3af;border-radius:3px;padding:1px 3px;font-size:9px" oninput="pmColFilter(this)">`;
-  const thF=(k,ph)=>`<th style="background:#e8eaf0;padding:2px;position:sticky;top:85px;z-index:3;border:1px solid #d1d5db">${k?fInp(k,ph):''}</th>`;
+  const thF=(k,ph)=>`<th style="background:#e8eaf0;padding:2px;position:sticky;top:79px;z-index:3;border:1px solid #d1d5db">${k?fInp(k,ph):''}</th>`;
 
-  let h=`<div style="overflow-x:auto">
+  let h=`<div style="overflow:auto;max-height:calc(100vh - 148px)">
   <div style="background:#1c232b;color:#fff;text-align:center;padding:3px 8px;font-size:10px;font-weight:700;letter-spacing:1px;position:sticky;top:0;z-index:5;height:22px">AREA DE CONTROL DE EQUIPOS</div>
   <div style="background:#f2f2f2;color:#002060;text-align:center;padding:10px 8px;font-size:16px;font-weight:800;position:sticky;top:22px;z-index:5;line-height:1.3">PROGRAMA DE MANTENIMIENTO PREVENTIVO SEMANAL &mdash; EQUIPOS &nbsp;|&nbsp; Semana ${wk} &middot; ${mesLabel} ${yr}</div>
   <table id="pmTable" style="width:100%;border-collapse:collapse;background:#fff;font-size:11px;table-layout:fixed">
@@ -825,7 +825,7 @@ function verPrograma(){
         ${mkH(B4,'#',';min-width:26px;text-align:center')}
         ${mkH(B1,'Proyecto',';min-width:72px')}
         ${mkH(B1,'Cod. SAP',';min-width:72px;font-family:monospace')}
-        ${mkH(B1,'Equipo / Vehiculo',';min-width:130px')}
+        ${mkH(B1,'Equipo / Vehiculo',';min-width:130px;width:auto;white-space:nowrap')}
         ${mkH(B1,'Marca',';min-width:70px')}
         ${mkH(B1,'Modelo',';min-width:78px')}
         ${mkH(B1,'Serie/Placa',';min-width:70px')}
@@ -839,13 +839,13 @@ function verPrograma(){
         ${mkHE(B3,'Fecha Ejec.')}
         ${mkHE(B3,'Estado')}
         ${mkH(B3,'Sem.',';text-align:center')}
-        ${mkH('#7f1d1d','',';min-width:22px')}
+        
       </tr>
       <tr>
         ${thF('','')+''+thF('proyec','Proyecto')+thF('sap','SAP')+thF('equipo','Equipo')+thF('marca','Marca')+thF('modelo','Modelo')}
         ${thF('')+thF('')+thF('')+thF('')+thF('')}
         ${dias.map(()=>thF('')).join('')}
-        ${thF('om','OM')+thF('')+thF('')+thF('estado','Estado')+thF('sem_col','Sem.')+thF('')}
+        ${thF('om','OM')+thF('')+thF('')+thF('estado','Estado')+thF('sem_col','Sem.')}
       </tr>
     </thead><tbody>`;
 
@@ -857,13 +857,13 @@ function verPrograma(){
     const trBg=idx%2===0?'#fff':'#f8fafc';
     const pillC=tipo==='PM4'?'bad':tipo==='PM3'?'warn':tipo==='PM2'?'ok':'na';
     const TD='padding:1px 3px;border:1px solid #e5e7eb;height:22px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap';
-    const tdE=(f,tipo2,val,ph='')=>{const disp=tipo2==='d'?fmtDMY(val):val;return`<td style="${TD}" ondblclick="pmEditCell(this,'${tipo2}')"><span class="pm-disp">${disp||'--'}</span><input class="pm-inp" type="${tipo2==='sel'?'text':tipo2==='n'?'number':'date'}" data-f="${f}" ${val?`value="${val}"`:`placeholder="${ph}"`} style="display:none;width:${tipo2==='d'?'auto':'70px'};border:1px solid var(--amber);border-radius:4px;padding:1px 3px;font-size:11px${tipo2==='n'?';text-align:right':''}"></td>`;};
+    const tdE=(f,tipo2,val,ph='')=>{const disp=tipo2==='date'||tipo2==='d'?fmtDMY(val):val;return`<td style="${TD}" ondblclick="pmEditCell(this,'${tipo2}')"><span class="pm-disp">${disp||'--'}</span><input class="pm-inp" type="${tipo2==='sel'?'text':tipo2==='n'?'number':'date'}" data-f="${f}" ${val?`value="${val}"`:`placeholder="${ph}"`} style="display:none;width:${tipo2==='d'?'auto':'70px'};border:1px solid var(--amber);border-radius:4px;padding:1px 3px;font-size:11px${tipo2==='n'?';text-align:right':''}"></td>`;};
     const tdSel=(f,val)=>`<td style="${TD}" data-pmcol="estado" ondblclick="pmEditCell(this,'sel')"><span class="pm-disp">${val||'--'}</span><select class="pm-inp" data-f="${f}" style="display:none;border:1px solid var(--amber);border-radius:4px;padding:1px 3px;font-size:11px"><option value="">--</option><option>EJECUT.</option><option>REPROG.</option></select></td>`;
     h+=`<tr data-pm-row="${e.id}" data-pm-id="${e.id}" data-search="${srch}" data-semana="${sem}" style="background:${trBg};cursor:pointer" onclick="pmSelRow(this)">
-      <td style="${TD};text-align:center;color:#9ca3af;font-size:10px">${idx+1}</td>
+      <td style="${TD};text-align:center;color:#9ca3af;font-size:10px;cursor:pointer;position:relative" title="Clic para eliminar fila" onclick="pmDelRow(event,'${e.id}')" onmouseenter="this.style.background='#fee2e2';this.style.color='#b91c1c'" onmouseleave="this.style.background='';this.style.color='#9ca3af'">${idx+1}<span style="display:none;position:absolute;right:1px;top:1px;font-size:9px;font-weight:700">✕</span></td>
       <td style="${TD};font-weight:600;color:#1d4ed8" data-pmcol="proyec">${esc(e.cod_proyec||'')}</td>
       <td style="${TD};font-family:monospace;font-size:10px" data-pmcol="sap">${esc(e.cod_sap||'')}</td>
-      <td style="${TD}" data-pmcol="equipo">${esc(e.equipo||'')}</td>
+      <td style="${TD};white-space:nowrap;min-width:130px" data-pmcol="equipo">${esc(e.equipo||'')}</td>
       <td style="${TD};font-size:10px" data-pmcol="marca">${esc(e.marca||'')}</td>
       <td style="${TD};font-size:10px" data-pmcol="modelo">${esc(e.modelo||'')}</td>
       <td style="${TD};font-size:10px">${esc(e.serie_placa||'')}</td>
@@ -877,7 +877,6 @@ function verPrograma(){
       ${tdE('fecha_ejec','date','','')}
       ${tdSel('ejec_estado','')}
       <td style="${TD};text-align:center;font-size:10px" data-pmcol="sem_col">${sem}</td>
-      <td style="${TD};text-align:center"><button onclick="pmDelRow(event,'${e.id}')" style="border:none;background:none;color:#cbd2d9;cursor:pointer;font-size:12px;line-height:1" title="Eliminar fila">x</button></td>
     </tr>`;
   });
   h+=`</tbody></table>
@@ -896,6 +895,7 @@ function pmSelRow(tr){document.querySelectorAll('#pmTable tr[data-pm-row]').forE
 /* Doble click editar */
 function pmEditCell(td,tipo){
   const disp=td.querySelector('.pm-disp'),inp=td.querySelector('.pm-inp');if(!inp)return;
+  if(tipo==='date'||tipo==='d'){disp.style.display='none';inp.style.display='';inp.focus();inp.onblur=()=>{disp.textContent=fmtDMY(inp.value)||'--';disp.style.display='';inp.style.display='none';};inp.onkeydown=e=>{if(e.key==='Enter')inp.blur();if(e.key==='Escape'){inp.style.display='none';disp.style.display='';}};return;}
   if(tipo==='sel'){
     // Convertir input en select si es select
     const sel=document.createElement('select');sel.className='pm-inp';sel.data=inp.dataset.f;
