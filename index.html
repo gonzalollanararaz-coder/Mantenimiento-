@@ -242,8 +242,8 @@ section.hide { display:none; }
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
 /* ╔══ pega aquí tus DOS datos (los mismos de tu archivo actual) ══╗ */
-const SUPABASE_URL = "https://hklwvdhzltjsbfvlewbu.supabase.co";   // ← reemplaza
-const SUPABASE_KEY = "sb_publishable_NgDfyDHDI_KByR-qf35EpA_ZuKI5E0K";                 // ← reemplaza
+const SUPABASE_URL = "https://TU-PROYECTO.supabase.co";   // ← reemplaza
+const SUPABASE_KEY = "TU-PUBLISHABLE-KEY";                 // ← reemplaza
 /* ──────────────────────────────────────────────────────────────── */
 const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
@@ -814,18 +814,18 @@ function verPrograma(){
   if(!due.length){pmProgramaWrap.innerHTML=`<p style="padding:16px;color:#6b747d">No hay equipos con PM pendiente hasta la semana ${wk}/${yr}.</p>`;return;}
 
   const B1='#002060',B2='#1a3a6b',B3='#006600',B4='#374557';
-  const thBase=`position:sticky;z-index:3;border:1px solid rgba(255,255,255,.2);white-space:nowrap;font-size:10px;padding:3px 4px`;
+  const thBase=`position:sticky;z-index:5;border:1px solid rgba(255,255,255,.2);white-space:nowrap;font-size:10px;padding:3px 4px`;
   const thDias=dias.map((d,i)=>{
     const dd=String(d.getUTCDate()).padStart(2,'0'),esDom=i===6;
     const esHoy=d.getUTCFullYear()===hoyD.getFullYear()&&d.getUTCMonth()===hoyD.getMonth()&&d.getUTCDate()===hoyD.getDate();
     const bg=esDom?'#b91c1c':esHoy?'#1d4ed8':'#002D86';
-    return `<th style="${thBase};background:${bg};color:#fff;text-align:center;min-width:28px;top:95px">${DIAS_LAB[i]}<br>${dd}</th>`;
+    return `<th style="${thBase};background:${bg};color:#fff;text-align:center;min-width:28px;top:64px">${DIAS_LAB[i]}<br>${dd}</th>`;
   }).join('');
 
-  const mkH=(bg,txt,extra='')=>`<th style="${thBase};background:${bg};color:#fff;top:95px${extra}">${txt}</th>`;
-  const mkHE=(bg,txt)=>`<th style="${thBase};background:${bg};color:#bfdbfe;top:95px" title="Editar: doble clic">${txt}*</th>`;
+  const mkH=(bg,txt,extra='')=>`<th style="${thBase};background:${bg};color:#fff;top:64px${extra}">${txt}</th>`;
+  const mkHE=(bg,txt)=>`<th style="${thBase};background:${bg};color:#bfdbfe;top:64px" title="Editar: doble clic">${txt}*</th>`;
   const fInp=(k,ph)=>`<input data-pmfcol="${k}" placeholder="${ph}" style="width:100%;box-sizing:border-box;border:1px solid #9ca3af;border-radius:3px;padding:1px 3px;font-size:9px" oninput="pmColFilter(this)">`;
-  const thF=(k,ph)=>`<th style="background:#e8eaf0;padding:2px;position:sticky;top:111px;z-index:3;border:1px solid #d1d5db">${k?fInp(k,ph):''}</th>`;
+  const thF=(k,ph)=>`<th style="background:#e8eaf0;padding:2px;position:sticky;top:81px;z-index:5;border:1px solid #d1d5db">${k?fInp(k,ph):''}</th>`;
 
   let h=`<div>
   <table id="pmTable" style="width:100%;border-collapse:collapse;background:#fff;font-size:11px">
