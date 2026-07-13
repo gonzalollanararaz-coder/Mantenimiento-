@@ -242,8 +242,8 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
 /* ╔══ pega aquí tus DOS datos (los mismos de tu archivo actual) ══╗ */
-const SUPABASE_URL = "https://hklwvdhzltjsbfvlewbu.supabase.co";   // ← reemplaza
-const SUPABASE_KEY = "sb_publishable_NgDfyDHDI_KByR-qf35EpA_ZuKI5E0K";                 // ← reemplaza
+const SUPABASE_URL = "https://TU-PROYECTO.supabase.co";   // ← reemplaza
+const SUPABASE_KEY = "TU-PUBLISHABLE-KEY";                 // ← reemplaza
 /* ──────────────────────────────────────────────────────────────── */
 const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
@@ -782,6 +782,18 @@ function pmApplyAll(){
   });
 }
 
+
+/* ----- Fijar tops de sticky midiendo alturas reales ----- */
+function fixStickyTops(){
+  const t=document.getElementById('pmTable');if(!t||!t.tHead)return;
+  let top=0;
+  for(const row of t.tHead.rows){
+    for(const th of row.cells){th.style.top=top+'px';th.style.position='sticky';}
+    top+=row.getBoundingClientRect().height;
+  }
+}
+window.addEventListener('resize',()=>{if(pmVista==='programa')fixStickyTops();});
+
 /* ----- PROGRAMA SEMANAL ----- */
 function verPrograma(){
   pmVista='programa';
@@ -900,6 +912,7 @@ function verPrograma(){
   pmProgramaWrap.innerHTML=h;
   pmProgramaWrap.dataset.semRend=wk+'_'+yr;
   document.getElementById('btnConfirmarPMs').onclick=confirmarPMs;
+  requestAnimationFrame(fixStickyTops);
 }
 
 /* Seleccion fila verde */
