@@ -242,8 +242,8 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
 /* ╔══ pega aquí tus DOS datos (los mismos de tu archivo actual) ══╗ */
-const SUPABASE_URL = "https://hklwvdhzltjsbfvlewbu.supabase.co";   // ← reemplaza
-const SUPABASE_KEY = "sb_publishable_NgDfyDHDI_KByR-qf35EpA_ZuKI5E0K";                 // ← reemplaza
+const SUPABASE_URL = "https://TU-PROYECTO.supabase.co";   // ← reemplaza
+const SUPABASE_KEY = "TU-PUBLISHABLE-KEY";                 // ← reemplaza
 /* ──────────────────────────────────────────────────────────────── */
 const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
@@ -327,7 +327,7 @@ btnAuth.onclick=async()=>{
   try{
     if(modoRegistro){const {error}=await sb.auth.signUp({email,password:pass,options:{data:{nombre}}});if(error)throw error;amsg("¡Registro exitoso! Tu cuenta queda pendiente de aprobación. Ya puedes iniciar sesión.","ok");modoRegistro=false;fldNombre.style.display="none";btnAuth.textContent="Ingresar";authSub.textContent="Inicia sesión para continuar";}
     else{const {error}=await sb.auth.signInWithPassword({email,password:pass});if(error)throw error;}
-  }catch(e){amsg(trad(e.message),"err");}finally{btnAuth.disabled=false;}finally{btnAuth.disabled=false;}
+  }catch(e){amsg(trad(e.message),"err");}finally{btnAuth.disabled=false;}
 };
 function amsg(t,k){authMsg.innerHTML=`<div class="msg ${k}">${t}</div>`;}
 function trad(m){if(/Invalid login/i.test(m))return"Correo o contraseña incorrectos.";if(/already registered/i.test(m))return"Ese correo ya está registrado.";if(/Email not confirmed/i.test(m))return"Correo sin confirmar. Pide al admin que lo confirme.";if(/at least 6/i.test(m))return"La contraseña debe tener mínimo 6 caracteres.";return m;}
@@ -761,11 +761,13 @@ function isoWeekSunday(y,w){const j=new Date(Date.UTC(y,0,4)),dw=j.getUTCDay()||
 function isoWeekMonday(y,w){const j=new Date(Date.UTC(y,0,4)),dw=j.getUTCDay()||7,m=new Date(j);m.setUTCDate(j.getUTCDate()-(dw-1)+(w-1)*7);m.setUTCHours(0,0,0,0);return m;}
 function fechaProxEquipo(e){const H=hoy0(),freq=+e.frecuencia||0,hd=+e.hr_dia||0;if(!freq||hd<=0)return null;const c=mant(e),dd=Math.floor(c.restante/hd)+1;return new Date(H.getTime()+dd*86400000);}
 
-/* ----- Filtros toolbar ----- */
+/* ----- Filtros toolbar (protegido para no romper login si falla) ----- */
+try{
 pmBuscar.oninput=()=>pmApplyAll();
 pmBuscarSemana.oninput=()=>pmApplyAll();
 pmBtnClearFiltros.onclick=()=>{pmBuscar.value='';pmBuscarSemana.value='';for(const k in _pmColF)delete _pmColF[k];pmApplyAll();};
 pmToggleHist.onclick=()=>verHistorial();
+}catch(err){console.error('PM-S bindings:',err);}
 
 const _pmColF={};
 function pmColFilter(inp){_pmColF[inp.dataset.pmfcol]=inp.value.toLowerCase().trim();pmApplyAll();}
