@@ -244,8 +244,8 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
 /* ╔══ pega aquí tus DOS datos (los mismos de tu archivo actual) ══╗ */
-const SUPABASE_URL = "https://hklwvdhzltjsbfvlewbu.supabase.co";   // ← reemplaza
-const SUPABASE_KEY = "sb_publishable_NgDfyDHDI_KByR-qf35EpA_ZuKI5E0K";                 // ← reemplaza
+const SUPABASE_URL = "https://TU-PROYECTO.supabase.co";   // ← reemplaza
+const SUPABASE_KEY = "TU-PUBLISHABLE-KEY";                 // ← reemplaza
 /* ──────────────────────────────────────────────────────────────── */
 const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
@@ -434,7 +434,8 @@ function buildBody(){
   vis.forEach(e=>{
     const c=mant(e);
     // divisor entre proyectos, solo en equipos MOVILIZADOS
-    const divi=(prevProy!==null && e.status!=='DESMOVILIZADO' && (e.cod_proyec!==prevProy || e.status!==prevSt))?'grp-top':'';
+    const _rk=s=>ST_RANK[s]||9;
+    const divi=(prevProy!==null && e.status!=='DESMOVILIZADO' && (e.cod_proyec!==prevProy || _rk(e.status)!==_rk(prevSt)))?'grp-top':'';
     prevProy=e.cod_proyec; prevSt=e.status;
     const selCls=(selId&&String(e.id)===String(selId))?' rowsel':'';
     let tr=`<tr data-id="${e.id}" class="${divi}${selCls}">`;
