@@ -84,6 +84,8 @@
   .pill.bad{background:var(--bad-bg);color:var(--bad)}.pill.na{background:var(--gray-bg);color:var(--gray)}
   td.st-MOVILIZADO{background:#dbeafe !important;color:#1d4ed8;font-weight:700}
   td.st-DESMOVILIZADO{background:#fce7f3 !important;color:#be123c;font-weight:700}
+  td.st-TRANSITO{background:#FEF3C7 !important;color:#B45309;font-weight:700}
+  td.sap-TRANSITO{color:#B45309;font-weight:700}
   td.sap-MOVILIZADO{color:#1d4ed8;font-weight:700}
   td.sap-DESMOVILIZADO{color:#be123c;font-weight:700}
   .delrow{border:none;background:none;color:#cbd2d9;cursor:pointer;font-size:13px;padding:0 2px;line-height:1}
@@ -176,7 +178,7 @@
       <input type="search" id="buscar" placeholder="Buscar proyecto, SAP, equipo, marca, modelo, serie/placa…">
       <select id="fStatus">
         <option value="">Todos los status</option>
-        <option>MOVILIZADO</option><option>DESMOVILIZADO</option>
+        <option>MOVILIZADO</option><option>TRANSITO</option><option>DESMOVILIZADO</option>
       </select>
       <select id="fDocs">
         <option value="">Todos los documentos</option>
@@ -242,8 +244,8 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
 /* ╔══ pega aquí tus DOS datos (los mismos de tu archivo actual) ══╗ */
-const SUPABASE_URL = "https://hklwvdhzltjsbfvlewbu.supabase.co";   // ← reemplaza
-const SUPABASE_KEY = "sb_publishable_NgDfyDHDI_KByR-qf35EpA_ZuKI5E0K";                 // ← reemplaza
+const SUPABASE_URL = "https://TU-PROYECTO.supabase.co";   // ← reemplaza
+const SUPABASE_KEY = "TU-PUBLISHABLE-KEY";                 // ← reemplaza
 /* ──────────────────────────────────────────────────────────────── */
 const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
@@ -288,8 +290,8 @@ const GROUPS=[
 const FROZEN_HCOL='#002060', ID_BAND='#0F243E';
 const DOCS=['certif_operat','soat','poliza','rev_tec','tarjeta_circ'];
 const FCALC=['_alerta','_sem','_alertamntto']; // columnas calculadas con filtro
-const ST_RANK={MOVILIZADO:1,DESMOVILIZADO:2};
-const collapsed={}, colFilters={};
+const ST_RANK={MOVILIZADO:1,TRANSITO:1,DESMOVILIZADO:2};
+const collapsed={mov:true,des:true,prov:true,doc:true}, colFilters={};
 let selId=null, undoStack=[];
 
 /* ===== arranque / sesión ===== */
@@ -616,7 +618,7 @@ cuerpo.addEventListener("dblclick",ev=>{
   const e=datos.find(x=>x.id==id); if(!e)return;
   const cur=e[k]??"";
   let ctrl;
-  if(type==='status') ctrl=`<select>${["","MOVILIZADO","DESMOVILIZADO"].map(o=>`<option ${cur===o?"selected":""}>${o}</option>`).join("")}</select>`;
+  if(type==='status') ctrl=`<select>${["","MOVILIZADO","TRANSITO","DESMOVILIZADO"].map(o=>`<option ${cur===o?"selected":""}>${o}</option>`).join("")}</select>`;
   else if(type==='okfalta') ctrl=`<select>${["","FALTA","OK"].map(o=>`<option ${cur===o?"selected":""}>${o}</option>`).join("")}</select>`;
   else if(type==='pct') ctrl=`<input type="number" min="0" max="100" value="${cur}">`;
   else if(type==='n') ctrl=`<input type="number" value="${cur}">`;
@@ -882,7 +884,7 @@ function verPrograma(){
     const trBg=idx%2===0?'#fff':'#f8fafc';
     const pillC=tipo==='PM4'?'bad':tipo==='PM3'?'warn':tipo==='PM2'?'ok':'na';
     const TD='padding:1px 3px;border:1px solid #e5e7eb;height:22px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap';
-    const tdE=(f,tipo2,val,ph='')=>{const disp=tipo2==='date'||tipo2==='d'?fmtDMY(val):val;return`<td style="${TD}" ondblclick="pmEditCell(this,'${tipo2}')"><span class="pm-disp">${disp||'--'}</span><input class="pm-inp" type="${tipo2==='sel'?'text':tipo2==='n'?'number':'date'}" data-f="${f}" ${val?`value="${val}"`:`placeholder="${ph}"`} style="display:none;width:${tipo2==='d'?'auto':'70px'};border:1px solid var(--amber);border-radius:4px;padding:1px 3px;font-size:11px${tipo2==='n'?';text-align:right':''}"></td>`;};
+    const tdE=(f,tipo2,val,ph='')=>{const disp=tipo2==='date'||tipo2==='d'?fmtDMY(val):val;const ityp=tipo2==='sel'?'text':(tipo2==='n'||tipo2==='om')?'number':'date';return`<td style="${TD}" ondblclick="pmEditCell(this,'${tipo2}')"><span class="pm-disp">${disp||'--'}</span><input class="pm-inp" type="${ityp}" data-f="${f}" data-omfmt="${tipo2==='om'?1:''}" ${val?`value="${val}"`:`placeholder="${ph}"`} style="display:none;width:${tipo2==='d'?'auto':'78px'};border:1px solid var(--amber);border-radius:4px;padding:1px 3px;font-size:11px${(tipo2==='n'||tipo2==='om')?';text-align:right':''}"></td>`;};
     const tdSel=(f,val)=>`<td style="${TD}" data-pmcol="estado" ondblclick="pmEditCell(this,'sel')"><span class="pm-disp">${val||'--'}</span><select class="pm-inp" data-f="${f}" style="display:none;border:1px solid var(--amber);border-radius:4px;padding:1px 3px;font-size:11px"><option value="">--</option><option>EJECUT.</option><option>REPROG.</option></select></td>`;
     h+=`<tr data-pm-row="${e.id}" data-pm-id="${e.id}" data-search="${srch}" data-semana="${sem}" style="background:${trBg};cursor:pointer" onclick="pmSelRow(this)">
       <td style="${TD};text-align:center;color:#6b747d;font-size:10px;cursor:default;white-space:nowrap"><button onclick="pmDelRow(event,'${e.id}')" style="border:none;background:none;color:#cbd2d9;cursor:pointer;font-size:10px;font-weight:600;padding:0 2px 0 0;line-height:1;vertical-align:middle;opacity:.6" title="Eliminar fila" onmouseenter="this.style.opacity='1';this.style.color='#e53e3e'" onmouseleave="this.style.opacity='.6';this.style.color='#cbd2d9'">&#10005;</button>${idx+1}</td>
@@ -897,7 +899,7 @@ function verPrograma(){
       ${tdE('hrkm_prog','n',hp,'HR/KM')}
       ${tdE('fecha_prog','date',fiso,'')}
       ${celdaDias}
-      ${tdE('om','text','','OM')}
+      ${tdE('om','om','','OM')}
       ${tdE('hrkm_ejec','n','','HR/KM')}
       ${tdE('fecha_ejec','date','','')}
       ${tdSel('ejec_estado','')}
@@ -932,7 +934,8 @@ function pmEditCell(td,tipo){
   }
   disp.style.display='none';inp.style.display='';inp.focus();
   try{inp.select&&inp.select();}catch(_){}
-  inp.onblur=()=>{disp.textContent=inp.value||'--';disp.style.display='';inp.style.display='none';};
+  if(inp.dataset.omfmt)inp.oninput=()=>{inp.value=inp.value.replace(/[^0-9]/g,'').slice(0,9);};
+  inp.onblur=()=>{let v=inp.value;if(inp.dataset.omfmt&&v)v=String(parseInt(v,10));disp.textContent=v||'--';if(inp.dataset.omfmt)inp.value=v;disp.style.display='';inp.style.display='none';};
   inp.onkeydown=e=>{if(e.key==='Enter')inp.blur();if(e.key==='Escape'){inp.style.display='none';disp.style.display='';}};
 }
 
@@ -960,7 +963,7 @@ btnAddMntto.onclick=()=>{
         <div><label style="font-size:11px;font-weight:700;color:#6b747d;display:block;margin-bottom:3px">TIPO PM</label>
           <select id="mntTipo" style="width:100%;padding:7px;border:1px solid #d1d5db;border-radius:7px;font-size:13px"><option>PM1</option><option>PM2</option><option>PM3</option><option>PM4</option></select></div>
         <div><label style="font-size:11px;font-weight:700;color:#6b747d;display:block;margin-bottom:3px">OM</label>
-          <input id="mntOM" type="text" style="width:100%;padding:7px;border:1px solid #d1d5db;border-radius:7px;font-size:13px" placeholder="N. OM"></div>
+          <input id="mntOM" type="number" step="1" min="0" max="999999999" style="width:100%;padding:7px;border:1px solid #d1d5db;border-radius:7px;font-size:13px" placeholder="N. OM"></div>
         <div><label style="font-size:11px;font-weight:700;color:#6b747d;display:block;margin-bottom:3px">HR/KM Prog.</label>
           <input id="mntHRProg" type="number" style="width:100%;padding:7px;border:1px solid #d1d5db;border-radius:7px;font-size:13px"></div>
         <div><label style="font-size:11px;font-weight:700;color:#6b747d;display:block;margin-bottom:3px">Fecha Prog.</label>
@@ -977,6 +980,7 @@ btnAddMntto.onclick=()=>{
         <button onclick="guardarMnttoManual()" style="padding:8px 16px;border:none;border-radius:7px;background:#0f766e;color:#fff;cursor:pointer;font-size:13px;font-weight:700">Guardar</button>
       </div>
     </div></div>`);
+  const _omInp=document.getElementById('mntOM');if(_omInp)_omInp.oninput=()=>{_omInp.value=_omInp.value.replace(/[^0-9]/g,'').slice(0,9);};
 };
 
 async function guardarMnttoManual(){
@@ -989,7 +993,7 @@ async function guardarMnttoManual(){
   const wk=+pmSemana.value,yr=+pmAnio.value;
   const reg={maestro_id:e.id,cod_sap:e.cod_sap,equipo:e.equipo,marca:e.marca||null,tipo_pm:tipo,semana:wk,anio:yr,
     hrkm_programado:hrkm_prog?Number(hrkm_prog):null,fecha_programada:document.getElementById('mntFProg').value||null,
-    ot:om||null,hrkm_ejecucion:hrkm_ejec?Number(hrkm_ejec):null,fecha_ejecucion:fecha_ejec||null,ejecutado_por:estado||null};
+    ot:om?String(parseInt(om,10)):null,hrkm_ejecucion:hrkm_ejec?Number(hrkm_ejec):null,fecha_ejecucion:fecha_ejec||null,ejecutado_por:estado||null};
   const{error}=await sb.from('pm_historial').insert(reg);
   if(error){alert('Error: '+error.message);return;}
   if(hrkm_ejec&&fecha_ejec){await sb.from('maestro').update({hrkm_ult_mntto:Number(hrkm_ejec),fecha_ult_mntto:fecha_ejec,pm_realizado:hrkm_prog?Number(hrkm_prog):null}).eq('id',e.id);await cargar();}
@@ -1011,7 +1015,7 @@ async function confirmarPMs(){
     const estado_val=val('ejec_estado');
     registros.push({maestro_id:e.id,cod_sap:e.cod_sap,equipo:e.equipo,marca:e.marca||null,tipo_pm:tipo,semana:wk,anio:yr,
       hrkm_programado:hrkm_prog?Number(hrkm_prog):null,fecha_programada:val('fecha_prog')||null,
-      ot:val('om')||null,hrkm_ejecucion:Number(hrkm_ejec),fecha_ejecucion:fecha_ejec,ejecutado_por:estado_val||null});
+      ot:(function(){const o=val('om');return o?String(parseInt(o,10)):null;})(),hrkm_ejecucion:Number(hrkm_ejec),fecha_ejecucion:fecha_ejec,ejecutado_por:estado_val||null});
     acts.push({id:e.id,hrkm:Number(hrkm_ejec),fecha:fecha_ejec,hrkm_prog:hrkm_prog?Number(hrkm_prog):null});
   }
   if(!registros.length){alert('Completa al menos una fila con HR/KM ejec. y fecha de ejecucion.');return;}
