@@ -74,6 +74,7 @@
   .mx td input:focus,.mx td select:focus{background:#fff7e6;box-shadow:inset 0 0 0 2px var(--amber)}
   .mx tbody tr:hover td{background:#f9fafb}
   .mx td.calc{padding:1px 5px;text-align:right;font-family:"SF Mono",monospace;color:var(--muted);background:#fbfbfc}
+  .mx td[data-type="n"],.mx td[data-type="pct"],.mx td[data-type="d"],.mx td[data-type="de"]{text-align:center}
   /* congelados */
   .frz{position:sticky;background:#fff;z-index:6}
   .mx thead .frz{z-index:9}
@@ -202,32 +203,19 @@
   </section>
 
   <section id="panePMS" class="hide">
-    <div class="toolbar" id="pmToolbarProg">
-      <label style="font-weight:600;font-size:13px">Semana</label>
-      <input type="number" id="pmSemana" min="1" max="53" style="width:68px;padding:6px 8px;border:1px solid var(--line);border-radius:8px;font-size:13px">
-      <label style="font-weight:600;font-size:13px">Año</label>
-      <input type="number" id="pmAnio" style="width:80px;padding:6px 8px;border:1px solid var(--line);border-radius:8px;font-size:13px">
-      <button class="act primary" id="pmVer">Ver programa</button>
-      <span class="chip" id="pmCount">--</span>
-      <input type="search" id="pmBuscar" placeholder="Proyecto, Cod. SAP, Equipo..." style="padding:6px 10px;border:1px solid var(--line);border-radius:8px;font-size:13px;min-width:200px;flex:1">
-      <input type="number" id="pmBuscarSemana" placeholder="# Semana" min="1" max="53" style="width:88px;padding:6px 8px;border:1px solid var(--line);border-radius:8px;font-size:13px">
-      <button class="act clear" id="pmBtnClearFiltros">X Borrar filtros</button>
-      <div class="spacer"></div>
-      <button class="act primary" id="btnAddMntto" style="background:#0f766e;color:#fff">+ MNTTO</button>
-      <button class="act ghost" id="pmToggleHist">Ver historial</button>
+    <div style="padding:40px;text-align:center;color:#6b747d">
+      <p>Esta pestaña se está rediseñando.</p>
     </div>
-    <div class="toolbar hide" id="pmToolbarHist">
-      <input type="search" id="pmHistBuscar" placeholder="SAP, equipo, proyecto..." style="min-width:200px;flex:1;padding:6px 10px;border:1px solid var(--line);border-radius:8px;font-size:13px">
-      <select id="pmHistFiltroPM" style="padding:6px 8px;border:1px solid var(--line);border-radius:8px;font-size:13px">
-        <option value="">Todos los PM</option>
-        <option>PM1</option><option>PM2</option><option>PM3</option><option>PM4</option>
-      </select>
-      <span class="chip" id="pmHistCount">--</span>
-      <div class="spacer"></div>
-      <button class="act ghost" id="pmToggleProg">Ver programa</button>
+    <!-- Elementos ocultos: mantienen vivas las referencias del JS legado del PM-S (no se muestran ni se usan) -->
+    <div style="display:none">
+      <input id="pmSemana"><input id="pmAnio"><button id="pmVer"></button><span id="pmCount"></span>
+      <input id="pmBuscar"><input id="pmBuscarSemana"><button id="pmBtnClearFiltros"></button>
+      <button id="btnAddMntto"></button><button id="pmToggleHist"></button>
+      <div id="pmToolbarProg" class="hide"></div><div id="pmToolbarHist" class="hide"></div>
+      <input id="pmHistBuscar"><select id="pmHistFiltroPM"></select><span id="pmHistCount"></span>
+      <button id="pmToggleProg"></button>
+      <div id="pmProgramaWrap"></div><div id="pmHistWrap" class="hide"></div>
     </div>
-    <div id="pmProgramaWrap" style="padding:0"></div>
-    <div id="pmHistWrap" class="padwrap hide" style="flex:1;overflow:auto"></div>
   </section>
   <section id="paneUsers" class="hide">
     <div class="padwrap">
@@ -244,8 +232,8 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
 /* ╔══ pega aquí tus DOS datos (los mismos de tu archivo actual) ══╗ */
-const SUPABASE_URL = "https://hklwvdhzltjsbfvlewbu.supabase.co";   // ← reemplaza
-const SUPABASE_KEY = "sb_publishable_NgDfyDHDI_KByR-qf35EpA_ZuKI5E0K";                 // ← reemplaza
+const SUPABASE_URL = "https://TU-PROYECTO.supabase.co";   // ← reemplaza
+const SUPABASE_KEY = "TU-PUBLISHABLE-KEY";                 // ← reemplaza
 /* ──────────────────────────────────────────────────────────────── */
 const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
@@ -283,7 +271,7 @@ const GROUPS=[
  {key:'prov',lab:'PROVEEDOR',color:'#0F243E',hcol:'#002060',cols:[['propietario','Propietario','t']]},
  {key:'doc',lab:'CONTROL DOCUMENTARIO',color:'#595959',hcol:'#808080',cols:[['certif_operat','Certif. oper.','de'],['soat','SOAT','de'],['poliza','Póliza','de'],['rev_tec','Rev. téc.','de'],['tarjeta_circ','T. circ.','de']]},
  {key:'act',lab:'DATOS ACTUALES',color:'#0F243E',hcol:'#002060',cols:[['hrkm_actual','HR/KM actual','n'],['fecha_lectura','F. lectura','d'],['hr_dia','HR/día','n']]},
- {key:'ult',lab:'ÚLTIMO MNTTO',color:'#595959',hcol:'#808080',cols:[['hrkm_ult_mntto','HR/KM últ.','n'],['fecha_ult_mntto','F. últ.','d'],['pm_realizado','PM realizad.','n'],['frecuencia','Frecuenc.','n']]},
+ {key:'ult',lab:'ÚLTIMO MNTTO',color:'#595959',hcol:'#808080',cols:[['hrkm_ult_mntto','HR/KM últ.','n'],['fecha_ult_mntto','F. últ.','d'],['frecuencia','Frecuenc.','n']]},
  {key:'ctrl',lab:'CONTROL DE HORAS Y MNTTO',color:'#C00000',hcol:'#FF0000',calc:true,cols:[['_proximo','Próx. PM','c'],['_restante','Restante','c'],['_alerta','Alerta','c'],['_fprox','Próx. fecha','c'],['_sem','Sem.','c'],['_alertamntto','Alerta de Mntto','c']]},
  {key:'com',lab:'COMENTARIOS',color:'#334155',hcol:'#475569',cols:[['obs','Comentarios','t']]},
 ];
@@ -339,9 +327,18 @@ btnOut.onclick=gateOut.onclick=()=>sb.auth.signOut();
 function hoy0(){const d=new Date();d.setHours(0,0,0,0);return d;}
 function dias(a,b){return Math.round((a-b)/86400000);}
 function isoWeek(d){const t=new Date(Date.UTC(d.getFullYear(),d.getMonth(),d.getDate()));const dn=t.getUTCDay()||7;t.setUTCDate(t.getUTCDate()+4-dn);const y=new Date(Date.UTC(t.getUTCFullYear(),0,1));return Math.ceil(((t-y)/86400000+1)/7);}
+function roundToFreq(V,F){
+  V=Number(V)||0; F=Number(F)||0;
+  if(F<=0)return Math.round(V);
+  const L=Math.floor(V/F)*F, U=L+F, band=F*0.2;
+  if((V-L)<band)return L;
+  if((U-V)<=band)return U;
+  const idx=Math.floor((V-L)/band+0.5);
+  return L+idx*band;
+}
 function mant(e){
   if(e.__mant)return e.__mant;              // caché: se recalcula solo al editar el equipo
-  const H=hoy0(),freq=+e.frecuencia||0,pmr=+e.pm_realizado||0,act=+e.hrkm_actual||0,hd=+e.hr_dia||0;
+  const H=hoy0(),freq=+e.frecuencia||0,pmr=roundToFreq(+e.hrkm_ult_mntto||0,freq),act=+e.hrkm_actual||0,hd=+e.hr_dia||0;
   let proy=act; if(e.fecha_lectura){const dd=Math.max(0,dias(H,new Date(e.fecha_lectura)));proy=act+dd*hd;}
   const proximo=freq?(pmr+freq):0; const restante=proximo-proy;
   let est="na";const margen=Math.max(freq*0.15,25);
@@ -435,7 +432,7 @@ function buildBody(){
     const c=mant(e);
     // divisor entre proyectos, solo en equipos MOVILIZADOS
     const _rk=s=>ST_RANK[s]||9;
-    const divi=(prevProy!==null && e.status!=='DESMOVILIZADO' && (e.cod_proyec!==prevProy || _rk(e.status)!==_rk(prevSt)))?'grp-top':'';
+    const divi=(prevProy!==null && (e.cod_proyec!==prevProy || _rk(e.status)!==_rk(prevSt)))?'grp-top':'';
     prevProy=e.cod_proyec; prevSt=e.status;
     const selCls=(selId&&String(e.id)===String(selId))?' rowsel':'';
     let tr=`<tr data-id="${e.id}" class="${divi}${selCls}">`;
@@ -571,11 +568,7 @@ document.addEventListener("keydown",ev=>{
 /* ===== Programar mntto → pasa el equipo seleccionado a la pestaña PM-S ===== */
 btnProg.onclick=()=>{
   if(!selId){alert("Primero selecciona un equipo haciendo clic en su número (#).");return;}
-  const e=datos.find(x=>x.id==selId); if(!e)return;
-  const c=mant(e);
-  if(!c.fproxDate){alert("Este equipo no tiene datos suficientes (frecuencia y HR/día) para calcular su programación.");return;}
-  document.querySelector('nav button[data-tab="pms"]').click();
-  pmSemana.value=isoWeek(c.fproxDate); pmAnio.value=c.fproxDate.getFullYear(); verPrograma();
+  abrirPMSVentana();
 };
 /* Agrupar / Desagrupar (colapsar / expandir todo) */
 btnAgrupar.onclick=()=>{GROUPS.forEach(g=>collapsed[g.key]=true);render();};
@@ -711,7 +704,17 @@ function startPoll(){stopPoll();pollTimer=setInterval(pollInteligente,60000);}
 function stopPoll(){if(pollTimer)clearInterval(pollTimer);}
 
 /* pestañas */
-document.querySelectorAll("nav button").forEach(b=>b.onclick=()=>{document.querySelectorAll("nav button").forEach(x=>x.classList.remove("on"));b.classList.add("on");const t=b.dataset.tab;paneEq.classList.toggle("hide",t!=="eq");panePMS.classList.toggle("hide",t!=="pms");paneUsers.classList.toggle("hide",t!=="users");if(t==="users")cargarUsuarios();if(t==="pms")initPMS();});
+function abrirPMSVentana(){
+  const w=window.open('','_blank');
+  if(w)w.document.write('<title>PM-S</title><body style="font-family:sans-serif;padding:40px;text-align:center;color:#6b747d"><h2>PM-S en rediseño</h2><p>Esta sección se está actualizando. Vuelve pronto.</p></body>');
+}
+document.querySelectorAll("nav button").forEach(b=>b.onclick=()=>{
+  const t=b.dataset.tab;
+  if(t==="pms"){abrirPMSVentana();return;}
+  document.querySelectorAll("nav button").forEach(x=>x.classList.remove("on"));b.classList.add("on");
+  paneEq.classList.toggle("hide",t!=="eq");panePMS.classList.toggle("hide",t!=="pms");paneUsers.classList.toggle("hide",t!=="users");
+  if(t==="users")cargarUsuarios();
+});
 
 /* admin */
 async function cargarUsuarios(){
