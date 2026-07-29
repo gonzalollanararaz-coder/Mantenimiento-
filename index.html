@@ -137,6 +137,7 @@
   .pms tbody tr:hover td.idx .delrow{opacity:1}
   .pms tbody tr.rowsel-g td{background:#bbf7d0 !important}
   .pms tbody tr.rowsel-g td.cellsel-g{background:#4ade80 !important;font-weight:700}
+  .pms td.pms-noeq{color:#b45309;background:#fffbeb}
   footer{padding:10px 16px;color:var(--muted);font-size:12px;text-align:center}
 
   /* admin */
@@ -258,8 +259,8 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
 /* ╔══ pega aquí tus DOS datos (los mismos de tu archivo actual) ══╗ */
-const SUPABASE_URL = "https://hklwvdhzltjsbfvlewbu.supabase.co";   // ← reemplaza
-const SUPABASE_KEY = "sb_publishable_NgDfyDHDI_KByR-qf35EpA_ZuKI5E0K";                 // ← reemplaza
+const SUPABASE_URL = "https://TU-PROYECTO.supabase.co";   // ← reemplaza
+const SUPABASE_KEY = "TU-PUBLISHABLE-KEY";                 // ← reemplaza
 /* ──────────────────────────────────────────────────────────────── */
 const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
@@ -788,6 +789,9 @@ cuerpoUsers.addEventListener("change",async ev=>{
 let pmsData=[], pmsSel=null, pmsSelCell=null, pmsVerEjec=false, pmsColF={}, pmsCargado=false;
 const PMS_DIA=['L','M','M','J','V','S','D'];
 const PMS_MES=['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Setiembre','Octubre','Noviembre','Diciembre'];
+/* lunes / domingo de una semana ISO */
+function isoWeekMonday(y,w){const j=new Date(Date.UTC(y,0,4)),dw=j.getUTCDay()||7,m=new Date(j);m.setUTCDate(j.getUTCDate()-(dw-1)+(w-1)*7);m.setUTCHours(0,0,0,0);return m;}
+function isoWeekSunday(y,w){const m=isoWeekMonday(y,w),s=new Date(m);s.setUTCDate(m.getUTCDate()+6);s.setUTCHours(23,59,59,999);return s;}
 
 /* ---- TIPO DE PM segun marca / modelo y el HR/KM programado ---- */
 function pmsTipoPM(marca,modelo,hrkm){
@@ -951,7 +955,7 @@ function pmsRender(){
     h+=`<tr data-pmsid="${r.id}"${sel?' class="'+sel.trim()+'"':''}>`
      +`<td class="idx"><span class="rn">0</span><button class="delrow" data-pmsdel="${r.id}" title="Eliminar fila">✕</button></td>`
      +`<td class="pms-c">${esc(f.proyec)}</td>`
-     +`<td class="pms-c mono">${esc(f.sap)}</td>`
+     +`<td class="pms-c mono${f.e?'':' pms-noeq'}"${f.e?'':' title="Este Cód. SAP no está en la pestaña Equipos: no se pueden derivar Equipo, Marca, Modelo ni Tipo de PM."'}>${esc(f.sap)}${f.e?'':' ⚠'}</td>`
      +`<td class="pms-l">${esc(f.equipo)}</td>`
      +`<td class="pms-l">${esc(f.marca)}</td>`
      +`<td class="pms-l">${esc(f.modelo)}</td>`
