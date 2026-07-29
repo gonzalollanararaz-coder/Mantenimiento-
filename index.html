@@ -110,6 +110,33 @@
   .mx tbody tr.rowsel td.frz,.mx tbody tr:hover.rowsel td{background:#b6d9f2 !important}
   .mx tbody tr.grp-top td{border-top:2px solid #595959}
   .collapsed-cell{background:#eef1f4;text-align:center;color:#94a3b8;font-weight:700;cursor:pointer}
+
+  /* ===== PM-S ===== */
+  #pmsWrap{padding:0;overflow:auto;max-height:calc(100vh - 158px);contain:paint}
+  table.pms{border-collapse:separate;border-spacing:0;font-size:11px;background:#fff;min-width:1500px;width:100%}
+  .pms th,.pms td{border-bottom:1px solid #e6e8eb;border-right:1px solid #eef0f2;white-space:nowrap}
+  .pms thead th{color:#fff;font-size:10px;font-weight:400;padding:2px 4px;text-align:center;z-index:5;border:none;border-right:1px solid #fff;border-bottom:1px solid #fff}
+  .pms thead .hlab{padding:1px 0 2px;line-height:1.05}
+  .pms thead .colf{width:100%;min-width:44px;border:1px solid #cfd6dd;border-radius:4px;padding:1px 3px;font-size:10px;height:16px;background:#fff;color:#1a1d21;outline:none}
+  .pms thead .colf:focus{border-color:var(--amber);box-shadow:0 0 0 2px rgba(242,169,0,.2)}
+  .pms tbody td{padding:1px 5px;height:22px}
+  .pms tbody tr{content-visibility:auto;contain-intrinsic-size:auto 22px}
+  .pms tbody tr:hover td{background:#f9fafb}
+  .pms td.pms-c{text-align:center}
+  .pms td.pms-l{text-align:left}
+  .pms td.mono{font-family:"SF Mono",ui-monospace,monospace}
+  .pms td.pms-day{text-align:center;width:26px;min-width:26px;padding:0}
+  .pms td.pms-day.dom{background:#fef2f2}
+  .pms td.pms-ed{cursor:cell}
+  .pms td.pms-ed:hover{background:#fff7e6;box-shadow:inset 0 0 0 1px #f0d68a}
+  .pms td[data-editing]{padding:0;box-shadow:inset 0 0 0 2px var(--amber)}
+  .pms td[data-editing] input{width:100%;border:none;background:#fff;font:inherit;padding:1px 4px;outline:none;text-align:center}
+  .pms tbody td.idx{padding:0 4px;text-align:center;color:var(--muted);font-family:"SF Mono",monospace;background:#f8fafc;font-size:10px;white-space:nowrap}
+  .pms tbody td.idx .rn{font-weight:600}
+  .pms tbody td.idx .delrow{opacity:0;vertical-align:middle}
+  .pms tbody tr:hover td.idx .delrow{opacity:1}
+  .pms tbody tr.rowsel-g td{background:#bbf7d0 !important}
+  .pms tbody tr.rowsel-g td.cellsel-g{background:#4ade80 !important;font-weight:700}
   footer{padding:10px 16px;color:var(--muted);font-size:12px;text-align:center}
 
   /* admin */
@@ -203,19 +230,18 @@
   </section>
 
   <section id="panePMS" class="hide">
-    <div style="padding:40px;text-align:center;color:#6b747d">
-      <p>Esta pestaña se está rediseñando.</p>
+    <div class="toolbar">
+      <button class="act primary" id="pmsBtnAdd">＋ MNTTO</button>
+      <button class="act ghost" id="pmsBtnHoy">Semana actual</button>
+      <input type="number" id="pmsBuscarSem" min="1" max="53" placeholder="Buscar semana" style="width:120px">
+      <button class="act ghost" id="pmsBtnVerEjec">Mostrar ejecutados</button>
+      <button class="act clear" id="pmsBtnClear">✕ Borrar filtros</button>
+      <span class="chip" id="pmsCount">—</span>
+      <span class="chip" id="pmsCountEjec">—</span>
+      <div class="spacer"></div>
+      <input type="hidden" id="pmsSemana"><input type="hidden" id="pmsAnio">
     </div>
-    <!-- Elementos ocultos: mantienen vivas las referencias del JS legado del PM-S (no se muestran ni se usan) -->
-    <div style="display:none">
-      <input id="pmSemana"><input id="pmAnio"><button id="pmVer"></button><span id="pmCount"></span>
-      <input id="pmBuscar"><input id="pmBuscarSemana"><button id="pmBtnClearFiltros"></button>
-      <button id="btnAddMntto"></button><button id="pmToggleHist"></button>
-      <div id="pmToolbarProg" class="hide"></div><div id="pmToolbarHist" class="hide"></div>
-      <input id="pmHistBuscar"><select id="pmHistFiltroPM"></select><span id="pmHistCount"></span>
-      <button id="pmToggleProg"></button>
-      <div id="pmProgramaWrap"></div><div id="pmHistWrap" class="hide"></div>
-    </div>
+    <div id="pmsWrap"><table class="pms"><thead id="pmsThead"></thead><tbody id="pmsBody"></tbody></table></div>
   </section>
   <section id="paneUsers" class="hide">
     <div class="padwrap">
@@ -232,8 +258,8 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
 /* ╔══ pega aquí tus DOS datos (los mismos de tu archivo actual) ══╗ */
-const SUPABASE_URL = "https://hklwvdhzltjsbfvlewbu.supabase.co";   // ← reemplaza
-const SUPABASE_KEY = "sb_publishable_NgDfyDHDI_KByR-qf35EpA_ZuKI5E0K";                 // ← reemplaza
+const SUPABASE_URL = "https://TU-PROYECTO.supabase.co";   // ← reemplaza
+const SUPABASE_KEY = "TU-PUBLISHABLE-KEY";                 // ← reemplaza
 /* ──────────────────────────────────────────────────────────────── */
 const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
@@ -570,10 +596,7 @@ document.addEventListener("keydown",ev=>{
   }
 });
 /* ===== Programar mntto → pasa el equipo seleccionado a la pestaña PM-S ===== */
-btnProg.onclick=()=>{
-  if(!selId){alert("Primero selecciona un equipo haciendo clic en su número (#).");return;}
-  abrirPMSVentana();
-};
+btnProg.onclick=()=>programarDesdeEquipos();
 /* Agrupar / Desagrupar (colapsar / expandir todo) */
 btnAgrupar.onclick=()=>{GROUPS.forEach(g=>collapsed[g.key]=true);render();};
 btnDesagrupar.onclick=()=>{GROUPS.forEach(g=>collapsed[g.key]=false);render();};
@@ -724,16 +747,12 @@ function startPoll(){stopPoll();pollTimer=setInterval(pollInteligente,60000);}
 function stopPoll(){if(pollTimer)clearInterval(pollTimer);}
 
 /* pestañas */
-function abrirPMSVentana(){
-  const w=window.open('','_blank');
-  if(w)w.document.write('<title>PM-S</title><body style="font-family:sans-serif;padding:40px;text-align:center;color:#6b747d"><h2>PM-S en rediseño</h2><p>Esta sección se está actualizando. Vuelve pronto.</p></body>');
-}
 document.querySelectorAll("nav button").forEach(b=>b.onclick=()=>{
   const t=b.dataset.tab;
-  if(t==="pms"){abrirPMSVentana();return;}
   document.querySelectorAll("nav button").forEach(x=>x.classList.remove("on"));b.classList.add("on");
   paneEq.classList.toggle("hide",t!=="eq");panePMS.classList.toggle("hide",t!=="pms");paneUsers.classList.toggle("hide",t!=="users");
   if(t==="users")cargarUsuarios();
+  if(t==="pms")initPMS();
 });
 
 /* admin */
@@ -765,344 +784,339 @@ cuerpoUsers.addEventListener("change",async ev=>{
   if(error){alert("No se pudo guardar la obra: "+error.message);cb.checked=!cb.checked;}
 });
 
-/* ===================== PM-S REDISENIADO v2 ===================== */
+/* ═══════════════════ PM-S : programa semanal + historico acumulado ═══════════════════ */
+let pmsData=[], pmsSel=null, pmsSelCell=null, pmsVerEjec=false, pmsColF={}, pmsCargado=false;
+const PMS_DIA=['L','M','M','J','V','S','D'];
+const PMS_MES=['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Setiembre','Octubre','Noviembre','Diciembre'];
 
-/* ----- Logica TIPO PM segun marca y horometro ----- */
-function calcTipoPM(marca,modelo,hrkm){
-  if(!hrkm||!marca)return'PM';
-  const m=String(marca).toUpperCase().trim(),mo=String(modelo||'').toUpperCase().trim(),h=Number(hrkm);
-  if(m.includes('MERCEDES')&&mo.includes('SPRINTER')){if(h%90000===0)return'PM4';if(h%60000===0)return'PM3';return'PM1';}
-  if(m.includes('MERCEDES')&&mo.includes('AROCS')){if(h%6000===0)return'PM4';if(h%3000===0)return'PM3';if(h%2000===0)return'PM2';return'PM1';}
-  if(m==='VOLVO'){if(h%6000===0)return'PM4';if(h%3000===0)return'PM3';if(h%1500===0)return'PM2';if(h%500===0)return'PM1';return'PM1';}
-  if(m==='TOYOTA'||m==='HINO'){if(h%8000===0)return'PM4';if(h%1000===0)return'PM2';if(h%5000===0)return'PM1';return'PM1';}
-  if(h%2000===0)return'PM4';if(h%1000===0)return'PM3';if(h%500===0)return'PM2';if(h%250===0)return'PM1';return'PM1';
-}
-function tiempoReq(tipo){return{PM1:'2 hrs',PM2:'4 hrs',PM3:'8 hrs',PM4:'1.5 dias'}[tipo]||'--';}
-const MESES=['ENERO','FEBRERO','MARZO','ABRIL','MAYO','JUNIO','JULIO','AGOSTO','SETIEMBRE','OCTUBRE','NOVIEMBRE','DICIEMBRE'];
-function fmtDMY(iso){if(!iso)return'--';const[y,m,d]=iso.split('-');return`${d}/${m}/${y.slice(2)}`;}
-
-let pmVista='programa',pmHist=[];
-function initPMS(){const H=hoy0(),wkHoy=isoWeek(H);if(!pmSemana.value){pmSemana.value=wkHoy;pmAnio.value=H.getFullYear();}document.getElementById('pmBuscarSemana').placeholder='Sem. actual: '+wkHoy;if(!pmProgramaWrap.innerHTML.trim()||pmProgramaWrap.dataset.semRend!==pmSemana.value+'_'+pmAnio.value)verPrograma();}
-function isoWeekSunday(y,w){const j=new Date(Date.UTC(y,0,4)),dw=j.getUTCDay()||7,m=new Date(j);m.setUTCDate(j.getUTCDate()-(dw-1)+(w-1)*7);const s=new Date(m);s.setUTCDate(m.getUTCDate()+6);s.setUTCHours(23,59,59,999);return s;}
-function isoWeekMonday(y,w){const j=new Date(Date.UTC(y,0,4)),dw=j.getUTCDay()||7,m=new Date(j);m.setUTCDate(j.getUTCDate()-(dw-1)+(w-1)*7);m.setUTCHours(0,0,0,0);return m;}
-function fechaProxEquipo(e){const H=hoy0(),freq=+e.frecuencia||0,hd=+e.hr_dia||0;if(!freq||hd<=0)return null;const c=mant(e),dd=Math.floor(c.restante/hd)+1;return new Date(H.getTime()+dd*86400000);}
-
-/* ----- Filtros toolbar (protegido para no romper login si falla) ----- */
-try{
-pmBuscar.oninput=()=>pmApplyAll();
-pmBuscarSemana.oninput=()=>pmApplyAll();
-pmBtnClearFiltros.onclick=()=>{pmBuscar.value='';pmBuscarSemana.value='';for(const k in _pmColF)delete _pmColF[k];pmApplyAll();};
-pmToggleHist.onclick=()=>verHistorial();
-}catch(err){console.error('PM-S bindings:',err);}
-
-const _pmColF={};
-function pmColFilter(inp){_pmColF[inp.dataset.pmfcol]=inp.value.toLowerCase().trim();pmApplyAll();}
-function pmApplyAll(){
-  requestAnimationFrame(()=>{
-  const q=(pmBuscar.value||'').toLowerCase().trim(),s=(pmBuscarSemana.value||'').trim();
-  document.querySelectorAll('#pmTable tbody tr[data-pm-row]').forEach(tr=>{
-    let ok=(!q||(tr.dataset.search||'').includes(q))&&(!s||tr.dataset.semana===s);
-    if(ok)for(const[k,v] of Object.entries(_pmColF)){if(!v)continue;const c=tr.querySelector(`[data-pmcol="${k}"]`);if(!c||(c.textContent||'').toLowerCase().indexOf(v)<0){ok=false;break;}}
-    tr.style.display=ok?'':'none';
-  });
-  });
-}
-
-
-/* ----- Fijar tops de sticky midiendo alturas reales ----- */
-function fixStickyTops(){
-  const t=document.getElementById('pmTable');if(!t||!t.tHead)return;
-  let top=0;
-  for(const row of t.tHead.rows){
-    for(const th of row.cells){th.style.top=top+'px';th.style.position='sticky';}
-    top+=row.getBoundingClientRect().height;
+/* ---- TIPO DE PM segun marca / modelo y el HR/KM programado ---- */
+function pmsTipoPM(marca,modelo,hrkm){
+  const h=Number(hrkm)||0; if(!h)return'';
+  const M=String(marca||'').toUpperCase(), MO=String(modelo||'').toUpperCase();
+  const es=(v,n)=>n>0&&h%n===0;
+  if(M.includes('MERCEDES')&&MO.includes('SPRINTER')){
+    if(es(h,90000))return'PM4'; if(es(h,60000))return'PM3'; if(es(h,5000))return'PM1'; return'';
   }
-}
-window.addEventListener('resize',()=>{if(pmVista==='programa')fixStickyTops();});
-
-/* ----- PROGRAMA SEMANAL ----- */
-function verPrograma(){
-  pmVista='programa';
-  pmProgramaWrap.classList.remove('hide');pmHistWrap.classList.add('hide');
-  pmToolbarProg.classList.remove('hide');pmToolbarHist.classList.add('hide');
-  const wk=+pmSemana.value,yr=+pmAnio.value;
-  if(!wk||!yr){pmProgramaWrap.innerHTML='<p style="padding:16px;color:#6b747d">Indica semana y anio.</p>';pmCount.textContent='--';return;}
-  const mon=isoWeekMonday(yr,wk),sun=isoWeekSunday(yr,wk);
-  const dias=[];for(let i=0;i<7;i++){const d=new Date(mon);d.setUTCDate(mon.getUTCDate()+i);dias.push(d);}
-  const DIAS_LAB=['lun','mar','mie','jue','vie','sab','dom'],hoyD=hoy0();
-  const mesLabel=MESES[mon.getUTCMonth()];
-  const due=[];
-  for(const e of datos){
-    // Excluir DESMOVILIZADOS y sin hr_dia
-    if((e.status||'').toUpperCase().includes('DESMOV'))continue;
-    if(!e.hr_dia||+e.hr_dia<=0)continue;
-    if(!e.hrkm_actual&&!e.pm_realizado)continue;
-    const f=fechaProxEquipo(e);if(!f)continue;
-    if(f<=sun){const c=mant(e),hp=c.proximo||0,tipo=calcTipoPM(e.marca||'',e.modelo||'',hp);due.push({e,c,f,tipo,hp});}
+  if(M.includes('MERCEDES')&&MO.includes('AROCS')){
+    if(es(h,6000))return'PM4'; if(es(h,3000))return'PM3'; if(es(h,2000))return'PM2'; if(es(h,1000))return'PM1'; return'';
   }
-  // Ordenamiento: 1°sem, 2°proyecto, 3°familia, 4°equipo
-  due.sort((a,b)=>{
-    const sa=isoWeek(a.f),sb=isoWeek(b.f);
-    if(sa!==sb)return sa-sb;
-    const pa=(a.e.cod_proyec||''),pb=(b.e.cod_proyec||'');
-    if(pa!==pb)return pa.localeCompare(pb);
-    const fa=+(a.e.familia||99),fb=+(b.e.familia||99);
-    if(fa!==fb)return fa-fb;
-    return(a.e.equipo||'').localeCompare(b.e.equipo||'');
-  });
-  pmCount.textContent=due.length+' equipo(s)';
-  if(!due.length){pmProgramaWrap.innerHTML=`<p style="padding:16px;color:#6b747d">No hay equipos con PM pendiente hasta la semana ${wk}/${yr}.</p>`;return;}
-
-  const B1='#002060',B2='#1a3a6b',B3='#006600',B4='#374557';
-  const thBase=`position:sticky;z-index:5;border:1px solid rgba(255,255,255,.2);white-space:nowrap;font-size:10px;padding:3px 4px`;
-  const thDias=dias.map((d,i)=>{
-    const dd=String(d.getUTCDate()).padStart(2,'0'),esDom=i===6;
-    const esHoy=d.getUTCFullYear()===hoyD.getFullYear()&&d.getUTCMonth()===hoyD.getMonth()&&d.getUTCDate()===hoyD.getDate();
-    const bg=esDom?'#b91c1c':esHoy?'#1d4ed8':'#002D86';
-    return `<th style="${thBase};background:${bg};color:#fff;text-align:center;min-width:28px;top:64px">${DIAS_LAB[i]}<br>${dd}</th>`;
-  }).join('');
-
-  const mkH=(bg,txt,extra='')=>`<th style="${thBase};background:${bg};color:#fff;top:64px${extra}">${txt}</th>`;
-  const mkHE=(bg,txt)=>`<th style="${thBase};background:${bg};color:#bfdbfe;top:64px" title="Editar: doble clic">${txt}*</th>`;
-  const fInp=(k,ph)=>`<input data-pmfcol="${k}" placeholder="${ph}" style="width:100%;box-sizing:border-box;border:1px solid #9ca3af;border-radius:3px;padding:1px 3px;font-size:9px" oninput="pmColFilter(this)">`;
-  const thF=(k,ph)=>`<th style="background:#e8eaf0;padding:2px;position:sticky;top:81px;z-index:5;border:1px solid #d1d5db">${k?fInp(k,ph):''}</th>`;
-
-  let h=`<div>
-  <table id="pmTable" style="width:100%;border-collapse:collapse;background:#fff;font-size:11px">
-    <thead>
-      <tr><th colspan="23" style="background:#1c232b;color:#fff;text-align:center;padding:4px 8px;font-size:10px;font-weight:700;letter-spacing:1px;position:sticky;top:0;z-index:6">AREA DE CONTROL DE EQUIPOS</th></tr>
-      <tr><th colspan="23" style="background:#f2f2f2;color:#002060;text-align:center;padding:10px 8px;font-size:16px;font-weight:800;position:sticky;top:25px;z-index:6;line-height:1.3">PROGRAMA DE MANTENIMIENTO PREVENTIVO SEMANAL &mdash; EQUIPOS &nbsp;|&nbsp; Semana ${wk} &middot; ${mesLabel} ${yr}</th></tr>
-      <tr>
-        ${mkH(B4,'#',';min-width:26px;text-align:center')}
-        ${mkH(B1,'Proyecto',';min-width:72px')}
-        ${mkH(B1,'Cod. SAP',';min-width:72px;font-family:monospace')}
-        ${mkH(B1,'Equipo / Vehiculo',';min-width:130px;width:auto;white-space:nowrap')}
-        ${mkH(B1,'Marca',';white-space:nowrap')}
-        ${mkH(B1,'Modelo',';white-space:nowrap')}
-        ${mkH(B1,'Serie/Placa',';white-space:nowrap')}
-        ${mkH(B1,'T.Req.',';min-width:50px;text-align:center')}
-        ${mkH(B1,'Tipo PM',';min-width:50px;text-align:center')}
-        ${mkHE(B1,'HR/KM')}
-        ${mkHE(B1,'F.Prog.')}
-        ${thDias}
-        ${mkHE(B3,'OM')}
-        ${mkHE(B3,'HR/KM Ejec.')}
-        ${mkHE(B3,'Fecha Ejec.')}
-        ${mkHE(B3,'Estado')}
-        ${mkH(B3,'Sem.',';text-align:center')}
-        
-      </tr>
-      <tr>
-        ${thF('','')+''+thF('proyec','Proyecto')+thF('sap','SAP')+thF('equipo','Equipo')+thF('marca','Marca')+thF('modelo','Modelo')}
-        ${thF('')+thF('')+thF('')+thF('')+thF('')}
-        ${dias.map(()=>thF('')).join('')}
-        ${thF('om','OM')+thF('')+thF('')+thF('estado','Estado')+thF('sem_col','Sem.')}
-      </tr>
-    </thead><tbody>`;
-
-  due.forEach(({e,c,f,tipo,hp},idx)=>{
-    const fiso=f.toISOString().slice(0,10),sem=isoWeek(f);
-    const fDia=f.getUTCDay(),diaIdx=fDia===0?6:fDia-1;
-    const celdaDias=dias.map((_,i)=>{const match=i===diaIdx,esDomC=i===6;const bgC=match?'#fef08a':esDomC?'#fee2e2':'';return`<td style="background:${bgC};text-align:center;border:1px solid #e5e7eb;padding:1px;font-size:10px;font-weight:${match?700:400}">${match?'PM':''}</td>`;}).join('');
-    const srch=[e.cod_proyec,e.cod_sap,e.equipo,e.marca,e.modelo].join(' ').toLowerCase();
-    const trBg=idx%2===0?'#fff':'#f8fafc';
-    const pillC=tipo==='PM4'?'bad':tipo==='PM3'?'warn':tipo==='PM2'?'ok':'na';
-    const TD='padding:1px 3px;border:1px solid #e5e7eb;height:22px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap';
-    const tdE=(f,tipo2,val,ph='')=>{const disp=tipo2==='date'||tipo2==='d'?fmtDMY(val):val;const ityp=tipo2==='sel'?'text':(tipo2==='n'||tipo2==='om')?'number':'date';return`<td style="${TD}" ondblclick="pmEditCell(this,'${tipo2}')"><span class="pm-disp">${disp||'--'}</span><input class="pm-inp" type="${ityp}" data-f="${f}" data-omfmt="${tipo2==='om'?1:''}" ${val?`value="${val}"`:`placeholder="${ph}"`} style="display:none;width:${tipo2==='d'?'auto':'78px'};border:1px solid var(--amber);border-radius:4px;padding:1px 3px;font-size:11px${(tipo2==='n'||tipo2==='om')?';text-align:right':''}"></td>`;};
-    const tdSel=(f,val)=>`<td style="${TD}" data-pmcol="estado" ondblclick="pmEditCell(this,'sel')"><span class="pm-disp">${val||'--'}</span><select class="pm-inp" data-f="${f}" style="display:none;border:1px solid var(--amber);border-radius:4px;padding:1px 3px;font-size:11px"><option value="">--</option><option>EJECUT.</option><option>REPROG.</option></select></td>`;
-    h+=`<tr data-pm-row="${e.id}" data-pm-id="${e.id}" data-search="${srch}" data-semana="${sem}" style="background:${trBg};cursor:pointer" onclick="pmSelRow(this)">
-      <td style="${TD};text-align:center;color:#6b747d;font-size:10px;cursor:default;white-space:nowrap"><button onclick="pmDelRow(event,'${e.id}')" style="border:none;background:none;color:#cbd2d9;cursor:pointer;font-size:10px;font-weight:600;padding:0 2px 0 0;line-height:1;vertical-align:middle;opacity:.6" title="Eliminar fila" onmouseenter="this.style.opacity='1';this.style.color='#e53e3e'" onmouseleave="this.style.opacity='.6';this.style.color='#cbd2d9'">&#10005;</button>${idx+1}</td>
-      <td style="${TD};font-weight:600;color:#1d4ed8" data-pmcol="proyec">${esc(e.cod_proyec||'')}</td>
-      <td style="${TD};font-family:monospace;font-size:10px" data-pmcol="sap">${esc(e.cod_sap||'')}</td>
-      <td style="${TD};white-space:nowrap;min-width:130px" data-pmcol="equipo">${esc(e.equipo||'')}</td>
-      <td style="${TD};font-size:10px;white-space:nowrap" data-pmcol="marca">${esc(e.marca||'')}</td>
-      <td style="${TD};font-size:10px;white-space:nowrap" data-pmcol="modelo">${esc(e.modelo||'')}</td>
-      <td style="${TD};font-size:10px;white-space:nowrap">${esc(e.serie_placa||'')}</td>
-      <td style="${TD};text-align:center;font-size:10px">${tiempoReq(tipo)}</td>
-      <td style="${TD};text-align:center"><span class="pill ${pillC}" style="font-size:9px">${tipo}</span></td>
-      ${tdE('hrkm_prog','n',hp,'HR/KM')}
-      ${tdE('fecha_prog','date',fiso,'')}
-      ${celdaDias}
-      ${tdE('om','om','','OM')}
-      ${tdE('hrkm_ejec','n','','HR/KM')}
-      ${tdE('fecha_ejec','date','','')}
-      ${tdSel('ejec_estado','')}
-      <td style="${TD};text-align:center;font-size:10px" data-pmcol="sem_col">${sem}</td>
-    </tr>`;
-  });
-  h+=`</tbody></table>
-  <div style="display:flex;gap:10px;padding:10px 12px;align-items:center;flex-wrap:wrap;border-top:1px solid var(--line);background:#fff;position:sticky;bottom:0">
-    <button class="act primary" id="btnConfirmarPMs">Confirmar seleccionados</button>
-    <p style="color:#6b747d;font-size:11px;margin:0">* Doble clic para editar. Llena HR/KM ejec. y fecha ejec., luego confirma.</p>
-  </div></div>`;
-  pmProgramaWrap.innerHTML=h;
-  pmProgramaWrap.dataset.semRend=wk+'_'+yr;
-  document.getElementById('btnConfirmarPMs').onclick=confirmarPMs;
-  requestAnimationFrame(fixStickyTops);
-}
-
-/* Seleccion fila verde */
-function pmSelRow(tr){document.querySelectorAll('#pmTable tr[data-pm-row]').forEach(r=>r.style.background=r.dataset.origBg||'');if(!tr.dataset.origBg)tr.dataset.origBg=tr.style.background;tr.style.background='#bbf7d0';}
-
-/* Doble click editar */
-function pmEditCell(td,tipo){
-  const disp=td.querySelector('.pm-disp'),inp=td.querySelector('.pm-inp');if(!inp)return;
-  if(tipo==='date'||tipo==='d'){disp.style.display='none';inp.style.display='';inp.focus();inp.onblur=()=>{disp.textContent=fmtDMY(inp.value)||'--';disp.style.display='';inp.style.display='none';};inp.onkeydown=e=>{if(e.key==='Enter')inp.blur();if(e.key==='Escape'){inp.style.display='none';disp.style.display='';}};return;}
-  if(tipo==='sel'){
-    // Convertir input en select si es select
-    const sel=document.createElement('select');sel.className='pm-inp';sel.data=inp.dataset.f;
-    sel.style.cssText='border:1px solid var(--amber);border-radius:4px;padding:1px 3px;font-size:11px';
-    ['--','EJECUT.','REPROG.'].forEach(o=>{const op=document.createElement('option');op.value=o==='--'?'':o;op.textContent=o;sel.appendChild(op);});
-    sel.onblur=()=>{disp.textContent=sel.value||'--';disp.style.display='';sel.remove();};
-    td.appendChild(sel);disp.style.display='none';sel.focus();return;
+  if(M.includes('VOLVO')){
+    if(es(h,6000))return'PM4'; if(es(h,3000))return'PM3'; if(es(h,1500))return'PM2'; if(es(h,500))return'PM1'; return'';
   }
-  disp.style.display='none';inp.style.display='';inp.focus();
-  try{inp.select&&inp.select();}catch(_){}
-  if(inp.dataset.omfmt)inp.oninput=()=>{inp.value=inp.value.replace(/[^0-9]/g,'').slice(0,9);};
-  inp.onblur=()=>{let v=inp.value;if(inp.dataset.omfmt&&v)v=String(parseInt(v,10));disp.textContent=v||'--';if(inp.dataset.omfmt)inp.value=v;disp.style.display='';inp.style.display='none';};
-  inp.onkeydown=e=>{if(e.key==='Enter')inp.blur();if(e.key==='Escape'){inp.style.display='none';disp.style.display='';}};
+  if(M.includes('TOYOTA')||M.includes('HINO')){
+    if(es(h,4000))return'PM4'; if(es(h,10000))return'PM2'; if(es(h,5000))return'PM1'; return'';
+  }
+  if(es(h,2000))return'PM4'; if(es(h,1000))return'PM3'; if(es(h,500))return'PM2'; if(es(h,250))return'PM1';
+  return'';
 }
-
-/* Eliminar fila del programa (no borra BD) */
-function pmDelRow(ev,id){
-  ev.stopPropagation();
-  const tr=ev.target.closest('tr'),e=datos.find(x=>String(x.id)===String(id));
-  if(!confirm('\u00bfAnular fila de "'+(e?.equipo||id)+'"?\n\nSe quitara del programa de esta semana.\nNingún dato del Maestro de Equipos se borra.'))return;
-  tr.remove();let n=0;
-  document.querySelectorAll('#pmTable tbody tr[data-pm-row]').forEach(r=>{const c=r.querySelector('td:first-child');if(c&&r.style.display!=='none')c.textContent=++n;});
-  pmCount.textContent=n+' equipo(s)';
+/* ---- TIEMPO REQ. ---- */
+function pmsTiempo(tipo,familia){
+  if(String(familia||'').toUpperCase().includes('VEH'))return'1 dia';
+  return {PM1:'2 hrs',PM2:'4 hrs',PM3:'8 hrs',PM4:'1.5 dias'}[tipo]||'';
 }
+/* ---- fila enriquecida con los datos del maestro ---- */
+function pmsFila(r){
+  const e = (r.maestro_id!=null?getE(r.maestro_id):null) || pmsPorSap(r.cod_sap);
+  const freq = e? (+e.frecuencia||0) : 0;
+  let hp = (r.hrkm_prog!=null&&r.hrkm_prog!=='')?+r.hrkm_prog:null;
+  if(hp==null && r.hrkm_ejec!=null && freq) hp = roundToFreq(+r.hrkm_ejec,freq);
+  const tipo = pmsTipoPM(e&&e.marca, e&&e.modelo, hp);
+  const est  = pmsEstado(r);
+  const fSem = r.fecha_prog || null;          // la SEMANA sale de Fecha Prog.
+  return {r,e,
+    proyec:r.cod_proyec||(e&&e.cod_proyec)||'', sap:r.cod_sap||'',
+    equipo:(e&&e.equipo)||'', marca:(e&&e.marca)||'', modelo:(e&&e.modelo)||'',
+    placa:(e&&e.serie_placa)||'', fam:e?famNum(e):99,
+    hp, tipo, treq:pmsTiempo(tipo,e&&e.familia), est,
+    sem: fSem? isoWeek(new Date(fSem+'T00:00:00')) : '',
+    anio: fSem? +String(fSem).slice(0,4) : 0};
+}
+let PMS_SAPX=new Map();
+function pmsReindexSap(){PMS_SAPX=new Map();for(const e of datos){const k=String(e.cod_sap||'').trim();if(k&&!PMS_SAPX.has(k))PMS_SAPX.set(k,e);}}
+function pmsPorSap(sap){return PMS_SAPX.get(String(sap||'').trim())||null;}
+/* ---- ESTADO ---- */
+function pmsEstado(r){
+  const lleno = r.om && r.hrkm_ejec!=null && r.hrkm_ejec!=='' && r.fecha_ejec;
+  if(lleno) return 'EJECUTADO';
+  const H=hoy0(), dow=(H.getDay()+6)%7;
+  const lunes=new Date(H.getTime()-dow*86400000); lunes.setHours(0,0,0,0);
+  if(r.fecha_prog && new Date(r.fecha_prog+'T00:00:00') < lunes) return 'PENDIENTE';
+  return 'PROGRAMADO';
+}
+/* ---- reparto de PM en los dias de la semana (balancea y evita domingo) ---- */
+function pmsBalance(filas,lunes){
+  const idxDe=f=>{
+    const fp=f.r.fecha_prog; if(!fp)return null;
+    const d=new Date(fp+'T00:00:00'); const off=Math.round((d-lunes)/86400000);
+    return (off>=0&&off<=6)?off:null;
+  };
+  const dentro=filas.filter(f=>idxDe(f)!==null);
+  if(!dentro.length)return new Map();
+  const cap=Math.max(1,Math.ceil(dentro.length/6));      // se reparte en lun..sab
+  const cubos=[[],[],[],[],[],[],[]];
+  for(const f of dentro){let i=idxDe(f); if(i===6)i=5; cubos[i].push(f);}
+  for(let i=0;i<6;i++){
+    while(cubos[i].length>cap){
+      let dest=-1;
+      for(let d=1;d<6&&dest<0;d++){
+        if(i+d<6&&cubos[i+d].length<cap)dest=i+d;
+        else if(i-d>=0&&cubos[i-d].length<cap)dest=i-d;
+      }
+      if(dest<0)break;
+      cubos[dest].push(cubos[i].pop());
+    }
+  }
+  const m=new Map();
+  cubos.forEach((arr,i)=>arr.forEach(f=>m.set(f.r.id,i)));
+  return m;
+}
+/* ---- carga ---- */
+async function pmsCargar(){
+  const {data,error}=await sb.from('pm_prog').select('*').order('fecha_prog',{ascending:true});
+  if(error){pmsBody.innerHTML=`<tr><td colspan="23" style="padding:20px;color:#b91c1c">${esc(error.message)}</td></tr>`;return;}
+  pmsData=data||[]; pmsCargado=true; pmsRender();
+}
+/* ---- encabezado ---- */
+function pmsHead(){
+  const wk=+pmsSemana.value||isoWeek(hoy0()), yr=+pmsAnio.value||hoy0().getFullYear();
+  const lun=isoWeekMonday(yr,wk), hoyISO=hoy0().toISOString().slice(0,10);
+  const dias=[];for(let i=0;i<7;i++){const d=new Date(lun);d.setUTCDate(lun.getUTCDate()+i);dias.push(d);}
+  const B='#002060', V='#006600', G='#595959';
+  const th=(t,st='')=>`<th style="${st}">${t}</th>`;
+  const opts=[];for(let w=1;w<=53;w++)opts.push(`<option value="${w}" ${w===wk?'selected':''}>Semana - ${w}</option>`);
 
-pmVer.onclick=verPrograma;pmSemana.onchange=verPrograma;pmAnio.onchange=verPrograma;
+  let h=`<tr class="pms-r1"><th colspan="23" style="background:#1c232b;letter-spacing:1px;font-weight:700">ÁREA DE CONTROL DE EQUIPOS</th></tr>`;
+  h+=`<tr class="pms-r2"><th colspan="23" style="background:#f2f2f2;color:#002060;font-size:14px;font-weight:800">PROGRAMA DE MANTENIMIENTO PREVENTIVO SEMANAL — EQUIPOS</th></tr>`;
+  h+=`<tr class="pms-r3">${th('',`background:${B};border:none`)}<th colspan="10" style="background:${B};border:none"></th>`
+    +`<th colspan="7" style="background:#bfbfbf;color:#002060;font-weight:800">${PMS_MES[lun.getUTCMonth()]} ${lun.getUTCFullYear()}</th>`
+    +`<th colspan="3" style="background:#1c232b;font-weight:700">EJECUCIÓN</th><th colspan="2" style="background:${G}"></th></tr>`;
+  h+=`<tr class="pms-r4"><th colspan="11" style="background:${B};border:none"></th>`
+    +`<th colspan="7" style="background:${B};padding:1px"><select id="pmsSelSem" style="width:130px;border:none;border-radius:4px;font-size:11px;padding:1px 3px;font-weight:700;color:#002060">${opts.join('')}</select>`
+    +` <input id="pmsAnioIn" type="number" value="${yr}" style="width:56px;border:none;border-radius:4px;font-size:11px;padding:1px 3px;text-align:center"></th>`
+    +`<th colspan="5" style="background:#1c232b"></th></tr>`;
+  h+=`<tr class="pms-r5"><th colspan="11" style="background:${B};border:none"></th>`;
+  dias.forEach((d,i)=>{h+=`<th style="background:${i===6?'#C00000':B};width:26px;min-width:26px">${PMS_DIA[i]}</th>`;});
+  h+=`<th colspan="5" style="background:#1c232b"></th></tr>`;
+  h+=`<tr class="pms-r6"><th colspan="11" style="background:${B};border:none"></th>`;
+  dias.forEach((d,i)=>{const iso=d.toISOString().slice(0,10),esH=iso===hoyISO;
+    h+=`<th style="background:${esH?'#F2A900':(i===6?'#C00000':B)};color:${esH?'#1a1200':'#fff'};font-weight:${esH?800:400}">${String(d.getUTCDate()).padStart(2,'0')}</th>`;});
+  h+=`<th colspan="5" style="background:#1c232b"></th></tr>`;
 
-/* ----- Boton + MNTTO ----- */
-btnAddMntto.onclick=()=>{
-  const opts=datos.map(e=>`<option value="${e.id}">${esc(e.cod_sap||'')} - ${esc(e.equipo||'')}</option>`).join('');
-  document.body.insertAdjacentHTML('beforeend',`<div id="pmModal" style="position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:9999;display:flex;align-items:center;justify-content:center">
-    <div style="background:#fff;border-radius:12px;padding:22px;width:430px;max-width:95vw;box-shadow:0 20px 60px rgba(0,0,0,.3)">
-      <h3 style="margin:0 0 14px;font-size:14px;color:#1c232b">Agregar mantenimiento manual</h3>
-      <div style="margin-bottom:10px"><label style="font-size:11px;font-weight:700;color:#6b747d;display:block;margin-bottom:3px">EQUIPO (del Maestro)</label>
-        <select id="mntEq" style="width:100%;padding:7px;border:1px solid #d1d5db;border-radius:7px;font-size:13px"><option value="">Selecciona...</option>${opts}</select></div>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px">
-        <div><label style="font-size:11px;font-weight:700;color:#6b747d;display:block;margin-bottom:3px">TIPO PM</label>
-          <select id="mntTipo" style="width:100%;padding:7px;border:1px solid #d1d5db;border-radius:7px;font-size:13px"><option>PM1</option><option>PM2</option><option>PM3</option><option>PM4</option></select></div>
-        <div><label style="font-size:11px;font-weight:700;color:#6b747d;display:block;margin-bottom:3px">OM</label>
-          <input id="mntOM" type="number" step="1" min="0" max="999999999" style="width:100%;padding:7px;border:1px solid #d1d5db;border-radius:7px;font-size:13px" placeholder="N. OM"></div>
-        <div><label style="font-size:11px;font-weight:700;color:#6b747d;display:block;margin-bottom:3px">HR/KM Prog.</label>
-          <input id="mntHRProg" type="number" style="width:100%;padding:7px;border:1px solid #d1d5db;border-radius:7px;font-size:13px"></div>
-        <div><label style="font-size:11px;font-weight:700;color:#6b747d;display:block;margin-bottom:3px">Fecha Prog.</label>
-          <input id="mntFProg" type="date" style="width:100%;padding:7px;border:1px solid #d1d5db;border-radius:7px;font-size:13px"></div>
-        <div><label style="font-size:11px;font-weight:700;color:#6b747d;display:block;margin-bottom:3px">HR/KM Ejec.</label>
-          <input id="mntHREjec" type="number" style="width:100%;padding:7px;border:1px solid #d1d5db;border-radius:7px;font-size:13px"></div>
-        <div><label style="font-size:11px;font-weight:700;color:#6b747d;display:block;margin-bottom:3px">Fecha Ejec.</label>
-          <input id="mntFEjec" type="date" style="width:100%;padding:7px;border:1px solid #d1d5db;border-radius:7px;font-size:13px"></div>
-      </div>
-      <div><label style="font-size:11px;font-weight:700;color:#6b747d;display:block;margin-bottom:3px">Estado</label>
-        <select id="mntEstado" style="width:100%;padding:7px;border:1px solid #d1d5db;border-radius:7px;font-size:13px"><option value="">--</option><option>EJECUT.</option><option>REPROG.</option></select></div>
-      <div style="display:flex;gap:10px;margin-top:16px;justify-content:flex-end">
-        <button onclick="document.getElementById('pmModal').remove()" style="padding:8px 16px;border:1px solid #d1d5db;border-radius:7px;background:#f9fafb;cursor:pointer;font-size:13px">Cancelar</button>
-        <button onclick="guardarMnttoManual()" style="padding:8px 16px;border:none;border-radius:7px;background:#0f766e;color:#fff;cursor:pointer;font-size:13px;font-weight:700">Guardar</button>
-      </div>
-    </div></div>`);
-  const _omInp=document.getElementById('mntOM');if(_omInp)_omInp.oninput=()=>{_omInp.value=_omInp.value.replace(/[^0-9]/g,'').slice(0,9);};
+  const cols=[['#',B],['Proyecto',B],['Cód. SAP<br>JJC',B],['Equipo / Vehículo',B],['Marca',B],['Modelo',B],['Serie/Placa',B],
+              ['Tiempo<br>Req.',B],['TIPO DE<br>PM',B],['HR/KM<br>Prog.',B],['Fecha<br>Prog.',B]];
+  h+='<tr class="pms-cols">';
+  cols.forEach(([l,bg])=>h+=`<th style="background:${bg}"><div class="hlab">${l}</div></th>`);
+  dias.forEach((d,i)=>h+=`<th style="background:${i===6?'#C00000':B}"></th>`);
+  [['OM',V],['HR / KM',V],['FECHA<br>EJECUCION',V],['ESTADO',G],['SEMANA',G]].forEach(([l,bg])=>h+=`<th style="background:${bg}"><div class="hlab">${l}</div></th>`);
+  h+='</tr>';
+
+  const f=(k,ph)=>`<th style="background:#e8eaf0;padding:1px 2px"><input class="colf" data-pmsf="${k}" placeholder="${ph||''}" value="${esc(pmsColF[k]||'')}"></th>`;
+  h+='<tr class="pms-filt">'+f('_n','#')+f('proyec','Proyecto')+f('sap','SAP')+f('equipo','Equipo')+f('marca','Marca')+f('modelo','Modelo')+f('placa','Serie')
+    +'<th style="background:#e8eaf0"></th><th style="background:#e8eaf0"></th><th style="background:#e8eaf0"></th><th style="background:#e8eaf0"></th>';
+  dias.forEach(()=>h+='<th style="background:#e8eaf0"></th>');
+  h+=f('om','OM')+f('hrkm','HR/KM')+f('fejec','Fecha')+f('est','Estado')+f('sem','Sem.')+'</tr>';
+
+  pmsThead.innerHTML=h;
+  const ss=document.getElementById('pmsSelSem'); if(ss)ss.onchange=()=>{pmsSemana.value=ss.value;pmsRender();};
+  const ai=document.getElementById('pmsAnioIn'); if(ai)ai.onchange=()=>{pmsAnio.value=ai.value;pmsRender();};
+  pmsFixTops();
+}
+function pmsFixTops(){
+  const t=pmsThead; if(!t)return; let top=0;
+  for(const row of t.rows){for(const th of row.cells){th.style.position='sticky';th.style.top=top+'px';}top+=row.getBoundingClientRect().height;}
+}
+/* ---- cuerpo ---- */
+function pmsRender(){
+  pmsReindexSap();
+  const wk=+pmsSemana.value||isoWeek(hoy0()), yr=+pmsAnio.value||hoy0().getFullYear();
+  pmsHead();
+  const filas=pmsData.map(pmsFila).sort((a,b)=>
+      String(a.proyec).localeCompare(String(b.proyec)) || a.fam-b.fam
+      || String(a.equipo).localeCompare(String(b.equipo))
+      || (a.anio||0)-(b.anio||0) || (a.sem||99)-(b.sem||99));
+  const lun=isoWeekMonday(yr,wk);
+  const bal=pmsBalance(filas.filter(f=>f.est!=='EJECUTADO'),lun);
+  const dias=[];for(let i=0;i<7;i++){const d=new Date(lun);d.setUTCDate(lun.getUTCDate()+i);dias.push(d);}
+  const PILL={PM1:'na',PM2:'ok',PM3:'warn',PM4:'bad'};
+  const EST={PROGRAMADO:'#1d4ed8',EJECUTADO:'#15803d',PENDIENTE:'#b45309'};
+  let h='';
+  filas.forEach(f=>{
+    const r=f.r, sel=(pmsSel!=null&&String(pmsSel)===String(r.id))?' rowsel-g':'';
+    const di=bal.has(r.id)?bal.get(r.id):-1;
+    let celdas='';
+    for(let i=0;i<7;i++){
+      const on=i===di;
+      celdas+=`<td class="pms-day${i===6?' dom':''}" style="${on?'background:#FEF08A;font-weight:800;color:#1a1200':''}">${on?(f.tipo||'PM'):''}</td>`;
+    }
+    h+=`<tr data-pmsid="${r.id}"${sel?' class="'+sel.trim()+'"':''}>`
+     +`<td class="idx"><span class="rn">0</span><button class="delrow" data-pmsdel="${r.id}" title="Eliminar fila">✕</button></td>`
+     +`<td class="pms-c">${esc(f.proyec)}</td>`
+     +`<td class="pms-c mono">${esc(f.sap)}</td>`
+     +`<td class="pms-l">${esc(f.equipo)}</td>`
+     +`<td class="pms-l">${esc(f.marca)}</td>`
+     +`<td class="pms-l">${esc(f.modelo)}</td>`
+     +`<td class="pms-c">${esc(f.placa)}</td>`
+     +`<td class="pms-c">${esc(f.treq)}</td>`
+     +`<td class="pms-c">${f.tipo?`<span class="pill ${PILL[f.tipo]}">${f.tipo}</span>`:''}</td>`
+     +`<td class="pms-c mono">${f.hp!=null?Number(f.hp).toLocaleString('es-PE'):''}</td>`
+     +`<td class="pms-c">${fmtDate(r.fecha_prog)}</td>`
+     +celdas
+     +`<td class="pms-c mono pms-ed" data-pmsk="om">${esc(r.om||'')}</td>`
+     +`<td class="pms-c mono pms-ed" data-pmsk="hrkm_ejec">${r.hrkm_ejec!=null?Number(r.hrkm_ejec).toLocaleString('es-PE'):''}</td>`
+     +`<td class="pms-c pms-ed" data-pmsk="fecha_ejec">${fmtDate(r.fecha_ejec)}</td>`
+     +`<td class="pms-c" style="color:${EST[f.est]};font-weight:700">${f.est}</td>`
+     +`<td class="pms-c">${f.sem||''}</td></tr>`;
+  });
+  pmsBody.innerHTML=h||`<tr><td colspan="23" style="padding:24px;text-align:center;color:#6b747d">Sin registros. Usa “＋ MNTTO” o “Programar mntto” desde Equipos.</td></tr>`;
+  pmsFilas=filas; pmsIndexar(); pmsAplicar();
+}
+let pmsFilas=[], PMSX=[];
+function pmsIndexar(){
+  PMSX=[]; const byId=new Map(pmsFilas.map(f=>[String(f.r.id),f]));
+  pmsBody.querySelectorAll('tr[data-pmsid]').forEach(tr=>{
+    const f=byId.get(tr.dataset.pmsid); if(!f)return;
+    PMSX.push({f,tr,rn:tr.querySelector('.rn')});
+  });
+}
+function pmsAplicar(){
+  const q=(pmsBuscarSem.value||'').trim();
+  const cf=[];for(const k in pmsColF){const v=(pmsColF[k]||'').trim().toLowerCase();if(v)cf.push([k,v]);}
+  const estF=(pmsColF['est']||'').toLowerCase();
+  let n=0,ver=0;
+  for(const m of PMSX){
+    const f=m.f,r=f.r; let ok=true;
+    if(f.est==='EJECUTADO' && !pmsVerEjec && !estF.includes('ejec')) ok=false;
+    if(ok&&q&&String(f.sem)!==q) ok=false;
+    if(ok)for(const [k,v] of cf){
+      const val = k==='_n'?'' : k==='om'?String(r.om||'') : k==='hrkm'?String(r.hrkm_ejec??'')
+                : k==='fejec'?fmtDate(r.fecha_ejec) : k==='est'?f.est : k==='sem'?String(f.sem)
+                : String(f[k]??'');
+      if(!val.toLowerCase().includes(v)){ok=false;break;}
+    }
+    const d=ok?'':'none';
+    if(m.tr.style.display!==d)m.tr.style.display=d;
+    if(ok){n++;if(m.rn&&m.rn.textContent!=n)m.rn.textContent=n;}
+    if(f.est==='EJECUTADO')ver++;
+  }
+  pmsCount.textContent=n+' fila(s)';
+  pmsCountEjec.textContent=ver+' ejecutado(s)';
+}
+let pmsFiltT; function pmsAplicarD(){clearTimeout(pmsFiltT);pmsFiltT=setTimeout(pmsAplicar,80);}
+
+/* ---- interaccion ---- */
+pmsThead.addEventListener('input',ev=>{const k=ev.target.dataset.pmsf;if(!k)return;pmsColF[k]=ev.target.value;pmsAplicarD();});
+pmsBuscarSem.oninput=pmsAplicarD;
+pmsBtnVerEjec.onclick=()=>{pmsVerEjec=!pmsVerEjec;pmsBtnVerEjec.textContent=pmsVerEjec?'Ocultar ejecutados':'Mostrar ejecutados';pmsBtnVerEjec.classList.toggle('primary',pmsVerEjec);pmsAplicar();};
+pmsBtnClear.onclick=()=>{pmsColF={};pmsBuscarSem.value='';pmsVerEjec=false;pmsBtnVerEjec.textContent='Mostrar ejecutados';pmsBtnVerEjec.classList.remove('primary');pmsRender();};
+pmsBtnHoy.onclick=()=>{const H=hoy0();pmsSemana.value=isoWeek(H);pmsAnio.value=H.getFullYear();pmsRender();};
+
+pmsBody.addEventListener('click',async ev=>{
+  const del=ev.target.dataset.pmsdel;
+  if(del){
+    const f=pmsFilas.find(x=>String(x.r.id)===String(del));
+    if(!confirm('¿Eliminar esta fila del PM-S?\n\n'+(f?(f.sap+' · '+f.equipo):'')+'\n\nNo se modifica ningún dato de la pestaña Equipos.'))return;
+    const {error}=await sb.from('pm_prog').delete().eq('id',del);
+    if(error)return alert('No se pudo eliminar: '+error.message);
+    pmsData=pmsData.filter(x=>String(x.id)!==String(del)); pmsRender(); return;
+  }
+  const tr=ev.target.closest('tr[data-pmsid]'); if(!tr)return;
+  pmsBody.querySelectorAll('tr.rowsel-g').forEach(r=>r.classList.remove('rowsel-g'));
+  tr.classList.add('rowsel-g'); pmsSel=tr.dataset.pmsid;
+  pmsBody.querySelectorAll('td.cellsel-g').forEach(c=>c.classList.remove('cellsel-g'));
+  const td=ev.target.closest('td'); if(td){td.classList.add('cellsel-g');pmsSelCell=td;}
+});
+pmsBody.addEventListener('dblclick',ev=>{
+  const td=ev.target.closest('td.pms-ed'); if(!td||td.dataset.editing)return;
+  const tr=td.closest('tr[data-pmsid]'), r=pmsData.find(x=>String(x.id)===String(tr.dataset.pmsid)); if(!r)return;
+  const k=td.dataset.pmsk; let ctrl;
+  if(k==='fecha_ejec') ctrl=`<input type="date" value="${r.fecha_ejec||''}">`;
+  else if(k==='hrkm_ejec') ctrl=`<input type="number" step="1" value="${r.hrkm_ejec??''}">`;
+  else ctrl=`<input type="number" step="1" min="0" max="999999999" value="${r.om??''}">`;
+  td.dataset.editing='1'; td.innerHTML=ctrl;
+  const inp=td.querySelector('input'); inp.focus(); try{inp.select();}catch(_){}
+  if(k==='om')inp.oninput=()=>{inp.value=inp.value.replace(/[^0-9]/g,'').slice(0,9);};
+});
+pmsBody.addEventListener('focusout',ev=>{
+  const td=ev.target.closest&&ev.target.closest('td[data-editing]'); if(!td)return;
+  pmsCommit(td,ev.target.value);
+});
+pmsBody.addEventListener('keydown',ev=>{
+  const td=ev.target.closest&&ev.target.closest('td[data-editing]'); if(!td)return;
+  if(ev.key==='Enter'){ev.preventDefault();ev.target.blur();}
+  else if(ev.key==='Escape'){delete td.dataset.editing;pmsRender();}
+});
+async function pmsCommit(td,raw){
+  const tr=td.closest('tr[data-pmsid]'), id=tr.dataset.pmsid, k=td.dataset.pmsk;
+  const r=pmsData.find(x=>String(x.id)===String(id)); delete td.dataset.editing;
+  if(!r){pmsRender();return;}
+  let val = raw===''?null : (k==='om'? String(parseInt(raw,10)) : k==='hrkm_ejec'? Number(raw) : raw);
+  if((r[k]??null)===(val??null)){pmsRender();return;}
+  r[k]=val;
+  const {error}=await sb.from('pm_prog').update({[k]:val}).eq('id',id);
+  if(error){appFoot.textContent='⚠️ No se guardó: '+error.message;pmsRender();return;}
+  // reflejar en el maestro: HR/KM ult. y F. ult.
+  if((k==='hrkm_ejec'||k==='fecha_ejec') && r.maestro_id){
+    const up={}; if(r.hrkm_ejec!=null)up.hrkm_ult_mntto=r.hrkm_ejec; if(r.fecha_ejec)up.fecha_ult_mntto=r.fecha_ejec;
+    if(Object.keys(up).length){
+      await sb.from('maestro').update(up).eq('id',r.maestro_id);
+      const e=getE(r.maestro_id); if(e){Object.assign(e,up);delete e.__mant;if(typeof patchRow==='function')patchRow(e);}
+    }
+  }
+  appFoot.textContent='Guardado ✓';setTimeout(()=>appFoot.textContent='Doble clic en una celda para editar · los cambios se guardan solos.',1200);
+  pmsRender();
+}
+/* ---- alta de filas ---- */
+function pmsElegibles(){
+  return datos.filter(e=>String(e.status||'').toUpperCase()!=='DESMOVILIZADO' && (+e.hr_dia||0)>0)
+              .sort((a,b)=>String(a.cod_sap||'').localeCompare(String(b.cod_sap||'')));
+}
+async function pmsAgregar(e){
+  if(!e)return;
+  if(String(e.status||'').toUpperCase()==='DESMOVILIZADO'){alert('El equipo está DESMOVILIZADO, no se puede programar.');return;}
+  if(!(+e.hr_dia||0)){alert('El equipo no tiene HR/día registrado, no se puede calcular su programación.');return;}
+  const c=mant(e);
+  const fila={maestro_id:e.id,cod_proyec:e.cod_proyec||null,cod_sap:e.cod_sap,
+    hrkm_prog:c.proximo||null, fecha_prog:c.fproxDate?c.fproxDate.toISOString().slice(0,10):null};
+  const {data,error}=await sb.from('pm_prog').insert(fila).select().single();
+  if(error)return alert('No se pudo agregar: '+error.message);
+  pmsData.push(data);
+  if(data.fecha_prog){const d=new Date(data.fecha_prog+'T00:00:00');pmsSemana.value=isoWeek(d);pmsAnio.value=d.getFullYear();}
+  pmsSel=data.id; pmsRender();
+}
+pmsBtnAdd.onclick=()=>{
+  const el=pmsElegibles();
+  if(!el.length)return alert('No hay equipos elegibles (se excluyen DESMOVILIZADOS y los que no tienen HR/día).');
+  const opts=el.map(e=>`<option value="${e.id}">${esc(e.cod_sap)} — ${esc(e.equipo)} (${esc(e.cod_proyec||'')})</option>`).join('');
+  document.body.insertAdjacentHTML('beforeend',
+   `<div id="pmsModal" style="position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:9999;display:flex;align-items:center;justify-content:center">
+      <div style="background:#fff;border-radius:12px;padding:22px;width:440px;max-width:94vw;box-shadow:0 20px 60px rgba(0,0,0,.3)">
+        <h3 style="margin:0 0 6px;font-size:15px">Agregar mantenimiento</h3>
+        <p style="margin:0 0 14px;font-size:12px;color:#6b747d">Solo equipos de la pestaña Equipos. HR/KM y Fecha Prog. se calculan solos.</p>
+        <select id="pmsModalEq" size="10" style="width:100%;padding:6px;border:1px solid #d1d5db;border-radius:8px;font-size:12px">${opts}</select>
+        <div style="display:flex;gap:10px;margin-top:16px;justify-content:flex-end">
+          <button class="act ghost" onclick="document.getElementById('pmsModal').remove()">Cancelar</button>
+          <button class="act primary" id="pmsModalOk">Agregar</button>
+        </div>
+      </div></div>`);
+  document.getElementById('pmsModalOk').onclick=async()=>{
+    const id=document.getElementById('pmsModalEq').value;
+    document.getElementById('pmsModal').remove();
+    await pmsAgregar(getE(id));
+  };
 };
-
-async function guardarMnttoManual(){
-  const id=document.getElementById('mntEq').value;
-  if(!id){alert('Selecciona un equipo.');return;}
-  const e=datos.find(x=>String(x.id)===String(id));
-  const hrkm_ejec=document.getElementById('mntHREjec').value,fecha_ejec=document.getElementById('mntFEjec').value;
-  const hrkm_prog=document.getElementById('mntHRProg').value,tipo=document.getElementById('mntTipo').value;
-  const om=document.getElementById('mntOM').value,estado=document.getElementById('mntEstado').value;
-  const wk=+pmSemana.value,yr=+pmAnio.value;
-  const reg={maestro_id:e.id,cod_sap:e.cod_sap,equipo:e.equipo,marca:e.marca||null,tipo_pm:tipo,semana:wk,anio:yr,
-    hrkm_programado:hrkm_prog?Number(hrkm_prog):null,fecha_programada:document.getElementById('mntFProg').value||null,
-    ot:om?String(parseInt(om,10)):null,hrkm_ejecucion:hrkm_ejec?Number(hrkm_ejec):null,fecha_ejecucion:fecha_ejec||null,ejecutado_por:estado||null};
-  const{error}=await sb.from('pm_historial').insert(reg);
-  if(error){alert('Error: '+error.message);return;}
-  if(hrkm_ejec&&fecha_ejec){await sb.from('maestro').update({hrkm_ult_mntto:Number(hrkm_ejec),fecha_ult_mntto:fecha_ejec,pm_realizado:hrkm_prog?Number(hrkm_prog):null}).eq('id',e.id);await cargar();}
-  document.getElementById('pmModal').remove();
-  appFoot.textContent='Mntto manual guardado.';setTimeout(()=>appFoot.textContent='Doble clic en una celda para editar.',1500);
+/* ---- entrada desde la pestaña Equipos ---- */
+async function programarDesdeEquipos(){
+  if(!selId){alert('Primero selecciona un equipo haciendo clic en su número (#).');return;}
+  const e=getE(selId); if(!e)return;
+  document.querySelector('nav button[data-tab="pms"]').click();
+  if(!pmsCargado)await pmsCargar();
+  await pmsAgregar(e);
 }
-
-/* ----- Confirmar PMs ----- */
-async function confirmarPMs(){
-  const wk=+pmSemana.value,yr=+pmAnio.value,filas=pmProgramaWrap.querySelectorAll('tr[data-pm-id]');
-  const registros=[],acts=[];
-  for(const tr of filas){
-    if(tr.style.display==='none')continue;
-    const val=f=>{const inp=tr.querySelector(`[data-f="${f}"]`);return inp?(inp.tagName==='SELECT'?inp.value:inp.value):''};
-    const hrkm_ejec=val('hrkm_ejec'),fecha_ejec=val('fecha_ejec');
-    if(!hrkm_ejec||!fecha_ejec)continue;
-    const id=tr.dataset.pmId,e=datos.find(x=>String(x.id)===String(id));if(!e)continue;
-    const hrkm_prog=val('hrkm_prog'),tipo=e.marca?calcTipoPM(e.marca,e.modelo||'',+hrkm_prog):'PM';
-    const estado_val=val('ejec_estado');
-    registros.push({maestro_id:e.id,cod_sap:e.cod_sap,equipo:e.equipo,marca:e.marca||null,tipo_pm:tipo,semana:wk,anio:yr,
-      hrkm_programado:hrkm_prog?Number(hrkm_prog):null,fecha_programada:val('fecha_prog')||null,
-      ot:(function(){const o=val('om');return o?String(parseInt(o,10)):null;})(),hrkm_ejecucion:Number(hrkm_ejec),fecha_ejecucion:fecha_ejec,ejecutado_por:estado_val||null});
-    acts.push({id:e.id,hrkm:Number(hrkm_ejec),fecha:fecha_ejec,hrkm_prog:hrkm_prog?Number(hrkm_prog):null});
-  }
-  if(!registros.length){alert('Completa al menos una fila con HR/KM ejec. y fecha de ejecucion.');return;}
-  if(!confirm('Confirmar '+registros.length+' PM(s)?\n\nQuedan PERMANENTES en el historial.'))return;
-  const btn=document.getElementById('btnConfirmarPMs');btn.disabled=true;btn.textContent='Guardando...';
-  const{error:e1}=await sb.from('pm_historial').insert(registros);
-  if(e1){alert('Error: '+e1.message);btn.disabled=false;btn.textContent='Confirmar seleccionados';return;}
-  for(const u of acts)await sb.from('maestro').update({hrkm_ult_mntto:u.hrkm,fecha_ult_mntto:u.fecha,pm_realizado:u.hrkm_prog}).eq('id',u.id);
-  await cargar();verPrograma();
-  appFoot.textContent='Confirmados '+registros.length+' PM(s).';setTimeout(()=>appFoot.textContent='Doble clic en una celda para editar.',2000);
+function initPMS(){
+  if(!pmsSemana.value){const H=hoy0();pmsSemana.value=isoWeek(H);pmsAnio.value=H.getFullYear();}
+  if(!pmsCargado)pmsCargar(); else pmsRender();
 }
-
-/* ----- HISTORIAL ----- */
-let _histPage=0,_histLimit=100,_pmHistData=[];
-async function verHistorial(page=0){
-  pmVista='historial';pmProgramaWrap.classList.add('hide');pmHistWrap.classList.remove('hide');
-  pmToolbarProg.classList.add('hide');pmToolbarHist.classList.remove('hide');
-  if(page===0)pmHistWrap.innerHTML='<p style="color:#6b747d;padding:16px">Cargando historial...</p>';
-  _histPage=page;const desde=page*_histLimit,hasta=desde+_histLimit-1;
-  const{data,error,count}=await sb.from('pm_historial').select('*',{count:'exact'}).order('fecha_ejecucion',{ascending:false}).range(desde,hasta);
-  if(error){pmHistWrap.innerHTML=`<p style="color:#b91c1c;padding:10px">${error.message}</p>`;return;}
-  if(page===0)_pmHistData=data;else _pmHistData=[..._pmHistData,...data];
-  renderHistorial(count);
-}
-function renderHistorial(count){
-  const q=(document.getElementById('pmHistBuscar')?.value||'').toLowerCase().trim();
-  const fPM=(document.getElementById('pmHistFiltroPM')?.value||'');
-  let dh=_pmHistData;
-  if(q)dh=dh.filter(r=>(r.cod_sap||'').toLowerCase().includes(q)||(r.equipo||'').toLowerCase().includes(q));
-  if(fPM)dh=dh.filter(r=>r.tipo_pm===fPM);
-  const hayMas=count&&_pmHistData.length<count;
-  document.getElementById('pmHistCount').textContent=dh.length+' registros';
-  if(!dh.length){pmHistWrap.innerHTML='<p style="color:#6b747d;padding:16px">Sin registros.</p>';return;}
-  const TH=`background:#2a333d;color:#fff;padding:6px 5px;white-space:nowrap;border:1px solid #3d4f5c;position:sticky;top:0`;
-  let h=`<div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse;background:#fff;font-size:11px">
-    <thead><tr>${['#','Fecha Ejec.','Proyecto','Cod. SAP','Equipo','Marca','Tipo PM','HR/KM Ejec.','OM/OT','Sem.','Anio','Estado'].map(x=>`<th style="${TH}">${x}</th>`).join('')}</tr></thead><tbody>`;
-  dh.forEach((r,i)=>{
-    const bg=i%2===0?'#fff':'#f8fafc',pc=r.tipo_pm==='PM4'?'bad':r.tipo_pm==='PM3'?'warn':r.tipo_pm==='PM2'?'ok':'na';
-    const est=r.ejecutado_por||'--',ec=est==='EJECUT.'?'#15803d':est==='REPROG.'?'#b45309':'#6b747d';
-    const TD2='padding:4px 5px;border-bottom:1px solid #eceef1';
-    h+=`<tr style="background:${bg}">
-      <td style="${TD2};color:#9ca3af;font-size:10px">${i+1}</td>
-      <td style="${TD2};font-family:monospace">${r.fecha_ejecucion||'--'}</td>
-      <td style="${TD2};font-weight:600;color:#1d4ed8;font-size:10px">${esc((r.cod_sap||'').substring(0,6))}</td>
-      <td style="${TD2};font-family:monospace;font-weight:700">${esc(r.cod_sap||'')}</td>
-      <td style="${TD2}">${esc(r.equipo||'')}</td>
-      <td style="${TD2};color:#6b747d">${esc(r.marca||'--')}</td>
-      <td style="${TD2};text-align:center"><span class="pill ${pc}" style="font-size:9px">${esc(r.tipo_pm||'')}</span></td>
-      <td style="${TD2};text-align:right;font-family:monospace">${r.hrkm_ejecucion?.toLocaleString('es-PE')||'--'}</td>
-      <td style="${TD2};font-family:monospace;font-size:10px">${esc(r.ot||'--')}</td>
-      <td style="${TD2};text-align:center">${r.semana||'--'}</td>
-      <td style="${TD2};text-align:center">${r.anio||'--'}</td>
-      <td style="${TD2};font-weight:700;color:${ec}">${est}</td>
-    </tr>`;
-  });
-  h+=`</tbody></table>`;
-  if(hayMas)h+=`<div style="text-align:center;padding:12px"><button class="act ghost" id="btnHistMas">Cargar mas (${count-_pmHistData.length} restantes)</button></div>`;
-  h+=`<p style='color:#6b747d;font-size:11px;margin-top:8px;padding:4px'>Bitacora permanente. Los registros no se pueden editar ni borrar.</p></div>`;
-  pmHistWrap.innerHTML=h;
-  if(hayMas)document.getElementById('btnHistMas').onclick=()=>verHistorial(_histPage+1);
-  document.getElementById('pmHistBuscar')?.addEventListener('input',()=>renderHistorial(count));
-  document.getElementById('pmHistFiltroPM')?.addEventListener('change',()=>renderHistorial(count));
-}
+window.addEventListener('resize',()=>{if(!panePMS.classList.contains('hide'))pmsFixTops();});
 
 init();
 </script>
