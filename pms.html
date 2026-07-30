@@ -124,7 +124,7 @@
       El HR/KM programado se reconstruye en cadena: lo programado de un mntto
       es el PM realizado del anterior m&aacute;s la frecuencia. El primer mntto de cada
       equipo no tiene referencia previa y no se mide.<br><br>
-      Cumplimiento = Ejecutados &divide; total de filas del periodo (por Fecha Prog.).
+      Cumplimiento = (Ejecutados + Reprogramados) &divide; total de filas del periodo, tomando la Fecha Prog.
     </div>
   </div>
 </div></div>
@@ -207,19 +207,45 @@ function pmsTiempo(tipo,familia){
   return {PM1:'2 hrs',PM2:'4 hrs',PM3:'8 hrs',PM4:'1.5 dias'}[tipo]||'';
 }
 /* ---- fila enriquecida con los datos del maestro ---- */
+/* HR/KM programado reconstruido en cadena: para cada equipo, lo programado de un
+   mntto es el PM realizado del anterior + la frecuencia. Se usa cuando la fila no
+   trae hrkm_prog propio. Sirve igual para la tabla y para el dashboard. */
+let PMS_HP=new Map();
+function pmsHPMap(){
+  const porEq=new Map();
+  for(const r of pmsData){ if(r.maestro_id==null)continue;
+    const k=String(r.maestro_id); if(!porEq.has(k))porEq.set(k,[]); porEq.get(k).push(r); }
+  const m=new Map();
+  for(const [k,arr] of porEq){
+    const e=getE(k), freq=e?(+e.frecuencia||0):0; if(!freq)continue;
+    const orden=arr.slice().sort((a,b)=>
+      String(a.fecha_ejec||a.fecha_prog||'').localeCompare(String(b.fecha_ejec||b.fecha_prog||'')));
+    let base=null;                                  // PM realizado del mntto anterior
+    for(const r of orden){
+      if(base!=null) m.set(String(r.id), base+freq);
+      if(r.hrkm_ejec!=null&&r.hrkm_ejec!=='') base=roundToFreq(+r.hrkm_ejec,freq);
+    }
+  }
+  return m;
+}
 function pmsFila(r){
   const e = (r.maestro_id!=null?getE(r.maestro_id):null) || pmsPorSap(r.cod_sap);
   const freq = e? (+e.frecuencia||0) : 0;
-  let hp = (r.hrkm_prog!=null&&r.hrkm_prog!=='')?+r.hrkm_prog:null;
+  const propio = (r.hrkm_prog!=null&&r.hrkm_prog!=='')?+r.hrkm_prog:null;
+  const cadena = PMS_HP.get(String(r.id));
+  let hp = propio!=null?propio:(cadena!=null?cadena:null);
+  const hpReal = hp!=null;                                   // hay referencia fiable
   if(hp==null && r.hrkm_ejec!=null && freq) hp = roundToFreq(+r.hrkm_ejec,freq);
-  const tipo = pmsTipoPM(e&&e.marca, e&&e.modelo, hp);
+  const tipo = r.tipo_pm || pmsTipoPM(e&&e.marca, e&&e.modelo, hp);
+  const treq = r.tiempo_req || pmsTiempo(tipo, e&&e.familia);
   const est  = pmsEstado(r);
+  const desf = (hpReal && freq && r.hrkm_ejec!=null && r.hrkm_ejec!=='') ? (+r.hrkm_ejec-hp)/freq*100 : null;
   const fSem = r.fecha_prog || null;          // la SEMANA sale de Fecha Prog.
-  return {r,e,
+  return {r,e,freq,hp,hpReal,desf,
     proyec:r.cod_proyec||(e&&e.cod_proyec)||'', sap:r.cod_sap||'',
     equipo:(e&&e.equipo)||'', marca:(e&&e.marca)||'', modelo:(e&&e.modelo)||'',
     placa:(e&&e.serie_placa)||'', fam:e?famNum(e):99,
-    hp, tipo, treq:pmsTiempo(tipo,e&&e.familia), est,
+    tipo, treq, est,
     sem: fSem? isoWeek(new Date(fSem+'T00:00:00')) : '',
     anio: fSem? +String(fSem).slice(0,4) : 0};
 }
@@ -229,7 +255,13 @@ function pmsPorSap(sap){return PMS_SAPX.get(String(sap||'').trim())||null;}
 /* ---- ESTADO ---- */
 function pmsEstado(r){
   const lleno = r.om && r.hrkm_ejec!=null && r.hrkm_ejec!=='' && r.fecha_ejec;
-  if(lleno) return 'EJECUTADO';
+  if(lleno){
+    if(r.fecha_prog){
+      const a=new Date(r.fecha_prog+'T00:00:00'), b=new Date(r.fecha_ejec+'T00:00:00');
+      if(isoWeek(a)!==isoWeek(b) || a.getFullYear()!==b.getFullYear()) return 'REPROGRAMADO';
+    }
+    return 'EJECUTADO';
+  }
   const H=hoy0(), dow=(H.getDay()+6)%7;
   const lunes=new Date(H.getTime()-dow*86400000); lunes.setHours(0,0,0,0);
   if(r.fecha_prog && new Date(r.fecha_prog+'T00:00:00') < lunes) return 'PENDIENTE';
@@ -265,7 +297,7 @@ function pmsBalance(filas,lunes){
 /* ---- carga ---- */
 async function pmsCargar(){
   const {data,error}=await sb.from('pm_prog').select('*').order('fecha_prog',{ascending:true});
-  if(error){pmsBody.innerHTML=`<tr><td colspan="23" style="padding:20px;color:#b91c1c">${esc(error.message)}</td></tr>`;return;}
+  if(error){pmsBody.innerHTML=`<tr><td colspan="24" style="padding:20px;color:#b91c1c">${esc(error.message)}</td></tr>`;return;}
   pmsData=data||[]; pmsCargado=true; pmsRender();
 }
 /* ---- encabezado ---- */
@@ -281,7 +313,7 @@ function pmsHead(){
   const mesLab = (m1===m2&&y1===y2) ? `${m1} ${y1}` : (y1===y2 ? `${m1} / ${m2} ${y1}` : `${m1} ${y1} / ${m2} ${y2}`);
 
   // ── fila 1: banda de area ──
-  let h=`<tr class="pms-r1"><th colspan="23" style="background:#1c232b;letter-spacing:1px;font-weight:700;font-size:9px;padding:1px 4px">ÁREA DE CONTROL DE EQUIPOS</th></tr>`;
+  let h=`<tr class="pms-r1"><th colspan="24" style="background:#1c232b;letter-spacing:1px;font-weight:700;font-size:9px;padding:1px 4px">ÁREA DE CONTROL DE EQUIPOS</th></tr>`;
   // ── fila 2: titulo + selector de semana + bandas EJECUCION / CONTROL ──
   h+=`<tr class="pms-r2">`
    +`<th colspan="11" style="background:#f2f2f2;color:#002060;font-size:12px;font-weight:800;text-align:left;padding:2px 8px">PROGRAMA DE MANTENIMIENTO PREVENTIVO SEMANAL — EQUIPOS</th>`
@@ -289,12 +321,12 @@ function pmsHead(){
      +`<select id="pmsSelSem" style="border:none;border-radius:4px;font-size:10px;padding:1px 2px;font-weight:700;color:#002060">${opts.join('')}</select>`
      +`<input id="pmsAnioIn" type="number" value="${yr}" style="width:46px;border:none;border-radius:4px;font-size:10px;padding:1px 2px;text-align:center;margin-left:3px">`
      +`<span style="margin-left:6px;font-size:10px;font-weight:700;color:#cfe0f5">${mesLab}</span></th>`
-   +`<th colspan="3" style="background:#1c232b;font-weight:700;font-size:10px">EJECUCIÓN</th>`
+   +`<th colspan="4" style="background:#1c232b;font-weight:700;font-size:10px">EJECUCIÓN</th>`
    +`<th colspan="2" style="background:${G};font-weight:700;font-size:10px">CONTROL</th></tr>`;
 
   // ── fila 3: nombres de columna (los dias llevan letra y numero en la misma celda) ──
   const cols=[['#',42],['Proyecto',66],['Cód. SAP<br>JJC',68],['Equipo / Vehículo',180],['Marca',96],['Modelo',120],['Serie/Placa',96],
-              ['Tiempo<br>Req.',54],['TIPO DE<br>PM',54],['HR/KM<br>Prog.',68],['Fecha<br>Prog.',64]];
+              ['Tiempo<br>Req.*',58],['TIPO DE<br>PM*',58],['HR/KM<br>Prog.*',68],['Fecha<br>Prog.*',66]];
   h+='<tr class="pms-cols">';
   cols.forEach(([l,w])=>h+=`<th style="background:${B};min-width:${w}px"><div class="hlab">${l}</div></th>`);
   dias.forEach((d,i)=>{
@@ -304,7 +336,7 @@ function pmsHead(){
       +`<div style="font-size:9px;opacity:.9;line-height:1.1">${PMS_DIA[i]}</div>`
       +`<div style="font-size:11px;font-weight:${esH?800:600};line-height:1.1">${String(d.getUTCDate()).padStart(2,'0')}</div></th>`;
   });
-  [['OM',V,84],['HR / KM',V,72],['FECHA<br>EJECUCION',V,74],['ESTADO',G,80],['SEMANA',G,54]]
+  [['OM*',V,84],['HR / KM*',V,72],['%<br>DESFASE',V,62],['FECHA<br>EJECUCION*',V,78],['ESTADO',G,92],['SEMANA',G,54]]
     .forEach(([l,bg,w])=>h+=`<th style="background:${bg};min-width:${w}px"><div class="hlab">${l}</div></th>`);
   h+='</tr>';
 
@@ -312,8 +344,8 @@ function pmsHead(){
   const f=(k,ph)=>`<th style="background:#e8eaf0;padding:1px 2px"><input class="colf" data-pmsf="${k}" placeholder="${ph||''}" value="${esc(pmsColF[k]||'')}"></th>`;
   const vac=n=>'<th style="background:#e8eaf0"></th>'.repeat(n);
   h+='<tr class="pms-filt">'+f('_n','#')+f('proyec','Proyecto')+f('sap','SAP')+f('equipo','Equipo')+f('marca','Marca')+f('modelo','Modelo')+f('placa','Serie')
-    +vac(4)+vac(7)
-    +f('om','OM')+f('hrkm','HR/KM')+f('fejec','Fecha')+f('est','Estado')+f('sem','Sem.')+'</tr>';
+    +vac(1)+f('tipo','PM')+vac(2)+vac(7)
+    +f('om','OM')+f('hrkm','HR/KM')+vac(1)+f('fejec','Fecha')+f('est','Estado')+f('sem','Sem.')+'</tr>';
 
   pmsThead.innerHTML=h;
   const ss=document.getElementById('pmsSelSem'); if(ss)ss.onchange=()=>{pmsSemana.value=ss.value;pmsRender();};
@@ -326,7 +358,7 @@ function pmsFixTops(){
 }
 /* ---- cuerpo ---- */
 function pmsRender(){
-  pmsReindexSap();
+  pmsReindexSap(); PMS_HP=pmsHPMap();
   const wk=+pmsSemana.value||isoWeek(hoy0()), yr=+pmsAnio.value||hoy0().getFullYear();
   pmsHead();
   const filas=pmsData.map(pmsFila).sort((a,b)=>
@@ -337,7 +369,7 @@ function pmsRender(){
   const bal=pmsBalance(filas.filter(f=>f.est!=='EJECUTADO'),lun);
   const dias=[];for(let i=0;i<7;i++){const d=new Date(lun);d.setUTCDate(lun.getUTCDate()+i);dias.push(d);}
   const PILL={PM1:'na',PM2:'ok',PM3:'warn',PM4:'bad'};
-  const EST={PROGRAMADO:'#1d4ed8',EJECUTADO:'#15803d',PENDIENTE:'#b45309'};
+  const EST={PROGRAMADO:'#1d4ed8',EJECUTADO:'#15803d',PENDIENTE:'#b91c1c',REPROGRAMADO:'#B45309'};
   let h='';
   filas.forEach(f=>{
     const r=f.r, sel=(pmsSel!=null&&String(pmsSel)===String(r.id))?' rowsel-g':'';
@@ -345,7 +377,7 @@ function pmsRender(){
     let celdas='';
     for(let i=0;i<7;i++){
       const on=i===di;
-      celdas+=`<td class="pms-day${i===6?' dom':''}" style="${on?'background:#FEF08A;font-weight:800;color:#1a1200':''}">${on?(f.tipo||'PM'):''}</td>`;
+      celdas+=`<td class="pms-day${i===6?' dom':''}" style="${on?'background:#FEF3C7;color:#B45309;font-weight:400':''}">${on?(f.tipo||'PM'):''}</td>`;
     }
     h+=`<tr data-pmsid="${r.id}"${sel?' class="'+sel.trim()+'"':''}>`
      +`<td class="idx"><span class="rn">0</span><button class="delrow" data-pmsdel="${r.id}" title="Eliminar fila">✕</button></td>`
@@ -355,18 +387,19 @@ function pmsRender(){
      +`<td class="pms-l">${esc(f.marca)}</td>`
      +`<td class="pms-l">${esc(f.modelo)}</td>`
      +`<td class="pms-l mono">${esc(f.placa)}</td>`
-     +`<td class="pms-c">${esc(f.treq)}</td>`
-     +`<td class="pms-c">${f.tipo?`<span class="pill ${PILL[f.tipo]}">${f.tipo}</span>`:''}</td>`
-     +`<td class="pms-c mono">${f.hp!=null?Number(f.hp).toLocaleString('es-PE'):''}</td>`
-     +`<td class="pms-c">${fmtDate(r.fecha_prog)}</td>`
+     +`<td class="pms-c pms-ed" data-pmsk="tiempo_req">${esc(f.treq)}</td>`
+     +`<td class="pms-c pms-ed" data-pmsk="tipo_pm">${f.tipo?`<span class="pill ${PILL[f.tipo]||'na'}">${f.tipo}</span>`:''}</td>`
+     +`<td class="pms-c mono pms-ed" data-pmsk="hrkm_prog">${f.hp!=null?Number(f.hp).toLocaleString('es-PE'):''}</td>`
+     +`<td class="pms-c pms-ed" data-pmsk="fecha_prog">${fmtDate(r.fecha_prog)}</td>`
      +celdas
      +`<td class="pms-c mono pms-ed" data-pmsk="om">${esc(r.om||'')}</td>`
      +`<td class="pms-c mono pms-ed" data-pmsk="hrkm_ejec">${r.hrkm_ejec!=null?Number(r.hrkm_ejec).toLocaleString('es-PE'):''}</td>`
+     +`<td class="pms-c mono" title="${f.desf==null?'Sin HR/KM programado de referencia':'(HR/KM ejec − HR/KM prog) ÷ Frecuencia'}" style="${f.desf==null?'color:#9ca3af':(Math.abs(f.desf)>10?'color:#dc2626;font-weight:700':'color:#15803d')}">${f.desf==null?'—':f.desf.toFixed(1)+'%'}</td>`
      +`<td class="pms-c pms-ed" data-pmsk="fecha_ejec">${fmtDate(r.fecha_ejec)}</td>`
      +`<td class="pms-c" style="color:${EST[f.est]};font-weight:700">${f.est}</td>`
      +`<td class="pms-c">${f.sem||''}</td></tr>`;
   });
-  pmsBody.innerHTML=h||`<tr><td colspan="23" style="padding:24px;text-align:center;color:#6b747d">Sin registros. Usa “＋ MNTTO” o “Programar mntto” desde Equipos.</td></tr>`;
+  pmsBody.innerHTML=h||`<tr><td colspan="24" style="padding:24px;text-align:center;color:#6b747d">Sin registros. Usa “＋ MNTTO” o “Programar mntto” desde Equipos.</td></tr>`;
   pmsFilas=filas; pmsIndexar(); pmsAplicar();
 }
 let pmsFilas=[], PMSX=[];
@@ -389,7 +422,7 @@ function pmsAplicar(){
     if(ok)for(const [k,v] of cf){
       const val = k==='_n'?'' : k==='om'?String(r.om||'') : k==='hrkm'?String(r.hrkm_ejec??'')
                 : k==='fejec'?fmtDate(r.fecha_ejec) : k==='est'?f.est : k==='sem'?String(f.sem)
-                : String(f[k]??'');
+                : k==='tipo'?String(f.tipo||'') : String(f[k]??'');
       if(!val.toLowerCase().includes(v)){ok=false;break;}
     }
     const d=ok?'':'none';
@@ -429,18 +462,25 @@ pmsBody.addEventListener('click',async ev=>{
 pmsBody.addEventListener('dblclick',ev=>{
   const td=ev.target.closest('td.pms-ed'); if(!td||td.dataset.editing)return;
   const tr=td.closest('tr[data-pmsid]'), r=pmsData.find(x=>String(x.id)===String(tr.dataset.pmsid)); if(!r)return;
-  const k=td.dataset.pmsk; let ctrl;
-  if(k==='fecha_ejec') ctrl=`<input type="date" value="${r.fecha_ejec||''}">`;
+  const k=td.dataset.pmsk, f=pmsFila(r); let ctrl;
+  if(k==='fecha_ejec'||k==='fecha_prog') ctrl=`<input type="date" value="${r[k]||''}">`;
   else if(k==='hrkm_ejec') ctrl=`<input type="number" step="1" value="${r.hrkm_ejec??''}">`;
+  else if(k==='hrkm_prog') ctrl=`<input type="number" step="1" min="0" value="${r.hrkm_prog??(f.hp??'')}">`;
+  else if(k==='tipo_pm') ctrl=`<select>${['','PM1','PM2','PM3','PM4'].map(o=>`<option value="${o}" ${((r.tipo_pm||'')===o)?'selected':''}>${o||'(automático)'}</option>`).join('')}</select>`;
+  else if(k==='tiempo_req') ctrl=`<input type="text" list="pmsTiempos" placeholder="(automático)" value="${esc(r.tiempo_req||'')}">`;
   else ctrl=`<input type="number" step="1" min="0" max="999999999" value="${r.om??''}">`;
   td.dataset.editing='1'; td.innerHTML=ctrl;
-  const inp=td.querySelector('input'); inp.focus(); try{inp.select();}catch(_){}
+  const inp=td.querySelector('input,select'); inp.focus(); try{inp.select&&inp.select();}catch(_){}
   if(k==='om')inp.oninput=()=>{inp.value=inp.value.replace(/[^0-9]/g,'').slice(0,9);};
+  if(inp.tagName==='SELECT')inp.onchange=()=>inp.blur();
 });
 pmsBody.addEventListener('focusout',ev=>{
   const td=ev.target.closest&&ev.target.closest('td[data-editing]'); if(!td)return;
   pmsCommit(td,ev.target.value);
 });
+/* sugerencias para Tiempo Req. */
+document.body.insertAdjacentHTML('beforeend',
+  '<datalist id="pmsTiempos"><option>2 hrs</option><option>4 hrs</option><option>8 hrs</option><option>1.5 dias</option><option>1 dia</option></datalist>');
 pmsBody.addEventListener('keydown',ev=>{
   const td=ev.target.closest&&ev.target.closest('td[data-editing]'); if(!td)return;
   if(ev.key==='Enter'){ev.preventDefault();ev.target.blur();}
@@ -450,7 +490,12 @@ async function pmsCommit(td,raw){
   const tr=td.closest('tr[data-pmsid]'), id=tr.dataset.pmsid, k=td.dataset.pmsk;
   const r=pmsData.find(x=>String(x.id)===String(id)); delete td.dataset.editing;
   if(!r){pmsRender();return;}
-  let val = raw===''?null : (k==='om'? String(parseInt(raw,10)) : k==='hrkm_ejec'? Number(raw) : raw);
+  let val;
+  if(raw===''||raw==null) val=null;
+  else if(k==='om') val=String(parseInt(raw,10));
+  else if(k==='hrkm_ejec'||k==='hrkm_prog') val=Number(raw);
+  else val=raw;
+  if((k==='tipo_pm'||k==='tiempo_req')&&val!=null) val=String(val).trim()||null;
   if((r[k]??null)===(val??null)){pmsRender();return;}
   const prev=r[k]??null;
   r[k]=val;
@@ -535,7 +580,7 @@ async function pmsDeshacer(){
     }
     pmsRender();
     appFoot.textContent='Cambio deshecho ✓';
-    setTimeout(()=>appFoot.textContent='Doble clic en OM, HR/KM o Fecha Ejecución para editar · los cambios se guardan solos.',1400);
+    setTimeout(()=>appFoot.textContent='Doble clic en las columnas con * para editar · los cambios se guardan solos.',1400);
   }catch(err){ alert('No se pudo deshacer: '+err.message); }
 }
 /* deja en el maestro el HR/KM y la fecha del mantenimiento ejecutado mas reciente */
@@ -565,16 +610,17 @@ pmsBtnExcel.onclick=()=>{
     return {'#':i+1,'Proyecto':f.proyec,'Cód. SAP JJC':f.sap,'Equipo / Vehículo':f.equipo,
       'Marca':f.marca,'Modelo':f.modelo,'Serie/Placa':f.placa,'Tiempo Req.':f.treq,'TIPO DE PM':f.tipo,
       'HR/KM Prog.':f.hp??'','Fecha Prog.':r.fecha_prog||'','OM':r.om||'',
-      'HR / KM':r.hrkm_ejec??'','FECHA EJECUCION':r.fecha_ejec||'','ESTADO':f.est,'SEMANA':f.sem||''};
+      'HR / KM':r.hrkm_ejec??'','% Desfase':f.desf==null?'':+f.desf.toFixed(2),
+      'FECHA EJECUCION':r.fecha_ejec||'','ESTADO':f.est,'SEMANA':f.sem||''};
   });
   const ws=XLSX.utils.json_to_sheet(filas);
   ws['!cols']=[{wch:5},{wch:10},{wch:11},{wch:30},{wch:14},{wch:16},{wch:14},{wch:10},{wch:9},
-               {wch:11},{wch:11},{wch:12},{wch:10},{wch:15},{wch:12},{wch:8}];
+               {wch:11},{wch:11},{wch:12},{wch:10},{wch:10},{wch:15},{wch:14},{wch:8}];
   const wb=XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb,ws,'PM-S');
   const hoy=new Date().toISOString().slice(0,10);
   XLSX.writeFile(wb,`PM-S_Semana${wk}-${yr}_${hoy}.xlsx`);
   appFoot.textContent=`Excel descargado (${filas.length} filas) ✓`;
-  setTimeout(()=>appFoot.textContent='Doble clic en OM, HR/KM o Fecha Ejecución para editar · los cambios se guardan solos.',1600);
+  setTimeout(()=>appFoot.textContent='Doble clic en las columnas con * para editar · los cambios se guardan solos.',1600);
 };
 
 /* ═══════════════════════════ DASHBOARD ═══════════════════════════ */
@@ -582,23 +628,6 @@ pmsBtnExcel.onclick=()=>{
    El HR/KM programado real se reconstruye en cadena: para cada equipo,
    lo programado de un mntto = (PM realizado del anterior) + frecuencia.
    El primer mntto de cada equipo no tiene referencia previa y se omite. */
-function dashProgMap(){
-  const porEq=new Map();
-  for(const r of pmsData){ if(r.maestro_id==null)continue;
-    const k=String(r.maestro_id); if(!porEq.has(k))porEq.set(k,[]); porEq.get(k).push(r); }
-  const m=new Map();
-  for(const [k,arr] of porEq){
-    const e=getE(k), freq=e?(+e.frecuencia||0):0;
-    arr.sort((a,b)=>String(a.fecha_ejec||a.fecha_prog||'').localeCompare(String(b.fecha_ejec||b.fecha_prog||'')));
-    let base=null;
-    for(const r of arr){
-      const propio=(r.hrkm_prog!=null&&r.hrkm_prog!=='')?+r.hrkm_prog:null;
-      m.set(String(r.id), propio!=null?propio:(freq&&base!=null?base+freq:null));
-      if(r.hrkm_ejec!=null&&freq) base=roundToFreq(+r.hrkm_ejec,freq);
-    }
-  }
-  return m;
-}
 /* filas dentro del ambito elegido (se usa la SEMANA de Fecha Prog., igual que la tabla) */
 function dashAmbito(){
   const yr=+dashAnio.value, mes=dashMes.value, sem=dashSem.value;
@@ -612,17 +641,16 @@ function dashAmbito(){
   });
 }
 function dashCalcular(){
-  const filas=dashAmbito(), pmap=dashProgMap();
-  const pts=[], cumpl={total:filas.length,ejec:0,pend:0};
+  const filas=dashAmbito();
+  const pts=[], cumpl={total:filas.length,ejec:0,reprog:0,pend:0};
   for(const r of filas){
     const f=pmsFila(r);
     if(f.est==='EJECUTADO')cumpl.ejec++;
-    if(r.hrkm_ejec==null||!r.fecha_ejec)continue;
-    const freq=f.e?(+f.e.frecuencia||0):0; if(!freq)continue;
-    const hp=pmap.get(String(r.id)); if(hp==null)continue;
-    pts.push({sap:f.sap,equipo:f.equipo,pct:(+r.hrkm_ejec-hp)/freq*100,fecha:r.fecha_ejec,prog:hp,ejec:+r.hrkm_ejec,freq});
+    else if(f.est==='REPROGRAMADO')cumpl.reprog++;
+    if(f.desf==null||!r.fecha_ejec)continue;
+    pts.push({sap:f.sap,equipo:f.equipo,pct:f.desf,fecha:r.fecha_ejec,prog:f.hp,ejec:+r.hrkm_ejec,freq:f.freq});
   }
-  cumpl.pend=cumpl.total-cumpl.ejec;
+  cumpl.pend=cumpl.total-cumpl.ejec-cumpl.reprog;
   pts.sort((a,b)=>String(a.fecha).localeCompare(String(b.fecha)));
   return {pts,cumpl,filas};
 }
@@ -723,7 +751,8 @@ function dashRender(){
   const rot = sem!=='' ? 'SEMANA  '+sem : (mes!=='' ? PMS_MES[+mes].toUpperCase() : 'AÑO '+dashAnio.value);
   const prom = pts.length? pts.reduce((a,p)=>a+p.pct,0)/pts.length : 0;
   const fuera = pts.filter(p=>Math.abs(p.pct)>10).length;
-  const cum = cumpl.total? cumpl.ejec/cumpl.total*100 : 0;
+  const hechos = cumpl.ejec+cumpl.reprog;
+  const cum = cumpl.total? hechos/cumpl.total*100 : 0;
 
   dashTitulo.textContent='PRECISIÓN DE MANTENIMIENTO: Desfase de Mntto Preventivos ±10%';
   dashGrafico.innerHTML=svgLinea(pts);
@@ -738,9 +767,10 @@ function dashRender(){
     +`<table style="margin-top:12px;font-size:12px;border-collapse:collapse">`
     +`<tr><td style="padding:3px 10px 3px 0"><span class="dot" style="background:#374557"></span>PROGRAMADO</td><td style="font-weight:800;text-align:right">${cumpl.total}</td></tr>`
     +`<tr><td style="padding:3px 10px 3px 0"><span class="dot" style="background:#16a34a"></span>EJECUTADO</td><td style="font-weight:800;text-align:right;color:#16a34a">${cumpl.ejec}</td></tr>`
+    +`<tr><td style="padding:3px 10px 3px 0"><span class="dot" style="background:#B45309"></span>REPROGRAMADO</td><td style="font-weight:800;text-align:right;color:#B45309">${cumpl.reprog}</td></tr>`
     +`<tr><td style="padding:3px 10px 3px 0"><span class="dot" style="background:#dc2626"></span>PENDIENTE</td><td style="font-weight:800;text-align:right;color:#dc2626">${cumpl.pend}</td></tr>`
     +`</table>`;
-  dashDonaBox.innerHTML=svgDona(cumpl.ejec,cumpl.total);
+  dashDonaBox.innerHTML=svgDona(hechos,cumpl.total);
 }
 function dashAbrir(){
   // poblar los selectores la primera vez
