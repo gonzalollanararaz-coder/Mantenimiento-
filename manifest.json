@@ -1,0 +1,15 @@
+{
+  "name": "Maestro de Equipos — UDE",
+  "short_name": "Equipos UDE",
+  "description": "Control de mantenimiento preventivo de la Unidad de Equipos",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#0f141a",
+  "theme_color": "#1c232b",
+  "lang": "es-PE",
+  "icons": [
+    { "src": "logo.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "logo.png", "sizes": "512x512", "type": "image/png", "purpose": "any" }
+  ]
+}
