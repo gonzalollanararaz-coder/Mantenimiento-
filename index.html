@@ -9,7 +9,7 @@
 <style>
   :root{
     --steel:#1c232b;--steel-2:#2a333d;--bg:#eef0f2;--card:#fff;--line:#d3d8dd;--ink:#1a1d21;
-    --muted:#6b747d;--amber:#f2a900;--ok:#15803d;--ok-bg:#dcfce7;--warn:#b45309;--warn-bg:#fef3c7;
+    --muted:#6b747d;--amber:#FFCD11;--amber-d:#E6B800;--ok:#15803d;--ok-bg:#dcfce7;--warn:#b45309;--warn-bg:#fef3c7;
     --bad:#b91c1c;--bad-bg:#fee2e2;--gray:#6b7280;--gray-bg:#f1f3f5;--blue:#1d4ed8;
   }
   *{box-sizing:border-box;margin:0;padding:0}
@@ -24,9 +24,9 @@
   .field{margin-bottom:14px}
   .field label{display:block;font-size:12px;font-weight:600;color:var(--muted);margin-bottom:5px;text-transform:uppercase;letter-spacing:.4px}
   .field input{width:100%;padding:11px;border:1px solid var(--line);border-radius:8px;font-size:14px}
-  .field input:focus{outline:none;border-color:var(--amber);box-shadow:0 0 0 3px rgba(242,169,0,.15)}
+  .field input:focus{outline:none;border-color:var(--amber);box-shadow:0 0 0 3px rgba(255,205,17,.35)}
   .btn{width:100%;border:none;border-radius:8px;padding:12px;font-size:14px;font-weight:700;cursor:pointer;background:var(--amber);color:#1a1200}
-  .btn:hover{background:#d99700}.btn:disabled{opacity:.6;cursor:wait}
+  .btn:hover{background:var(--amber-d)}.btn:disabled{opacity:.6;cursor:wait}
   .toggle{text-align:center;margin-top:16px;font-size:13px;color:var(--muted)}.toggle a{color:var(--blue);cursor:pointer;font-weight:600}
   .msg{padding:10px 12px;border-radius:8px;font-size:13px;margin-bottom:14px}.msg.err{background:var(--bad-bg);color:var(--bad)}.msg.ok{background:var(--ok-bg);color:var(--ok)}
   .gate{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px;text-align:center}
@@ -46,15 +46,19 @@
   nav button{background:none;border:none;padding:12px 16px;cursor:pointer;font-size:13px;font-weight:600;color:var(--muted);border-bottom:3px solid transparent}
   nav button.on{color:var(--ink);border-bottom-color:var(--amber)}
 
-  .toolbar{display:flex;flex-wrap:wrap;gap:9px;align-items:center;padding:10px 16px;background:#fff;border-bottom:1px solid var(--line)}
-  .toolbar input[type=search],.toolbar select{padding:7px 10px;border:1px solid var(--line);border-radius:8px;font-size:13px}
-  .toolbar input[type=search]{min-width:200px;flex:1}
+  .toolbar{display:flex;flex-wrap:nowrap;gap:6px;align-items:center;padding:7px 12px;background:#fff;border-bottom:1px solid var(--line);overflow-x:auto;overflow-y:hidden;scrollbar-width:thin}
+  .toolbar>*{flex:0 0 auto}
+  .toolbar input[type=search],.toolbar select{padding:6px 8px;border:1px solid var(--line);border-radius:7px;font-size:12px}
+  .toolbar input[type=search]{min-width:150px;max-width:230px;flex:1 1 150px}
+  .toolbar select{max-width:150px}
+  .toolbar .act{padding:6px 9px;font-size:11.5px;white-space:nowrap}
+  .toolbar .chip{padding:5px 9px;font-size:11px;white-space:nowrap}
   .spacer{flex:1}
   .chip{background:#eef0f2;padding:6px 11px;border-radius:999px;font-size:12px;display:inline-flex;align-items:center;gap:6px;font-weight:600}
   .dot{width:9px;height:9px;border-radius:50%;display:inline-block}
   .dot.ok{background:#22c55e}.dot.warn{background:#f59e0b}.dot.bad{background:#ef4444}.dot.na{background:#cbd5e1}
   .act{border:none;border-radius:8px;padding:8px 13px;font-size:13px;font-weight:600;cursor:pointer}
-  .act.primary{background:var(--amber);color:#1a1200}.act.primary:hover{background:#d99700}
+  .act.primary{background:var(--amber);color:#1a1200}.act.primary:hover{background:var(--amber-d)}
   .act.ghost{background:#eef0f2;color:var(--ink)}.act.ghost:hover{background:#e0e4e8}
   .act.clear{background:#fee2e2;color:#b91c1c;border:1.5px solid #f87171;font-weight:700}.act.clear:hover{background:#fecaca}
 
@@ -67,7 +71,7 @@
   .mx thead tr.cols th{top:22px;font-weight:400;text-transform:none;vertical-align:top}
   .mx thead .hlab{padding:2px 0 3px;line-height:1.05}
   .mx thead .colf{width:100%;border:1px solid #cfd6dd;border-radius:4px;padding:1px 4px;font-size:10px;height:17px;background:#fff;color:#1a1d21;outline:none}
-  .mx thead .colf:focus{border-color:var(--amber);box-shadow:0 0 0 2px rgba(242,169,0,.2)}
+  .mx thead .colf:focus{border-color:var(--amber);box-shadow:0 0 0 2px rgba(255,205,17,.45)}
   .mx tbody td{padding:0;height:22px}
   .mx tbody tr{content-visibility:auto;contain-intrinsic-size:auto 22px}
   .mx tbody td.idx{padding:0 4px;text-align:center;color:var(--muted);font-family:"SF Mono",monospace;background:#f8fafc;font-size:10px}
@@ -121,6 +125,22 @@
   .off-ok{background:#dcfce7;color:#15803d;border-color:#86efac}
   .off-warn{background:#fef3c7;color:#B45309;border-color:#fcd34d}
   .off-bad{background:#fee2e2;color:#b91c1c;border-color:#fca5a5}
+
+  /* chips que filtran al pulsarlos */
+  .chip.clic{cursor:pointer;border:1.5px solid transparent;user-select:none}
+  .chip.clic:hover{background:#e2e6ea}
+  .chip.clic.on{background:#1c232b;color:#fff;border-color:#1c232b}
+  .chip.clic.on .dot{box-shadow:0 0 0 2px #fff}
+  /* boton programar mntto */
+  .act.prog{background:#dbeafe;color:#1d4ed8;font-weight:800}
+  .act.prog:hover{background:#bfdbfe}
+  /* datos de ULTIMO MNTTO en gris */
+  .mx tbody td.ult{background:#e4e6e8}
+  .mx tbody tr:hover td.ult{background:#dcdfe2}
+  .mx tbody tr.rowsel td.ult{background:#b6d9f2 !important}
+  /* umbral de F. lectura */
+  .mx thead .colnum{width:100%;box-sizing:border-box;border:1px solid #cfd6dd;border-radius:4px;padding:1px 3px;font-size:10px;height:17px;text-align:center;background:#fffbe6;color:#7a5b00;font-weight:700}
+  .mx thead .colnum:focus{outline:none;border-color:var(--amber);box-shadow:0 0 0 2px rgba(255,205,17,.45)}
   footer{padding:10px 16px;color:var(--muted);font-size:12px;text-align:center}
 
   /* admin */
@@ -194,12 +214,12 @@
         <option value="warn">Solo con doc. por vencer</option>
       </select>
       <button class="act primary" id="btnClear">✕ Borrar filtros</button>
-      <span class="chip"><span class="dot bad"></span> Mntto vencido: <b id="cBad">0</b></span>
-      <span class="chip"><span class="dot warn"></span> Próximo: <b id="cWarn">0</b></span>
-      <span class="chip"><span class="dot bad"></span> Docs vencidos: <b id="cDoc">0</b></span>
+      <span class="chip clic" id="chipBad" data-kpi="bad" title="Ver solo los equipos con mantenimiento vencido"><span class="dot bad"></span> Mntto vencido: <b id="cBad">0</b></span>
+      <span class="chip clic" id="chipWarn" data-kpi="warn" title="Ver solo los equipos con mantenimiento próximo"><span class="dot warn"></span> Próximo: <b id="cWarn">0</b></span>
+      <span class="chip clic" id="chipDoc" data-kpi="doc" title="Ver solo los equipos con documentos vencidos"><span class="dot bad"></span> Docs vencidos: <b id="cDoc">0</b></span>
       <div class="spacer"></div>
       <button class="act ghost" id="btnUndo" disabled>↶ Deshacer</button>
-      <button class="act ghost" id="btnProg">📅 Programar mntto</button>
+      <button class="act prog" id="btnProg">📅 Programar mntto</button>
       <button class="act ghost" id="btnAgrupar">⊟ Agrupar</button>
       <button class="act ghost" id="btnDesagrupar">⊞ Desagrupar</button>
       <button class="act ghost" id="btnExcel">⬇ Excel</button>
@@ -224,8 +244,8 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
 /* ╔══ pega aquí tus DOS datos (los mismos de tu archivo actual) ══╗ */
-const SUPABASE_URL = "https://hklwvdhzltjsbfvlewbu.supabase.co";   // ← reemplaza
-const SUPABASE_KEY = "sb_publishable_NgDfyDHDI_KByR-qf35EpA_ZuKI5E0K";                 // ← reemplaza
+const SUPABASE_URL = "https://TU-PROYECTO.supabase.co";   // ← reemplaza
+const SUPABASE_KEY = "TU-PUBLISHABLE-KEY";                 // ← reemplaza
 /* ──────────────────────────────────────────────────────────────── */
 const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 try{localStorage.setItem('gllr_sbcfg',JSON.stringify({url:SUPABASE_URL,key:SUPABASE_KEY}));}catch(_){}
@@ -457,7 +477,8 @@ function alertaMntto(e){
   return "";
 }
 function docState(v){if(!v||isNaN(new Date(v)))return"na";const d=dias(new Date(v),hoy0());if(d<=7)return"bad";if(d<=15)return"warn";return"ok";}
-function staleLectura(v){if(!v)return false;return new Date(v)<=new Date(hoy0().getTime()-20*86400000);} // fórmula Excel: AI<=HOY()-20
+let staleDias=+(localStorage.getItem('gllr_staleDias')||10);   // resalta lecturas con más de N días
+function staleLectura(v){if(!v||!staleDias)return false;return new Date(v)<=new Date(hoy0().getTime()-staleDias*86400000);}
 function docsWorst(e){let w="na";for(const f of DOCS){if(!e[f])continue;const s=docState(e[f]);if(s==="bad")return"bad";if(s==="warn")w="warn";else if(w==="na")w="ok";}return w;}
 const ETI={ok:"En regla",warn:"Próximo",bad:"Vencido",na:"—"};
 
@@ -505,7 +526,12 @@ function buildHead(){
       b1+=`<th class="bands" data-collapse="${g.key}" colspan="${g.cols.length}" style="background:${g.color}">${g.lab} －</th>`;
       for(const [k,lab,tipo] of g.cols){
         const filtrable = tipo!=='c' || FCALC.includes(k);
-        const inp = filtrable ? filterInput(k, k==='_sem'?`Sem ${semHoy}`:'') : '';
+        let inp;
+        if(k==='fecha_lectura')
+          inp=`<input class="colnum" type="number" min="0" max="365" id="inpStale" value="${staleDias}" title="Resalta las lecturas con más de estos días de antigüedad">`;
+        else if(k==='_sem')
+          inp = filterInput(k, String(semHoy));
+        else inp = filtrable ? filterInput(k,'') : '';
         b2+=`<th style="background:${g.hcol}"><div class="hlab">${lab}</div>${inp}</th>`;
       }
     }
@@ -520,6 +546,7 @@ function cellCls(e,k,type,isFrz){
   if(type==='okfalta'&&e[k])cls+=(e[k]==='OK'?' of-ok':e[k]==='FALTA'?' of-falta':'');
   if(type==='de'){const s=docState(e[k]);if(e[k]&&e[k]!=='N.A.'&&(s==='bad'||s==='warn'))cls+=' exp-'+s;}
   if(k==='fecha_lectura'&&staleLectura(e[k]))cls+=' stale';
+  if(k==='hrkm_ult_mntto'||k==='fecha_ult_mntto'||k==='frecuencia')cls+=' ult';
   return cls;
 }
 function buildBody(){
@@ -608,6 +635,12 @@ function applyFilters(){
     if(q&&!m.search.includes(q))ok=false;
     if(ok&&fs&&e.status!==fs)ok=false;
     if(ok&&fd&&docsWorst(e)!==fd)ok=false;
+    if(ok&&kpiFiltro){
+      const cc=mant(e);
+      if(kpiFiltro==='bad'&&cc.est!=='bad')ok=false;
+      else if(kpiFiltro==='warn'&&cc.est!=='warn')ok=false;
+      else if(kpiFiltro==='doc'&&docsWorst(e)!=='bad')ok=false;
+    }
     if(ok)for(const [k,v] of cf){
       const val = k==='_alerta'?m._alerta : k==='_sem'?m._sem : k==='_alertamntto'?m._alertamntto : String(e[k]??"").toLowerCase();
       if(!val.includes(v)){ok=false;break;}
@@ -618,6 +651,23 @@ function applyFilters(){
   }
   const er=document.getElementById('emptyRow'); if(er)er.style.display=n?"none":"";
 }
+
+/* ---- chips informativos: al pulsarlos filtran la tabla ---- */
+let kpiFiltro='';
+function pintarChips(){
+  [['bad',chipBad],['warn',chipWarn],['doc',chipDoc]].forEach(([k,el])=>el.classList.toggle('on',kpiFiltro===k));
+}
+[['bad',chipBad],['warn',chipWarn],['doc',chipDoc]].forEach(([k,el])=>{
+  el.onclick=()=>{
+    kpiFiltro = (kpiFiltro===k) ? '' : k;
+    pintarChips(); applyFilters();
+    const n=cuerpo.querySelectorAll('tr[data-id]:not([style*="none"])').length;
+    const txt={bad:'mantenimiento vencido',warn:'mantenimiento próximo',doc:'documentos vencidos'}[k];
+    appFoot.textContent = kpiFiltro
+      ? `Mostrando solo equipos con ${txt} · pulsa de nuevo para quitar el filtro`
+      : 'Doble clic en una celda para editar · los cambios se guardan solos.';
+  };
+});
 let filtT; function applyFiltersD(){clearTimeout(filtT);filtT=setTimeout(applyFilters,80);}
 function resumen(){let b=0,w=0,dv=0;datos.forEach(e=>{const c=mant(e);if(c.est==="bad")b++;else if(c.est==="warn")w++;if(docsWorst(e)==="bad")dv++;});cBad.textContent=b;cWarn.textContent=w;cDoc.textContent=dv;}
 
@@ -626,7 +676,18 @@ thead.addEventListener("click",ev=>{
   if(ev.target.closest('[data-famtoggle]')){famCollapsed=!famCollapsed;render();return;}
   const k=ev.target.dataset.collapse;if(!k)return;collapsed[k]=!collapsed[k];render();
 });
-thead.addEventListener("input",ev=>{const fc=ev.target.dataset.fcol;if(!fc)return;colFilters[fc]=ev.target.value;applyFiltersD();});
+thead.addEventListener("input",ev=>{
+  if(ev.target.id==="inpStale"){
+    const v=Math.max(0,Math.min(365,+ev.target.value||0));
+    staleDias=v; try{localStorage.setItem("gllr_staleDias",v);}catch(_){}
+    clearTimeout(window._stT); window._stT=setTimeout(()=>{
+      cuerpo.querySelectorAll('td[data-k="fecha_lectura"]').forEach(td=>{
+        const e=getE(td.dataset.id); if(!e)return;
+        td.classList.toggle("stale",staleLectura(e.fecha_lectura));});
+    },120);
+    return;
+  }
+  const fc=ev.target.dataset.fcol;if(!fc)return;colFilters[fc]=ev.target.value;applyFiltersD();});
 cuerpo.addEventListener("click",async ev=>{
   if(ev.target.closest('[data-famtoggle]')){famCollapsed=!famCollapsed;render();return;}
   const k=ev.target.dataset.collapse; if(k){collapsed[k]=false;render();return;}
@@ -687,7 +748,7 @@ btnProg.onclick=()=>{
 btnAgrupar.onclick=()=>{GROUPS.forEach(g=>collapsed[g.key]=true);render();};
 btnDesagrupar.onclick=()=>{GROUPS.forEach(g=>collapsed[g.key]=false);render();};
 /* Borrar todos los filtros */
-btnClear.onclick=()=>{buscar.value="";fStatus.value="";fDocs.value="";for(const k in colFilters)delete colFilters[k];render();};
+btnClear.onclick=()=>{buscar.value="";fStatus.value="";fDocs.value="";kpiFiltro="";pintarChips();for(const k in colFilters)delete colFilters[k];render();appFoot.textContent="Doble clic en una celda para editar · los cambios se guardan solos.";};
 /* Exportar a Excel */
 btnExcel.onclick=()=>{
   try{
