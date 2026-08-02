@@ -86,6 +86,15 @@
   .pms tbody td.idx .rn{font-weight:600}
   .pms tbody td.idx .delrow{opacity:0;vertical-align:middle}
   .pms tbody tr:hover td.idx .delrow{opacity:1}
+
+  .pms td.est-PROGRAMADO{color:#1d4ed8;font-weight:700}
+  .pms td.est-EJECUTADO{color:#15803d;font-weight:700}
+  .pms td.est-PENDIENTE{color:#b91c1c;font-weight:700}
+  .pms td.est-REPROGRAMADO{color:#B45309;font-weight:700}
+  .pms td.df-na{color:#9ca3af}
+  .pms td.df-ok{color:#15803d}
+  .pms td.df-bad{color:#dc2626;font-weight:700}
+  .pms td.pm-on{background:#FEF3C7;color:#B45309;font-weight:400}
   .pms tbody tr.rowsel-g td{background:#bbf7d0 !important}
   .pms tbody tr.rowsel-g td.cellsel-g{background:#4ade80 !important;font-weight:700}
   .pms td.pms-noeq{color:#b45309;background:#fffbeb}
@@ -483,10 +492,61 @@ function pmsFixTops(){
   for(const row of t.rows){for(const th of row.cells){th.style.position='sticky';th.style.top=top+'px';}top+=row.getBoundingClientRect().height;}
 }
 /* ---- cuerpo ---- */
+const PMS_PILL={PM1:'na',PM2:'ok',PM3:'warn',PM4:'bad'};
+/* HTML de una fila; se usa al pintar todo y al refrescar una sola */
+function pmsRowHTML(f,di){
+  const r=f.r, sel=(pmsSel!=null&&String(pmsSel)===String(r.id))?' class="rowsel-g"':'';
+  let celdas='';
+  for(let i=0;i<7;i++){
+    const on=i===di;
+    celdas+=`<td class="pms-day${i===6?' dom':''}${on?' pm-on':''}">${on?(f.tipo||'PM'):''}</td>`;
+  }
+  const dfCls=f.desf==null?'df-na':(Math.abs(f.desf)>10?'df-bad':'df-ok');
+  return `<tr data-pmsid="${r.id}"${sel}>`
+   +`<td class="idx"><span class="rn">0</span><button class="delrow" data-pmsdel="${r.id}" title="Eliminar fila">✕</button></td>`
+   +`<td class="pms-c">${esc(f.proyec)}</td>`
+   +`<td class="pms-c mono${f.e?'':' pms-noeq'}"${f.e?'':' title="Este Cód. SAP no está en la pestaña Equipos: no se pueden derivar Equipo, Marca, Modelo ni Tipo de PM."'}>${esc(f.sap)}${f.e?'':' ⚠'}</td>`
+   +`<td class="pms-l">${esc(f.equipo)}</td>`
+   +`<td class="pms-l">${esc(f.marca)}</td>`
+   +`<td class="pms-l">${esc(f.modelo)}</td>`
+   +`<td class="pms-l mono">${esc(f.placa)}</td>`
+   +`<td class="pms-c pms-ed" data-pmsk="tiempo_req">${esc(f.treq)}</td>`
+   +`<td class="pms-c pms-ed" data-pmsk="tipo_pm">${f.tipo?`<span class="pill ${PMS_PILL[f.tipo]||'na'}">${f.tipo}</span>`:''}</td>`
+   +`<td class="pms-c mono pms-ed" data-pmsk="hrkm_prog">${f.hp!=null?Number(f.hp).toLocaleString('es-PE'):''}</td>`
+   +`<td class="pms-c pms-ed" data-pmsk="fecha_prog">${fmtDate(r.fecha_prog)}</td>`
+   +celdas
+   +`<td class="pms-c mono pms-ed" data-pmsk="om">${esc(r.om||'')}</td>`
+   +`<td class="pms-c mono pms-ed" data-pmsk="hrkm_ejec">${r.hrkm_ejec!=null?Number(r.hrkm_ejec).toLocaleString('es-PE'):''}</td>`
+   +`<td class="pms-c pms-ed" data-pmsk="fecha_ejec">${fmtDate(r.fecha_ejec)}</td>`
+   +`<td class="pms-c est-${f.est}">${f.est}</td>`
+   +`<td class="pms-c mono ${dfCls}">${f.desf==null?'—':f.desf.toFixed(1)+'%'}</td>`
+   +`<td class="pms-c">${f.sem||''}</td></tr>`;
+}
+/* refresca solo una fila; devuelve false si hace falta repintar todo */
+function pmsRefrescarFila(id){
+  const tr=pmsBody.querySelector(`tr[data-pmsid="${id}"]`); if(!tr)return false;
+  const r=pmsData.find(x=>String(x.id)===String(id)); if(!r)return false;
+  const di=[...tr.cells].slice(11,18).findIndex(td=>td.classList.contains('pm-on'));
+  const f=pmsFila(r);
+  const tmp=document.createElement('tbody'); tmp.innerHTML=pmsRowHTML(f,di);
+  const nueva=tmp.firstElementChild;
+  const vis=tr.style.display;
+  const n=tr.querySelector('.rn'); const num=n?n.textContent:'0';
+  tr.replaceWith(nueva);
+  nueva.style.display=vis;
+  const n2=nueva.querySelector('.rn'); if(n2)n2.textContent=num;
+  const i=PMSX.findIndex(m=>String(m.f.r.id)===String(id));
+  if(i>=0)PMSX[i]={f,tr:nueva,rn:n2};
+  const j=pmsFilas.findIndex(x=>String(x.r.id)===String(id));
+  if(j>=0)pmsFilas[j]=f;
+  return true;
+}
+let _pmsHeadKey='';
 function pmsRender(){
   pmsReindexSap(); PMS_HP=pmsHPMap();
   const wk=+pmsSemana.value||isoWeek(hoy0()), yr=+pmsAnio.value||hoy0().getFullYear();
-  pmsHead();
+  const hk=wk+'_'+yr+'_'+JSON.stringify(pmsColF);
+  if(hk!==_pmsHeadKey){_pmsHeadKey=hk;pmsHead();}
   const filas=pmsData.map(pmsFila).sort((a,b)=>
       String(a.r.fecha_ejec||'9999-99-99').localeCompare(String(b.r.fecha_ejec||'9999-99-99'))
       || String(a.proyec).localeCompare(String(b.proyec)) || a.fam-b.fam
@@ -494,37 +554,13 @@ function pmsRender(){
   const lun=isoWeekMonday(yr,wk);
   const bal=pmsBalance(filas.filter(f=>f.est!=='EJECUTADO'),lun);
   const dias=[];for(let i=0;i<7;i++){const d=new Date(lun);d.setUTCDate(lun.getUTCDate()+i);dias.push(d);}
-  const PILL={PM1:'na',PM2:'ok',PM3:'warn',PM4:'bad'};
-  const EST={PROGRAMADO:'#1d4ed8',EJECUTADO:'#15803d',PENDIENTE:'#b91c1c',REPROGRAMADO:'#B45309'};
+  // Con el filtro por defecto (ejecutados ocultos) no se crea el DOM de esas filas:
+  // en un histórico de ~380 registros eso deja la tabla en unas pocas decenas de <tr>.
+  const estF=(pmsColF['est']||'').toLowerCase();
+  const ocultarEjec = !pmsVerEjec && !estF.includes('ejec');
+  const visibles = ocultarEjec ? filas.filter(f=>f.est!=='EJECUTADO') : filas;
   let h='';
-  filas.forEach(f=>{
-    const r=f.r, sel=(pmsSel!=null&&String(pmsSel)===String(r.id))?' rowsel-g':'';
-    const di=bal.has(r.id)?bal.get(r.id):-1;
-    let celdas='';
-    for(let i=0;i<7;i++){
-      const on=i===di;
-      celdas+=`<td class="pms-day${i===6?' dom':''}" style="${on?'background:#FEF3C7;color:#B45309;font-weight:400':''}">${on?(f.tipo||'PM'):''}</td>`;
-    }
-    h+=`<tr data-pmsid="${r.id}"${sel?' class="'+sel.trim()+'"':''}>`
-     +`<td class="idx"><span class="rn">0</span><button class="delrow" data-pmsdel="${r.id}" title="Eliminar fila">✕</button></td>`
-     +`<td class="pms-c">${esc(f.proyec)}</td>`
-     +`<td class="pms-c mono${f.e?'':' pms-noeq'}"${f.e?'':' title="Este Cód. SAP no está en la pestaña Equipos: no se pueden derivar Equipo, Marca, Modelo ni Tipo de PM."'}>${esc(f.sap)}${f.e?'':' ⚠'}</td>`
-     +`<td class="pms-l">${esc(f.equipo)}</td>`
-     +`<td class="pms-l">${esc(f.marca)}</td>`
-     +`<td class="pms-l">${esc(f.modelo)}</td>`
-     +`<td class="pms-l mono">${esc(f.placa)}</td>`
-     +`<td class="pms-c pms-ed" data-pmsk="tiempo_req">${esc(f.treq)}</td>`
-     +`<td class="pms-c pms-ed" data-pmsk="tipo_pm">${f.tipo?`<span class="pill ${PILL[f.tipo]||'na'}">${f.tipo}</span>`:''}</td>`
-     +`<td class="pms-c mono pms-ed" data-pmsk="hrkm_prog">${f.hp!=null?Number(f.hp).toLocaleString('es-PE'):''}</td>`
-     +`<td class="pms-c pms-ed" data-pmsk="fecha_prog">${fmtDate(r.fecha_prog)}</td>`
-     +celdas
-     +`<td class="pms-c mono pms-ed" data-pmsk="om">${esc(r.om||'')}</td>`
-     +`<td class="pms-c mono pms-ed" data-pmsk="hrkm_ejec">${r.hrkm_ejec!=null?Number(r.hrkm_ejec).toLocaleString('es-PE'):''}</td>`
-     +`<td class="pms-c pms-ed" data-pmsk="fecha_ejec">${fmtDate(r.fecha_ejec)}</td>`
-     +`<td class="pms-c" style="color:${EST[f.est]};font-weight:700">${f.est}</td>`
-     +`<td class="pms-c mono" title="${f.desf==null?'Sin HR/KM programado de referencia':'(HR/KM ejec − HR/KM prog) ÷ Frecuencia'}" style="${f.desf==null?'color:#9ca3af':(Math.abs(f.desf)>10?'color:#dc2626;font-weight:700':'color:#15803d')}">${f.desf==null?'—':f.desf.toFixed(1)+'%'}</td>`
-     +`<td class="pms-c">${f.sem||''}</td></tr>`;
-  });
+  visibles.forEach(f=>{ h+=pmsRowHTML(f, bal.has(f.r.id)?bal.get(f.r.id):-1); });
   pmsBody.innerHTML=h||`<tr><td colspan="24" style="padding:24px;text-align:center;color:#6b747d">Sin registros. Usa “＋ MNTTO” o “Programar mntto” desde Equipos.</td></tr>`;
   pmsFilas=filas; pmsIndexar(); pmsAplicar();
 }
@@ -554,17 +590,24 @@ function pmsAplicar(){
     const d=ok?'':'none';
     if(m.tr.style.display!==d)m.tr.style.display=d;
     if(ok){n++;if(m.rn&&m.rn.textContent!=n)m.rn.textContent=n;}
-    if(f.est==='EJECUTADO')ver++;
   }
+  ver=pmsFilas.reduce((a,f)=>a+(f.est==='EJECUTADO'?1:0),0);
   pmsCount.textContent=n+' fila(s)';
   pmsCountEjec.textContent=ver+' ejecutado(s)';
 }
 let pmsFiltT; function pmsAplicarD(){clearTimeout(pmsFiltT);pmsFiltT=setTimeout(pmsAplicar,80);}
 
 /* ---- interaccion ---- */
-pmsThead.addEventListener('input',ev=>{const k=ev.target.dataset.pmsf;if(!k)return;pmsColF[k]=ev.target.value;pmsAplicarD();});
+pmsThead.addEventListener('input',ev=>{
+  const k=ev.target.dataset.pmsf;if(!k)return;
+  const antes=(pmsColF['est']||'').toLowerCase().includes('ejec');
+  pmsColF[k]=ev.target.value;
+  const ahora=(pmsColF['est']||'').toLowerCase().includes('ejec');
+  if(k==='est'&&antes!==ahora&&!pmsVerEjec){const foco=ev.target.dataset.pmsf;pmsRender();
+    const nuevo=pmsThead.querySelector(`[data-pmsf="${foco}"]`);if(nuevo){nuevo.focus();nuevo.setSelectionRange(nuevo.value.length,nuevo.value.length);}return;}
+  pmsAplicarD();});
 pmsBuscarSem.oninput=pmsAplicarD;
-pmsBtnVerEjec.onclick=()=>{pmsVerEjec=!pmsVerEjec;pmsBtnVerEjec.textContent=pmsVerEjec?'Ocultar ejecutados':'Mostrar ejecutados';pmsBtnVerEjec.classList.toggle('primary',pmsVerEjec);pmsAplicar();};
+pmsBtnVerEjec.onclick=()=>{pmsVerEjec=!pmsVerEjec;pmsBtnVerEjec.textContent=pmsVerEjec?'Ocultar ejecutados':'Mostrar ejecutados';pmsBtnVerEjec.classList.toggle('primary',pmsVerEjec);pmsRender();};
 pmsBtnClear.onclick=()=>{pmsColF={};pmsBuscarSem.value='';pmsVerEjec=false;pmsBtnVerEjec.textContent='Mostrar ejecutados';pmsBtnVerEjec.classList.remove('primary');pmsRender();};
 pmsBtnHoy.onclick=()=>{const H=hoy0();pmsSemana.value=isoWeek(H);pmsAnio.value=H.getFullYear();pmsRender();};
 
@@ -637,8 +680,12 @@ async function pmsCommit(td,raw){
       const e=getE(r.maestro_id); if(e){Object.assign(e,up);delete e.__mant;OFF.guardar('maestro',datos);}
     }
   }
-  appFoot.textContent='Guardado ✓';setTimeout(()=>appFoot.textContent='Doble clic en una celda para editar · los cambios se guardan solos.',1200);
-  pmsRender();
+  appFoot.textContent=res.local?'Guardado local · se enviará al recuperar señal':'Guardado ✓';
+  setTimeout(()=>appFoot.textContent='Doble clic en una celda para editar · los cambios se guardan solos.',1200);
+  // om / tipo_pm / tiempo_req no cambian el orden, la semana ni el reparto de días:
+  // basta con repintar esa fila en vez de las ~380
+  const soloFila=(k==='om'||k==='tipo_pm'||k==='tiempo_req');
+  if(soloFila&&pmsRefrescarFila(id))pmsAplicar(); else pmsRender();
 }
 /* ---- alta de filas ---- */
 function pmsElegibles(){
@@ -732,6 +779,8 @@ document.addEventListener('keydown',ev=>{
 pmsBtnExcel.onclick=()=>{
   const vis=PMSX.filter(m=>m.tr.style.display!=='none');
   if(!vis.length)return alert('No hay filas visibles para exportar.');
+  if(!pmsVerEjec&&pmsFilas.some(f=>f.est==='EJECUTADO')&&
+     !confirm('Se exportará solo lo que está a la vista.\n\nLos mantenimientos EJECUTADOS están ocultos. Si los necesitas, pulsa “Mostrar ejecutados” y vuelve a exportar.\n\n¿Continuar?'))return;
   const wk=+pmsSemana.value||isoWeek(hoy0()), yr=+pmsAnio.value||hoy0().getFullYear();
   const filas=vis.map((m,i)=>{
     const f=m.f, r=f.r;
@@ -948,7 +997,7 @@ if('serviceWorker' in navigator){
 }
 OFF.vigilar(()=>{ offPintarEstado(); if(navigator.onLine)OFF.sincronizar(sb).then(r=>{ if(r.ok){offPintarEstado(); if(typeof recargarTrasSync==='function')recargarTrasSync(); }}); });
 offPintarEstado();
-setInterval(()=>{ if(navigator.onLine)OFF.sincronizar(sb).then(r=>{if(r.ok)offPintarEstado();}); },30000);
+setInterval(()=>{ if(navigator.onLine&&!document.hidden)OFF.sincronizar(sb).then(r=>{if(r.ok)offPintarEstado();}); },30000);
 
   const add=new URLSearchParams(location.search).get('add');
   if(add){const e=getE(add); if(e)await pmsAgregar(e); else alert('No se encontr\u00f3 el equipo indicado.');}
