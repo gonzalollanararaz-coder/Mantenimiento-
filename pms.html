@@ -4,6 +4,8 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>PM-S — Programa de Mantenimiento Preventivo Semanal</title>
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#1c232b">
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
@@ -53,6 +55,12 @@
   .d-cumpl{display:grid;grid-template-columns:150px 1fr;gap:14px;align-items:center}
   .dot{display:inline-block;width:9px;height:9px;border-radius:2px;margin-right:6px}
   @media(max-width:1100px){.d-top,.d-bottom{grid-template-columns:1fr}}
+
+  /* estado de conexion */
+  .off-chip{border-radius:999px;padding:4px 10px;font-size:11px;font-weight:700;border:1px solid transparent;white-space:nowrap}
+  .off-ok{background:#dcfce7;color:#15803d;border-color:#86efac}
+  .off-warn{background:#fef3c7;color:#B45309;border-color:#fcd34d}
+  .off-bad{background:#fee2e2;color:#b91c1c;border-color:#fca5a5}
   footer{padding:7px 16px;color:var(--muted);font-size:12px;text-align:center;flex-shrink:0}
   /* ===== PM-S ===== */
   #pmsWrap{padding:0;overflow:auto;flex:1;min-height:0;contain:paint}
@@ -87,7 +95,7 @@
 <body>
 <header>
   <div><h1>PM-S — Programa de Mantenimiento Preventivo Semanal</h1><p>Unidad de Equipos · UDE</p></div>
-  <span class="who" id="who"></span>
+  <div style="display:flex;gap:10px;align-items:center"><span id="offEstado" class="off-chip"></span><span class="who" id="who"></span></div>
 </header>
 <div class="toolbar">
   <button class="act primary" id="pmsBtnAdd">&#65291; MNTTO</button>
@@ -140,6 +148,110 @@ if(!CFG||!CFG.url){
   throw new Error('sin configuracion');
 }
 const sb = window.supabase.createClient(CFG.url, CFG.key);
+
+/* ═══════════════════ MODO OFFLINE ═══════════════════
+   · Guarda una copia de los datos en el navegador (IndexedDB).
+   · Si no hay internet, los cambios entran a una cola y se envían solos al volver.
+   · Se usa igual desde index.html y desde pms.html. */
+const OFF = (() => {
+  const DB='gllr_off', VER=1;
+  let db=null;
+  function abrir(){
+    return new Promise((res,rej)=>{
+      if(db)return res(db);
+      const q=indexedDB.open(DB,VER);
+      q.onupgradeneeded=()=>{
+        const d=q.result;
+        if(!d.objectStoreNames.contains('tablas'))d.createObjectStore('tablas');      // copia de maestro / pm_prog
+        if(!d.objectStoreNames.contains('cola'))d.createObjectStore('cola',{keyPath:'id',autoIncrement:true});
+        if(!d.objectStoreNames.contains('meta'))d.createObjectStore('meta');
+      };
+      q.onsuccess=()=>{db=q.result;res(db);};
+      q.onerror=()=>rej(q.error);
+    });
+  }
+  function tx(store,modo,fn){
+    return abrir().then(d=>new Promise((res,rej)=>{
+      const t=d.transaction(store,modo), s=t.objectStore(store);
+      let out; try{ out=fn(s); }catch(e){ return rej(e); }
+      t.oncomplete=()=>res(out&&out.result!==undefined?out.result:out);
+      t.onerror=()=>rej(t.error);
+    }));
+  }
+  const guardar=(k,v)=>tx('tablas','readwrite',s=>s.put(v,k));
+  const leer=k=>tx('tablas','readonly',s=>s.get(k));
+  const meta=(k,v)=>v===undefined?tx('meta','readonly',s=>s.get(k)):tx('meta','readwrite',s=>s.put(v,k));
+  const encolar=op=>tx('cola','readwrite',s=>s.add(op));
+  const pendientes=()=>tx('cola','readonly',s=>s.getAll());
+  const quitar=id=>tx('cola','readwrite',s=>s.delete(id));
+
+  let online=navigator.onLine, avisar=null, sincronizando=false;
+
+  /* Envía a Supabase todo lo que quedó pendiente, en el orden en que se hizo */
+  async function sincronizar(sb){
+    if(sincronizando||!navigator.onLine)return {ok:0,fail:0};
+    sincronizando=true;
+    let ok=0,fail=0;
+    try{
+      const ops=await pendientes();
+      for(const op of ops){
+        try{
+          let r;
+          if(op.accion==='update')      r=await sb.from(op.tabla).update(op.datos).eq('id',op.id_fila);
+          else if(op.accion==='insert') r=await sb.from(op.tabla).insert(op.datos);
+          else if(op.accion==='delete') r=await sb.from(op.tabla).delete().eq('id',op.id_fila);
+          if(r&&r.error)throw r.error;
+          await quitar(op.id); ok++;
+        }catch(e){ fail++; break; }        // si una falla se detiene: conserva el orden
+      }
+    } finally { sincronizando=false; }
+    if(avisar)avisar();
+    return {ok,fail};
+  }
+  async function cuantosPendientes(){ try{ return (await pendientes()).length; }catch(_){ return 0; } }
+
+  function vigilar(cb){
+    avisar=cb;
+    addEventListener('online',()=>{online=true;cb&&cb();});
+    addEventListener('offline',()=>{online=false;cb&&cb();});
+  }
+  return {guardar,leer,meta,encolar,pendientes,quitar,sincronizar,cuantosPendientes,vigilar,
+          get online(){return navigator.onLine;}};
+})();
+
+/* Indicador de estado en la barra superior */
+function offPintarEstado(){
+  const el=document.getElementById('offEstado'); if(!el)return;
+  OFF.cuantosPendientes().then(n=>{
+    if(!navigator.onLine){
+      el.textContent = n? `Sin conexión · ${n} cambio(s) por enviar` : 'Sin conexión · trabajando local';
+      el.className='off-chip off-bad';
+    } else if(n){
+      el.textContent = `Enviando ${n} cambio(s)…`;
+      el.className='off-chip off-warn';
+    } else {
+      el.textContent='En línea';
+      el.className='off-chip off-ok';
+    }
+  });
+}
+
+/* Envuelve una escritura: si hay internet va directo; si no, entra a la cola */
+async function offEscribir(sb,tabla,accion,{id_fila=null,datos=null}={}){
+  if(navigator.onLine){
+    let r;
+    if(accion==='update')      r=await sb.from(tabla).update(datos).eq('id',id_fila);
+    else if(accion==='insert') r=await sb.from(tabla).insert(datos).select().single();
+    else if(accion==='delete') r=await sb.from(tabla).delete().eq('id',id_fila);
+    if(!r||!r.error)return {error:null,data:r?r.data:null,local:false};
+    // si falló por red, se guarda para reintentar
+    const red=/fetch|network|Failed to fetch|NetworkError/i.test(r.error.message||'');
+    if(!red)return {error:r.error,local:false};
+  }
+  await OFF.encolar({tabla,accion,id_fila,datos,ts:Date.now()});
+  offPintarEstado();
+  return {error:null,data:null,local:true};
+}
 
 let datos=[], perfil=null;
 function hoy0(){const d=new Date();d.setHours(0,0,0,0);return d;}
@@ -218,13 +330,18 @@ function pmsHPMap(){
   const m=new Map();
   for(const [k,arr] of porEq){
     const e=getE(k), freq=e?(+e.frecuencia||0):0; if(!freq)continue;
-    const orden=arr.slice().sort((a,b)=>
-      String(a.fecha_ejec||a.fecha_prog||'').localeCompare(String(b.fecha_ejec||b.fecha_prog||'')));
+    // se encadena por horómetro: el mntto siguiente es el de HR/KM mayor.
+    // Las filas sin HR/KM ejecutado se ubican por su fecha programada, al final.
+    const conHr=arr.filter(r=>r.hrkm_ejec!=null&&r.hrkm_ejec!=='')
+                   .sort((a,b)=>(+a.hrkm_ejec)-(+b.hrkm_ejec));
+    const sinHr=arr.filter(r=>r.hrkm_ejec==null||r.hrkm_ejec==='')
+                   .sort((a,b)=>String(a.fecha_prog||'').localeCompare(String(b.fecha_prog||'')));
     let base=null;                                  // PM realizado del mntto anterior
-    for(const r of orden){
+    for(const r of conHr){
       if(base!=null) m.set(String(r.id), base+freq);
-      if(r.hrkm_ejec!=null&&r.hrkm_ejec!=='') base=roundToFreq(+r.hrkm_ejec,freq);
+      base=roundToFreq(+r.hrkm_ejec,freq);
     }
+    for(const r of sinHr){ if(base!=null){ base=base+freq; m.set(String(r.id), base); } }
   }
   return m;
 }
@@ -254,7 +371,7 @@ function pmsReindexSap(){PMS_SAPX=new Map();for(const e of datos){const k=String
 function pmsPorSap(sap){return PMS_SAPX.get(String(sap||'').trim())||null;}
 /* ---- ESTADO ---- */
 function pmsEstado(r){
-  const lleno = r.om && r.hrkm_ejec!=null && r.hrkm_ejec!=='' && r.fecha_ejec;
+  const lleno = String(r.om??'').trim()!=='' && r.hrkm_ejec!=null && String(r.hrkm_ejec).trim()!=='' && String(r.fecha_ejec??'').trim()!=='';
   if(lleno){
     if(r.fecha_prog){
       const a=new Date(r.fecha_prog+'T00:00:00'), b=new Date(r.fecha_ejec+'T00:00:00');
@@ -296,10 +413,19 @@ function pmsBalance(filas,lunes){
 }
 /* ---- carga ---- */
 async function pmsCargar(){
-  const {data,error}=await sb.from('pm_prog').select('*').order('fecha_prog',{ascending:true});
-  if(error){pmsBody.innerHTML=`<tr><td colspan="24" style="padding:20px;color:#b91c1c">${esc(error.message)}</td></tr>`;return;}
+  let data=null;
+  try{
+    const r=await sb.from('pm_prog').select('*').order('fecha_prog',{ascending:true});
+    if(r.error)throw r.error; data=r.data; OFF.guardar('pm_prog',data);
+  }catch(err){
+    data=await OFF.leer('pm_prog');
+    if(!data){pmsBody.innerHTML='<tr><td colspan="24" style="padding:20px;color:#b91c1c">Sin conexión y sin datos guardados en este equipo.</td></tr>';return;}
+    appFoot.textContent='Mostrando la última copia guardada en este equipo.';
+  }
   pmsData=data||[]; pmsCargado=true; pmsRender();
 }
+/* tras enviar la cola, refresca desde el servidor */
+async function recargarTrasSync(){ if(pmsCargado)await pmsCargar(); }
 /* ---- encabezado ---- */
 function pmsHead(){
   const wk=+pmsSemana.value||isoWeek(hoy0()), yr=+pmsAnio.value||hoy0().getFullYear();
@@ -321,8 +447,8 @@ function pmsHead(){
      +`<select id="pmsSelSem" style="border:none;border-radius:4px;font-size:10px;padding:1px 2px;font-weight:700;color:#002060">${opts.join('')}</select>`
      +`<input id="pmsAnioIn" type="number" value="${yr}" style="width:46px;border:none;border-radius:4px;font-size:10px;padding:1px 2px;text-align:center;margin-left:3px">`
      +`<span style="margin-left:6px;font-size:10px;font-weight:700;color:#cfe0f5">${mesLab}</span></th>`
-   +`<th colspan="4" style="background:#1c232b;font-weight:700;font-size:10px">EJECUCIÓN</th>`
-   +`<th colspan="2" style="background:${G};font-weight:700;font-size:10px">CONTROL</th></tr>`;
+   +`<th colspan="3" style="background:#1c232b;font-weight:700;font-size:10px">EJECUCIÓN</th>`
+   +`<th colspan="3" style="background:${G};font-weight:700;font-size:10px">CONTROL</th></tr>`;
 
   // ── fila 3: nombres de columna (los dias llevan letra y numero en la misma celda) ──
   const cols=[['#',42],['Proyecto',66],['Cód. SAP<br>JJC',68],['Equipo / Vehículo',180],['Marca',96],['Modelo',120],['Serie/Placa',96],
@@ -336,7 +462,7 @@ function pmsHead(){
       +`<div style="font-size:9px;opacity:.9;line-height:1.1">${PMS_DIA[i]}</div>`
       +`<div style="font-size:11px;font-weight:${esH?800:600};line-height:1.1">${String(d.getUTCDate()).padStart(2,'0')}</div></th>`;
   });
-  [['OM*',V,84],['HR / KM*',V,72],['%<br>DESFASE',V,62],['FECHA<br>EJECUCION*',V,78],['ESTADO',G,92],['SEMANA',G,54]]
+  [['OM*',V,84],['HR / KM*',V,72],['FECHA<br>EJECUCION*',V,78],['ESTADO',G,92],['%<br>DESFASE',G,62],['SEMANA',G,54]]
     .forEach(([l,bg,w])=>h+=`<th style="background:${bg};min-width:${w}px"><div class="hlab">${l}</div></th>`);
   h+='</tr>';
 
@@ -345,7 +471,7 @@ function pmsHead(){
   const vac=n=>'<th style="background:#e8eaf0"></th>'.repeat(n);
   h+='<tr class="pms-filt">'+f('_n','#')+f('proyec','Proyecto')+f('sap','SAP')+f('equipo','Equipo')+f('marca','Marca')+f('modelo','Modelo')+f('placa','Serie')
     +vac(1)+f('tipo','PM')+vac(2)+vac(7)
-    +f('om','OM')+f('hrkm','HR/KM')+vac(1)+f('fejec','Fecha')+f('est','Estado')+f('sem','Sem.')+'</tr>';
+    +f('om','OM')+f('hrkm','HR/KM')+f('fejec','Fecha')+f('est','Estado')+vac(1)+f('sem','Sem.')+'</tr>';
 
   pmsThead.innerHTML=h;
   const ss=document.getElementById('pmsSelSem'); if(ss)ss.onchange=()=>{pmsSemana.value=ss.value;pmsRender();};
@@ -394,9 +520,9 @@ function pmsRender(){
      +celdas
      +`<td class="pms-c mono pms-ed" data-pmsk="om">${esc(r.om||'')}</td>`
      +`<td class="pms-c mono pms-ed" data-pmsk="hrkm_ejec">${r.hrkm_ejec!=null?Number(r.hrkm_ejec).toLocaleString('es-PE'):''}</td>`
-     +`<td class="pms-c mono" title="${f.desf==null?'Sin HR/KM programado de referencia':'(HR/KM ejec − HR/KM prog) ÷ Frecuencia'}" style="${f.desf==null?'color:#9ca3af':(Math.abs(f.desf)>10?'color:#dc2626;font-weight:700':'color:#15803d')}">${f.desf==null?'—':f.desf.toFixed(1)+'%'}</td>`
      +`<td class="pms-c pms-ed" data-pmsk="fecha_ejec">${fmtDate(r.fecha_ejec)}</td>`
      +`<td class="pms-c" style="color:${EST[f.est]};font-weight:700">${f.est}</td>`
+     +`<td class="pms-c mono" title="${f.desf==null?'Sin HR/KM programado de referencia':'(HR/KM ejec − HR/KM prog) ÷ Frecuencia'}" style="${f.desf==null?'color:#9ca3af':(Math.abs(f.desf)>10?'color:#dc2626;font-weight:700':'color:#15803d')}">${f.desf==null?'—':f.desf.toFixed(1)+'%'}</td>`
      +`<td class="pms-c">${f.sem||''}</td></tr>`;
   });
   pmsBody.innerHTML=h||`<tr><td colspan="24" style="padding:24px;text-align:center;color:#6b747d">Sin registros. Usa “＋ MNTTO” o “Programar mntto” desde Equipos.</td></tr>`;
@@ -448,10 +574,10 @@ pmsBody.addEventListener('click',async ev=>{
     const f=pmsFilas.find(x=>String(x.r.id)===String(del));
     if(!confirm('¿Eliminar esta fila del PM-S?\n\n'+(f?(f.sap+' · '+f.equipo):'')+'\n\nNo se modifica ningún dato de la pestaña Equipos.'))return;
     const rec=pmsData.find(x=>String(x.id)===String(del));
-    const {error}=await sb.from('pm_prog').delete().eq('id',del);
-    if(error)return alert('No se pudo eliminar: '+error.message);
+    const res=await offEscribir(sb,'pm_prog','delete',{id_fila:del});
+    if(res.error)return alert('No se pudo eliminar: '+res.error.message);
     if(rec)pmsPushUndo({tipo:'delete',record:{...rec}});
-    pmsData=pmsData.filter(x=>String(x.id)!==String(del)); pmsRender(); return;
+    pmsData=pmsData.filter(x=>String(x.id)!==String(del)); OFF.guardar('pm_prog',pmsData); pmsRender(); return;
   }
   const tr=ev.target.closest('tr[data-pmsid]'); if(!tr)return;
   pmsBody.querySelectorAll('tr.rowsel-g').forEach(r=>r.classList.remove('rowsel-g'));
@@ -499,15 +625,16 @@ async function pmsCommit(td,raw){
   if((r[k]??null)===(val??null)){pmsRender();return;}
   const prev=r[k]??null;
   r[k]=val;
-  const {error}=await sb.from('pm_prog').update({[k]:val}).eq('id',id);
-  if(error){appFoot.textContent='⚠️ No se guardó: '+error.message;r[k]=prev;pmsRender();return;}
+  const res=await offEscribir(sb,'pm_prog','update',{id_fila:id,datos:{[k]:val}});
+  if(res.error){appFoot.textContent='⚠️ No se guardó: '+res.error.message;r[k]=prev;pmsRender();return;}
+  OFF.guardar('pm_prog',pmsData);
   pmsPushUndo({tipo:'edit',id,k,old:prev});
   // reflejar en el maestro: HR/KM ult. y F. ult.
   if((k==='hrkm_ejec'||k==='fecha_ejec') && r.maestro_id){
     const up={}; if(r.hrkm_ejec!=null)up.hrkm_ult_mntto=r.hrkm_ejec; if(r.fecha_ejec)up.fecha_ult_mntto=r.fecha_ejec;
     if(Object.keys(up).length){
-      await sb.from('maestro').update(up).eq('id',r.maestro_id);
-      const e=getE(r.maestro_id); if(e){Object.assign(e,up);delete e.__mant;}
+      await offEscribir(sb,'maestro','update',{id_fila:r.maestro_id,datos:up});
+      const e=getE(r.maestro_id); if(e){Object.assign(e,up);delete e.__mant;OFF.guardar('maestro',datos);}
     }
   }
   appFoot.textContent='Guardado ✓';setTimeout(()=>appFoot.textContent='Doble clic en una celda para editar · los cambios se guardan solos.',1200);
@@ -525,9 +652,10 @@ async function pmsAgregar(e){
   const c=mant(e);
   const fila={maestro_id:e.id,cod_proyec:e.cod_proyec||null,cod_sap:e.cod_sap,
     hrkm_prog:c.proximo||null, fecha_prog:c.fproxDate?c.fproxDate.toISOString().slice(0,10):null};
+  if(!navigator.onLine)return alert('Sin conexión: no se pueden agregar filas nuevas.\n\nSí puedes editar OM, HR/KM y fechas de las filas existentes; se enviarán al recuperar la señal.');
   const {data,error}=await sb.from('pm_prog').insert(fila).select().single();
   if(error)return alert('No se pudo agregar: '+error.message);
-  pmsData.push(data); pmsPushUndo({tipo:'add',id:data.id});
+  pmsData.push(data); OFF.guardar('pm_prog',pmsData); pmsPushUndo({tipo:'add',id:data.id});
   if(data.fecha_prog){const d=new Date(data.fecha_prog+'T00:00:00');pmsSemana.value=isoWeek(d);pmsAnio.value=d.getFullYear();}
   pmsSel=data.id; pmsRender();
 }
@@ -610,12 +738,12 @@ pmsBtnExcel.onclick=()=>{
     return {'#':i+1,'Proyecto':f.proyec,'Cód. SAP JJC':f.sap,'Equipo / Vehículo':f.equipo,
       'Marca':f.marca,'Modelo':f.modelo,'Serie/Placa':f.placa,'Tiempo Req.':f.treq,'TIPO DE PM':f.tipo,
       'HR/KM Prog.':f.hp??'','Fecha Prog.':r.fecha_prog||'','OM':r.om||'',
-      'HR / KM':r.hrkm_ejec??'','% Desfase':f.desf==null?'':+f.desf.toFixed(2),
-      'FECHA EJECUCION':r.fecha_ejec||'','ESTADO':f.est,'SEMANA':f.sem||''};
+      'HR / KM':r.hrkm_ejec??'','FECHA EJECUCION':r.fecha_ejec||'',
+      'ESTADO':f.est,'% Desfase':f.desf==null?'':+f.desf.toFixed(2),'SEMANA':f.sem||''};
   });
   const ws=XLSX.utils.json_to_sheet(filas);
   ws['!cols']=[{wch:5},{wch:10},{wch:11},{wch:30},{wch:14},{wch:16},{wch:14},{wch:10},{wch:9},
-               {wch:11},{wch:11},{wch:12},{wch:10},{wch:10},{wch:15},{wch:14},{wch:8}];
+               {wch:11},{wch:11},{wch:12},{wch:10},{wch:15},{wch:14},{wch:10},{wch:8}];
   const wb=XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb,ws,'PM-S');
   const hoy=new Date().toISOString().slice(0,10);
   XLSX.writeFile(wb,`PM-S_Semana${wk}-${yr}_${hoy}.xlsx`);
@@ -801,14 +929,27 @@ document.addEventListener('keydown',ev=>{if(ev.key==='Escape'&&!dashWrap.classLi
   perfil=p||{}; who.textContent=(perfil.nombre||session.user.email)+' · '+(perfil.rol||'');
   if(perfil.estado!=='aprobado'){document.body.innerHTML='<div style="padding:60px;text-align:center"><h2 style="font-size:18px">Acceso pendiente</h2><p style="color:#6b747d">Tu cuenta a&uacute;n no est&aacute; aprobada.</p></div>';return;}
 
-  const {data:m,error:e1}=await sb.from('maestro').select(MAESTRO_CAMPOS).order('cod_proyec').order('id');
-  if(e1){appFoot.textContent='No se pudo cargar el maestro: '+e1.message;return;}
-  datos=m||[]; reindexDatos();
+  let m=null;
+  try{
+    const r=await sb.from('maestro').select(MAESTRO_CAMPOS).order('cod_proyec').order('id');
+    if(r.error)throw r.error; m=r.data; OFF.guardar('maestro',m);
+  }catch(_){ m=await OFF.leer('maestro'); }
+  if(!m){appFoot.textContent='No hay datos del maestro guardados en este equipo. Conéctate una vez para descargarlos.';return;}
+  datos=m; reindexDatos();
 
   const H=hoy0(); pmsSemana.value=isoWeek(H); pmsAnio.value=H.getFullYear();
   await pmsCargar();
 
   // ?add=<id>  -> viene del boton "Programar mntto" de la pagina principal
+
+/* ── modo offline: service worker + copia local + sincronizacion ── */
+if('serviceWorker' in navigator){
+  navigator.serviceWorker.register('sw.js').catch(e=>console.warn('SW no registrado:',e));
+}
+OFF.vigilar(()=>{ offPintarEstado(); if(navigator.onLine)OFF.sincronizar(sb).then(r=>{ if(r.ok){offPintarEstado(); if(typeof recargarTrasSync==='function')recargarTrasSync(); }}); });
+offPintarEstado();
+setInterval(()=>{ if(navigator.onLine)OFF.sincronizar(sb).then(r=>{if(r.ok)offPintarEstado();}); },30000);
+
   const add=new URLSearchParams(location.search).get('add');
   if(add){const e=getE(add); if(e)await pmsAgregar(e); else alert('No se encontr\u00f3 el equipo indicado.');}
 })();
