@@ -385,6 +385,8 @@ const MAESTRO_CAMPOS="id,status,cod_proyec,familia,cod_sap,equipo,marca,modelo,s
 /* ═══════════════════ PM-S : programa semanal + historico acumulado ═══════════════════ */
 let pmsData=[], pmsSel=null, pmsSelCell=null, pmsVerEjec=false, pmsColF={}, pmsCargado=false;
 const PMS_DIA=['L','M','M','J','V','S','D'];
+/* ¿está fuera de obra? "TRANS. DESM." NO cuenta: sigue en obra, en tránsito de salida */
+function esDesmov(s){return /^DESMOVILIZ/.test(String(s||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toUpperCase());}
 const PMS_MES=['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Setiembre','Octubre','Noviembre','Diciembre'];
 /* lunes / domingo de una semana ISO */
 function isoWeekMonday(y,w){const j=new Date(Date.UTC(y,0,4)),dw=j.getUTCDay()||7,m=new Date(j);m.setUTCDate(j.getUTCDate()-(dw-1)+(w-1)*7);m.setUTCHours(0,0,0,0);return m;}
@@ -777,12 +779,12 @@ async function pmsCommit(td,raw){
 }
 /* ---- alta de filas ---- */
 function pmsElegibles(){
-  return datos.filter(e=>String(e.status||'').toUpperCase()!=='DESMOVILIZADO' && (+e.hr_dia||0)>0)
+  return datos.filter(e=>!esDesmov(e.status) && (+e.hr_dia||0)>0)
               .sort((a,b)=>String(a.cod_sap||'').localeCompare(String(b.cod_sap||'')));
 }
 async function pmsAgregar(e){
   if(!e)return;
-  if(String(e.status||'').toUpperCase()==='DESMOVILIZADO'){alert('El equipo está DESMOVILIZADO, no se puede programar.');return;}
+  if(esDesmov(e.status)){alert('El equipo está desmovilizado, no se puede programar.');return;}
   if(!(+e.hr_dia||0)){alert('El equipo no tiene HR/día registrado, no se puede calcular su programación.');return;}
   const c=mant(e);
   const fila={maestro_id:e.id,cod_proyec:e.cod_proyec||null,cod_sap:e.cod_sap,
@@ -797,7 +799,7 @@ async function pmsAgregar(e){
 
 /* Agrega varios equipos de una vez (viene de "Programar mntto" en la pestaña Equipos) */
 async function pmsAgregarVarios(ids){
-  const eqs=ids.map(id=>getE(id)).filter(e=>e&&String(e.status||'').toUpperCase()!=='DESMOVILIZADO'&&(+e.hr_dia||0));
+  const eqs=ids.map(id=>getE(id)).filter(e=>e&&!esDesmov(e.status)&&(+e.hr_dia||0));
   if(!eqs.length){alert('Ninguno de los equipos indicados se puede programar.');return;}
   if(!navigator.onLine){alert('Sin conexión: no se pueden agregar filas nuevas.\n\nSí puedes editar OM, HR/KM y fechas de las filas existentes.');return;}
   const filas=eqs.map(e=>{const c=mant(e);return{maestro_id:e.id,cod_proyec:e.cod_proyec||null,cod_sap:e.cod_sap,
