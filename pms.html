@@ -744,6 +744,38 @@ async function pmsAgregar(e){
   if(data.fecha_prog){const d=new Date(data.fecha_prog+'T00:00:00');pmsSemana.value=isoWeek(d);pmsAnio.value=d.getFullYear();}
   pmsSel=data.id; pmsRender();
 }
+
+/* Agrega varios equipos de una vez (viene de "Programar mntto" en la pestaña Equipos) */
+async function pmsAgregarVarios(ids){
+  const eqs=ids.map(id=>getE(id)).filter(e=>e&&String(e.status||'').toUpperCase()!=='DESMOVILIZADO'&&(+e.hr_dia||0));
+  if(!eqs.length){alert('Ninguno de los equipos indicados se puede programar.');return;}
+  if(!navigator.onLine){alert('Sin conexión: no se pueden agregar filas nuevas.\n\nSí puedes editar OM, HR/KM y fechas de las filas existentes.');return;}
+  const filas=eqs.map(e=>{const c=mant(e);return{maestro_id:e.id,cod_proyec:e.cod_proyec||null,cod_sap:e.cod_sap,
+    hrkm_prog:c.proximo||null, fecha_prog:c.fproxDate?c.fproxDate.toISOString().slice(0,10):null};});
+  const {data,error}=await sb.from('pm_prog').insert(filas).select();
+  if(error){alert('No se pudieron agregar: '+error.message);return;}
+  data.forEach(d=>{pmsData.push(d); pmsPushUndo({tipo:'add',id:d.id});});
+  OFF.guardar('pm_prog',pmsData);
+  const f0=data.map(d=>d.fecha_prog).filter(Boolean).sort()[0];
+  if(f0){const d=new Date(f0+'T00:00:00');pmsSemana.value=isoWeek(d);pmsAnio.value=d.getFullYear();}
+  pmsSel=data.length===1?data[0].id:null;
+  pmsRender();
+  appFoot.textContent=`${data.length} equipo(s) agregados al programa ✓`;
+  setTimeout(()=>appFoot.textContent='Doble clic en una celda para editar · los cambios se guardan solos.',2600);
+  try{window.focus();}catch(_){}
+}
+/* Canal con la pestaña Equipos: responde que está viva y recibe nuevos encargos */
+if('BroadcastChannel' in window){
+  const ch=new BroadcastChannel('gllr_pms');
+  ch.onmessage=async ev=>{
+    const m=ev.data||{};
+    if(m.tipo==='ping'){ch.postMessage({tipo:'pong'});return;}
+    if(m.tipo==='add'&&Array.isArray(m.ids)&&m.ids.length){
+      if(!pmsCargado)await pmsCargar();
+      await pmsAgregarVarios(m.ids);
+    }
+  };
+}
 pmsBtnAdd.onclick=()=>{
   const el=pmsElegibles();
   if(!el.length)return alert('No hay equipos elegibles (se excluyen DESMOVILIZADOS y los que no tienen HR/día).');
@@ -1084,7 +1116,11 @@ offPintarEstado();
 setInterval(()=>{ if(navigator.onLine&&!document.hidden)OFF.sincronizar(sb).then(r=>{if(r.ok)offPintarEstado();}); },30000);
 
   const add=new URLSearchParams(location.search).get('add');
-  if(add){const e=getE(add); if(e)await pmsAgregar(e); else alert('No se encontr\u00f3 el equipo indicado.');}
+  if(add){
+    const ids=add.split(',').map(s=>s.trim()).filter(Boolean);
+    if(ids.length>1)await pmsAgregarVarios(ids);
+    else {const e=getE(ids[0]); if(e)await pmsAgregar(e); else alert('No se encontró el equipo indicado.');}
+  }
 })();
 </script>
 </body>
