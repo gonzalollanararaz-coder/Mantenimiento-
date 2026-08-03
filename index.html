@@ -244,8 +244,8 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
 /* ╔══ pega aquí tus DOS datos (los mismos de tu archivo actual) ══╗ */
-const SUPABASE_URL = "https://hklwvdhzltjsbfvlewbu.supabase.co";   // ← reemplaza
-const SUPABASE_KEY = "sb_publishable_NgDfyDHDI_KByR-qf35EpA_ZuKI5E0K";                 // ← reemplaza
+const SUPABASE_URL = "https://TU-PROYECTO.supabase.co";   // ← reemplaza
+const SUPABASE_KEY = "TU-PUBLISHABLE-KEY";                 // ← reemplaza
 /* ──────────────────────────────────────────────────────────────── */
 const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 try{localStorage.setItem('gllr_sbcfg',JSON.stringify({url:SUPABASE_URL,key:SUPABASE_KEY}));}catch(_){}
@@ -397,7 +397,7 @@ const DOCS=['certif_operat','soat','poliza','rev_tec','tarjeta_circ'];
 const FCALC=['_alerta','_sem','_alertamntto']; // columnas calculadas con filtro
 const ST_RANK={MOVILIZADO:1,TRANSITO:1,DESMOVILIZADO:2};
 const collapsed={mov:true,des:true,prov:true,doc:true}, colFilters={};
-let selId=null, undoStack=[];
+let selId=null, selIds=new Set(), undoStack=[];
 
 /* ===== arranque / sesión ===== */
 async function init(){const {data:{session}}=await sb.auth.getSession();if(session)await trasLogin();else mostrar("auth");}
@@ -565,7 +565,7 @@ function buildBody(){
     const _rk=s=>ST_RANK[s]||9;
     const divi=(prevProy!==null && (e.cod_proyec!==prevProy || _rk(e.status)!==_rk(prevSt)))?'grp-top':'';
     prevProy=e.cod_proyec; prevSt=e.status;
-    const selCls=(selId&&String(e.id)===String(selId))?' rowsel':'';
+    const selCls=selIds.has(String(e.id))?' rowsel':'';
     let tr=`<tr data-id="${e.id}" class="${divi}${selCls}">`;
     FROZEN.forEach((f,i)=>{
       const w=fw(f),style=`left:${frozenLeft(i)}px;min-width:${w}px;width:${w}px`;
@@ -703,14 +703,31 @@ cuerpo.addEventListener("click",async ev=>{
     return;
   }
   // fila en celeste claro + la celda pulsada en celeste oscuro
+  // Ctrl/Cmd + clic  -> suma o quita esa fila     Shift + clic -> marca el rango
   const tr=ev.target.closest('tr[data-id]');
   if(tr){
-    cuerpo.querySelectorAll('tr.rowsel').forEach(r=>{if(r!==tr)r.classList.remove('rowsel');});
-    tr.classList.add('rowsel'); selId=tr.dataset.id;
+    const id=tr.dataset.id;
+    if(ev.ctrlKey||ev.metaKey){
+      if(selIds.has(id)){selIds.delete(id); if(selId===id)selId=[...selIds].pop()||null;}
+      else {selIds.add(id); selId=id;}
+    }else if(ev.shiftKey&&selId){
+      const filas=[...cuerpo.querySelectorAll('tr[data-id]')].filter(r=>r.style.display!=='none');
+      const a=filas.findIndex(r=>r.dataset.id===selId), b=filas.findIndex(r=>r.dataset.id===id);
+      if(a>=0&&b>=0)for(let i=Math.min(a,b);i<=Math.max(a,b);i++)selIds.add(filas[i].dataset.id);
+      selId=id;
+    }else{ selIds.clear(); selIds.add(id); selId=id; }
+    cuerpo.querySelectorAll('tr[data-id]').forEach(r=>r.classList.toggle('rowsel',selIds.has(r.dataset.id)));
     cuerpo.querySelectorAll('td.cellsel').forEach(t=>t.classList.remove('cellsel'));
-    const td=ev.target.closest('td'); if(td)td.classList.add('cellsel');
+    const td=ev.target.closest('td'); if(td&&selIds.has(id))td.classList.add('cellsel');
+    pintarSel();
   }
 });
+/* aviso del número de filas marcadas */
+function pintarSel(){
+  const n=selIds.size;
+  btnProg.textContent = n>1 ? `📅 Programar mntto (${n})` : '📅 Programar mntto';
+  if(n>1)appFoot.textContent=`${n} equipos marcados · pulsa “Programar mntto” para pasarlos al PM-S`;
+}
 /* ===== Deshacer (Ctrl+Z) ===== */
 function pushUndo(a){undoStack.push(a);if(undoStack.length>50)undoStack.shift();btnUndo.disabled=undoStack.length===0;}
 async function deshacer(){
@@ -740,15 +757,12 @@ document.addEventListener("keydown",ev=>{
   }
 });
 /* ===== Programar mntto → pasa el equipo seleccionado a la pestaña PM-S ===== */
-btnProg.onclick=()=>{
-  if(!selId){alert("Primero selecciona un equipo haciendo clic en su fila.");return;}
-  abrirPMS('?add='+encodeURIComponent(selId));
-};
+btnProg.onclick=programarSeleccion;
 /* Agrupar / Desagrupar (colapsar / expandir todo) */
 btnAgrupar.onclick=()=>{GROUPS.forEach(g=>collapsed[g.key]=true);render();};
 btnDesagrupar.onclick=()=>{GROUPS.forEach(g=>collapsed[g.key]=false);render();};
 /* Borrar todos los filtros */
-btnClear.onclick=()=>{buscar.value="";fStatus.value="";fDocs.value="";kpiFiltro="";pintarChips();for(const k in colFilters)delete colFilters[k];render();appFoot.textContent="Doble clic en una celda para editar · los cambios se guardan solos.";};
+btnClear.onclick=()=>{buscar.value="";fStatus.value="";fDocs.value="";kpiFiltro="";pintarChips();selIds.clear();selId=null;pintarSel();for(const k in colFilters)delete colFilters[k];render();appFoot.textContent="Doble clic en una celda para editar · los cambios se guardan solos.";};
 /* Exportar a Excel */
 btnExcel.onclick=()=>{
   try{
@@ -897,7 +911,49 @@ function startPoll(){stopPoll();pollTimer=setInterval(pollInteligente,60000);}
 function stopPoll(){if(pollTimer)clearInterval(pollTimer);}
 
 /* pestañas */
-function abrirPMS(qs){window.open('pms.html'+(qs||''),'_blank');}
+/* ── Enlace con la pestaña PM-S ──
+   Si ya hay una abierta se le manda el encargo por un canal compartido y no se
+   abre otra; solo se abre ventana nueva cuando no responde ninguna. */
+let pmsWin=null;
+const PMSCH = ('BroadcastChannel' in window) ? new BroadcastChannel('gllr_pms') : null;
+
+function abrirPMS(qs){ pmsWin=window.open('pms.html'+(qs||''),'_blank'); return pmsWin; }
+
+/* ¿hay alguna pestaña PM-S viva? espera un instante su respuesta */
+function pmsViva(ms=350){
+  if(pmsWin&&!pmsWin.closed)return Promise.resolve(true);
+  if(!PMSCH)return Promise.resolve(false);
+  return new Promise(res=>{
+    let listo=false;
+    const oye=ev=>{ if(ev.data&&ev.data.tipo==='pong'){listo=true;PMSCH.removeEventListener('message',oye);res(true);} };
+    PMSCH.addEventListener('message',oye);
+    PMSCH.postMessage({tipo:'ping'});
+    setTimeout(()=>{ if(!listo){PMSCH.removeEventListener('message',oye);res(false);} },ms);
+  });
+}
+
+async function programarSeleccion(){
+  const ids=[...selIds];
+  if(!ids.length){alert('Primero selecciona uno o más equipos haciendo clic en su fila.\n\nPara marcar varios: Ctrl + clic (o Shift + clic para un rango).');return;}
+  // solo equipos válidos: se excluyen DESMOVILIZADOS y los que no tienen HR/día
+  const malos=ids.map(getE).filter(e=>e&&(String(e.status||'').toUpperCase()==='DESMOVILIZADO'||!(+e.hr_dia||0)));
+  if(malos.length){
+    const lista=malos.slice(0,6).map(e=>' · '+e.cod_sap+' — '+(String(e.status||'').toUpperCase()==='DESMOVILIZADO'?'desmovilizado':'sin HR/día')).join('\n');
+    if(!confirm(`${malos.length} de ${ids.length} equipos no se pueden programar:\n${lista}${malos.length>6?'\n · …':''}\n\n¿Continuar con los ${ids.length-malos.length} restantes?`))return;
+  }
+  const buenos=ids.filter(id=>{const e=getE(id);return e&&String(e.status||'').toUpperCase()!=='DESMOVILIZADO'&&(+e.hr_dia||0);});
+  if(!buenos.length){alert('Ninguno de los equipos marcados se puede programar.');return;}
+
+  const qs='?add='+encodeURIComponent(buenos.join(','));
+  if(await pmsViva()){
+    PMSCH&&PMSCH.postMessage({tipo:'add',ids:buenos});
+    if(pmsWin&&!pmsWin.closed){try{pmsWin.focus();}catch(_){}}
+    appFoot.textContent=`${buenos.length} equipo(s) enviados a la pestaña PM-S ya abierta.`;
+    setTimeout(()=>appFoot.textContent='Doble clic en una celda para editar · los cambios se guardan solos.',2600);
+  }else{
+    abrirPMS(qs);
+  }
+}
 document.querySelectorAll("nav button").forEach(b=>b.onclick=()=>{
   const t=b.dataset.tab;
   if(t==="pms"){abrirPMS();return;}                 // se abre en otra pestaña del navegador
