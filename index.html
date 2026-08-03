@@ -90,11 +90,11 @@
   .pill.ok{background:var(--ok-bg);color:var(--ok)}.pill.warn{background:var(--warn-bg);color:var(--warn)}
   .pill.bad{background:var(--bad-bg);color:var(--bad)}.pill.na{background:var(--gray-bg);color:var(--gray)}
   td.st-MOVILIZADO{background:#dbeafe !important;color:#1d4ed8;font-weight:700}
-  td.st-DESMOVILIZADO{background:#fce7f3 !important;color:#be123c;font-weight:700}
-  td.st-TRANSITO,td.st-TRANSITO-MOV,td.st-TRANSITO-DESMOV{background:#FEF3C7 !important;color:#B45309;font-weight:700}
-  td.sap-TRANSITO,td.sap-TRANSITO-MOV,td.sap-TRANSITO-DESMOV{color:#B45309;font-weight:700}
+  td.st-DESMOVILIZADO,td.st-DESMOVILIZ{background:#fce7f3 !important;color:#be123c;font-weight:700}
+  td.st-TRANS-MOV,td.st-TRANS-DESM,td.st-TRANSITO,td.st-TRANSITO-MOV,td.st-TRANSITO-DESMOV{background:#FEF3C7 !important;color:#B45309;font-weight:700}
+  td.sap-TRANS-MOV,td.sap-TRANS-DESM,td.sap-TRANSITO,td.sap-TRANSITO-MOV,td.sap-TRANSITO-DESMOV{color:#B45309;font-weight:700}
   td.sap-MOVILIZADO{color:#1d4ed8;font-weight:700}
-  td.sap-DESMOVILIZADO{color:#be123c;font-weight:700}
+  td.sap-DESMOVILIZADO,td.sap-DESMOVILIZ{color:#be123c;font-weight:700}
   .delrow{border:none;background:none;color:#cbd2d9;cursor:pointer;font-size:13px;padding:0 2px;line-height:1}
   .delrow:hover{color:var(--bad)}
   .mx td.cell{padding:1px 5px;cursor:cell}
@@ -206,7 +206,7 @@
       <input type="search" id="buscar" placeholder="Buscar proyecto, SAP, equipo, marca, modelo, serie/placa…">
       <select id="fStatus">
         <option value="">Todos los status</option>
-        <option>MOVILIZADO</option><option>TRANSITO MOV.</option><option>TRANSITO DESMOV.</option><option>DESMOVILIZADO</option>
+        <option>MOVILIZADO</option><option>TRANS. MOV.</option><option>TRANS. DESM.</option><option>DESMOVILIZ.</option>
       </select>
       <select id="fDocs">
         <option value="">Todos los documentos</option>
@@ -244,8 +244,8 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
 /* ╔══ pega aquí tus DOS datos (los mismos de tu archivo actual) ══╗ */
-const SUPABASE_URL = "https://hklwvdhzltjsbfvlewbu.supabase.co";   // ← reemplaza
-const SUPABASE_KEY = "sb_publishable_NgDfyDHDI_KByR-qf35EpA_ZuKI5E0K";                 // ← reemplaza
+const SUPABASE_URL = "https://TU-PROYECTO.supabase.co";   // ← reemplaza
+const SUPABASE_KEY = "TU-PUBLISHABLE-KEY";                 // ← reemplaza
 /* ──────────────────────────────────────────────────────────────── */
 const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 try{localStorage.setItem('gllr_sbcfg',JSON.stringify({url:SUPABASE_URL,key:SUPABASE_KEY}));}catch(_){}
@@ -396,10 +396,16 @@ const FROZEN_HCOL='#002060', ID_BAND='#0F243E';
 const DOCS=['certif_operat','soat','poliza','rev_tec','tarjeta_circ'];
 const FCALC=['_alerta','_sem','_alertamntto']; // columnas calculadas con filtro
 /* Los estados llevan espacios y puntos: se normalizan para usarlos como clase CSS */
-function stSlug(s){return String(s||'').toUpperCase().replace(/[^A-Z0-9]+/g,'-').replace(/-+$/,'');}
-const ESTADOS=["MOVILIZADO","TRANSITO MOV.","TRANSITO DESMOV.","DESMOVILIZADO"];
-/* TRANSITO (en cualquiera de sus dos formas) se ordena junto a los movilizados */
-const ST_RANK={MOVILIZADO:1,'TRANSITO MOV.':1,'TRANSITO DESMOV.':1,TRANSITO:1,DESMOVILIZADO:2};
+function stSlug(s){return String(s||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'')
+  .toUpperCase().replace(/[^A-Z0-9]+/g,'-').replace(/^-+|-+$/g,'');}
+const ESTADOS=["MOVILIZADO","TRANS. MOV.","TRANS. DESM.","DESMOVILIZ."];
+/* ¿está fuera de obra? "TRANS. DESM." NO cuenta: sigue en obra, solo en tránsito de salida */
+function esDesmov(s){return /^DESMOVILIZ/.test(stSlug(s));}
+/* los dos tránsitos se ordenan junto a los movilizados; se conservan los nombres antiguos */
+const ST_RANK={MOVILIZADO:1,'TRANS. MOV.':1,'TRANS. DESM.':1,
+               'TRÁNS. MOV.':1,'TRÁNS. DESM.':1,
+               'TRANSITO MOV.':1,'TRANSITO DESMOV.':1,TRANSITO:1,
+               'DESMOVILIZ.':2,DESMOVILIZADO:2};
 const collapsed={mov:true,des:true,prov:true,doc:true}, colFilters={};
 let selId=null, selIds=new Set(), undoStack=[];
 
@@ -942,12 +948,12 @@ async function programarSeleccion(){
   const ids=[...selIds];
   if(!ids.length){alert('Primero selecciona uno o más equipos haciendo clic en su fila.\n\nPara marcar varios: Ctrl + clic (o Shift + clic para un rango).');return;}
   // solo equipos válidos: se excluyen DESMOVILIZADOS y los que no tienen HR/día
-  const malos=ids.map(getE).filter(e=>e&&(String(e.status||'').toUpperCase()==='DESMOVILIZADO'||!(+e.hr_dia||0)));
+  const malos=ids.map(getE).filter(e=>e&&(esDesmov(e.status)||!(+e.hr_dia||0)));
   if(malos.length){
-    const lista=malos.slice(0,6).map(e=>' · '+e.cod_sap+' — '+(String(e.status||'').toUpperCase()==='DESMOVILIZADO'?'desmovilizado':'sin HR/día')).join('\n');
+    const lista=malos.slice(0,6).map(e=>' · '+e.cod_sap+' — '+(esDesmov(e.status)?'desmovilizado':'sin HR/día')).join('\n');
     if(!confirm(`${malos.length} de ${ids.length} equipos no se pueden programar:\n${lista}${malos.length>6?'\n · …':''}\n\n¿Continuar con los ${ids.length-malos.length} restantes?`))return;
   }
-  const buenos=ids.filter(id=>{const e=getE(id);return e&&String(e.status||'').toUpperCase()!=='DESMOVILIZADO'&&(+e.hr_dia||0);});
+  const buenos=ids.filter(id=>{const e=getE(id);return e&&!esDesmov(e.status)&&(+e.hr_dia||0);});
   if(!buenos.length){alert('Ninguno de los equipos marcados se puede programar.');return;}
 
   const qs='?add='+encodeURIComponent(buenos.join(','));
