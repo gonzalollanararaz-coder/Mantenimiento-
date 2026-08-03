@@ -91,8 +91,8 @@
   .pill.bad{background:var(--bad-bg);color:var(--bad)}.pill.na{background:var(--gray-bg);color:var(--gray)}
   td.st-MOVILIZADO{background:#dbeafe !important;color:#1d4ed8;font-weight:700}
   td.st-DESMOVILIZADO{background:#fce7f3 !important;color:#be123c;font-weight:700}
-  td.st-TRANSITO{background:#FEF3C7 !important;color:#B45309;font-weight:700}
-  td.sap-TRANSITO{color:#B45309;font-weight:700}
+  td.st-TRANSITO,td.st-TRANSITO-MOV,td.st-TRANSITO-DESMOV{background:#FEF3C7 !important;color:#B45309;font-weight:700}
+  td.sap-TRANSITO,td.sap-TRANSITO-MOV,td.sap-TRANSITO-DESMOV{color:#B45309;font-weight:700}
   td.sap-MOVILIZADO{color:#1d4ed8;font-weight:700}
   td.sap-DESMOVILIZADO{color:#be123c;font-weight:700}
   .delrow{border:none;background:none;color:#cbd2d9;cursor:pointer;font-size:13px;padding:0 2px;line-height:1}
@@ -206,7 +206,7 @@
       <input type="search" id="buscar" placeholder="Buscar proyecto, SAP, equipo, marca, modelo, serie/placa…">
       <select id="fStatus">
         <option value="">Todos los status</option>
-        <option>MOVILIZADO</option><option>TRANSITO</option><option>DESMOVILIZADO</option>
+        <option>MOVILIZADO</option><option>TRANSITO MOV.</option><option>TRANSITO DESMOV.</option><option>DESMOVILIZADO</option>
       </select>
       <select id="fDocs">
         <option value="">Todos los documentos</option>
@@ -244,8 +244,8 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
 /* ╔══ pega aquí tus DOS datos (los mismos de tu archivo actual) ══╗ */
-const SUPABASE_URL = "https://hklwvdhzltjsbfvlewbu.supabase.co";   // ← reemplaza
-const SUPABASE_KEY = "sb_publishable_NgDfyDHDI_KByR-qf35EpA_ZuKI5E0K";                 // ← reemplaza
+const SUPABASE_URL = "https://TU-PROYECTO.supabase.co";   // ← reemplaza
+const SUPABASE_KEY = "TU-PUBLISHABLE-KEY";                 // ← reemplaza
 /* ──────────────────────────────────────────────────────────────── */
 const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 try{localStorage.setItem('gllr_sbcfg',JSON.stringify({url:SUPABASE_URL,key:SUPABASE_KEY}));}catch(_){}
@@ -395,7 +395,11 @@ const GROUPS=[
 const FROZEN_HCOL='#002060', ID_BAND='#0F243E';
 const DOCS=['certif_operat','soat','poliza','rev_tec','tarjeta_circ'];
 const FCALC=['_alerta','_sem','_alertamntto']; // columnas calculadas con filtro
-const ST_RANK={MOVILIZADO:1,TRANSITO:1,DESMOVILIZADO:2};
+/* Los estados llevan espacios y puntos: se normalizan para usarlos como clase CSS */
+function stSlug(s){return String(s||'').toUpperCase().replace(/[^A-Z0-9]+/g,'-').replace(/-+$/,'');}
+const ESTADOS=["MOVILIZADO","TRANSITO MOV.","TRANSITO DESMOV.","DESMOVILIZADO"];
+/* TRANSITO (en cualquiera de sus dos formas) se ordena junto a los movilizados */
+const ST_RANK={MOVILIZADO:1,'TRANSITO MOV.':1,'TRANSITO DESMOV.':1,TRANSITO:1,DESMOVILIZADO:2};
 const collapsed={mov:true,des:true,prov:true,doc:true}, colFilters={};
 let selId=null, selIds=new Set(), undoStack=[];
 
@@ -541,8 +545,8 @@ function buildHead(){
 function famNum(e){const m=String(e.familia||'').match(/\d+/);return m?+m[0]:99;}
 function cellCls(e,k,type,isFrz){
   let cls=isFrz?'frz cell':'cell';
-  if(type==='status')cls+=' st-'+(e.status||'');
-  if(k==='cod_sap')cls+=' sap-'+(e.status||'');
+  if(type==='status')cls+=' st-'+stSlug(e.status);
+  if(k==='cod_sap')cls+=' sap-'+stSlug(e.status);
   if(type==='okfalta'&&e[k])cls+=(e[k]==='OK'?' of-ok':e[k]==='FALTA'?' of-falta':'');
   if(type==='de'){const s=docState(e[k]);if(e[k]&&e[k]!=='N.A.'&&(s==='bad'||s==='warn'))cls+=' exp-'+s;}
   if(k==='fecha_lectura'&&staleLectura(e[k]))cls+=' stale';
@@ -800,7 +804,8 @@ cuerpo.addEventListener("dblclick",ev=>{
   const e=getE(id); if(!e)return;
   const cur=e[k]??"";
   let ctrl;
-  if(type==='status') ctrl=`<select>${["","MOVILIZADO","TRANSITO","DESMOVILIZADO"].map(o=>`<option ${cur===o?"selected":""}>${o}</option>`).join("")}</select>`;
+  if(type==='status'){const ops=ESTADOS.includes(cur)||!cur?ESTADOS:[cur,...ESTADOS];
+    ctrl=`<select>${["",...ops].map(o=>`<option ${cur===o?"selected":""}>${o}</option>`).join("")}</select>`;}
   else if(type==='okfalta') ctrl=`<select>${["","FALTA","OK"].map(o=>`<option ${cur===o?"selected":""}>${o}</option>`).join("")}</select>`;
   else if(type==='pct') ctrl=`<input type="number" min="0" max="100" value="${cur}">`;
   else if(type==='n') ctrl=`<input type="number" value="${cur}">`;
@@ -809,6 +814,7 @@ cuerpo.addEventListener("dblclick",ev=>{
   else ctrl=`<input type="text" value="${esc(cur)}">`;
   td.dataset.editing="1"; td.innerHTML=ctrl;
   const inp=td.querySelector("input,select"); inp.focus(); try{inp.select&&inp.select();}catch(_){}
+  if(inp.tagName==='SELECT')inp.onchange=()=>inp.blur();   // al elegir se guarda solo
 });
 cuerpo.addEventListener("mousedown",ev=>{  // botón N.A. (mousedown para no perder el foco antes)
   const btn=ev.target.closest('[data-na]'); if(!btn)return;
