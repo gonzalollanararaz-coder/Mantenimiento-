@@ -244,8 +244,8 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
 /* ╔══ pega aquí tus DOS datos (los mismos de tu archivo actual) ══╗ */
-const SUPABASE_URL = "https://hklwvdhzltjsbfvlewbu.supabase.co";   // ← reemplaza
-const SUPABASE_KEY = "sb_publishable_NgDfyDHDI_KByR-qf35EpA_ZuKI5E0K";                 // ← reemplaza
+const SUPABASE_URL = "https://TU-PROYECTO.supabase.co";   // ← reemplaza
+const SUPABASE_KEY = "TU-PUBLISHABLE-KEY";                 // ← reemplaza
 /* ──────────────────────────────────────────────────────────────── */
 const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 try{localStorage.setItem('gllr_sbcfg',JSON.stringify({url:SUPABASE_URL,key:SUPABASE_KEY}));}catch(_){}
@@ -286,6 +286,7 @@ const OFF = (() => {
   const quitar=id=>tx('cola','readwrite',s=>s.delete(id));
 
   let online=navigator.onLine, avisar=null, sincronizando=false;
+  const atascadas=new Map();          // no salieron tras varios intentos (una entrada por operación)
 
   /* Envía a Supabase todo lo que quedó pendiente, en el orden en que se hizo */
   async function sincronizar(sb){
@@ -294,15 +295,25 @@ const OFF = (() => {
     let ok=0,fail=0;
     try{
       const ops=await pendientes();
+      const trabadas=new Set();           // filas con un envío fallado: se respeta su orden
       for(const op of ops){
+        const fila=op.tabla+'#'+op.id_fila;
+        if(trabadas.has(fila)){fail++;continue;}
         try{
           let r;
-          if(op.accion==='update')      r=await sb.from(op.tabla).update(op.datos).eq('id',op.id_fila);
-          else if(op.accion==='insert') r=await sb.from(op.tabla).insert(op.datos);
-          else if(op.accion==='delete') r=await sb.from(op.tabla).delete().eq('id',op.id_fila);
+          if(op.accion==='update')      r=await sb.from(op.tabla).update(op.datos).eq('id',op.id_fila).select('id');
+          else if(op.accion==='insert') r=await sb.from(op.tabla).insert(op.datos).select('id');
+          else if(op.accion==='delete') r=await sb.from(op.tabla).delete().eq('id',op.id_fila).select('id');
           if(r&&r.error)throw r.error;
-          await quitar(op.id); ok++;
-        }catch(e){ fail++; break; }        // si una falla se detiene: conserva el orden
+          if(op.accion!=='insert'&&r&&Array.isArray(r.data)&&r.data.length===0)
+            throw new Error('el servidor no aplicó el cambio');
+          await quitar(op.id); atascadas.delete(op.id); ok++;
+        }catch(e){
+          fail++; trabadas.add(fila);
+          const n=(op.intentos||0)+1;
+          if(n>=5){ await tx('cola','readwrite',s=>s.put({...op,intentos:n,error:String(e.message||e)})); atascadas.set(op.id,{...op,error:String(e.message||e)}); }
+          else     { await tx('cola','readwrite',s=>s.put({...op,intentos:n})); }
+        }
       }
     } finally { sincronizando=false; }
     if(avisar)avisar();
@@ -316,6 +327,7 @@ const OFF = (() => {
     addEventListener('offline',()=>{online=false;cb&&cb();});
   }
   return {guardar,leer,meta,encolar,pendientes,quitar,sincronizar,cuantosPendientes,vigilar,
+          get atascadas(){return [...atascadas.values()];}, limpiarCola:()=>tx('cola','readwrite',s=>s.clear()),
           get online(){return navigator.onLine;}};
 })();
 
@@ -323,27 +335,55 @@ const OFF = (() => {
 function offPintarEstado(){
   const el=document.getElementById('offEstado'); if(!el)return;
   OFF.cuantosPendientes().then(n=>{
-    if(!navigator.onLine){
-      el.textContent = n? `Sin conexión · ${n} cambio(s) por enviar` : 'Sin conexión · trabajando local';
+    const at=OFF.atascadas.length;
+    el.style.cursor=n?'pointer':'default';
+    if(at){
+      el.textContent = `⚠ ${at} cambio(s) NO se guardaron — clic para ver`;
       el.className='off-chip off-bad';
+    } else if(!navigator.onLine){
+      el.textContent = n? `Sin conexión · ${n} cambio(s) por enviar` : 'Sin conexión · trabajando local';
+      el.className='off-chip off-warn';
     } else if(n){
       el.textContent = `Enviando ${n} cambio(s)…`;
       el.className='off-chip off-warn';
     } else {
-      el.textContent='En línea';
+      el.textContent='Todo guardado ✓';
       el.className='off-chip off-ok';
     }
   });
 }
+/* al pulsar el indicador: detalle de lo que quedó sin enviar */
+document.addEventListener('click',ev=>{
+  if(ev.target.id!=='offEstado')return;
+  OFF.pendientes().then(ops=>{
+    if(!ops.length)return alert('No hay cambios pendientes: todo está guardado en el servidor.');
+    const l=ops.slice(0,12).map(o=>` · ${o.tabla} #${o.id_fila}  ${JSON.stringify(o.datos||{}).slice(0,60)}`
+      +(o.error?`\n     ↳ ${o.error}`:'')).join('\n');
+    alert(`${ops.length} cambio(s) sin confirmar:\n\n${l}${ops.length>12?'\n · …':''}\n\n`
+      +(navigator.onLine?'Se reintentan solos cada 30 s.':'Se enviarán al recuperar la señal.'));
+  });
+});
+/* aviso si se cierra la pestaña con cambios sin enviar */
+window.addEventListener('beforeunload',ev=>{
+  if(_pendCache>0){ev.preventDefault();ev.returnValue='';return '';}
+});
+let _pendCache=0;
+setInterval(()=>{OFF.cuantosPendientes().then(n=>{_pendCache=n;});},4000);
 
 /* Envuelve una escritura: si hay internet va directo; si no, entra a la cola */
 async function offEscribir(sb,tabla,accion,{id_fila=null,datos=null}={}){
   if(navigator.onLine){
     let r;
-    if(accion==='update')      r=await sb.from(tabla).update(datos).eq('id',id_fila);
+    if(accion==='update')      r=await sb.from(tabla).update(datos).eq('id',id_fila).select('id');
     else if(accion==='insert') r=await sb.from(tabla).insert(datos).select().single();
-    else if(accion==='delete') r=await sb.from(tabla).delete().eq('id',id_fila);
-    if(!r||!r.error)return {error:null,data:r?r.data:null,local:false};
+    else if(accion==='delete') r=await sb.from(tabla).delete().eq('id',id_fila).select('id');
+    if(r&&!r.error){
+      // el servidor debe devolver la fila que tocó; si no vino, no se guardó nada
+      if((accion==='update'||accion==='delete')&&Array.isArray(r.data)&&r.data.length===0)
+        return {error:{message:'El servidor no aplicó el cambio (fila inexistente o sin permiso sobre esa obra).'},local:false,vacio:true};
+      return {error:null,data:r.data,local:false};
+    }
+    if(!r)return {error:null,data:null,local:false};
     // si falló por red, se guarda para reintentar
     const red=/fetch|network|Failed to fetch|NetworkError/i.test(r.error.message||'');
     if(!red)return {error:r.error,local:false};
@@ -850,7 +890,7 @@ function commitEdit(td,val){
   e[k]=val; delete e.__mant; delete td.dataset.editing; redrawCell(td,e);
   if(!changed)return;
   pushUndo({type:'edit',id,k,old});
-  guardar(id,k,val);
+  guardar(id,k,val,old);
   if(["frecuencia","hrkm_ult_mntto","hrkm_actual","hr_dia","fecha_lectura"].includes(k)) redrawCalc(id,td.closest("tr"));
   if(k==='status'){ buildBody(); applyFilters(); return; }
   const tr=td.closest('tr'); if(tr){
@@ -869,12 +909,21 @@ function redrawCalc(id,tr){
     td.innerHTML=calcHTML(e,cc,c); td.style.color=(cc==='_restante'&&c.est==='bad')?'#b91c1c':'';});
 }
 
-async function guardar(id,k,val){
+async function guardar(id,k,val,old_){
   const _r=await offEscribir(sb,'maestro','update',{id_fila:id,datos:{[k]:val}});
   const error=_r.error;
   if(!error)OFF.guardar('maestro_full',datos);
-  if(error){appFoot.textContent="⚠️ No se guardó: "+error.message;}
-  else{appFoot.textContent="Guardado ✓";setTimeout(()=>appFoot.textContent="Doble clic en una celda para editar · los cambios se guardan solos.",1200);}
+  if(error){
+    appFoot.textContent="⚠️ NO SE GUARDÓ: "+error.message;
+    appFoot.style.color="#b91c1c"; appFoot.style.fontWeight="700";
+    const e2=getE(id); if(e2){e2[k]=old_;delete e2.__mant;}      // se revierte para no mostrar algo falso
+    render();
+    alert("No se pudo guardar el cambio.\n\n"+error.message+"\n\nEl valor volvió al anterior. Vuelve a intentarlo; si se repite, avisa.");
+    return;
+  }
+  appFoot.style.color=""; appFoot.style.fontWeight="";
+  appFoot.textContent=_r.local?"Guardado local · se enviará al recuperar señal":"Guardado ✓";
+  setTimeout(()=>{if(/Guardado/.test(appFoot.textContent))appFoot.textContent="Doble clic en una celda para editar · los cambios se guardan solos.";},1200);
 }
 btnAdd.onclick=async()=>{
   const nuevo={equipo:"NUEVO EQUIPO",status:"MOVILIZADO",frecuencia:250};
