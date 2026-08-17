@@ -141,6 +141,18 @@
   /* umbral de F. lectura */
   .mx thead .colnum{width:100%;box-sizing:border-box;border:1px solid #cfd6dd;border-radius:4px;padding:1px 3px;font-size:10px;height:17px;text-align:center;background:#fffbe6;color:#7a5b00;font-weight:700}
   .mx thead .colnum:focus{outline:none;border-color:var(--amber);box-shadow:0 0 0 2px rgba(255,205,17,.45)}
+
+  /* botones de status: se encienden y apagan entre sí */
+  .stbar{display:inline-flex;gap:3px;align-items:center}
+  .stb{border:1.5px solid #cbd2d9;background:#fff;color:#98a2ad;border-radius:7px;
+       padding:5px 8px;font-size:10.5px;font-weight:800;cursor:pointer;white-space:nowrap;
+       display:inline-flex;align-items:center;gap:4px;line-height:1;transition:none}
+  .stb .n{font-weight:800;opacity:.85}
+  .stb:hover{border-color:#98a2ad}
+  .stb.on{border-color:currentColor}
+  .stb.on[data-st="MOVILIZADO"]{background:#e8f0fe;color:#1d4ed8}
+  .stb.on[data-st="TRANS. MOV."],.stb.on[data-st="TRANS. DESM."]{background:#FEF3C7;color:#B45309}
+  .stb.on[data-st="DESMOVILIZ."]{background:#fce7f3;color:#be123c}
   footer{padding:10px 16px;color:var(--muted);font-size:12px;text-align:center}
 
   /* admin */
@@ -204,19 +216,12 @@
   <section id="paneEq">
     <div class="toolbar">
       <input type="search" id="buscar" placeholder="Buscar proyecto, SAP, equipo, marca, modelo, serie/placa…">
-      <select id="fStatus">
-        <option value="">Todos los status</option>
-        <option>MOVILIZADO</option><option>TRANS. MOV.</option><option>TRANS. DESM.</option><option>DESMOVILIZ.</option>
-      </select>
-      <select id="fDocs">
-        <option value="">Todos los documentos</option>
-        <option value="bad">Solo con doc. vencido</option>
-        <option value="warn">Solo con doc. por vencer</option>
-      </select>
+      <span class="stbar" id="stBar" title="Enciende o apaga los status que quieres ver"></span>
       <button class="act primary" id="btnClear">✕ Borrar filtros</button>
       <span class="chip clic" id="chipBad" data-kpi="bad" title="Ver solo los equipos con mantenimiento vencido"><span class="dot bad"></span> Mntto vencido: <b id="cBad">0</b></span>
       <span class="chip clic" id="chipWarn" data-kpi="warn" title="Ver solo los equipos con mantenimiento próximo"><span class="dot warn"></span> Próximo: <b id="cWarn">0</b></span>
       <span class="chip clic" id="chipDoc" data-kpi="doc" title="Ver solo los equipos con documentos vencidos"><span class="dot bad"></span> Docs vencidos: <b id="cDoc">0</b></span>
+      <span class="chip clic" id="chipDocW" data-kpi="docw" title="Ver solo los equipos con documentos por vencer"><span class="dot warn"></span> Docs por vencer: <b id="cDocW">0</b></span>
       <div class="spacer"></div>
       <button class="act ghost" id="btnUndo" disabled>↶ Deshacer</button>
       <button class="act prog" id="btnProg">📅 Programar mntto</button>
@@ -244,8 +249,8 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
 /* ╔══ pega aquí tus DOS datos (los mismos de tu archivo actual) ══╗ */
-const SUPABASE_URL = "https://hklwvdhzltjsbfvlewbu.supabase.co";   // ← reemplaza
-const SUPABASE_KEY = "sb_publishable_NgDfyDHDI_KByR-qf35EpA_ZuKI5E0K";                 // ← reemplaza
+const SUPABASE_URL = "https://TU-PROYECTO.supabase.co";   // ← reemplaza
+const SUPABASE_KEY = "TU-PUBLISHABLE-KEY";                 // ← reemplaza
 /* ──────────────────────────────────────────────────────────────── */
 const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 try{localStorage.setItem('gllr_sbcfg',JSON.stringify({url:SUPABASE_URL,key:SUPABASE_KEY}));}catch(_){}
@@ -419,7 +424,7 @@ const FROZEN=[
   {k:'marca',lab:'Marca',w:82,type:'t'},
   {k:'modelo',lab:'Modelo',w:88,type:'t'},
 ];
-let famCollapsed=false;
+let famCollapsed=true;   // ID Familia arranca colapsada
 function fw(f){return (f.collapsible&&famCollapsed)?26:f.w;}
 const GROUPS=[
  {key:'tec',lab:'DATOS TÉCNICOS',color:'#0F243E',hcol:'#002060',cols:[['serie_placa','Serie/Placa','t'],['anio','Año','t'],['color','Color','t'],['potencia','Potencia','t'],['capacidad','Capacidad','t'],['peso_bruto','Peso (Ton)','t'],['tanque_comb','Tanque','t']]},
@@ -446,7 +451,7 @@ const ST_RANK={MOVILIZADO:1,'TRANS. MOV.':1,'TRANS. DESM.':1,
                'TRÁNS. MOV.':1,'TRÁNS. DESM.':1,
                'TRANSITO MOV.':1,'TRANSITO DESMOV.':1,TRANSITO:1,
                'DESMOVILIZ.':2,DESMOVILIZADO:2};
-const collapsed={mov:true,des:true,prov:true,doc:true}, colFilters={};
+const collapsed={tec:true,mov:true,des:true,prov:true,doc:true}, colFilters={};
 let selId=null, selIds=new Set(), undoStack=[];
 
 /* ===== arranque / sesión ===== */
@@ -677,19 +682,20 @@ function celda(e,k,tipo,c){
 }
 /* ---- filtrar SIN reconstruir la tabla (ocultar/mostrar filas) ---- */
 function applyFilters(){
-  const q=buscar.value.toLowerCase().trim(),fs=fStatus.value,fd=fDocs.value;
+  const q=buscar.value.toLowerCase().trim();
   const cf=[]; for(const k in colFilters){const v=(colFilters[k]||"").trim().toLowerCase();if(v)cf.push([k,v]);}
   let n=0;
   for(const m of ROWX){
     const e=m.e; let ok=true;
     if(q&&!m.search.includes(q))ok=false;
-    if(ok&&fs&&e.status!==fs)ok=false;
-    if(ok&&fd&&docsWorst(e)!==fd)ok=false;
+
+    if(ok&&!stEnLista(e.status))ok=false;
     if(ok&&kpiFiltro){
       const cc=mant(e);
       if(kpiFiltro==='bad'&&cc.est!=='bad')ok=false;
       else if(kpiFiltro==='warn'&&cc.est!=='warn')ok=false;
       else if(kpiFiltro==='doc'&&docsWorst(e)!=='bad')ok=false;
+      else if(kpiFiltro==='docw'&&docsWorst(e)!=='warn')ok=false;
     }
     if(ok)for(const [k,v] of cf){
       const val = k==='_alerta'?m._alerta : k==='_sem'?m._sem : k==='_alertamntto'?m._alertamntto : String(e[k]??"").toLowerCase();
@@ -705,21 +711,66 @@ function applyFilters(){
 /* ---- chips informativos: al pulsarlos filtran la tabla ---- */
 let kpiFiltro='';
 function pintarChips(){
-  [['bad',chipBad],['warn',chipWarn],['doc',chipDoc]].forEach(([k,el])=>el.classList.toggle('on',kpiFiltro===k));
+  [['bad',chipBad],['warn',chipWarn],['doc',chipDoc],['docw',chipDocW]].forEach(([k,el])=>el.classList.toggle('on',kpiFiltro===k));
 }
-[['bad',chipBad],['warn',chipWarn],['doc',chipDoc]].forEach(([k,el])=>{
+[['bad',chipBad],['warn',chipWarn],['doc',chipDoc],['docw',chipDocW]].forEach(([k,el])=>{
   el.onclick=()=>{
     kpiFiltro = (kpiFiltro===k) ? '' : k;
     pintarChips(); applyFilters();
     const n=cuerpo.querySelectorAll('tr[data-id]:not([style*="none"])').length;
-    const txt={bad:'mantenimiento vencido',warn:'mantenimiento próximo',doc:'documentos vencidos'}[k];
+    const txt={bad:'mantenimiento vencido',warn:'mantenimiento próximo',doc:'documentos vencidos',docw:'documentos por vencer'}[k];
     appFoot.textContent = kpiFiltro
       ? `Mostrando solo equipos con ${txt} · pulsa de nuevo para quitar el filtro`
       : 'Doble clic en una celda para editar · los cambios se guardan solos.';
   };
 });
+
+/* ---- Botones de la columna Status: combinables, encendidos menos DESMOVILIZ. ---- */
+const stSel=new Set(ESTADOS.filter(s=>!esDesmov(s)));      // al iniciar: todos menos desmovilizados
+function stEnLista(s){                                      // ¿a qué botón pertenece este equipo?
+  if(stSel.size===0)return true;                            // ninguno encendido = sin filtro
+  const g=stSlug(s);
+  for(const b of stSel){
+    const gb=stSlug(b);
+    if(g===gb)return true;
+    if(gb==='MOVILIZADO'&&g==='MOVILIZADO')return true;
+    if(gb==='DESMOVILIZ'&&/^DESMOVILIZ/.test(g))return true;
+    if(gb==='TRANS-MOV'&&(g==='TRANS-MOV'||g==='TRANSITO-MOV'))return true;
+    if(gb==='TRANS-DESM'&&(g==='TRANS-DESM'||g==='TRANSITO-DESMOV'))return true;
+    // el "TRANSITO" antiguo (sin dividir) responde a cualquiera de los dos tránsitos
+    if(g==='TRANSITO'&&(gb==='TRANS-MOV'||gb==='TRANS-DESM'))return true;
+  }
+  return false;
+}
+function pintarStBar(){
+  const cuenta={}; datos.forEach(e=>{
+    const g=stSlug(e.status);
+    const k = g==='MOVILIZADO'?'MOVILIZADO'
+            : /^DESMOVILIZ/.test(g)?'DESMOVILIZ.'
+            : (g==='TRANS-DESM'||g==='TRANSITO-DESMOV')?'TRANS. DESM.'
+            : (g==='TRANS-MOV'||g==='TRANSITO-MOV'||g==='TRANSITO')?'TRANS. MOV.' : null;
+    if(k)cuenta[k]=(cuenta[k]||0)+1;
+  });
+  stBar.innerHTML=ESTADOS.map(s=>
+    `<button class="stb${stSel.has(s)?' on':''}" data-st="${s}" title="${stSel.has(s)?'Se está mostrando · clic para ocultar':'Oculto · clic para mostrar'}">`
+    +`${s} <span class="n">${cuenta[s]||0}</span></button>`).join('');
+}
+stBar.addEventListener('click',ev=>{
+  const b=ev.target.closest('.stb'); if(!b)return;
+  const s=b.dataset.st;
+  if(stSel.has(s))stSel.delete(s); else stSel.add(s);
+  pintarStBar(); applyFilters();
+  appFoot.textContent = stSel.size===0
+    ? 'Ningún status encendido: se muestran todos los equipos'
+    : 'Mostrando: '+[...stSel].join(' · ');
+  setTimeout(()=>{if(/^(Mostrando|Ningún)/.test(appFoot.textContent))appFoot.textContent='Doble clic en una celda para editar · los cambios se guardan solos.';},2600);
+});
 let filtT; function applyFiltersD(){clearTimeout(filtT);filtT=setTimeout(applyFilters,80);}
-function resumen(){let b=0,w=0,dv=0;datos.forEach(e=>{const c=mant(e);if(c.est==="bad")b++;else if(c.est==="warn")w++;if(docsWorst(e)==="bad")dv++;});cBad.textContent=b;cWarn.textContent=w;cDoc.textContent=dv;}
+function resumen(){let b=0,w=0,dv=0,dw=0;
+  datos.forEach(e=>{const c=mant(e);if(c.est==="bad")b++;else if(c.est==="warn")w++;
+    const d=docsWorst(e); if(d==="bad")dv++; else if(d==="warn")dw++;});
+  cBad.textContent=b;cWarn.textContent=w;cDoc.textContent=dv;cDocW.textContent=dw;
+  pintarStBar();}
 
 /* ---- colapsar/expandir grupos ---- */
 thead.addEventListener("click",ev=>{
@@ -812,7 +863,10 @@ btnProg.onclick=programarSeleccion;
 btnAgrupar.onclick=()=>{GROUPS.forEach(g=>collapsed[g.key]=true);render();};
 btnDesagrupar.onclick=()=>{GROUPS.forEach(g=>collapsed[g.key]=false);render();};
 /* Borrar todos los filtros */
-btnClear.onclick=()=>{buscar.value="";fStatus.value="";fDocs.value="";kpiFiltro="";pintarChips();selIds.clear();selId=null;pintarSel();for(const k in colFilters)delete colFilters[k];render();appFoot.textContent="Doble clic en una celda para editar · los cambios se guardan solos.";};
+btnClear.onclick=()=>{buscar.value="";kpiFiltro="";pintarChips();
+  stSel.clear(); ESTADOS.filter(s=>!esDesmov(s)).forEach(s=>stSel.add(s));   // vuelve al arranque
+  selIds.clear();selId=null;pintarSel();for(const k in colFilters)delete colFilters[k];
+  render();appFoot.textContent="Doble clic en una celda para editar · los cambios se guardan solos.";};
 /* Exportar a Excel */
 btnExcel.onclick=()=>{
   try{
@@ -930,9 +984,9 @@ btnAdd.onclick=async()=>{
   if(perfil.rol!=="admin" && Array.isArray(perfil.proyectos) && perfil.proyectos.length) nuevo.cod_proyec=perfil.proyectos[0];
   const {data,error}=await sb.from("maestro").insert(nuevo).select().single();
   if(error)return alert("No se pudo agregar: "+error.message);
-  datos.push(data);pushUndo({type:'add',id:data.id});buscar.value="";fStatus.value="";fDocs.value="";render();
+  datos.push(data);pushUndo({type:'add',id:data.id});buscar.value="";render();
 };
-btnRefresh.onclick=cargar; buscar.oninput=applyFiltersD; fStatus.onchange=applyFilters; fDocs.onchange=applyFilters;
+btnRefresh.onclick=cargar; buscar.oninput=applyFiltersD;
 
 /* sincronización ligera con detección de cambios */
 let _lastPollTs=null;
