@@ -121,7 +121,7 @@
   .pms td.pms-day{text-align:center;width:26px;min-width:26px;padding:0}
   .pms td.pms-day.dom{background:#fef2f2}
   .pms td.pms-ed{cursor:cell}
-  .pms td.pms-ed:hover{background:#fff7e6;box-shadow:inset 0 0 0 1px #f0d68a}
+  .pms td.pms-ed:hover{background:#fff7e6}
   .pms td[data-editing]{padding:0;box-shadow:inset 0 0 0 2px var(--amber)}
   .pms td[data-editing] input{width:100%;border:none;background:#fff;font:inherit;padding:1px 4px;outline:none;text-align:center}
   .pms tbody td.idx{padding:0 4px;text-align:center;color:var(--muted);font-family:"SF Mono",monospace;background:#f8fafc;font-size:10px;white-space:nowrap}
@@ -332,6 +332,7 @@ const OFF = (() => {
 function offPintarEstado(){
   const el=document.getElementById('offEstado'); if(!el)return;
   OFF.cuantosPendientes().then(n=>{
+    _pendCache=n;
     const at=OFF.atascadas.length;
     el.style.cursor=n?'pointer':'default';
     if(at){
@@ -365,7 +366,9 @@ window.addEventListener('beforeunload',ev=>{
   if(_pendCache>0){ev.preventDefault();ev.returnValue='';return '';}
 });
 let _pendCache=0;
-setInterval(()=>{OFF.cuantosPendientes().then(n=>{_pendCache=n;});},4000);
+/* El contador de pendientes se actualiza solo cuando algo cambia. */
+function refrescarPendientes(){return OFF.cuantosPendientes().then(n=>{_pendCache=n;return n;});}
+refrescarPendientes();
 
 /* Envuelve una escritura: si hay internet va directo; si no, entra a la cola */
 async function offEscribir(sb,tabla,accion,{id_fila=null,datos=null}={}){
@@ -386,7 +389,7 @@ async function offEscribir(sb,tabla,accion,{id_fila=null,datos=null}={}){
     if(!red)return {error:r.error,local:false};
   }
   await OFF.encolar({tabla,accion,id_fila,datos,ts:Date.now()});
-  offPintarEstado();
+  offPintarEstado(); if(typeof refrescarPendientes==='function')refrescarPendientes();
   return {error:null,data:null,local:true};
 }
 

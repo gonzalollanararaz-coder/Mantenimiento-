@@ -100,7 +100,7 @@
   .delrow{border:none;background:none;color:#cbd2d9;cursor:pointer;font-size:13px;padding:0 2px;line-height:1}
   .delrow:hover{color:var(--bad)}
   .mx td.cell{padding:1px 5px;cursor:cell}
-  .mx td.cell:hover{background:#fff7e6;box-shadow:inset 0 0 0 1px #f0d68a}
+  .mx td.cell:hover{background:#fff7e6}
   .mx td[data-editing]{padding:0;box-shadow:inset 0 0 0 2px var(--amber)}
   .mx td[data-editing] input,.mx td[data-editing] select{width:100%;border:none;background:#fff;font:inherit;padding:1px 4px;outline:none}
   .mx td.idx{white-space:nowrap;text-align:center}
@@ -253,8 +253,8 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
 /* ╔══ pega aquí tus DOS datos (los mismos de tu archivo actual) ══╗ */
-const SUPABASE_URL = "https://hklwvdhzltjsbfvlewbu.supabase.co";   // ← reemplaza
-const SUPABASE_KEY = "sb_publishable_NgDfyDHDI_KByR-qf35EpA_ZuKI5E0K";                 // ← reemplaza
+const SUPABASE_URL = "https://TU-PROYECTO.supabase.co";   // ← reemplaza
+const SUPABASE_KEY = "TU-PUBLISHABLE-KEY";                 // ← reemplaza
 /* ──────────────────────────────────────────────────────────────── */
 const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 try{localStorage.setItem('gllr_sbcfg',JSON.stringify({url:SUPABASE_URL,key:SUPABASE_KEY}));}catch(_){}
@@ -344,6 +344,7 @@ const OFF = (() => {
 function offPintarEstado(){
   const el=document.getElementById('offEstado'); if(!el)return;
   OFF.cuantosPendientes().then(n=>{
+    _pendCache=n;                       // se aprovecha esta misma consulta
     const at=OFF.atascadas.length;
     el.style.cursor=n?'pointer':'default';
     if(at){
@@ -377,7 +378,10 @@ window.addEventListener('beforeunload',ev=>{
   if(_pendCache>0){ev.preventDefault();ev.returnValue='';return '';}
 });
 let _pendCache=0;
-setInterval(()=>{OFF.cuantosPendientes().then(n=>{_pendCache=n;});},4000);
+/* El contador de pendientes ya no se consulta cada pocos segundos:
+   se actualiza únicamente cuando se encola o se envía algo. */
+function refrescarPendientes(){return OFF.cuantosPendientes().then(n=>{_pendCache=n;return n;});}
+refrescarPendientes();
 
 /* Envuelve una escritura: si hay internet va directo; si no, entra a la cola */
 async function offEscribir(sb,tabla,accion,{id_fila=null,datos=null}={}){
@@ -398,7 +402,7 @@ async function offEscribir(sb,tabla,accion,{id_fila=null,datos=null}={}){
     if(!red)return {error:r.error,local:false};
   }
   await OFF.encolar({tabla,accion,id_fila,datos,ts:Date.now()});
-  offPintarEstado();
+  offPintarEstado(); if(typeof refrescarPendientes==='function')refrescarPendientes();
   return {error:null,data:null,local:true};
 }
 
@@ -609,6 +613,7 @@ function cellCls(e,k,type,isFrz){
   return cls;
 }
 function buildBody(){
+  _marcadas=new Set(selIds);   // buildBody pinta las marcas directo en el HTML
   // ORDEN DE 4 NIVELES: 1) status (MOVILIZADO arriba) 2) Proyecto A-Z 3) ID-Familia 1-10 4) Equipo A-Z
   const vis=datos.slice().sort((a,b)=>{
     const ra=ST_RANK[a.status]||9,rb=ST_RANK[b.status]||9; if(ra!==rb)return ra-rb;
@@ -821,13 +826,26 @@ cuerpo.addEventListener("click",async ev=>{
       if(a>=0&&b>=0)for(let i=Math.min(a,b);i<=Math.max(a,b);i++)selIds.add(filas[i].dataset.id);
       selId=id;
     }else{ selIds.clear(); selIds.add(id); selId=id; }
-    cuerpo.querySelectorAll('tr[data-id]').forEach(r=>r.classList.toggle('rowsel',selIds.has(r.dataset.id)));
+    pintarMarcas();
     cuerpo.querySelectorAll('td.cellsel').forEach(t=>t.classList.remove('cellsel'));
     const td=ev.target.closest('td'); if(td&&selIds.has(id))td.classList.add('cellsel');
     pintarSel();
   }
 });
 /* aviso del número de filas marcadas */
+
+/* Marca las filas seleccionadas tocando SOLO las que cambian.
+   Antes se recorrían las ~120 filas en cada clic; ahora son 1 o 2 operaciones. */
+let _marcadas=new Set();
+function pintarMarcas(){
+  for(const id of _marcadas) if(!selIds.has(id)){
+    const tr=cuerpo.querySelector(`tr[data-id="${id}"]`); if(tr)tr.classList.remove('rowsel');
+  }
+  for(const id of selIds) if(!_marcadas.has(id)){
+    const tr=cuerpo.querySelector(`tr[data-id="${id}"]`); if(tr)tr.classList.add('rowsel');
+  }
+  _marcadas=new Set(selIds);
+}
 function pintarSel(){
   const n=selIds.size;
   btnProg.textContent = n>1 ? `📅 Programar mntto (${n})` : '📅 Programar mntto';
@@ -869,7 +887,7 @@ btnDesagrupar.onclick=()=>{GROUPS.forEach(g=>collapsed[g.key]=false);render();};
 /* Borrar todos los filtros */
 btnClear.onclick=()=>{buscar.value="";kpiFiltro="";pintarChips();
   stSel.clear(); ESTADOS.filter(s=>!esDesmov(s)).forEach(s=>stSel.add(s));   // vuelve al arranque
-  selIds.clear();selId=null;pintarSel();for(const k in colFilters)delete colFilters[k];
+  selIds.clear();selId=null;pintarMarcas();pintarSel();for(const k in colFilters)delete colFilters[k];
   render();appFoot.textContent="Doble clic en una celda para editar · los cambios se guardan solos.";};
 /* Exportar a Excel */
 btnExcel.onclick=()=>{
