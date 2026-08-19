@@ -93,7 +93,7 @@
   .mx td input:focus,.mx td select:focus{background:#fff7e6;box-shadow:inset 0 0 0 2px var(--amber)}
   .mx tbody tr:hover td{background:#f9fafb}
   .mx td.calc{padding:1px 5px;text-align:right;font-family:"SF Mono",monospace;color:var(--muted);background:#fbfbfc}
-  .mx td[data-type="n"],.mx td[data-type="pct"],.mx td[data-type="d"],.mx td[data-type="de"]{text-align:center}
+  .mx td.ctr{text-align:center}
   /* congelados */
   .frz{position:sticky;background:#fff;z-index:6}
   .mx thead .frz{z-index:9}
@@ -148,6 +148,7 @@
   .act.prog{background:#dbeafe;color:#1d4ed8;font-weight:800}
   .act.prog:hover{background:#bfdbfe}
   /* datos de ULTIMO MNTTO en gris */
+  .mx td.famdot{text-align:center;color:#94a3b8;cursor:pointer}
   .mx tbody td.ult{background:#e4e6e8}
   .mx tbody tr:hover td.ult{background:#dcdfe2}
   .mx tbody tr.rowsel td.ult{background:#b6d9f2 !important}
@@ -264,8 +265,8 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
 /* ╔══ pega aquí tus DOS datos (los mismos de tu archivo actual) ══╗ */
-const SUPABASE_URL = "https://hklwvdhzltjsbfvlewbu.supabase.co";   // ← reemplaza
-const SUPABASE_KEY = "sb_publishable_NgDfyDHDI_KByR-qf35EpA_ZuKI5E0K";                 // ← reemplaza
+const SUPABASE_URL = "https://TU-PROYECTO.supabase.co";   // ← reemplaza
+const SUPABASE_KEY = "TU-PUBLISHABLE-KEY";                 // ← reemplaza
 /* ──────────────────────────────────────────────────────────────── */
 const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 try{localStorage.setItem('gllr_sbcfg',JSON.stringify({url:SUPABASE_URL,key:SUPABASE_KEY}));}catch(_){}
@@ -578,18 +579,28 @@ function esc(s){return String(s??"").replace(/&/g,"&amp;").replace(/"/g,"&quot;"
 
 function render(){buildHead();buildBody();applyFilters();}
 function filterInput(k,ph){return `<input class="colf" data-fcol="${k}" placeholder="${ph||'🔍'}" value="${esc(colFilters[k]||'')}">`;}
+/* Una sola hoja de estilo con la posición de cada columna congelada.
+   Así las celdas llevan solo una clase corta en vez de estilos escritos uno por uno. */
+function estilosFrozen(){
+  let css='';
+  FROZEN.forEach((f,i)=>{const w=fw(f);
+    css+=`.mx .fz${i}{left:${frozenLeft(i)}px;min-width:${w}px;width:${w}px}`;});
+  let el=document.getElementById('cssFrozen');
+  if(!el){el=document.createElement('style');el.id='cssFrozen';document.head.appendChild(el);}
+  if(el.textContent!==css)el.textContent=css;
+}
 function buildHead(){
   const totW=FROZEN.reduce((a,f)=>a+fw(f),0), semHoy=isoWeek(hoy0());
+  estilosFrozen();
   let b1='<tr class="bands">',b2='<tr class="cols">';
   b1+=`<th class="frz" colspan="${FROZEN.length}" style="left:0;min-width:${totW}px;width:${totW}px;background:${ID_BAND}">IDENTIFICACIÓN</th>`;
   FROZEN.forEach((f,i)=>{
-    const w=fw(f),L=frozenLeft(i),st=`left:${L}px;min-width:${w}px;width:${w}px`;
     if(f.collapsible&&famCollapsed){
-      b2+=`<th class="frz" data-famtoggle style="${st};background:${FROZEN_HCOL};cursor:pointer" title="Expandir ID Familia"><div class="hlab">＋</div></th>`;
+      b2+=`<th class="frz fz${i}" data-famtoggle style="background:${FROZEN_HCOL};cursor:pointer" title="Expandir ID Familia"><div class="hlab">＋</div></th>`;
     }else{
       const inp = f.type==='idx' ? '' : filterInput(f.k);
       const lab = f.collapsible ? `${f.lab} <span data-famtoggle style="cursor:pointer">－</span>` : f.lab;
-      b2+=`<th class="frz" style="${st};background:${FROZEN_HCOL}"><div class="hlab">${lab}</div>${inp}</th>`;
+      b2+=`<th class="frz fz${i}" style="background:${FROZEN_HCOL}"><div class="hlab">${lab}</div>${inp}</th>`;
     }
   });
   for(const g of GROUPS){
@@ -613,8 +624,10 @@ function buildHead(){
   thead.innerHTML=b1+'</tr>'+b2+'</tr>';
 }
 function famNum(e){const m=String(e.familia||'').match(/\d+/);return m?+m[0]:99;}
+const TIPOS_CTR={n:1,pct:1,d:1,de:1};
 function cellCls(e,k,type,isFrz){
   let cls=isFrz?'frz cell':'cell';
+  if(TIPOS_CTR[type])cls+=' ctr';
   if(type==='status')cls+=' st-'+stSlug(e.status);
   if(k==='cod_sap')cls+=' sap-'+stSlug(e.status);
   if(type==='okfalta'&&e[k])cls+=(e[k]==='OK'?' of-ok':e[k]==='FALTA'?' of-falta':'');
@@ -643,14 +656,13 @@ function buildBody(){
     const selCls=selIds.has(String(e.id))?' rowsel':'';
     let tr=`<tr data-id="${e.id}" class="${divi}${selCls}">`;
     FROZEN.forEach((f,i)=>{
-      const w=fw(f),style=`left:${frozenLeft(i)}px;min-width:${w}px;width:${w}px`;
-      if(f.collapsible&&famCollapsed){ tr+=`<td class="frz" data-famtoggle style="${style};text-align:center;color:#94a3b8;cursor:pointer">·</td>`; return; }
-      if(f.type==='idx') tr+=`<td class="frz idx" style="${style}"><span class="rn">0</span><button class="delrow" data-del="${e.id}" title="Eliminar fila">✕</button></td>`;
-      else if(f.type==='status') tr+=`<td class="${cellCls(e,'status','status',true)}" data-id="${e.id}" data-k="status" data-type="status" style="${style}">${esc(e.status)}</td>`;
-      else tr+=`<td class="${cellCls(e,f.k,'t',true)}" data-id="${e.id}" data-k="${f.k}" data-type="t" style="${style}">${dispVal(e,f.k,'t')}</td>`;
+      if(f.collapsible&&famCollapsed){ tr+=`<td class="frz fz${i} famdot" data-famtoggle>·</td>`; return; }
+      if(f.type==='idx') tr+=`<td class="frz idx fz${i}"><span class="rn">0</span><button class="delrow" data-del="${e.id}" title="Eliminar fila">✕</button></td>`;
+      else if(f.type==='status') tr+=`<td class="${cellCls(e,'status','status',true)} fz${i}" data-k="status">${esc(e.status)}</td>`;
+      else tr+=`<td class="${cellCls(e,f.k,'t',true)} fz${i}" data-k="${f.k}">${dispVal(e,f.k,'t')}</td>`;
     });
     for(const g of GROUPS){
-      if(collapsed[g.key]){tr+=`<td class="collapsed-cell" data-collapse="${g.key}" title="Expandir ${g.lab}">＋</td>`;continue;}
+      if(collapsed[g.key]){tr+=`<td class="collapsed-cell" data-collapse="${g.key}">＋</td>`;continue;}
       for(const [k,lab,tipo] of g.cols) tr+=celda(e,k,tipo,c);
     }
     tr+='</tr>';html+=tr;
@@ -665,20 +677,32 @@ let ROWX=[];
 let DIDX=new Map();
 function reindexDatos(){DIDX=new Map(datos.map(e=>[String(e.id),e]));}
 function getE(id){return DIDX.get(String(id))||datos.find(x=>String(x.id)===String(id));}
-function rowMeta(e,tr){
+/* El id vive solo en el <tr>: no se repite en cada celda. */
+/* Tipo de cada columna: se consulta aquí en vez de repetirlo en las ~3000 celdas. */
+const K2TYPE=(()=>{const m={};
+  FROZEN.forEach(f=>{if(f.k)m[f.k]=(f.type==='status'?'status':'t');});
+  GROUPS.forEach(g=>g.cols.forEach(([k,,tipo])=>m[k]=tipo));
+  return m;})();
+function tipoDe(td){return K2TYPE[td.dataset.k]||'t';}
+function idDe(td){const tr=td&&td.closest&&td.closest('tr[data-id]');return tr?tr.dataset.id:null;}
+function rowMeta(e,tr,rn){
   const c=mant(e);
   return {e,tr,
     search:[e.cod_proyec,e.cod_sap,e.equipo,e.marca,e.modelo,e.serie_placa].join(" ").toLowerCase(),
     _alerta:(ETI[c.est]||"").toLowerCase(),
     _sem:String(c.sem||""),
     _alertamntto:(alertaMntto(e)||"").toLowerCase(),
-    rn:tr.querySelector('.rn')};
+    rn:rn!==undefined?rn:tr.querySelector('.rn')};
 }
 function indexRows(){
   ROWX=[];
   reindexDatos();
   const byId=DIDX;
-  cuerpo.querySelectorAll('tr[data-id]').forEach(tr=>{const e=byId.get(tr.dataset.id);if(e){const m=rowMeta(e,tr);tr._meta=m;ROWX.push(m);}});
+  // se piden todos los números de fila de una vez, no uno por fila
+  const filas=cuerpo.querySelectorAll('tr[data-id]');
+  const nums=cuerpo.querySelectorAll('tr[data-id] .rn');
+  filas.forEach((tr,i)=>{const e=byId.get(tr.dataset.id);
+    if(e){const m=rowMeta(e,tr,nums[i]);tr._meta=m;ROWX.push(m);}});
 }
 /* ---- helpers de visualización ---- */
 function fmtDate(v){if(!v)return"";const p=String(v).split("-");return p.length===3?`${p[2]}/${p[1]}/${p[0].slice(2)}`:String(v);}
@@ -698,7 +722,7 @@ function celda(e,k,tipo,c){
     const col=k==='_restante'&&c.est==='bad'?'color:#b91c1c':'';
     return `<td class="calc" data-id="${e.id}" data-calc="${k}" style="${col}">${calcHTML(e,k,c)}</td>`;
   }
-  return `<td class="${cellCls(e,k,tipo,false)}" data-id="${e.id}" data-k="${k}" data-type="${tipo}">${dispVal(e,k,tipo)}</td>`;
+  return `<td class="${cellCls(e,k,tipo,false)}" data-k="${k}">${dispVal(e,k,tipo)}</td>`;
 }
 /* ---- filtrar SIN reconstruir la tabla (ocultar/mostrar filas) ---- */
 function applyFilters(){
@@ -803,7 +827,7 @@ thead.addEventListener("input",ev=>{
     staleDias=v; try{localStorage.setItem("gllr_staleDias",v);}catch(_){}
     clearTimeout(window._stT); window._stT=setTimeout(()=>{
       cuerpo.querySelectorAll('td[data-k="fecha_lectura"]').forEach(td=>{
-        const e=getE(td.dataset.id); if(!e)return;
+        const e=getE(idDe(td)); if(!e)return;
         td.classList.toggle("stale",staleLectura(e.fecha_lectura));});
     },120);
     return;
@@ -933,7 +957,7 @@ btnExcel.onclick=()=>{
 /* ---- edición al DOBLE CLIC (celdas de solo lectura hasta que las editas) ---- */
 cuerpo.addEventListener("dblclick",ev=>{
   const td=ev.target.closest('td[data-k]'); if(!td||td.dataset.editing)return;
-  const id=td.dataset.id,k=td.dataset.k,type=td.dataset.type;
+  const id=idDe(td),k=td.dataset.k,type=tipoDe(td);
   const e=getE(id); if(!e)return;
   const cur=e[k]??"";
   let ctrl;
@@ -960,17 +984,17 @@ cuerpo.addEventListener("focusout",ev=>{
 cuerpo.addEventListener("keydown",ev=>{
   const td=ev.target.closest&&ev.target.closest('td[data-editing]'); if(!td)return;
   if(ev.key==="Enter"){ev.preventDefault();ev.target.blur();}
-  else if(ev.key==="Escape"){delete td.dataset.editing;redrawCell(td,getE(td.dataset.id));}
+  else if(ev.key==="Escape"){delete td.dataset.editing;redrawCell(td,getE(idDe(td)));}
 });
 function finishEdit(td,inp){
-  const type=td.dataset.type; let val=inp.value;
+  const type=tipoDe(td); let val=inp.value;
   if(type==='n'||type==='pct')val=(val===""?null:Number(val));
   else if(type==='d'||type==='de')val=(val===""?null:val);
   else if(val==="")val=null;
   commitEdit(td,val);
 }
 function commitEdit(td,val){
-  const id=td.dataset.id,k=td.dataset.k;
+  const id=idDe(td),k=td.dataset.k;
   const e=getE(id); if(!e){delete td.dataset.editing;return;}
   const old=e[k];
   const changed=(old??null)!==(val??null);
@@ -986,7 +1010,7 @@ function commitEdit(td,val){
   }
 }
 function redrawCell(td,e){
-  const k=td.dataset.k,type=td.dataset.type,isFrz=td.classList.contains('frz');
+  const k=td.dataset.k,type=tipoDe(td),isFrz=td.classList.contains('frz');
   td.className=cellCls(e,k,type,isFrz); td.innerHTML=dispVal(e,k,type);
 }
 function redrawCalc(id,tr){
