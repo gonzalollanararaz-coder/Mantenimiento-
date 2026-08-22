@@ -50,10 +50,12 @@
      la barra de desplazamiento (que se lleva ~11 px del interior). */
   .toolbar{display:flex;flex-wrap:nowrap;gap:6px;align-items:center;padding:3px 12px;background:#fff;
     border-bottom:1px solid var(--line);overflow-x:auto;overflow-y:hidden;
-    height:42px;box-sizing:border-box;
+    height:43px;box-sizing:border-box;
     scrollbar-width:thin;scrollbar-color:#cbd2d9 transparent}
   /* cada pieza con alto propio: así ninguna puede estirar la barra */
   .toolbar>*{height:24px;box-sizing:border-box}
+  .toolbar .tb-sep{height:22px}
+  .toolbar .spacer{height:auto}
   .toolbar .chip,.toolbar .stbar,.toolbar .stb{height:24px}
   .toolbar::-webkit-scrollbar{height:5px}
   .toolbar::-webkit-scrollbar-track{background:transparent}
@@ -64,7 +66,7 @@
   .toolbar input[type=search]{width:190px;flex:0 0 190px}
   .toolbar select{max-width:150px}
   .toolbar .act{padding:0 9px;font-size:11px;white-space:nowrap;line-height:22px;border-radius:6px}
-  .toolbar .chip{padding:0 9px;font-size:10.5px;white-space:nowrap;line-height:22px}
+  .toolbar .chip{padding:0 7px;font-size:10.5px;white-space:nowrap;line-height:22px;gap:4px}
   .spacer{flex:1}
   .chip{background:#eef0f2;padding:6px 11px;border-radius:999px;font-size:12px;display:inline-flex;align-items:center;gap:6px;font-weight:600}
   .chip b{display:inline-block;min-width:22px;text-align:right}
@@ -76,7 +78,7 @@
   .act.clear{background:#fee2e2;color:#b91c1c;border:1.5px solid #f87171;font-weight:700}.act.clear:hover{background:#fecaca}
 
   /* Tabla estilo Excel */
-  .wrap{padding:0;overflow:auto;overflow-x:auto;max-height:calc(100vh - 163px);contain:paint}
+  .wrap{padding:0;overflow:auto;overflow-x:auto;max-height:calc(100vh - 164px);contain:paint}
   table.mx{border-collapse:separate;border-spacing:0;font-size:11px;background:#fff;min-width:1200px}
   .mx th,.mx td{border-bottom:1px solid #e6e8eb;border-right:1px solid #eef0f2;white-space:nowrap}
   .mx thead th{position:sticky;color:#fff;font-size:11px;font-weight:400;letter-spacing:0;padding:2px 4px;text-align:center;z-index:5;overflow:hidden;border:none;border-right:1px solid #fff;border-bottom:1px solid #fff}
@@ -169,6 +171,11 @@
   .stb.on[data-st="MOVILIZADO"]{background:#e8f0fe;color:#1d4ed8}
   .stb.on[data-st="TRANS. MOV."],.stb.on[data-st="TRANS. DESM."]{background:#FEF3C7;color:#B45309}
   .stb.on[data-st="DESMOVILIZ."]{background:#fce7f3;color:#be123c}
+
+  /* separador entre zonas de la barra */
+  .tb-sep{width:1px;height:22px;background:var(--line);display:inline-block;flex:0 0 1px;margin:0 2px}
+  /* botones solo con icono */
+  .toolbar .act.ic{width:26px;padding:0;font-size:13px;display:inline-flex;align-items:center;justify-content:center}
   footer{padding:10px 16px;color:var(--muted);font-size:12px;text-align:center}
 
   /* admin */
@@ -231,21 +238,28 @@
 
   <section id="paneEq">
     <div class="toolbar">
-      <input type="search" id="buscar" placeholder="Buscar proyecto, SAP, equipo, marca, modelo, serie/placa…">
+      <!-- zona 1: BUSCAR -->
+      <input type="search" id="buscar" placeholder="Buscar proyecto, SAP, equipo, marca…">
+
+      <i class="tb-sep"></i>
+      <!-- zona 2: FILTRAR -->
       <span class="stbar" id="stBar" title="Enciende o apaga los status que quieres ver"></span>
-      <button class="act primary" id="btnClear">✕ Borrar filtros</button>
-      <span class="chip clic" id="chipBad" data-kpi="bad" title="Ver solo los equipos con mantenimiento vencido"><span class="dot bad"></span> Mntto vencido: <b id="cBad">0</b></span>
-      <span class="chip clic" id="chipWarn" data-kpi="warn" title="Ver solo los equipos con mantenimiento próximo"><span class="dot warn"></span> Próximo: <b id="cWarn">0</b></span>
-      <span class="chip clic" id="chipDoc" data-kpi="doc" title="Ver solo los equipos con documentos vencidos"><span class="dot bad"></span> Docs vencidos: <b id="cDoc">0</b></span>
-      <span class="chip clic" id="chipDocW" data-kpi="docw" title="Ver solo los equipos con documentos por vencer"><span class="dot warn"></span> Docs por vencer: <b id="cDocW">0</b></span>
+      <span class="chip clic" id="chipBad"  data-kpi="bad"  title="Mantenimiento vencido"><span class="dot bad"></span>Vencido <b id="cBad">0</b></span>
+      <span class="chip clic" id="chipWarn" data-kpi="warn" title="Mantenimiento próximo"><span class="dot warn"></span>Próximo <b id="cWarn">0</b></span>
+      <span class="chip clic" id="chipDoc"  data-kpi="doc"  title="Documentos vencidos"><span class="dot bad"></span>Doc. venc. <b id="cDoc">0</b></span>
+      <span class="chip clic" id="chipDocW" data-kpi="docw" title="Documentos por vencer"><span class="dot warn"></span>Doc. x venc. <b id="cDocW">0</b></span>
+      <button class="act clear ic" id="btnClear" title="Borrar todos los filtros">✕</button>
+
       <div class="spacer"></div>
-      <button class="act ghost" id="btnUndo" disabled>↶ Deshacer</button>
+      <!-- zona 3: ACTUAR -->
       <button class="act prog" id="btnProg">📅 Programar mntto</button>
-      <button class="act ghost" id="btnAgrupar">⊟ Agrupar</button>
-      <button class="act ghost" id="btnDesagrupar">⊞ Desagrupar</button>
-      <button class="act ghost" id="btnExcel">⬇ Excel</button>
-      <button class="act ghost" id="btnRefresh">↻ Actualizar</button>
       <button class="act primary" id="btnAdd">＋ Equipo</button>
+      <i class="tb-sep"></i>
+      <button class="act ghost ic" id="btnUndo" disabled title="Deshacer el último cambio (Ctrl+Z)">↶</button>
+      <button class="act ghost ic" id="btnAgrupar" title="Contraer todos los grupos de columnas">⊟</button>
+      <button class="act ghost ic" id="btnDesagrupar" title="Expandir todos los grupos de columnas">⊞</button>
+      <button class="act ghost ic" id="btnExcel" title="Descargar en Excel">⬇</button>
+      <button class="act ghost ic" id="btnRefresh" title="Volver a cargar los datos">↻</button>
     </div>
     <div class="wrap"><table class="mx"><thead id="thead"></thead><tbody id="cuerpo"></tbody></table></div>
   </section>
@@ -265,8 +279,8 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
 /* ╔══ pega aquí tus DOS datos (los mismos de tu archivo actual) ══╗ */
-const SUPABASE_URL = "https://hklwvdhzltjsbfvlewbu.supabase.co";   // ← reemplaza
-const SUPABASE_KEY = "sb_publishable_NgDfyDHDI_KByR-qf35EpA_ZuKI5E0K";                 // ← reemplaza
+const SUPABASE_URL = "https://TU-PROYECTO.supabase.co";   // ← reemplaza
+const SUPABASE_KEY = "TU-PUBLISHABLE-KEY";                 // ← reemplaza
 /* ──────────────────────────────────────────────────────────────── */
 const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 try{localStorage.setItem('gllr_sbcfg',JSON.stringify({url:SUPABASE_URL,key:SUPABASE_KEY}));}catch(_){}
@@ -467,10 +481,11 @@ const ESTADOS=["MOVILIZADO","TRANS. MOV.","TRANS. DESM.","DESMOVILIZ."];
 /* ¿está fuera de obra? "TRANS. DESM." NO cuenta: sigue en obra, solo en tránsito de salida */
 function esDesmov(s){return /^DESMOVILIZ/.test(stSlug(s));}
 /* los dos tránsitos se ordenan junto a los movilizados; se conservan los nombres antiguos */
-const ST_RANK={MOVILIZADO:1,'TRANS. MOV.':1,'TRANS. DESM.':1,
-               'TRÁNS. MOV.':1,'TRÁNS. DESM.':1,
-               'TRANSITO MOV.':1,'TRANSITO DESMOV.':1,TRANSITO:1,
-               'DESMOVILIZ.':2,DESMOVILIZADO:2};
+/* 1er nivel de orden: MOVILIZADO → TRANS. MOV. → TRANS. DESM. → DESMOVILIZ. */
+const ST_RANK={MOVILIZADO:1,
+               'TRANS. MOV.':2,'TRÁNS. MOV.':2,'TRANSITO MOV.':2,TRANSITO:2,
+               'TRANS. DESM.':3,'TRÁNS. DESM.':3,'TRANSITO DESMOV.':3,
+               'DESMOVILIZ.':4,DESMOVILIZADO:4};
 const collapsed={tec:true,mov:true,des:true,prov:true,doc:true}, colFilters={};
 let selId=null, selIds=new Set(), undoStack=[];
 
@@ -636,15 +651,20 @@ function cellCls(e,k,type,isFrz){
   if(k==='hrkm_ult_mntto'||k==='fecha_ult_mntto'||k==='frecuencia')cls+=' ult';
   return cls;
 }
+/* Orden de la tabla. Se aplica solo cada vez que entra, sale o cambia una fila. */
+function ordenTabla(a,b){
+  const ra=ST_RANK[a.status]||9, rb=ST_RANK[b.status]||9; if(ra!==rb)return ra-rb;
+  const p=String(a.cod_proyec||'').localeCompare(String(b.cod_proyec||'')); if(p)return p;
+  const f=famNum(a)-famNum(b); if(f)return f;
+  return String(a.cod_sap||'').localeCompare(String(b.cod_sap||''));
+}
 function buildBody(){
   _marcadas=new Set(selIds);   // buildBody pinta las marcas directo en el HTML
   // ORDEN DE 4 NIVELES: 1) status (MOVILIZADO arriba) 2) Proyecto A-Z 3) ID-Familia 1-10 4) Equipo A-Z
-  const vis=datos.slice().sort((a,b)=>{
-    const ra=ST_RANK[a.status]||9,rb=ST_RANK[b.status]||9; if(ra!==rb)return ra-rb;
-    const p=String(a.cod_proyec||'').localeCompare(String(b.cod_proyec||'')); if(p)return p;
-    const f=famNum(a)-famNum(b); if(f)return f;
-    return String(a.equipo||'').localeCompare(String(b.equipo||''));
-  });
+  /* ORDEN AUTOMÁTICO DE 4 NIVELES
+     1) Status: MOVILIZADO · TRANS. MOV. · TRANS. DESM. · DESMOVILIZ.
+     2) Proyecto A-Z    3) ID Familia 1,2,3…    4) Cód. SAP A-Z          */
+  const vis=datos.slice().sort(ordenTabla);
   const span=FROZEN.length+GROUPS.reduce((a,g)=>a+(collapsed[g.key]?1:g.cols.length),0);
   let html="",prevProy=null,prevSt=null;
   vis.forEach(e=>{
@@ -1003,7 +1023,7 @@ function commitEdit(td,val){
   pushUndo({type:'edit',id,k,old});
   guardar(id,k,val,old);
   if(["frecuencia","hrkm_ult_mntto","hrkm_actual","hr_dia","fecha_lectura"].includes(k)) redrawCalc(id,td.closest("tr"));
-  if(k==='status'){ buildBody(); applyFilters(); return; }
+  if(['status','cod_proyec','familia','cod_sap'].includes(k)){ buildBody(); applyFilters(); return; }  // estos campos cambian el orden
   const tr=td.closest('tr'); if(tr){
     const sapTd=tr.querySelector('td[data-k="cod_sap"]'); if(sapTd)redrawCell(sapTd,e);
     if(tr._meta)Object.assign(tr._meta,rowMeta(e,tr));

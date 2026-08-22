@@ -832,6 +832,26 @@ function pmsElegibles(){
   return datos.filter(e=>!esDesmov(e.status) && (+e.hr_dia||0)>0)
               .sort((a,b)=>String(a.cod_sap||'').localeCompare(String(b.cod_sap||'')));
 }
+/* ¿Este mantenimiento ya está en el programa?
+   Se considera repetido cuando es el mismo equipo, el mismo HR/KM programado
+   y todavía no se ha ejecutado. Devuelve la fila existente o null. */
+function pmsYaExiste(e,hrkmProg){
+  const mid=String(e.id), hp=hrkmProg==null?null:+hrkmProg;
+  return pmsData.find(r=>{
+    if(String(r.maestro_id)!==mid)return false;
+    const f=pmsFila(r);
+    if(f.est==='EJECUTADO'||f.est==='REPROGRAMADO')return false;   // ya cerrado: no estorba
+    const suyo=(r.hrkm_prog!=null&&r.hrkm_prog!=='')?+r.hrkm_prog:(f.hp!=null?+f.hp:null);
+    return hp==null ? suyo==null : suyo===hp;
+  })||null;
+}
+/* Deja marcada y a la vista la fila indicada */
+function pmsEnfocar(id,fechaProg){
+  if(fechaProg){const d=new Date(fechaProg+'T00:00:00');pmsSemana.value=isoWeek(d);pmsAnio.value=d.getFullYear();}
+  pmsSel=id; pmsRender();
+  const tr=pmsBody.querySelector(`tr[data-pmsid="${id}"]`);
+  if(tr&&tr.scrollIntoView)try{tr.scrollIntoView({block:'center'});}catch(_){}
+}
 async function pmsAgregar(e){
   if(!e)return;
   if(esDesmov(e.status)){alert('El equipo está desmovilizado, no se puede programar.');return;}
@@ -839,6 +859,14 @@ async function pmsAgregar(e){
   const c=mant(e);
   const fila={maestro_id:e.id,cod_proyec:e.cod_proyec||null,cod_sap:e.cod_sap,
     hrkm_prog:c.proximo||null, fecha_prog:c.fproxDate?c.fproxDate.toISOString().slice(0,10):null};
+  // si ese mismo mantenimiento ya está programado, no se duplica: se muestra el existente
+  const rep=pmsYaExiste(e,fila.hrkm_prog);
+  if(rep){
+    pmsEnfocar(rep.id,rep.fecha_prog);
+    appFoot.textContent=`${e.cod_sap} ya estaba programado — se resaltó la fila existente`;
+    setTimeout(()=>appFoot.textContent='Doble clic en una celda para editar · los cambios se guardan solos.',3000);
+    return;
+  }
   if(!navigator.onLine)return alert('Sin conexión: no se pueden agregar filas nuevas.\n\nSí puedes editar OM, HR/KM y fechas de las filas existentes; se enviarán al recuperar la señal.');
   const {data,error}=await sb.from('pm_prog').insert(fila).select().single();
   if(error)return alert('No se pudo agregar: '+error.message);
@@ -852,8 +880,25 @@ async function pmsAgregarVarios(ids){
   const eqs=ids.map(id=>getE(id)).filter(e=>e&&!esDesmov(e.status)&&(+e.hr_dia||0));
   if(!eqs.length){alert('Ninguno de los equipos indicados se puede programar.');return;}
   if(!navigator.onLine){alert('Sin conexión: no se pueden agregar filas nuevas.\n\nSí puedes editar OM, HR/KM y fechas de las filas existentes.');return;}
-  const filas=eqs.map(e=>{const c=mant(e);return{maestro_id:e.id,cod_proyec:e.cod_proyec||null,cod_sap:e.cod_sap,
-    hrkm_prog:c.proximo||null, fecha_prog:c.fproxDate?c.fproxDate.toISOString().slice(0,10):null};});
+  // se apartan los que ya estaban programados
+  const filas=[], repetidos=[];
+  for(const e of eqs){
+    const c=mant(e);
+    const f={maestro_id:e.id,cod_proyec:e.cod_proyec||null,cod_sap:e.cod_sap,
+      hrkm_prog:c.proximo||null, fecha_prog:c.fproxDate?c.fproxDate.toISOString().slice(0,10):null};
+    const rep=pmsYaExiste(e,f.hrkm_prog);
+    if(rep)repetidos.push({e,rep}); else filas.push(f);
+  }
+  if(!filas.length){
+    const r0=repetidos[0];
+    if(r0)pmsEnfocar(r0.rep.id,r0.rep.fecha_prog);
+    alert(repetidos.length===1
+      ? `${repetidos[0].e.cod_sap} ya estaba programado.\n\nSe resaltó la fila que ya existe.`
+      : `Los ${repetidos.length} equipos ya estaban programados:\n`
+        +repetidos.slice(0,8).map(r=>' · '+r.e.cod_sap).join('\n')+(repetidos.length>8?'\n · …':'')
+        +'\n\nNo se agregó ninguna fila nueva.');
+    return;
+  }
   const {data,error}=await sb.from('pm_prog').insert(filas).select();
   if(error){alert('No se pudieron agregar: '+error.message);return;}
   data.forEach(d=>{pmsData.push(d); pmsPushUndo({tipo:'add',id:d.id});});
@@ -862,7 +907,8 @@ async function pmsAgregarVarios(ids){
   if(f0){const d=new Date(f0+'T00:00:00');pmsSemana.value=isoWeek(d);pmsAnio.value=d.getFullYear();}
   pmsSel=data.length===1?data[0].id:null;
   pmsRender();
-  appFoot.textContent=`${data.length} equipo(s) agregados al programa ✓`;
+  appFoot.textContent=`${data.length} equipo(s) agregados al programa ✓`
+    +(repetidos.length?` · ${repetidos.length} ya estaban programados y se omitieron`:'');
   setTimeout(()=>appFoot.textContent='Doble clic en una celda para editar · los cambios se guardan solos.',2600);
   try{window.focus();}catch(_){}
 }
