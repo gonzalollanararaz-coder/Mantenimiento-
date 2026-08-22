@@ -1,0 +1,468 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Rendimiento de Combustible &mdash; UDE</title>
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#1c232b">
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+:root{
+    --steel:#1c232b;--steel-2:#2a333d;--bg:#eef0f2;--card:#fff;--line:#d3d8dd;--ink:#1a1d21;
+    --muted:#6b747d;--amber:#f2a900;--ok:#15803d;--ok-bg:#dcfce7;--warn:#b45309;--warn-bg:#fef3c7;
+    --bad:#b91c1c;--bad-bg:#fee2e2;--gray:#6b7280;--gray-bg:#f1f3f5;--blue:#1d4ed8;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;background:var(--bg);color:var(--ink);font-size:14px;display:flex;flex-direction:column;height:100vh;overflow:hidden}
+  .hide{display:none !important}
+  .mono{font-family:"SF Mono",ui-monospace,monospace}
+  header{background:var(--steel);color:#fff;padding:8px 16px;display:flex;gap:12px;align-items:center;justify-content:space-between;border-bottom:3px solid var(--amber);flex-shrink:0}
+  header h1{font-size:14px;font-weight:700}header p{font-size:10px;color:#9aa4ad;text-transform:uppercase;letter-spacing:1.5px}
+  header .who{font-size:12px;color:#cdd4da}
+  .toolbar{display:flex;flex-wrap:nowrap;gap:8px;align-items:center;padding:6px 14px;background:#fff;
+    border-bottom:1px solid var(--line);flex-shrink:0;overflow-x:auto;overflow-y:hidden;
+    height:48px;box-sizing:border-box;                 /* alto fijo, igual que en Equipos */
+    scrollbar-width:thin;scrollbar-color:#cbd2d9 transparent}
+  .toolbar>*{flex:0 0 auto}
+  .toolbar::-webkit-scrollbar{height:6px}
+  .toolbar::-webkit-scrollbar-track{background:transparent}
+  .toolbar::-webkit-scrollbar-thumb{background:#cbd2d9;border-radius:3px}
+  .toolbar input{padding:7px 10px;border:1px solid var(--line);border-radius:8px;font-size:13px}
+  .act{border:none;border-radius:8px;padding:8px 12px;font-size:12px;font-weight:700;cursor:pointer;background:#eef0f2;color:var(--ink)}
+  .act:hover{filter:brightness(.96)}
+  .act.primary{background:var(--amber);color:#1a1200}
+  .act.clear{background:#fee2e2;color:#b91c1c;border:1.5px solid #f87171}
+  .act:disabled{opacity:.45;cursor:default;filter:none}
+  .chip{background:#f1f3f5;border:1px solid var(--line);border-radius:999px;padding:5px 11px;font-size:11px;font-weight:700;color:var(--muted)}
+  .spacer{flex:1}
+  .pill{display:inline-block;padding:1px 6px;border-radius:999px;font-size:10px;font-weight:700}
+  .pill.ok{background:var(--ok-bg);color:var(--ok)}.pill.warn{background:var(--warn-bg);color:var(--warn)}
+  .pill.bad{background:var(--bad-bg);color:var(--bad)}.pill.na{background:var(--gray-bg);color:var(--gray)}
+  .delrow{border:none;background:none;color:#cbd2d9;cursor:pointer;font-size:12px;padding:0 2px;line-height:1}
+  .delrow:hover{color:var(--bad)}
+
+  /* ===== Dashboard ===== */
+  #dashWrap{position:fixed;inset:0;background:rgba(15,20,26,.62);z-index:9998;display:flex;align-items:flex-start;justify-content:center;overflow:auto;padding:12px}
+  #dashCard{background:#fff;border:2px solid #2E75B6;border-radius:9px;padding:8px;width:min(1560px,99vw);box-shadow:0 24px 70px rgba(0,0,0,.45)}
+  .dh-tit{border:2px solid #2E75B6;border-radius:5px;text-align:center;font-size:31px;font-weight:800;color:#1F3864;letter-spacing:.5px;padding:2px}
+  .dh-dep{background:#DEEBF7;text-align:center;font-size:11px;font-weight:800;color:#1F3864;letter-spacing:.6px;padding:2px;margin-top:3px}
+  .dh-sub{border:2px solid #2E75B6;border-radius:5px;text-align:center;font-size:21px;font-weight:700;color:#1F3864;padding:2px;margin-top:3px}
+  .d-body{display:grid;grid-template-columns:158px 1fr 306px;gap:7px;margin-top:7px;align-items:start}
+  /* barra lateral */
+  .d-side{display:flex;flex-direction:column;gap:6px}
+  .d-logo{border:1px solid #BFD7EE;border-radius:6px;padding:8px;text-align:center;line-height:1.05}
+  .d-logo b{font-size:25px;font-weight:800;color:#1F3864;letter-spacing:1px}
+  .d-logo span{display:block;font-size:6.5px;font-weight:700;color:#2E75B6;letter-spacing:.7px;margin-top:2px}
+  .d-f{display:block;border:1px solid #BFD7EE;border-radius:6px;padding:4px 5px;text-align:center;background:#fff}
+  .d-f select{width:100%;border:none;background:transparent;font-size:16px;font-weight:700;color:#1F3864;text-align:center;cursor:pointer;outline:none}
+  .d-f i{display:block;font-style:normal;font-size:8.5px;color:#808080;letter-spacing:.4px}
+  .d-f2{background:#F2F2F2}
+  .d-f2 select{font-size:10.5px;font-weight:600;color:#404040}
+  .d-btn{border:1px solid #BFD7EE;border-radius:6px;background:#fff;padding:6px;font-size:11px;font-weight:700;color:#1F3864;cursor:pointer}
+  .d-btn:hover{background:#DEEBF7}
+  .d-btn-x{color:#C00000;border-color:#F1B0B0}
+  .d-btn-x:hover{background:#FDECEC}
+  /* cabecera de indicadores */
+  .d-top{display:grid;grid-template-columns:auto auto 1fr;gap:7px;margin-bottom:7px}
+  .d-kpi{border:1px solid #2E75B6;border-radius:6px;overflow:hidden;min-width:150px}
+  .d-kh{background:#DEEBF7;text-align:center;font-size:11px;font-weight:800;color:#1F3864;padding:2px;letter-spacing:.4px}
+  .d-kv{text-align:center;font-size:27px;font-weight:800;color:#2E75B6;padding:3px 8px 0}
+  .d-kl{text-align:center;font-size:9px;font-weight:700;color:#1F3864;padding-bottom:4px;letter-spacing:.3px}
+  .d-rng{display:grid;grid-template-columns:1fr 1fr}
+  .d-rng>div{text-align:center;padding:3px 10px 4px}
+  .d-rng>div+div{border-left:1px solid #BFD7EE}
+  .d-rng b{display:block;font-size:24px;font-weight:800}
+  .d-rng i{font-style:normal;font-size:9px;font-weight:700;color:#1F3864}
+  .d-foco{display:flex;flex-direction:column;justify-content:center;align-items:center;padding:2px 10px}
+  .d-foco-t{font-size:29px;font-weight:400;color:#404040;text-align:center;line-height:1.05;letter-spacing:.3px}
+  .d-foco-s{font-size:10px;color:#808080;letter-spacing:.5px;margin-top:2px}
+  /* paneles */
+  .d-panel{border:1px solid #2E75B6;border-radius:6px;padding:5px 7px;background:#fff}
+  .d-panel+.d-panel{margin-top:7px}
+  .d-pt{text-align:center;font-size:10.5px;font-weight:800;color:#1F3864;letter-spacing:.3px}
+  .d-pt2{text-align:center;font-size:8.5px;font-weight:700;color:#2E75B6;letter-spacing:.3px}
+  .d-lg{display:flex;justify-content:center;gap:14px;font-size:9px;color:#404040;margin:1px 0 2px}
+  .d-lg i{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:3px;vertical-align:middle}
+  .d-svg{width:100%;height:auto;display:block}
+  .d-vacio{padding:38px;text-align:center;color:#98a2ad;font-size:11px}
+  .d-tabla{margin-top:7px;padding:0;overflow:hidden}
+  table.d-tb{width:100%;border-collapse:collapse;font-size:11px}
+  table.d-tb th{background:#fff;color:#1F3864;font-weight:800;font-size:10px;letter-spacing:.3px;padding:4px 6px;border-bottom:2px solid #2E75B6;text-align:center}
+  table.d-tb td{padding:2px 6px;border-bottom:1px solid #E6EEF7;text-align:center;color:#404040}
+  table.d-tb td.dt-fam{text-align:left}
+  table.d-tb td.dt-n{font-weight:700;color:#1F3864}
+  table.d-tb tbody tr:hover td{background:#F5F9FD}
+  /* columna derecha */
+  .d-right{display:flex;flex-direction:column}
+  .d-leyenda{margin-top:4px}
+  .dl{font-size:9.5px;color:#404040;padding:1px 0;white-space:nowrap}
+  .dl-b{display:inline-block;width:9px;height:9px;border-radius:2px;margin-right:5px;vertical-align:middle}
+  .dl b{color:#1F3864}
+  .d-tot{text-align:right;margin-top:2px}
+  .d-tot b{display:block;font-size:31px;font-weight:800;color:#2E75B6;line-height:1}
+  .d-tot span{font-size:9px;font-weight:700;color:#1F3864;letter-spacing:.3px}
+  .d-pie{margin-top:6px;text-align:center;font-size:9.5px;color:#808080}
+  @media(max-width:1150px){.d-body{grid-template-columns:1fr}.d-side{flex-direction:row;flex-wrap:wrap}.d-side>*{flex:1 1 120px}}
+  /* estado de conexion */
+  .off-chip{border-radius:999px;padding:4px 10px;font-size:11px;font-weight:700;border:1px solid transparent;white-space:nowrap}
+  .off-ok{background:#dcfce7;color:#15803d;border-color:#86efac}
+  .off-warn{background:#fef3c7;color:#B45309;border-color:#fcd34d}
+  .off-bad{background:#fee2e2;color:#b91c1c;border-color:#fca5a5}
+  footer{padding:7px 16px;color:var(--muted);font-size:12px;text-align:center;flex-shrink:0}
+  
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;background:var(--bg);color:var(--ink);font-size:14px;display:flex;flex-direction:column;height:100vh;overflow:hidden}
+  .hide{display:none !important}
+  .mono{font-family:"SF Mono",ui-monospace,monospace}
+  header{background:var(--steel);color:#fff;padding:8px 16px;display:flex;gap:12px;align-items:center;justify-content:space-between;border-bottom:3px solid var(--amber);flex-shrink:0}
+  header h1{font-size:14px;font-weight:700}
+  header p{font-size:10px;color:#9aa4ad;text-transform:uppercase;letter-spacing:1.5px}
+  header .who{font-size:12px;color:#cdd4da}
+  .toolbar{display:flex;flex-wrap:nowrap;gap:8px;align-items:center;padding:6px 14px;background:#fff;border-bottom:1px solid var(--line);flex-shrink:0;height:44px;box-sizing:border-box;overflow-x:auto}
+  .toolbar>*{flex:0 0 auto}
+  .toolbar input,.toolbar select{padding:4px 8px;border:1px solid var(--line);border-radius:7px;font-size:12px;height:26px}
+  .act{border:none;border-radius:7px;padding:0 11px;height:26px;font-size:11.5px;font-weight:700;cursor:pointer;background:#eef0f2;color:var(--ink)}
+  .act:hover{filter:brightness(.96)}
+  .act.primary{background:var(--amber);color:#1a1200}
+  .act.blue{background:#dbeafe;color:#1d4ed8}
+  .act:disabled{opacity:.45;cursor:default}
+  .chip{background:#f1f3f5;border:1px solid var(--line);border-radius:999px;padding:4px 10px;font-size:11px;font-weight:700;color:var(--muted)}
+  .spacer{flex:1}
+  footer{padding:6px 16px;color:var(--muted);font-size:12px;text-align:center;flex-shrink:0}
+  /* ===== rendimiento ===== */
+  #rcWrap{flex:1;overflow:auto;padding:10px 14px;min-height:0}
+  .rc-cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:9px;margin-bottom:10px}
+  .rc-c{background:#fff;border:1px solid #dde3e9;border-radius:11px;padding:9px 12px}
+  .rc-c .l{font-size:10px;font-weight:800;color:#6b747d;text-transform:uppercase;letter-spacing:.4px}
+  .rc-c .v{font-size:23px;font-weight:800;line-height:1.15;margin-top:2px}
+  .rc-c .s{font-size:9.5px;color:#98a2ad;margin-top:2px}
+  .rc-panel{background:#fff;border:1px solid #dde3e9;border-radius:11px;padding:9px 11px;margin-bottom:10px}
+  .rc-tit{font-size:12px;font-weight:800;color:#1f3864;margin-bottom:6px;display:flex;align-items:baseline;gap:8px}
+  .rc-tit small{font-weight:400;color:var(--muted);font-size:10px}
+  table.rc{width:100%;border-collapse:collapse;font-size:11.5px}
+  table.rc th{background:#f1f4f7;color:#1f3864;font-size:10px;text-transform:uppercase;letter-spacing:.3px;padding:4px 6px;text-align:left;position:sticky;top:0;z-index:2}
+  table.rc td{padding:3px 6px;border-bottom:1px solid #eef1f4}
+  table.rc td.r{text-align:right}table.rc td.c{text-align:center}
+  table.rc tr:hover td{background:#f9fbfd}
+  table.rc tr.eq{cursor:pointer}
+  table.rc tr.eq.on td{background:#e8f0fe}
+  .b-ok{color:#15803d;font-weight:800}.b-mid{color:#B45309;font-weight:800}.b-bad{color:#dc2626;font-weight:800}
+  .obs{color:#B45309;font-size:10.5px}
+  .vacio{padding:34px;text-align:center;color:#98a2ad;font-size:12px}
+  .rc-2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+  @media(max-width:1100px){.rc-2{grid-template-columns:1fr}}
+  .bar{height:7px;border-radius:4px;background:#eef1f4;position:relative;overflow:hidden;min-width:60px}
+  .bar i{position:absolute;left:0;top:0;height:100%;border-radius:4px}
+</style>
+</head>
+<body>
+<header>
+  <div><h1>Rendimiento de Combustible</h1><p>Unidad de Equipos &middot; UDE</p></div>
+  <span class="who" id="who"></span>
+</header>
+
+<div class="toolbar">
+  <button class="act primary" id="btnArch">&#9195; Cargar reporte</button>
+  <span class="chip" id="chArch">sin archivo</span>
+  <select id="fTipo"><option value="">Hr y Km</option><option value="Hr">Solo Hr (Gl/Hr)</option><option value="Km">Solo Km (Km/Gl)</option></select>
+  <select id="fProy"><option value="">Todos los proyectos</option></select>
+  <input type="search" id="fBusca" placeholder="Cód. SAP o equipo…" style="width:190px">
+  <span class="chip" id="chN">&mdash;</span>
+  <div class="spacer"></div>
+  <button class="act blue" id="btnDet" disabled>Ver detalle</button>
+  <button class="act" id="btnXls" disabled>&#8681; Excel</button>
+</div>
+
+<div id="rcWrap"><div class="vacio">Carga el reporte de abastecimiento de combustible.<br><small>Solo se calculan los equipos registrados en la pestaña Equipos.</small></div></div>
+<footer id="pie">El contador de cada equipo (Hr o Km) se toma del Maestro; define qu&eacute; f&oacute;rmula se aplica.</footer>
+
+<script>
+const CFG=(()=>{try{return JSON.parse(localStorage.getItem('gllr_sbcfg')||'null')}catch(_){return null}})();
+if(!CFG||!CFG.url){
+  document.body.innerHTML='<div style="padding:60px;text-align:center;font-family:sans-serif">'
+   +'<h2 style="font-size:18px;margin-bottom:10px">Abre primero la p&aacute;gina principal</h2>'
+   +'<p style="color:#6b747d">Esta pesta&ntilde;a toma la conexi&oacute;n y la sesi&oacute;n desde el Maestro de Equipos.</p></div>';
+  throw new Error('sin configuracion');
+}
+const sb=window.supabase.createClient(CFG.url,CFG.key);
+let datos=[], perfil=null, RC=null, sel=null, DESCARTADOS=[];
+function hoy0(){const d=new Date();d.setHours(0,0,0,0);return d;}
+function dias(a,b){return Math.round((a-b)/86400000);}
+function isoWeek(d){const t=new Date(Date.UTC(d.getFullYear(),d.getMonth(),d.getDate()));const dn=t.getUTCDay()||7;t.setUTCDate(t.getUTCDate()+4-dn);const y=new Date(Date.UTC(t.getUTCFullYear(),0,1));return Math.ceil(((t-y)/86400000+1)/7);}
+function esc(s){return String(s??"").replace(/&/g,"&amp;").replace(/"/g,"&quot;").replace(/</g,"&lt;")}
+function fmtDate(v){if(!v)return"";const p=String(v).split("-");return p.length===3?`${p[2]}/${p[1]}/${p[0].slice(2)}`:String(v);}
+function famNum(e){const m=String(e.familia||'').match(/\d+/);return m?+m[0]:99;}
+function roundToFreq(V,F){
+  V=Number(V)||0; F=Number(F)||0;
+  if(F<=0)return Math.round(V);
+  const L=Math.floor(V/F)*F, U=L+F, band=F*0.2;
+  if((V-L)<band)return L;
+  if((U-V)<=band)return U;
+  const idx=Math.floor((V-L)/band+0.5);
+  return L+idx*band;
+}
+function mant(e){
+  if(e.__mant)return e.__mant;              // caché: se recalcula solo al editar el equipo
+  const H=hoy0(),freq=+e.frecuencia||0,pmr=roundToFreq(+e.hrkm_ult_mntto||0,freq),act=+e.hrkm_actual||0,hd=+e.hr_dia||0;
+  let proy=act; if(e.fecha_lectura){const dd=Math.max(0,dias(H,new Date(e.fecha_lectura)));proy=act+dd*hd;}
+  const proximo=freq?(pmr+freq):0; const restante=proximo-proy;
+  let est="na";const margen=Math.max(freq*0.15,25);
+  if(freq)est=restante<=0?"bad":(restante<=margen?"warn":"ok");
+  let fprox="",sem="",fproxDate=null;
+  if(hd>0&&freq){const dd=Math.floor(restante/hd)+1;fproxDate=new Date(H.getTime()+dd*86400000);fprox=fmtDate(fproxDate.toISOString().slice(0,10));sem=isoWeek(fproxDate);}
+  return (e.__mant={proy:Math.round(proy),proximo:Math.round(proximo),restante:Math.round(restante),est,fprox,sem,fproxDate});
+}
+
+let DIDX=new Map();
+function reindexDatos(){DIDX=new Map(datos.map(e=>[String(e.id),e]));}
+function getE(id){return DIDX.get(String(id))||null;}
+const CAMPOS="id,cod_proyec,cod_sap,equipo,marca,modelo,serie_placa,familia,status,contador,hr_dia,hrkm_actual";
+const nrm=s=>String(s??'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toUpperCase().replace(/\s+/g,' ').trim();
+const clave=s=>nrm(s).replace(/[^A-Z0-9]/g,'');
+const f1=n=>Number(n).toLocaleString('es-PE',{minimumFractionDigits:1,maximumFractionDigits:1});
+const f2=n=>Number(n).toLocaleString('es-PE',{minimumFractionDigits:2,maximumFractionDigits:2});
+const f0=n=>Number(n).toLocaleString('es-PE',{maximumFractionDigits:0});
+
+/* ── columnas del reporte ── */
+const COL={cod:['CODIGO INTERNO','CÓDIGO INTERNO'],placa:['PLACA'],serie:['NRO SERIE','NRO. SERIE'],
+  fecha:['FECHA TRANSAC.','FECHA TRANSAC','FECHA'],hora:['HORA TRANSAC.','HORA TRANSAC','HORA'],
+  valor:['KM/HM','KM / HM'],gln:['GLN','GALONES'],desc:['DESCRIPCION','DESCRIPCIÓN'],
+  tipo:['TIPO DE CONTROL'],proy:['PROYECTO']};
+function mapaCols(filas){
+  for(let i=0;i<12&&i<filas.length;i++){
+    const f=(filas[i]||[]).map(nrm), idx={};
+    for(const [k,al] of Object.entries(COL)){const j=f.findIndex(c=>al.some(a=>nrm(a)===c)); if(j>=0)idx[k]=j;}
+    if(idx.cod!==undefined&&idx.valor!==undefined&&idx.fecha!==undefined&&idx.gln!==undefined)return{fila:i,idx};
+  }
+  return null;
+}
+function fecha(v){
+  if(v instanceof Date&&!isNaN(v))return v;
+  const s=String(v??'').trim(); if(!s)return null;
+  let m=s.match(/^(\d{4})-(\d{2})-(\d{2})/); if(m)return new Date(+m[1],+m[2]-1,+m[3]);
+  m=s.match(/^(\d{1,2})[\/-](\d{1,2})[\/-](\d{2,4})/);
+  if(m){let a=+m[3]; if(a<100)a+=2000; return new Date(a,+m[2]-1,+m[1]);}
+  const d=new Date(s); return isNaN(d)?null:d;
+}
+const mins=h=>{const p=String(h??'').split(':');const a=+p[0],b=+p[1];return (isNaN(a)?0:a)*60+(isNaN(b)?0:b);};
+
+/* ── agrupar el archivo por equipo ── */
+function leer(filas,idx,f0i){
+  const m=new Map();
+  for(let i=f0i+1;i<filas.length;i++){
+    const f=filas[i]||[]; const cod=nrm(f[idx.cod]); if(!cod)continue;
+    const val=Number(String(f[idx.valor]??'').replace(/[^0-9.,-]/g,'').replace(',','.'));
+    const gl=Number(String(f[idx.gln]??'').replace(/[^0-9.,-]/g,'').replace(',','.'));
+    const fe=fecha(f[idx.fecha]);
+    if(!fe||!isFinite(gl)||gl<=0)continue;
+    const ts=fe.getTime()+mins(idx.hora!==undefined?f[idx.hora]:0)*60000;
+    if(!m.has(cod))m.set(cod,{cod,regs:[],
+      placa:idx.placa!==undefined?nrm(f[idx.placa]):'',
+      serie:idx.serie!==undefined?nrm(f[idx.serie]):'',
+      desc:idx.desc!==undefined?String(f[idx.desc]??''):'',
+      tipoArch:idx.tipo!==undefined?String(f[idx.tipo]??''):'',
+      proy:idx.proy!==undefined?String(f[idx.proy]??''):''});
+    m.get(cod).regs.push({ts,fe,val:isFinite(val)?val:null,gl});
+  }
+  return [...m.values()];
+}
+/* ── emparejar con el Maestro ── */
+function emparejar(regs){
+  const porSap=new Map(),porSer=new Map();
+  datos.forEach(e=>{const s=clave(e.cod_sap); if(s&&!porSap.has(s))porSap.set(s,e);
+    const p=clave(e.serie_placa); if(p&&!porSer.has(p))porSer.set(p,e);});
+  return regs.map(r=>{
+    const c=clave(r.cod),p=clave(r.placa),s=clave(r.serie);
+    const e=(c&&porSap.get(c))||(p&&porSap.get(p))||(p&&porSer.get(p))||(s&&porSer.get(s))||(s&&porSap.get(s))||null;
+    return {...r,e};
+  });
+}
+
+/* ═══ CÁLCULO DE RENDIMIENTO ═══
+   Hr → galones ÷ horas (menor es mejor) · Km → km ÷ galones (mayor es mejor)
+   Promedio ponderado: se suman totales y se divide al final.            */
+function calcular(u){
+  const tipo=(u.e&&(u.e.contador==='Hr'||u.e.contador==='Km'))?u.e.contador
+            :(/HOR/i.test(u.tipoArch)?'Hr':'Km');
+  const sinCont=!(u.e&&(u.e.contador==='Hr'||u.e.contador==='Km'));
+  const regs=u.regs.slice().sort((a,b)=>a.ts-b.ts);
+  // incremento típico con las filas sanas, para detectar saltos anómalos
+  const inc=[];
+  for(let i=1;i<regs.length;i++){
+    const d=(regs[i].val??NaN)-(regs[i-1].val??NaN);
+    const dd=Math.max((regs[i].ts-regs[i-1].ts)/86400000,0.5);
+    if(isFinite(d)&&d>0&&d<=(tipo==='Hr'?24:400)*dd)inc.push(d);   // solo los plausibles
+  }
+  const orden=inc.slice().sort((a,b)=>a-b);
+  const tip=orden.length?orden[Math.floor(orden.length/2)]:0;     // mediana
+  const tramos=[]; let sumaGl=0,sumaRec=0,corr=0,desc=0;
+  for(let i=1;i<regs.length;i++){
+    const a=regs[i-1],b=regs[i];
+    const gl=b.gl; let d=(b.val??NaN)-(a.val??NaN); let obs='';
+    const dias=Math.max((b.ts-a.ts)/86400000,0.5);      // dos cargas el mismo día cuentan como medio día
+    const tope=(tipo==='Hr'?24:400)*dias;                // límite físico: 24 h/día · 400 km/día
+    if(!isFinite(d)||d<=0){ obs=d===0?'contador sin avance':'retroceso del contador'; desc++; d=NaN; }
+    else if(d>tope){ obs='salto imposible ('+f0(d)+' en '+f1(dias)+' d\u00eda(s))'; desc++; d=NaN; }
+    else if(tip>0&&d>tip*3){ obs='salto at\u00edpico ('+f0(d)+' vs '+f0(tip)+' habitual)'; desc++; d=NaN; }
+    let rend=null;
+    if(isFinite(d)){ rend = tipo==='Hr' ? gl/d : d/gl; sumaGl+=gl; sumaRec+=d; }
+    else corr++;
+    tramos.push({fe:b.fe,cont:b.val,gl,d:isFinite(d)?d:null,rend,obs});
+  }
+  const prom = sumaRec>0&&sumaGl>0 ? (tipo==='Hr'? sumaGl/sumaRec : sumaRec/sumaGl) : null;
+  return {...u,tipo,sinCont,tramos,prom,sumaGl,sumaRec,cargas:regs.length,
+          galTotal:regs.reduce((a,r)=>a+r.gl,0),descartes:desc,tipico:tip,
+          desde:regs[0]&&regs[0].fe, hasta:regs[regs.length-1]&&regs[regs.length-1].fe};
+}
+
+/* ── colores según el rendimiento respecto a la mediana del grupo ── */
+function nota(v,med,tipo){
+  if(v==null||!med)return '';
+  const r=v/med;
+  if(tipo==='Hr') return r<=0.9?'b-ok':(r<=1.15?'b-mid':'b-bad');
+  return r>=1.1?'b-ok':(r>=0.85?'b-mid':'b-bad');
+}
+function pintar(){
+  if(!RC){return;}
+  const ft=fTipo.value, fp=fProy.value, q=nrm(fBusca.value);
+  let lista=RC.filter(u=>{
+    if(ft&&u.tipo!==ft)return false;
+    if(fp&&String(u.e.cod_proyec||'')!==fp)return false;
+    if(q){const t=nrm((u.e.cod_sap)+' '+(u.e&&u.e.equipo||u.desc)); if(!t.includes(q))return false;}
+    return true;
+  });
+  chN.textContent=lista.length+' equipo(s)';
+  btnDet.disabled=!sel; btnXls.disabled=!lista.length;
+  if(!lista.length){rcWrap.innerHTML='<div class="vacio">Ning\u00fan equipo coincide con el filtro.</div>';return;}
+
+  const hr=lista.filter(u=>u.tipo==='Hr'&&u.prom!=null), km=lista.filter(u=>u.tipo==='Km'&&u.prom!=null);
+  const med=a=>{if(!a.length)return null;const o=a.map(u=>u.prom).sort((x,y)=>x-y);return o[Math.floor(o.length/2)];};
+  const medHr=med(hr), medKm=med(km);
+  const glTot=lista.reduce((a,u)=>a+u.galTotal,0);
+  const totHrGl=hr.reduce((a,u)=>a+u.sumaGl,0), totHrH=hr.reduce((a,u)=>a+u.sumaRec,0);
+  const totKmGl=km.reduce((a,u)=>a+u.sumaGl,0), totKmK=km.reduce((a,u)=>a+u.sumaRec,0);
+
+  let h='<div class="rc-cards">'
+   +card('Gal\u00f3n total despachado',f0(glTot)+' gl',lista.length+' equipos')
+   +card('Maquinaria (Hr)',totHrH>0?f2(totHrGl/totHrH)+' Gl/Hr':'\u2014',hr.length+' equipos \u00b7 '+f0(totHrH)+' h')
+   +card('Veh\u00edculos (Km)',totKmGl>0?f2(totKmK/totKmGl)+' Km/Gl':'\u2014',km.length+' equipos \u00b7 '+f0(totKmK)+' km')
+   +card('Tramos descartados',lista.reduce((a,u)=>a+u.descartes,0),'retrocesos o saltos at\u00edpicos')
+   +'</div>';
+
+  h+='<div class="rc-2">'+tabla('Maquinaria &mdash; Gl/Hr <small>(menor es mejor)</small>',hr,medHr,'Hr')
+                        +tabla('Veh\u00edculos &mdash; Km/Gl <small>(mayor es mejor)</small>',km,medKm,'Km')+'</div>';
+  if(DESCARTADOS.length)h+='<div class="rc-panel"><div class="rc-tit">Descartados <small>('+DESCARTADOS.length
+    +' c\u00f3digos del archivo que no est\u00e1n en la pesta\u00f1a Equipos)</small></div>'
+    +'<div class="obs">'+DESCARTADOS.map(u=>esc(u.cod)+(u.desc?` <i style="color:#98a2ad">${esc(u.desc)}</i>`:'')).join(' \u00b7 ')+'</div></div>';
+  const sinR=lista.filter(u=>u.prom==null);
+  if(sinR.length)h+='<div class="rc-panel"><div class="rc-tit">Sin rendimiento calculable <small>(una sola carga o contador inconsistente)</small></div>'
+    +'<div class="obs">'+sinR.map(u=>esc(u.e.cod_sap)).join(' \u00b7 ')+'</div></div>';
+  rcWrap.innerHTML=h;
+  rcWrap.querySelectorAll('tr.eq').forEach(tr=>tr.onclick=()=>{sel=tr.dataset.cod;pintar();detalle();});
+}
+const card=(l,v,s)=>`<div class="rc-c"><div class="l">${l}</div><div class="v">${v}</div><div class="s">${s}</div></div>`;
+function tabla(tit,arr,med,tipo){
+  if(!arr.length)return '<div class="rc-panel"><div class="rc-tit">'+tit+'</div><div class="vacio">Sin equipos</div></div>';
+  const ord=arr.slice().sort((a,b)=>tipo==='Hr'?a.prom-b.prom:b.prom-a.prom);
+  const mx=Math.max(...ord.map(u=>u.prom));
+  return '<div class="rc-panel"><div class="rc-tit">'+tit+'</div>'
+   +'<table class="rc"><thead><tr><th>C\u00f3d. SAP</th><th>Equipo</th><th>Cargas</th><th>Galones</th><th>'
+   +(tipo==='Hr'?'Horas':'Km')+'</th><th>Rendim.</th><th></th></tr></thead><tbody>'
+   +ord.map(u=>`<tr class="eq${sel===u.cod?' on':''}" data-cod="${esc(u.cod)}">
+      <td class="mono">${esc(u.e.cod_sap)}${u.sinCont?' <span title="Sin Contador en el Maestro" class="obs">&#9888;</span>':''}</td>
+      <td>${esc(u.e.equipo||u.desc||'')}</td>
+      <td class="c">${u.cargas}</td>
+      <td class="r">${f0(u.sumaGl)}</td>
+      <td class="r">${f0(u.sumaRec)}</td>
+      <td class="r ${nota(u.prom,med,tipo)}">${f2(u.prom)}</td>
+      <td><div class="bar"><i style="width:${Math.max(3,u.prom/mx*100)}%;background:${tipo==='Hr'?'#2E75B6':'#0f766e'}"></i></div></td>
+    </tr>`).join('')+'</tbody></table></div>';
+}
+/* ── detalle tramo a tramo ── */
+function detalle(){
+  const u=RC.find(x=>x.cod===sel); if(!u)return;
+  const uni=u.tipo==='Hr'?'Gl/Hr':'Km/Gl';
+  let h=`<div id="dWrap" style="position:fixed;inset:0;background:rgba(15,20,26,.55);z-index:9998;display:flex;align-items:flex-start;justify-content:center;padding:18px;overflow:auto">
+   <div style="background:#fff;border-radius:12px;width:min(920px,98vw);box-shadow:0 20px 60px rgba(0,0,0,.35)">
+   <div style="display:flex;align-items:center;gap:10px;padding:12px 16px;border-bottom:1px solid var(--line)">
+     <div><h3 style="font-size:14px;color:#1f3864">${esc(u.e.cod_sap)} &middot; ${esc(u.e.equipo||u.desc||'')}</h3>
+     <div style="font-size:11px;color:var(--muted);margin-top:2px">Contador ${u.tipo}${u.sinCont?' (asumido del archivo)':''} &middot; ${u.cargas} cargas &middot; promedio ponderado <b>${u.prom!=null?f2(u.prom):'—'} ${uni}</b></div></div>
+     <div style="flex:1"></div><button class="act" onclick="document.getElementById('dWrap').remove()">Cerrar</button>
+   </div>
+   <div style="padding:10px 16px 16px;max-height:70vh;overflow:auto">
+   <table class="rc"><thead><tr><th>Fecha</th><th>Contador</th><th>Galones</th><th>&Delta; ${u.tipo==='Hr'?'Horas':'Km'}</th><th>Rendim. tramo</th><th>Observaci\u00f3n</th></tr></thead><tbody>`;
+  u.tramos.forEach(t=>{
+    h+=`<tr><td>${fmtDate(t.fe.toISOString().slice(0,10))}</td>
+      <td class="r mono">${t.cont!=null?f0(t.cont):'—'}</td>
+      <td class="r">${f1(t.gl)}</td>
+      <td class="r">${t.d!=null?f0(t.d):'—'}</td>
+      <td class="r">${t.rend!=null?f2(t.rend):'—'}</td>
+      <td class="obs">${esc(t.obs||'')}</td></tr>`;});
+  h+=`</tbody></table>
+   <p style="font-size:10.5px;color:var(--muted);margin-top:8px">El promedio no es el promedio de esta columna: se suman los totales y se divide al final, para que una carga de 60 galones pese m&aacute;s que una de 5.</p>
+   </div></div></div>`;
+  document.body.insertAdjacentHTML('beforeend',h);
+  document.getElementById('dWrap').addEventListener('click',ev=>{if(ev.target.id==='dWrap')ev.target.remove();});
+}
+btnDet.onclick=detalle;
+
+/* ── carga del archivo ── */
+btnArch.onclick=()=>{
+  const i=document.createElement('input'); i.type='file'; i.accept='.xlsx,.xls,.csv';
+  i.onchange=async()=>{
+    const f=i.files&&i.files[0]; if(!f)return;
+    pie.textContent='Leyendo '+f.name+'…';
+    try{
+      const wb=XLSX.read(await f.arrayBuffer(),{type:'array',cellDates:true});
+      const filas=XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]],{header:1,raw:true,defval:''});
+      const m=mapaCols(filas);
+      if(!m){alert('No se reconoci\u00f3 el formato.\n\nDebe tener CODIGO INTERNO, FECHA TRANSAC., KM/HM y GLN.');pie.textContent='';return;}
+      const todos=emparejar(leer(filas,m.idx,m.fila));
+      const fuera=todos.filter(u=>!u.e);                    // no están en el Maestro: se descartan
+      RC=todos.filter(u=>u.e).map(calcular);
+      DESCARTADOS=fuera;
+      const ps=[...new Set(RC.map(u=>u.e.cod_proyec).filter(Boolean))].sort();
+      fProy.innerHTML='<option value="">Todos los proyectos</option>'+ps.map(p=>`<option>${esc(p)}</option>`).join('');
+      chArch.textContent=f.name;
+      pie.textContent=`${RC.length} equipo(s) del Maestro`
+        +(fuera.length?` · ${fuera.length} del archivo se descartaron por no estar en Equipos`:'')
+        +' · el Contador de cada equipo define la fórmula.';
+      sel=null; pintar();
+    }catch(err){alert('No se pudo leer: '+err.message);pie.textContent='';}
+  };
+  i.click();
+};
+[fTipo,fProy].forEach(s=>s.onchange=pintar); fBusca.oninput=pintar;
+
+btnXls.onclick=()=>{
+  if(!RC)return;
+  const ft=fTipo.value,fp=fProy.value,q=nrm(fBusca.value);
+  const lista=RC.filter(u=>(!ft||u.tipo===ft)&&(!fp||String(u.e.cod_proyec||'')===fp)
+    &&(!q||nrm((u.e.cod_sap)+' '+(u.e&&u.e.equipo||u.desc)).includes(q)));
+  const rows=lista.map(u=>({'Cód. SAP':u.e.cod_sap,'Equipo':u.e.equipo||u.desc||'',
+    'Proyecto':u.e.cod_proyec||'','Contador':u.tipo,'Cargas':u.cargas,
+    'Galones':+u.sumaGl.toFixed(1),[u.tipo==='Hr'?'Horas':'Km']:+u.sumaRec.toFixed(1),
+    'Rendimiento':u.prom!=null?+u.prom.toFixed(3):'',
+    'Unidad':u.tipo==='Hr'?'Gl/Hr':'Km/Gl','Tramos descartados':u.descartes}));
+  const ws=XLSX.utils.json_to_sheet(rows);
+  ws['!cols']=[{wch:11},{wch:30},{wch:10},{wch:9},{wch:8},{wch:10},{wch:10},{wch:12},{wch:8},{wch:10}];
+  const wb=XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb,ws,'Rendimiento');
+  XLSX.writeFile(wb,'Rendimiento_combustible_'+new Date().toISOString().slice(0,10)+'.xlsx');
+};
+
+/* ── arranque ── */
+(async()=>{
+  const {data:{session}}=await sb.auth.getSession();
+  if(!session){document.body.innerHTML='<div style="padding:60px;text-align:center"><h2 style="font-size:18px">Sesi\u00f3n no iniciada</h2><p style="color:#6b747d">Ingresa en la p\u00e1gina principal.</p></div>';return;}
+  const {data:p}=await sb.from('profiles').select('id,nombre,rol,estado').eq('id',session.user.id).single();
+  perfil=p||{}; who.textContent=(perfil.nombre||session.user.email)+' · '+(perfil.rol||'');
+  const {data:m,error}=await sb.from('maestro').select(CAMPOS).order('cod_proyec').order('id');
+  if(error){pie.textContent='No se pudo cargar el maestro: '+error.message;return;}
+  datos=m||[]; reindexDatos();
+  pie.textContent=`${datos.length} equipos en el Maestro · carga el reporte para calcular.`;
+})();
+</script>
+</body>
+</html>

@@ -150,6 +150,8 @@
   .act.prog{background:#dbeafe;color:#1d4ed8;font-weight:800}
   .act.prog:hover{background:#bfdbfe}
   /* datos de ULTIMO MNTTO en gris */
+  .mx td.cont-Hr{color:#1d4ed8;font-weight:700}
+  .mx td.cont-Km{color:#0f766e;font-weight:700}
   .mx td.famdot{text-align:center;color:#94a3b8;cursor:pointer}
   .mx tbody td.ult{background:#e4e6e8}
   .mx tbody tr:hover td.ult{background:#dcdfe2}
@@ -200,6 +202,13 @@
   .htb tr:hover td{background:#f9fbfd}
   .hvac{color:var(--muted);font-size:11px;padding:3px 0;line-height:1.7}
   .hvac i{color:#98a2ad}
+
+  /* selección tipo Excel */
+  .mx td.xsel{background:#cfe4f7 !important;box-shadow:inset 0 0 0 1px #9dc3e6}
+  .mx td.xanc{box-shadow:inset 0 0 0 2px #1d4ed8 !important}
+  .mx thead th.xcol{background:#1d4ed8 !important}
+  .mx tbody tr.rowsel td.xsel{background:#bcd9f2 !important}
+  #cuerpo{user-select:none}
   footer{padding:10px 16px;color:var(--muted);font-size:12px;text-align:center}
 
   /* admin */
@@ -257,6 +266,7 @@
   <nav>
     <button class="on" id="tabEq" data-tab="eq">Equipos</button>
     <button id="tabPms" data-tab="pms">PM-S</button>
+    <button id="tabComb" data-tab="comb">Combustible</button>
     <button id="tabUsers" data-tab="users" style="display:none">Usuarios</button>
   </nav>
 
@@ -304,8 +314,8 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
 /* ╔══ pega aquí tus DOS datos (los mismos de tu archivo actual) ══╗ */
-const SUPABASE_URL = "https://hklwvdhzltjsbfvlewbu.supabase.co";   // ← reemplaza
-const SUPABASE_KEY = "sb_publishable_NgDfyDHDI_KByR-qf35EpA_ZuKI5E0K";                 // ← reemplaza
+const SUPABASE_URL = "https://TU-PROYECTO.supabase.co";   // ← reemplaza
+const SUPABASE_KEY = "TU-PUBLISHABLE-KEY";                 // ← reemplaza
 /* ──────────────────────────────────────────────────────────────── */
 const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 try{localStorage.setItem('gllr_sbcfg',JSON.stringify({url:SUPABASE_URL,key:SUPABASE_KEY}));}catch(_){}
@@ -491,7 +501,7 @@ const GROUPS=[
  {key:'des',lab:'DATOS DESMOVILIZACIÓN',color:'#C00000',hcol:'#FF0000',cols:[['fecha_desmov','F. desmov.','d'],['hrkm_salida','HR/KM sal.','n'],['nivel_comb_sal','Comb. sal.','pct'],['chk_salida','Chk sal.','okfalta'],['inf_salida','Inf. sal.','okfalta'],['ubic_salida','Ubic. SAP-CE sal.','okfalta']]},
  {key:'prov',lab:'PROVEEDOR',color:'#0F243E',hcol:'#002060',cols:[['propietario','Propietario','t']]},
  {key:'doc',lab:'CONTROL DOCUMENTARIO',color:'#595959',hcol:'#808080',cols:[['certif_operat','Certif. oper.','de'],['soat','SOAT','de'],['poliza','Póliza','de'],['rev_tec','Rev. téc.','de'],['tarjeta_circ','T. circ.','de']]},
- {key:'act',lab:'DATOS ACTUALES',color:'#0F243E',hcol:'#002060',cols:[['hrkm_actual','HR/KM actual','n'],['fecha_lectura','F. lectura','d'],['hr_dia','HR/día','n']]},
+ {key:'act',lab:'DATOS ACTUALES',color:'#0F243E',hcol:'#002060',cols:[['hrkm_actual','HR/KM actual','n'],['fecha_lectura','F. lectura','d'],['hr_dia','HR/día','n'],['contador','Contador','cont']]},
  {key:'ult',lab:'ÚLTIMO MNTTO',color:'#595959',hcol:'#808080',cols:[['hrkm_ult_mntto','HR/KM últ.','n'],['fecha_ult_mntto','F. últ.','d'],['frecuencia','Frecuenc.','n']]},
  {key:'ctrl',lab:'CONTROL DE HORAS Y MNTTO',color:'#C00000',hcol:'#FF0000',calc:true,cols:[['_proximo','Próx. PM','c'],['_restante','Restante','c'],['_alerta','Alerta','c'],['_fprox','Próx. fecha','c'],['_sem','Sem.','c'],['_alertamntto','Alerta de Mntto','c']]},
  {key:'com',lab:'COMENTARIOS',color:'#334155',hcol:'#475569',cols:[['obs','Comentarios','t']]},
@@ -559,7 +569,7 @@ btnOut.onclick=gateOut.onclick=()=>sb.auth.signOut();
 function hoy0(){const d=new Date();d.setHours(0,0,0,0);return d;}
 function dias(a,b){return Math.round((a-b)/86400000);}
 function isoWeek(d){const t=new Date(Date.UTC(d.getFullYear(),d.getMonth(),d.getDate()));const dn=t.getUTCDay()||7;t.setUTCDate(t.getUTCDate()+4-dn);const y=new Date(Date.UTC(t.getUTCFullYear(),0,1));return Math.ceil(((t-y)/86400000+1)/7);}
-const CAMPOS="id,status,cod_proyec,familia,cod_sap,equipo,marca,modelo,serie_placa,anio,color,potencia,capacidad,peso_bruto,tanque_comb,fecha_ingreso,hrkm_ingreso,nivel_comb_ing,chk_ingreso,inf_ingreso,ubic_ingreso,fecha_desmov,hrkm_salida,nivel_comb_sal,chk_salida,inf_salida,ubic_salida,propietario,certif_operat,soat,poliza,rev_tec,tarjeta_circ,hrkm_actual,fecha_lectura,hr_dia,hrkm_ult_mntto,fecha_ult_mntto,pm_realizado,frecuencia,obs,updated_at";
+const CAMPOS="id,status,cod_proyec,familia,cod_sap,equipo,marca,modelo,serie_placa,anio,color,potencia,capacidad,peso_bruto,tanque_comb,fecha_ingreso,hrkm_ingreso,nivel_comb_ing,chk_ingreso,inf_ingreso,ubic_ingreso,fecha_desmov,hrkm_salida,nivel_comb_sal,chk_salida,inf_salida,ubic_salida,propietario,certif_operat,soat,poliza,rev_tec,tarjeta_circ,hrkm_actual,fecha_lectura,hr_dia,contador,hrkm_ult_mntto,fecha_ult_mntto,pm_realizado,frecuencia,obs,updated_at";
 function roundToFreq(V,F){
   V=Number(V)||0; F=Number(F)||0;
   if(F<=0)return Math.round(V);
@@ -664,7 +674,7 @@ function buildHead(){
   thead.innerHTML=b1+'</tr>'+b2+'</tr>';
 }
 function famNum(e){const m=String(e.familia||'').match(/\d+/);return m?+m[0]:99;}
-const TIPOS_CTR={n:1,pct:1,d:1,de:1};
+const TIPOS_CTR={n:1,pct:1,d:1,de:1,cont:1};
 function cellCls(e,k,type,isFrz){
   let cls=isFrz?'frz cell':'cell';
   if(TIPOS_CTR[type])cls+=' ctr';
@@ -674,6 +684,7 @@ function cellCls(e,k,type,isFrz){
   if(type==='de'){const s=docState(e[k]);if(e[k]&&e[k]!=='N.A.'&&(s==='bad'||s==='warn'))cls+=' exp-'+s;}
   if(k==='fecha_lectura'&&staleLectura(e[k]))cls+=' stale';
   if(k==='hrkm_ult_mntto'||k==='fecha_ult_mntto'||k==='frecuencia')cls+=' ult';
+  if(k==='contador'&&e.contador)cls+=' cont-'+e.contador;
   return cls;
 }
 /* Orden de la tabla. Se aplica solo cada vez que entra, sale o cambia una fila. */
@@ -1006,7 +1017,8 @@ cuerpo.addEventListener("dblclick",ev=>{
   const e=getE(id); if(!e)return;
   const cur=e[k]??"";
   let ctrl;
-  if(type==='status'){const ops=ESTADOS.includes(cur)||!cur?ESTADOS:[cur,...ESTADOS];
+  if(type==='cont') ctrl=`<select>${["","Hr","Km"].map(o=>`<option ${cur===o?"selected":""}>${o}</option>`).join("")}</select>`;
+  else if(type==='status'){const ops=ESTADOS.includes(cur)||!cur?ESTADOS:[cur,...ESTADOS];
     ctrl=`<select>${["",...ops].map(o=>`<option ${cur===o?"selected":""}>${o}</option>`).join("")}</select>`;}
   else if(type==='okfalta') ctrl=`<select>${["","FALTA","OK"].map(o=>`<option ${cur===o?"selected":""}>${o}</option>`).join("")}</select>`;
   else if(type==='pct') ctrl=`<input type="number" min="0" max="100" value="${cur}">`;
@@ -1174,6 +1186,7 @@ async function programarSeleccion(){
 document.querySelectorAll("nav button").forEach(b=>b.onclick=()=>{
   const t=b.dataset.tab;
   if(t==="pms"){abrirPMS();return;}                 // se abre en otra pestaña del navegador
+  if(t==="comb"){window.open("combustible.html","_blank");return;}   // ventana aparte, como PM-S
   document.querySelectorAll("nav button").forEach(x=>x.classList.remove("on"));b.classList.add("on");
   paneEq.classList.toggle("hide",t!=="eq");paneUsers.classList.toggle("hide",t!=="users");
   if(t==="users")cargarUsuarios();
@@ -1211,6 +1224,84 @@ cuerpoUsers.addEventListener("change",async ev=>{
 
 function recargarTrasSync(){cargar();}
 
+
+
+/* ═══════════════ SELECCIÓN TIPO EXCEL ═══════════════
+   Arrastrar o Shift+clic marca un rectángulo de celdas; Ctrl+C lo copia
+   con tabulaciones, listo para pegar en Excel. Se resaltan también el
+   encabezado de las columnas y el número de las filas involucradas. */
+let selAnc=null, selFoco=null, selArrastre=false;
+
+function celdaPos(td){
+  const tr=td&&td.closest&&td.closest('#cuerpo tr[data-id]');
+  if(!tr)return null;
+  return {tr,td,f:tr.sectionRowIndex,c:td.cellIndex};
+}
+function selRect(){
+  if(!selAnc||!selFoco)return null;
+  return {f1:Math.min(selAnc.f,selFoco.f),f2:Math.max(selAnc.f,selFoco.f),
+          c1:Math.min(selAnc.c,selFoco.c),c2:Math.max(selAnc.c,selFoco.c)};
+}
+/* pinta el rectángulo y los encabezados correspondientes */
+function selPintar(){
+  cuerpo.querySelectorAll('td.xsel,td.xanc').forEach(t=>t.classList.remove('xsel','xanc'));
+  thead.querySelectorAll('th.xcol').forEach(t=>t.classList.remove('xcol'));
+  const R=selRect(); if(!R)return;
+  const filas=cuerpo.rows;
+  for(let f=R.f1;f<=R.f2;f++){
+    const tr=filas[f]; if(!tr||tr.style.display==='none')continue;
+    for(let cx=R.c1;cx<=R.c2;cx++){const td=tr.cells[cx]; if(td)td.classList.add('xsel');}
+  }
+  if(selAnc&&selAnc.td)selAnc.td.classList.add('xanc');
+  // encabezado de las columnas marcadas
+  const filaCols=thead.rows[thead.rows.length-1];
+  if(filaCols)for(let cx=R.c1;cx<=R.c2;cx++){const th=filaCols.cells[cx]; if(th)th.classList.add('xcol');}
+  const n=(R.f2-R.f1+1)*(R.c2-R.c1+1);
+  if(n>1)appFoot.textContent=`${R.f2-R.f1+1} fila(s) × ${R.c2-R.c1+1} columna(s) · Ctrl+C para copiar`;
+}
+function selLimpiar(){selAnc=null;selFoco=null;selPintar();}
+
+cuerpo.addEventListener('mousedown',ev=>{
+  if(ev.button!==0)return;
+  if(ev.target.closest('[data-editing]')||ev.target.closest('button'))return;
+  const p=celdaPos(ev.target.closest('td')); if(!p)return;
+  if(ev.shiftKey&&selAnc){selFoco=p;}
+  else {selAnc=p;selFoco=p;selArrastre=true;}
+  selPintar();
+});
+cuerpo.addEventListener('mouseover',ev=>{
+  if(!selArrastre)return;
+  const p=celdaPos(ev.target.closest('td')); if(!p)return;
+  selFoco=p; selPintar();
+});
+document.addEventListener('mouseup',()=>{selArrastre=false;});
+
+/* Ctrl+C: arma el texto con tabulaciones */
+document.addEventListener('copy',ev=>{
+  const R=selRect(); if(!R)return;
+  if(document.activeElement&&/INPUT|SELECT|TEXTAREA/.test(document.activeElement.tagName))return;
+  const filas=cuerpo.rows, lineas=[];
+  for(let f=R.f1;f<=R.f2;f++){
+    const tr=filas[f]; if(!tr||tr.style.display==='none')continue;
+    const col=[];
+    for(let cx=R.c1;cx<=R.c2;cx++){
+      const td=tr.cells[cx];
+      let t=td?td.textContent.replace(/\s+/g,' ').trim():'';
+      if(td&&td.classList.contains('idx'))t=t.replace(/[✕✖]/g,'').trim();   // sin el botón de borrar
+      col.push(t);
+    }
+    lineas.push(col.join('\t'));
+  }
+  if(!lineas.length)return;
+  ev.clipboardData.setData('text/plain',lineas.join('\n'));
+  ev.preventDefault();
+  appFoot.textContent=`Copiado: ${lineas.length} fila(s) × ${R.c2-R.c1+1} columna(s)`;
+  setTimeout(()=>appFoot.textContent='Doble clic en una celda para editar · los cambios se guardan solos.',2200);
+});
+/* Escape quita la marca */
+document.addEventListener('keydown',ev=>{
+  if(ev.key==='Escape'&&selAnc&&!document.querySelector('#cuerpo [data-editing]'))selLimpiar();
+});
 
 /* ═══════════════ CARGA DE HORÓMETROS DESDE EL REPORTE DE COMBUSTIBLE ═══════════════
    Lee el Excel de despachos, toma la ÚLTIMA lectura de cada equipo y actualiza
@@ -1280,6 +1371,24 @@ function horLeerFilas(filas,idx,fila0){
   return out;
 }
 
+/* Promedio de uso diario con los últimos intervalos.
+   Manda el Contador del Maestro; si está vacío se usa el del archivo. */
+const HOR_TOPE={Hr:24,Km:250};
+function horRitmo(lecturas,tipo,N){
+  N=N||4;
+  const tope=HOR_TOPE[tipo]||24, ivs=[];
+  for(let i=1;i<lecturas.length;i++){
+    const dv=lecturas[i].val-lecturas[i-1].val;
+    const dd=(lecturas[i].ts-lecturas[i-1].ts)/86400000;
+    if(dv<=0||dd<=0)continue;              // retroceso o misma marca de tiempo
+    const r=dv/dd;
+    if(r>tope)continue;                     // salto imposible: error de digitación
+    ivs.push(r);
+  }
+  const u=ivs.slice(-N);
+  if(!u.length)return null;
+  return {valor:Math.round(u.reduce((a,b)=>a+b,0)/u.length*10)/10, n:u.length, desc:ivs.length-u.length};
+}
 /* Empareja cada equipo del archivo con el Maestro */
 function horEmparejar(regs){
   const porSap=new Map(), porSerie=new Map();
@@ -1307,12 +1416,19 @@ function horAnalizar(regs){
   for(const r of horEmparejar(regs)){
     if(!r.e){R.sinEquipo.push(r);continue;}
     const act=+r.e.hrkm_actual||0, fIso=iso(r.fecha);
-    const item={...r,antes:act,despues:r.valor,fechaIso:fIso,
+    const tipo=(r.e.contador==='Hr'||r.e.contador==='Km')?r.e.contador
+              :(/HOR/i.test(r.tipo)?'Hr':'Km');
+    const ri=horRitmo(r.lecturas,tipo);
+    const item={...r,antes:act,despues:r.valor,fechaIso:fIso,tipoCont:tipo,
+                sinContador:!(r.e.contador==='Hr'||r.e.contador==='Km'),
+                hdAntes:(r.e.hr_dia==null||r.e.hr_dia==='')?null:+r.e.hr_dia,
+                hdNuevo:ri?ri.valor:null, hdN:ri?ri.n:0,
                 antesF:r.e.fecha_lectura||'',motivo:''};
     if(r.valor===act && r.e.fecha_lectura===fIso){R.iguales.push(item);continue;}
     if(r.valor<act)      item.motivo=`el archivo trae ${fmtNum(r.valor)} y el Maestro ya tiene ${fmtNum(act)}`;
     else if(r.picos)     item.motivo=`el archivo tiene ${r.picos} lectura(s) mayores que la última`;
     else if(r.fecha>hoy) item.motivo='la fecha de lectura es futura';
+    else if(item.sinContador) item.motivo='sin Contador en el Maestro: se asumió '+tipo;
     (item.motivo?R.revisar:R.aplicar).push(item);
   }
   const ord=(a,b)=>String(a.e.cod_sap).localeCompare(String(b.e.cod_sap));
@@ -1324,17 +1440,20 @@ const fmtNum=n=>Number(n).toLocaleString('es-PE');
 /* ---------- pantalla de confirmación ---------- */
 function horPanel(R,nomArchivo){
   const fila=(o,marcado)=>`<tr>
-    <td><input type="checkbox" class="hchk" data-id="${o.e.id}" data-val="${o.despues}" data-fec="${o.fechaIso}" ${marcado?'checked':''}></td>
+    <td><input type="checkbox" class="hchk" data-id="${o.e.id}" data-val="${o.despues}" data-fec="${o.fechaIso}" data-hd="${o.hdNuevo!=null?o.hdNuevo:''}" ${marcado?'checked':''}></td>
     <td class="mono">${esc(o.e.cod_sap)}</td>
     <td>${esc(o.e.equipo||'')}</td>
     <td class="mono r">${o.antes?fmtNum(o.antes):'—'}</td>
     <td class="mono r b">${fmtNum(o.despues)}</td>
     <td class="c">${fmtDate(o.fechaIso)}</td>
+    <td class="c">${o.tipoCont||'—'}</td>
+    <td class="mono r">${o.hdAntes!=null?o.hdAntes:'—'}</td>
+    <td class="mono r ${o.hdNuevo!=null?'b':''}">${o.hdNuevo!=null?o.hdNuevo:'—'}${o.hdN?`<small> (${o.hdN})</small>`:''}</td>
     <td class="c">${o.n}</td>
     <td class="via">${esc(o.via)}</td>
     <td class="mot">${esc(o.motivo||'')}</td></tr>`;
   const tabla=(arr,marcado)=>arr.length?`<table class="htb">
-    <thead><tr><th></th><th>Cód. SAP</th><th>Equipo</th><th>HR/KM actual</th><th>Nuevo</th><th>F. lectura</th><th>Lect.</th><th>Encontrado por</th><th>Observación</th></tr></thead>
+    <thead><tr><th></th><th>Cód. SAP</th><th>Equipo</th><th>HR/KM actual</th><th>Nuevo</th><th>F. lectura</th><th>Cont.</th><th>HR/día</th><th>Nuevo</th><th>Lect.</th><th>Encontrado por</th><th>Observación</th></tr></thead>
     <tbody>${arr.map(o=>fila(o,marcado)).join('')}</tbody></table>`:'<p class="hvac">— ninguno —</p>';
 
   document.body.insertAdjacentHTML('beforeend',`<div id="horWrap"><div id="horCard">
@@ -1351,7 +1470,7 @@ function horPanel(R,nomArchivo){
       <span class="hb bad">${R.sinEquipo.length} sin equipo en el Maestro</span>
     </div>
     <div class="hbody">
-      <h4>Se actualizan <small>(desmarca los que no quieras)</small></h4>
+      <h4>Se actualizan <small>(HR/KM, F. lectura y HR/día · desmarca los que no quieras)</small></h4>
       ${tabla(R.aplicar,true)}
       <h4 class="w">Requieren tu revisión <small>(vienen desmarcados)</small></h4>
       ${tabla(R.revisar,false)}
@@ -1371,13 +1490,17 @@ function horPanel(R,nomArchivo){
     let ok=0,err=0;
     for(const ch of chk){
       const id=ch.dataset.id, val=Number(ch.dataset.val), fec=ch.dataset.fec;
+      const hd=ch.dataset.hd===''?null:Number(ch.dataset.hd);
       const e=getE(id); if(!e)continue;
-      const antes={hrkm_actual:e.hrkm_actual,fecha_lectura:e.fecha_lectura};
-      const r=await offEscribir(sb,'maestro','update',{id_fila:id,datos:{hrkm_actual:val,fecha_lectura:fec}});
+      const antes={hrkm_actual:e.hrkm_actual,fecha_lectura:e.fecha_lectura,hr_dia:e.hr_dia};
+      const dat={hrkm_actual:val,fecha_lectura:fec};
+      if(hd!=null&&isFinite(hd))dat.hr_dia=hd;
+      const r=await offEscribir(sb,'maestro','update',{id_fila:id,datos:dat});
       if(r.error){err++;continue;}
-      e.hrkm_actual=val; e.fecha_lectura=fec; delete e.__mant;
+      Object.assign(e,dat); delete e.__mant;
       pushUndo({type:'edit',id,k:'hrkm_actual',old:antes.hrkm_actual});
       pushUndo({type:'edit',id,k:'fecha_lectura',old:antes.fecha_lectura});
+      if(dat.hr_dia!=null)pushUndo({type:'edit',id,k:'hr_dia',old:antes.hr_dia});
       ok++;
     }
     OFF.guardar('maestro_full',datos);
