@@ -176,6 +176,30 @@
   .tb-sep{width:1px;height:22px;background:var(--line);display:inline-block;flex:0 0 1px;margin:0 2px}
   /* botones solo con icono */
   .toolbar .act.ic{width:26px;padding:0;font-size:13px;display:inline-flex;align-items:center;justify-content:center}
+
+  /* panel de carga de horómetros */
+  #horWrap{position:fixed;inset:0;background:rgba(15,20,26,.55);z-index:9997;display:flex;align-items:flex-start;justify-content:center;padding:18px;overflow:auto}
+  #horCard{background:#fff;border-radius:12px;width:min(1180px,98vw);box-shadow:0 20px 60px rgba(0,0,0,.35);display:flex;flex-direction:column;max-height:calc(100vh - 36px)}
+  #horCard .hhead{display:flex;align-items:center;gap:10px;padding:12px 16px;border-bottom:1px solid var(--line)}
+  #horCard h3{font-size:15px;color:#1f3864}
+  #horCard .hsub{font-size:11px;color:var(--muted);margin-top:2px}
+  #horCard .hres{display:flex;gap:7px;flex-wrap:wrap;padding:9px 16px;background:#f6f8fa;border-bottom:1px solid var(--line)}
+  .hb{border-radius:999px;padding:4px 11px;font-size:11px;font-weight:700}
+  .hb.ok{background:#dcfce7;color:#15803d}.hb.warn{background:#fef3c7;color:#B45309}
+  .hb.gris{background:#eef0f2;color:#6b747d}.hb.bad{background:#fee2e2;color:#b91c1c}
+  #horCard .hbody{overflow:auto;padding:10px 16px 16px}
+  #horCard h4{font-size:12px;color:#15803d;margin:12px 0 5px;font-weight:800}
+  #horCard h4.w{color:#B45309}#horCard h4.r{color:#b91c1c}
+  #horCard h4 small{font-weight:400;color:var(--muted)}
+  .htb{width:100%;border-collapse:collapse;font-size:11.5px}
+  .htb th{text-align:left;background:#f1f4f7;color:#1f3864;font-size:10px;text-transform:uppercase;letter-spacing:.3px;padding:4px 6px;position:sticky;top:0}
+  .htb td{padding:3px 6px;border-bottom:1px solid #eef1f4}
+  .htb td.r{text-align:right}.htb td.c{text-align:center}.htb td.b{font-weight:800;color:#15803d}
+  .htb td.via{color:var(--muted);font-size:10.5px}
+  .htb td.mot{color:#B45309;font-size:10.5px}
+  .htb tr:hover td{background:#f9fbfd}
+  .hvac{color:var(--muted);font-size:11px;padding:3px 0;line-height:1.7}
+  .hvac i{color:#98a2ad}
   footer{padding:10px 16px;color:var(--muted);font-size:12px;text-align:center}
 
   /* admin */
@@ -258,6 +282,7 @@
       <button class="act ghost ic" id="btnUndo" disabled title="Deshacer el último cambio (Ctrl+Z)">↶</button>
       <button class="act ghost ic" id="btnAgrupar" title="Contraer todos los grupos de columnas">⊟</button>
       <button class="act ghost ic" id="btnDesagrupar" title="Expandir todos los grupos de columnas">⊞</button>
+      <button class="act ghost ic" id="btnHoro" title="Actualizar horómetros desde el reporte de combustible">⛽</button>
       <button class="act ghost ic" id="btnExcel" title="Descargar en Excel">⬇</button>
       <button class="act ghost ic" id="btnRefresh" title="Volver a cargar los datos">↻</button>
     </div>
@@ -279,8 +304,8 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
 /* ╔══ pega aquí tus DOS datos (los mismos de tu archivo actual) ══╗ */
-const SUPABASE_URL = "https://hklwvdhzltjsbfvlewbu.supabase.co";   // ← reemplaza
-const SUPABASE_KEY = "sb_publishable_NgDfyDHDI_KByR-qf35EpA_ZuKI5E0K";                 // ← reemplaza
+const SUPABASE_URL = "https://TU-PROYECTO.supabase.co";   // ← reemplaza
+const SUPABASE_KEY = "TU-PUBLISHABLE-KEY";                 // ← reemplaza
 /* ──────────────────────────────────────────────────────────────── */
 const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 try{localStorage.setItem('gllr_sbcfg',JSON.stringify({url:SUPABASE_URL,key:SUPABASE_KEY}));}catch(_){}
@@ -1185,6 +1210,205 @@ cuerpoUsers.addEventListener("change",async ev=>{
 
 
 function recargarTrasSync(){cargar();}
+
+
+/* ═══════════════ CARGA DE HORÓMETROS DESDE EL REPORTE DE COMBUSTIBLE ═══════════════
+   Lee el Excel de despachos, toma la ÚLTIMA lectura de cada equipo y actualiza
+   HR/KM actual y F. lectura. Nada se escribe sin que lo confirmes en pantalla. */
+
+const HOR_COLS={
+  cod:['CODIGO INTERNO','CÓDIGO INTERNO','COD INTERNO'],
+  placa:['PLACA'],
+  serie:['NRO SERIE','N° SERIE','NUMERO DE SERIE','NRO. SERIE'],
+  fecha:['FECHA TRANSAC.','FECHA TRANSAC','FECHA'],
+  hora:['HORA TRANSAC.','HORA TRANSAC','HORA'],
+  valor:['KM/HM','KM / HM','HOROMETRO','KILOMETRAJE'],
+  desc:['DESCRIPCION','DESCRIPCIÓN'],
+  tipo:['TIPO DE CONTROL']
+};
+const horNorm=s=>String(s??'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toUpperCase().replace(/\s+/g,' ').trim();
+const horClave=s=>horNorm(s).replace(/[^A-Z0-9]/g,'');   // para comparar placas y series
+
+/* Ubica la fila de encabezados y devuelve el índice de cada columna que interesa */
+function horMapaCols(filas){
+  for(let i=0;i<Math.min(12,filas.length);i++){
+    const fila=(filas[i]||[]).map(horNorm);
+    const idx={};
+    for(const [k,alias] of Object.entries(HOR_COLS)){
+      const j=fila.findIndex(c=>alias.some(a=>horNorm(a)===c));
+      if(j>=0)idx[k]=j;
+    }
+    if(idx.cod!==undefined&&idx.valor!==undefined&&idx.fecha!==undefined)return {fila:i,idx};
+  }
+  return null;
+}
+function horFecha(v){
+  if(v instanceof Date&&!isNaN(v))return v;
+  const s=String(v??'').trim(); if(!s)return null;
+  let m=s.match(/^(\d{4})-(\d{2})-(\d{2})/);           if(m)return new Date(+m[1],+m[2]-1,+m[3]);
+  m=s.match(/^(\d{1,2})[\/-](\d{1,2})[\/-](\d{2,4})/);
+  if(m){let a=+m[3]; if(a<100)a+=2000; return new Date(a,+m[2]-1,+m[1]);}
+  const d=new Date(s); return isNaN(d)?null:d;
+}
+const horMin=h=>{const p=String(h??'').split(':');const a=+p[0],b=+p[1];return (isNaN(a)?0:a)*60+(isNaN(b)?0:b);};
+
+/* Del archivo saca una lectura por equipo: la más reciente */
+function horLeerFilas(filas,idx,fila0){
+  const porEq=new Map();
+  for(let i=fila0+1;i<filas.length;i++){
+    const f=filas[i]||[];
+    const cod=horNorm(f[idx.cod]); if(!cod)continue;
+    const val=Number(String(f[idx.valor]??'').replace(/[^0-9.,-]/g,'').replace(',','.'));
+    const fec=horFecha(f[idx.fecha]);
+    if(!isFinite(val)||val<=0||!fec)continue;                       // descarta vacíos y erratas
+    const ts=fec.getTime()+horMin(idx.hora!==undefined?f[idx.hora]:0)*60000;
+    if(!porEq.has(cod))porEq.set(cod,{cod,lecturas:[],
+      placa:idx.placa!==undefined?horNorm(f[idx.placa]):'',
+      serie:idx.serie!==undefined?horNorm(f[idx.serie]):'',
+      desc:idx.desc!==undefined?String(f[idx.desc]??''):'',
+      tipo:idx.tipo!==undefined?String(f[idx.tipo]??''):''});
+    porEq.get(cod).lecturas.push({ts,val,fec});
+  }
+  const out=[];
+  for(const o of porEq.values()){
+    o.lecturas.sort((a,b)=>a.ts-b.ts);
+    const ult=o.lecturas[o.lecturas.length-1];
+    // Los horómetros solo suben: una lectura anterior mayor que la última es un error de tipeo
+    const picos=o.lecturas.filter(l=>l.val>ult.val).length;
+    out.push({...o,valor:ult.val,fecha:ult.fec,n:o.lecturas.length,picos});
+  }
+  return out;
+}
+
+/* Empareja cada equipo del archivo con el Maestro */
+function horEmparejar(regs){
+  const porSap=new Map(), porSerie=new Map();
+  datos.forEach(e=>{
+    const s=horClave(e.cod_sap); if(s&&!porSap.has(s))porSap.set(s,e);
+    const p=horClave(e.serie_placa); if(p&&!porSerie.has(p))porSerie.set(p,e);
+  });
+  return regs.map(r=>{
+    let e=null,via='';
+    const c=horClave(r.cod), p=horClave(r.placa), s=horClave(r.serie);
+    if(c&&porSap.has(c)){e=porSap.get(c);via='Cód. SAP';}
+    else if(p&&porSap.has(p)){e=porSap.get(p);via='Placa → Cód. SAP';}
+    else if(p&&porSerie.has(p)){e=porSerie.get(p);via='Placa → Serie';}
+    else if(s&&porSerie.has(s)){e=porSerie.get(s);via='N° Serie';}
+    else if(s&&porSap.has(s)){e=porSap.get(s);via='N° Serie → Cód. SAP';}
+    return {...r,e,via};
+  });
+}
+
+/* Clasifica: qué se actualiza, qué queda igual, qué hay que revisar */
+function horAnalizar(regs){
+  const iso=d=>{const z=new Date(d.getTime()-d.getTimezoneOffset()*60000);return z.toISOString().slice(0,10);};
+  const hoy=hoy0();
+  const R={aplicar:[],revisar:[],iguales:[],sinEquipo:[]};
+  for(const r of horEmparejar(regs)){
+    if(!r.e){R.sinEquipo.push(r);continue;}
+    const act=+r.e.hrkm_actual||0, fIso=iso(r.fecha);
+    const item={...r,antes:act,despues:r.valor,fechaIso:fIso,
+                antesF:r.e.fecha_lectura||'',motivo:''};
+    if(r.valor===act && r.e.fecha_lectura===fIso){R.iguales.push(item);continue;}
+    if(r.valor<act)      item.motivo=`el archivo trae ${fmtNum(r.valor)} y el Maestro ya tiene ${fmtNum(act)}`;
+    else if(r.picos)     item.motivo=`el archivo tiene ${r.picos} lectura(s) mayores que la última`;
+    else if(r.fecha>hoy) item.motivo='la fecha de lectura es futura';
+    (item.motivo?R.revisar:R.aplicar).push(item);
+  }
+  const ord=(a,b)=>String(a.e.cod_sap).localeCompare(String(b.e.cod_sap));
+  R.aplicar.sort(ord); R.revisar.sort(ord); R.iguales.sort(ord);
+  return R;
+}
+const fmtNum=n=>Number(n).toLocaleString('es-PE');
+
+/* ---------- pantalla de confirmación ---------- */
+function horPanel(R,nomArchivo){
+  const fila=(o,marcado)=>`<tr>
+    <td><input type="checkbox" class="hchk" data-id="${o.e.id}" data-val="${o.despues}" data-fec="${o.fechaIso}" ${marcado?'checked':''}></td>
+    <td class="mono">${esc(o.e.cod_sap)}</td>
+    <td>${esc(o.e.equipo||'')}</td>
+    <td class="mono r">${o.antes?fmtNum(o.antes):'—'}</td>
+    <td class="mono r b">${fmtNum(o.despues)}</td>
+    <td class="c">${fmtDate(o.fechaIso)}</td>
+    <td class="c">${o.n}</td>
+    <td class="via">${esc(o.via)}</td>
+    <td class="mot">${esc(o.motivo||'')}</td></tr>`;
+  const tabla=(arr,marcado)=>arr.length?`<table class="htb">
+    <thead><tr><th></th><th>Cód. SAP</th><th>Equipo</th><th>HR/KM actual</th><th>Nuevo</th><th>F. lectura</th><th>Lect.</th><th>Encontrado por</th><th>Observación</th></tr></thead>
+    <tbody>${arr.map(o=>fila(o,marcado)).join('')}</tbody></table>`:'<p class="hvac">— ninguno —</p>';
+
+  document.body.insertAdjacentHTML('beforeend',`<div id="horWrap"><div id="horCard">
+    <div class="hhead">
+      <div><h3>Actualizar horómetros</h3><div class="hsub">${esc(nomArchivo)}</div></div>
+      <div class="spacer"></div>
+      <button class="act ghost" id="horCancel">Cancelar</button>
+      <button class="act primary" id="horOk">Aplicar cambios</button>
+    </div>
+    <div class="hres">
+      <span class="hb ok">${R.aplicar.length} para actualizar</span>
+      <span class="hb warn">${R.revisar.length} para revisar</span>
+      <span class="hb gris">${R.iguales.length} sin cambio</span>
+      <span class="hb bad">${R.sinEquipo.length} sin equipo en el Maestro</span>
+    </div>
+    <div class="hbody">
+      <h4>Se actualizan <small>(desmarca los que no quieras)</small></h4>
+      ${tabla(R.aplicar,true)}
+      <h4 class="w">Requieren tu revisión <small>(vienen desmarcados)</small></h4>
+      ${tabla(R.revisar,false)}
+      ${R.sinEquipo.length?`<h4 class="r">No están en el Maestro</h4>
+        <p class="hvac">${R.sinEquipo.map(o=>esc(o.cod)+(o.desc?` <i>${esc(o.desc)}</i>`:'')).join(' · ')}</p>`:''}
+      ${R.iguales.length?`<h4>Sin cambio</h4><p class="hvac">${R.iguales.map(o=>esc(o.e.cod_sap)).join(' · ')}</p>`:''}
+    </div>
+  </div></div>`);
+
+  const cerrar=()=>{const el=document.getElementById('horWrap');if(el)el.remove();};
+  document.getElementById('horCancel').onclick=cerrar;
+  document.getElementById('horWrap').addEventListener('click',ev=>{if(ev.target.id==='horWrap')cerrar();});
+  document.getElementById('horOk').onclick=async()=>{
+    const chk=[...document.querySelectorAll('#horWrap .hchk:checked')];
+    if(!chk.length){alert('No hay ningún equipo marcado.');return;}
+    const btn=document.getElementById('horOk'); btn.disabled=true; btn.textContent='Guardando…';
+    let ok=0,err=0;
+    for(const ch of chk){
+      const id=ch.dataset.id, val=Number(ch.dataset.val), fec=ch.dataset.fec;
+      const e=getE(id); if(!e)continue;
+      const antes={hrkm_actual:e.hrkm_actual,fecha_lectura:e.fecha_lectura};
+      const r=await offEscribir(sb,'maestro','update',{id_fila:id,datos:{hrkm_actual:val,fecha_lectura:fec}});
+      if(r.error){err++;continue;}
+      e.hrkm_actual=val; e.fecha_lectura=fec; delete e.__mant;
+      pushUndo({type:'edit',id,k:'hrkm_actual',old:antes.hrkm_actual});
+      pushUndo({type:'edit',id,k:'fecha_lectura',old:antes.fecha_lectura});
+      ok++;
+    }
+    OFF.guardar('maestro_full',datos);
+    cerrar(); render();
+    appFoot.textContent=`Horómetros actualizados: ${ok} equipo(s)`+(err?` · ${err} con error`:'');
+    setTimeout(()=>appFoot.textContent='Doble clic en una celda para editar · los cambios se guardan solos.',3500);
+  };
+}
+
+/* ---------- botón ---------- */
+btnHoro.onclick=()=>{
+  const inp=document.createElement('input');
+  inp.type='file'; inp.accept='.xlsx,.xls,.csv';
+  inp.onchange=async()=>{
+    const f=inp.files&&inp.files[0]; if(!f)return;
+    appFoot.textContent='Leyendo '+f.name+'…';
+    try{
+      const buf=await f.arrayBuffer();
+      const wb=XLSX.read(buf,{type:'array',cellDates:true});
+      const hoja=wb.Sheets[wb.SheetNames[0]];
+      const filas=XLSX.utils.sheet_to_json(hoja,{header:1,raw:true,defval:''});
+      const mapa=horMapaCols(filas);
+      if(!mapa){alert('No se reconoció el formato del archivo.\n\nDebe tener las columnas CODIGO INTERNO, FECHA TRANSAC. y KM/HM.');appFoot.textContent='';return;}
+      const regs=horLeerFilas(filas,mapa.idx,mapa.fila);
+      if(!regs.length){alert('El archivo no tiene lecturas válidas.');appFoot.textContent='';return;}
+      horPanel(horAnalizar(regs),f.name+' · '+regs.length+' equipos');
+      appFoot.textContent='';
+    }catch(err){ alert('No se pudo leer el archivo: '+err.message); appFoot.textContent=''; }
+  };
+  inp.click();
+};
 
 /* ── modo offline: service worker + copia local + sincronizacion ── */
 if('serviceWorker' in navigator){
