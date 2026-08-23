@@ -338,8 +338,8 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
 /* ╔══ pega aquí tus DOS datos (los mismos de tu archivo actual) ══╗ */
-const SUPABASE_URL = "https://hklwvdhzltjsbfvlewbu.supabase.co";   // ← reemplaza
-const SUPABASE_KEY = "sb_publishable_NgDfyDHDI_KByR-qf35EpA_ZuKI5E0K";                 // ← reemplaza
+const SUPABASE_URL = "https://TU-PROYECTO.supabase.co";   // ← reemplaza
+const SUPABASE_KEY = "TU-PUBLISHABLE-KEY";                 // ← reemplaza
 /* ──────────────────────────────────────────────────────────────── */
 const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 try{localStorage.setItem('gllr_sbcfg',JSON.stringify({url:SUPABASE_URL,key:SUPABASE_KEY}));}catch(_){}
@@ -1701,9 +1701,26 @@ function horPanel(R,regs,nomArchivo){
           descartado:!!l.descartar,galones:l.gl,obs:l.obs||null});
       });
     });
-    let gd=0,ge=0,msg='';
-    for(let i=0;i<disp.length;i+=200){
-      const lote=disp.slice(i,i+200);
+    /* Los despachos ya guardados NO se pisan: si alguien corrigió un contador,
+       ajustó galones o descartó una carga desde la pestaña Combustible, esa
+       corrección se conserva aunque se vuelva a cargar el mismo reporte.
+       Solo se envían los despachos nuevos y los que corregiste en esta carga. */
+    let gd=0,ge=0,msg='',omitidos=0;
+    const fechas=disp.map(d=>d.fecha).sort();
+    const yaHay=new Set();
+    if(fechas.length){
+      const {data:prev}=await sb.from('combustible').select('cod_sap,fecha,hora,nro_vale')
+        .gte('fecha',fechas[0]).lte('fecha',fechas[fechas.length-1]);
+      (prev||[]).forEach(r=>yaHay.add([r.cod_sap,r.fecha,r.hora||'',r.nro_vale||''].join('|')));
+    }
+    const enviar=disp.filter(d=>{
+      const k=[d.cod_sap,d.fecha,d.hora,d.nro_vale].join('|');
+      if(!yaHay.has(k))return true;                       // nuevo
+      if(d.contador_corr!=null||d.descartado||d.obs)return true;   // corregido ahora
+      omitidos++; return false;                            // ya estaba: se respeta
+    });
+    for(let i=0;i<enviar.length;i+=200){
+      const lote=enviar.slice(i,i+200);
       const {error}=await sb.from('combustible')
         .upsert(lote,{onConflict:'cod_sap,fecha,hora,nro_vale',ignoreDuplicates:false});
       if(error){ge+=lote.length; if(!msg)msg=error.message; console.error(error);} else gd+=lote.length;
@@ -1716,7 +1733,8 @@ function horPanel(R,regs,nomArchivo){
     }
     cerrar(); render();
     appFoot.textContent=`Equipos actualizados: ${ok}`+(err?` · ${err} con error`:'')
-      +` · Despachos guardados: ${gd}`+(ge?` · ${ge} con error`:'');
+      +` · Despachos guardados: ${gd}`+(omitidos?` · ${omitidos} ya estaban y se respetaron`:'')
+      +(ge?` · ${ge} con error`:'');
     setTimeout(()=>appFoot.textContent='Doble clic en una celda para editar · los cambios se guardan solos.',5000);
   };
 }
