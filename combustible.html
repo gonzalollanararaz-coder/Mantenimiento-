@@ -164,19 +164,25 @@
 </header>
 
 <div class="toolbar">
-  <button class="act primary" id="btnArch">&#9195; Cargar reporte</button>
-  <span class="chip" id="chArch">sin archivo</span>
+  <select id="fPeriodo">
+    <option value="4s">Últimas 4 semanas</option>
+    <option value="mes">Por mes</option>
+    <option value="rango">Rango de fechas</option>
+    <option value="todo">Todo el historial</option>
+  </select>
+  <select id="fMes" class="hide"></select>
+  <span id="boxRango" class="hide"><input type="date" id="fDesde"> <input type="date" id="fHasta"></span>
   <select id="fTipo"><option value="">Hr y Km</option><option value="Hr">Solo Hr (Gl/Hr)</option><option value="Km">Solo Km (Km/Gl)</option></select>
   <select id="fProy"><option value="">Todos los proyectos</option></select>
-  <input type="search" id="fBusca" placeholder="Cód. SAP o equipo…" style="width:190px">
+  <input type="search" id="fBusca" placeholder="Cód. SAP o equipo…" style="width:180px">
   <span class="chip" id="chN">&mdash;</span>
   <div class="spacer"></div>
-  <button class="act blue" id="btnDet" disabled>Ver detalle</button>
+  <button class="act" id="btnRec">&#8635; Recargar</button>
   <button class="act" id="btnXls" disabled>&#8681; Excel</button>
 </div>
 
-<div id="rcWrap"><div class="vacio">Carga el reporte de abastecimiento de combustible.<br><small>Solo se calculan los equipos registrados en la pestaña Equipos.</small></div></div>
-<footer id="pie">El contador de cada equipo (Hr o Km) se toma del Maestro; define qu&eacute; f&oacute;rmula se aplica.</footer>
+<div id="rcWrap"><div class="vacio">Cargando…</div></div>
+<footer id="pie">Los despachos se cargan desde la pesta&ntilde;a Equipos con el bot&oacute;n &#9981;.</footer>
 
 <script>
 const CFG=(()=>{try{return JSON.parse(localStorage.getItem('gllr_sbcfg')||'null')}catch(_){return null}})();
@@ -187,7 +193,7 @@ if(!CFG||!CFG.url){
   throw new Error('sin configuracion');
 }
 const sb=window.supabase.createClient(CFG.url,CFG.key);
-let datos=[], perfil=null, RC=null, sel=null, DESCARTADOS=[];
+let datos=[], perfil=null, RC=null, sel=null;
 function hoy0(){const d=new Date();d.setHours(0,0,0,0);return d;}
 function dias(a,b){return Math.round((a-b)/86400000);}
 function isoWeek(d){const t=new Date(Date.UTC(d.getFullYear(),d.getMonth(),d.getDate()));const dn=t.getUTCDay()||7;t.setUTCDate(t.getUTCDate()+4-dn);const y=new Date(Date.UTC(t.getUTCFullYear(),0,1));return Math.ceil(((t-y)/86400000+1)/7);}
@@ -334,7 +340,7 @@ function pintar(){
     return true;
   });
   chN.textContent=lista.length+' equipo(s)';
-  btnDet.disabled=!sel; btnXls.disabled=!lista.length;
+  btnXls.disabled=!lista.length;
   if(!lista.length){rcWrap.innerHTML='<div class="vacio">Ning\u00fan equipo coincide con el filtro.</div>';return;}
 
   const hr=lista.filter(u=>u.tipo==='Hr'&&u.prom!=null), km=lista.filter(u=>u.tipo==='Km'&&u.prom!=null);
@@ -353,11 +359,8 @@ function pintar(){
 
   h+='<div class="rc-2">'+tabla('Maquinaria &mdash; Gl/Hr <small>(menor es mejor)</small>',hr,medHr,'Hr')
                         +tabla('Veh\u00edculos &mdash; Km/Gl <small>(mayor es mejor)</small>',km,medKm,'Km')+'</div>';
-  if(DESCARTADOS.length)h+='<div class="rc-panel"><div class="rc-tit">Descartados <small>('+DESCARTADOS.length
-    +' c\u00f3digos del archivo que no est\u00e1n en la pesta\u00f1a Equipos)</small></div>'
-    +'<div class="obs">'+DESCARTADOS.map(u=>esc(u.cod)+(u.desc?` <i style="color:#98a2ad">${esc(u.desc)}</i>`:'')).join(' \u00b7 ')+'</div></div>';
   const sinR=lista.filter(u=>u.prom==null);
-  if(sinR.length)h+='<div class="rc-panel"><div class="rc-tit">Sin rendimiento calculable <small>(una sola carga o contador inconsistente)</small></div>'
+  if(sinR.length)h+='<div class="rc-panel"><div class="rc-tit">Sin rendimiento calculable <small>(una sola carga en el periodo)</small></div>'
     +'<div class="obs">'+sinR.map(u=>esc(u.e.cod_sap)).join(' \u00b7 ')+'</div></div>';
   rcWrap.innerHTML=h;
   rcWrap.querySelectorAll('tr.eq').forEach(tr=>tr.onclick=()=>{sel=tr.dataset.cod;pintar();detalle();});
@@ -406,34 +409,62 @@ function detalle(){
   document.body.insertAdjacentHTML('beforeend',h);
   document.getElementById('dWrap').addEventListener('click',ev=>{if(ev.target.id==='dWrap')ev.target.remove();});
 }
-btnDet.onclick=detalle;
 
-/* ── carga del archivo ── */
-btnArch.onclick=()=>{
-  const i=document.createElement('input'); i.type='file'; i.accept='.xlsx,.xls,.csv';
-  i.onchange=async()=>{
-    const f=i.files&&i.files[0]; if(!f)return;
-    pie.textContent='Leyendo '+f.name+'…';
-    try{
-      const wb=XLSX.read(await f.arrayBuffer(),{type:'array',cellDates:true});
-      const filas=XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]],{header:1,raw:true,defval:''});
-      const m=mapaCols(filas);
-      if(!m){alert('No se reconoci\u00f3 el formato.\n\nDebe tener CODIGO INTERNO, FECHA TRANSAC., KM/HM y GLN.');pie.textContent='';return;}
-      const todos=emparejar(leer(filas,m.idx,m.fila));
-      const fuera=todos.filter(u=>!u.e);                    // no están en el Maestro: se descartan
-      RC=todos.filter(u=>u.e).map(calcular);
-      DESCARTADOS=fuera;
-      const ps=[...new Set(RC.map(u=>u.e.cod_proyec).filter(Boolean))].sort();
-      fProy.innerHTML='<option value="">Todos los proyectos</option>'+ps.map(p=>`<option>${esc(p)}</option>`).join('');
-      chArch.textContent=f.name;
-      pie.textContent=`${RC.length} equipo(s) del Maestro`
-        +(fuera.length?` · ${fuera.length} del archivo se descartaron por no estar en Equipos`:'')
-        +' · el Contador de cada equipo define la fórmula.';
-      sel=null; pintar();
-    }catch(err){alert('No se pudo leer: '+err.message);pie.textContent='';}
-  };
-  i.click();
+/* ── datos desde la base ── */
+let DESPACHOS=[];
+function rangoActivo(){
+  const hoy=new Date(); const iso=d=>{const z=new Date(d.getTime()-d.getTimezoneOffset()*60000);return z.toISOString().slice(0,10);};
+  const p=fPeriodo.value;
+  if(p==='4s'){const d=new Date(hoy.getTime()-28*86400000);return {desde:iso(d),hasta:iso(hoy),lab:'últimas 4 semanas'};}
+  if(p==='mes'&&fMes.value){const [a,m]=fMes.value.split('-').map(Number);
+    return {desde:iso(new Date(a,m-1,1)),hasta:iso(new Date(a,m,0)),lab:PMS_MES[m-1]+' '+a};}
+  if(p==='rango')return {desde:fDesde.value||'1900-01-01',hasta:fHasta.value||'2999-12-31',
+    lab:(fDesde.value?fmtDate(fDesde.value):'inicio')+' a '+(fHasta.value?fmtDate(fHasta.value):'hoy')};
+  return {desde:'1900-01-01',hasta:'2999-12-31',lab:'todo el historial'};
+}
+const PMS_MES=['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Setiembre','Octubre','Noviembre','Diciembre'];
+
+async function cargarDespachos(){
+  pie.textContent='Cargando despachos…';
+  const {data,error}=await sb.from('combustible').select('*').order('fecha').order('hora');
+  if(error){pie.textContent='No se pudieron cargar los despachos: '+error.message;return;}
+  DESPACHOS=data||[];
+  // meses disponibles
+  const meses=[...new Set(DESPACHOS.map(d=>String(d.fecha).slice(0,7)))].sort().reverse();
+  fMes.innerHTML=meses.map(m=>{const [a,mm]=m.split('-');return `<option value="${m}">${PMS_MES[+mm-1]} ${a}</option>`;}).join('');
+  const ps=[...new Set(DESPACHOS.map(d=>d.cod_proyec).filter(Boolean))].sort();
+  fProy.innerHTML='<option value="">Todos los proyectos</option>'+ps.map(p=>`<option>${esc(p)}</option>`).join('');
+  armar();
+}
+/* agrupa los despachos del periodo por equipo y calcula */
+function armar(){
+  const R=rangoActivo();
+  const porEq=new Map();
+  for(const d of DESPACHOS){
+    if(d.descartado)continue;                       // lo que se descartó al cargar no entra
+    const f=String(d.fecha).slice(0,10);
+    if(f<R.desde||f>R.hasta)continue;
+    const e=getE(d.maestro_id); if(!e)continue;     // solo equipos de la pestaña Equipos
+    const val=d.contador_corr!=null?+d.contador_corr:(d.contador!=null?+d.contador:null);
+    const gl=d.galones!=null?+d.galones:null;
+    if(gl==null||gl<=0)continue;
+    const k=String(e.id);
+    if(!porEq.has(k))porEq.set(k,{cod:e.cod_sap,e,desc:e.equipo||'',tipoArch:'',regs:[]});
+    const ts=new Date(f+'T00:00:00').getTime()+(()=>{const p=String(d.hora||'').split(':');const a=+p[0],b=+p[1];return ((isNaN(a)?0:a)*60+(isNaN(b)?0:b))*60000;})();
+    porEq.get(k).regs.push({ts,fe:new Date(f+'T00:00:00'),val,gl});
+  }
+  RC=[...porEq.values()].map(calcular);
+  pie.textContent=`${RC.length} equipo(s) · ${R.lab} · el Contador del Maestro define la fórmula.`;
+  sel=null; pintar();
+}
+fPeriodo.onchange=()=>{
+  fMes.classList.toggle('hide',fPeriodo.value!=='mes');
+  boxRango.classList.toggle('hide',fPeriodo.value!=='rango');
+  armar();
 };
+[fMes,fDesde,fHasta].forEach(x=>x.onchange=armar);
+btnRec.onclick=cargarDespachos;
+
 [fTipo,fProy].forEach(s=>s.onchange=pintar); fBusca.oninput=pintar;
 
 btnXls.onclick=()=>{
@@ -461,7 +492,8 @@ btnXls.onclick=()=>{
   const {data:m,error}=await sb.from('maestro').select(CAMPOS).order('cod_proyec').order('id');
   if(error){pie.textContent='No se pudo cargar el maestro: '+error.message;return;}
   datos=m||[]; reindexDatos();
-  pie.textContent=`${datos.length} equipos en el Maestro · carga el reporte para calcular.`;
+  fPeriodo.onchange();          // deja visible el control que corresponda
+  await cargarDespachos();
 })();
 </script>
 </body>

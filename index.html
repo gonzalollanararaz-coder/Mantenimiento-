@@ -209,6 +209,28 @@
   .mx thead th.xcol{background:#1d4ed8 !important}
   .mx tbody tr.rowsel td.xsel{background:#bcd9f2 !important}
   #cuerpo{user-select:none}
+
+  /* cuadro de corrección de lecturas */
+  #cbWrap{position:fixed;inset:0;background:rgba(15,20,26,.55);z-index:9997;display:flex;align-items:flex-start;justify-content:center;padding:18px;overflow:auto}
+  #cbCard{background:#fff;border-radius:12px;width:min(1080px,98vw);box-shadow:0 20px 60px rgba(0,0,0,.35);display:flex;flex-direction:column;max-height:calc(100vh - 36px)}
+  #cbCard .cbh{display:flex;align-items:center;gap:10px;padding:12px 16px;border-bottom:1px solid var(--line)}
+  #cbCard h3{font-size:15px;color:#1f3864}
+  #cbCard .cbs{font-size:11px;color:var(--muted);margin-top:2px}
+  #cbCard .cbb{overflow:auto;padding:10px 16px 16px;background:#f6f8fa}
+  .cbq{background:#fff;border:1px solid #dde3e9;border-radius:10px;padding:9px 11px;margin-bottom:10px}
+  .cbq-h{font-size:12px;color:#1f3864;margin-bottom:5px;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+  .cbq-t{background:#e8f0fe;color:#1d4ed8;border-radius:999px;padding:1px 8px;font-size:10px;font-weight:800}
+  .cbq-n{color:#B45309;font-size:10.5px;margin-left:auto}
+  table.cbt{width:100%;border-collapse:collapse;font-size:11.5px}
+  table.cbt th{background:#f1f4f7;color:#1f3864;font-size:9.5px;text-transform:uppercase;letter-spacing:.3px;padding:3px 6px;text-align:left;line-height:1.2}
+  table.cbt td{padding:2px 6px;border-bottom:1px solid #eef1f4}
+  table.cbt td.r{text-align:right}table.cbt td.c{text-align:center}
+  table.cbt tr.bad{background:#fffbe6}
+  table.cbt td.hl{background:#F4A100;color:#1a1200;font-weight:800}
+  table.cbt td.sug{color:#15803d;font-weight:700}
+  table.cbt input[type=number]{width:88px;border:1px solid var(--amber);border-radius:5px;padding:1px 4px;font-size:11.5px;text-align:right}
+  .cbm{font-size:10.5px;color:#B45309;margin-top:3px}
+  .hb.azul{background:#dbeafe;color:#1d4ed8}
   footer{padding:10px 16px;color:var(--muted);font-size:12px;text-align:center}
 
   /* admin */
@@ -314,8 +336,8 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
 /* ╔══ pega aquí tus DOS datos (los mismos de tu archivo actual) ══╗ */
-const SUPABASE_URL = "https://hklwvdhzltjsbfvlewbu.supabase.co";   // ← reemplaza
-const SUPABASE_KEY = "sb_publishable_NgDfyDHDI_KByR-qf35EpA_ZuKI5E0K";                 // ← reemplaza
+const SUPABASE_URL = "https://TU-PROYECTO.supabase.co";   // ← reemplaza
+const SUPABASE_KEY = "TU-PUBLISHABLE-KEY";                 // ← reemplaza
 /* ──────────────────────────────────────────────────────────────── */
 const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 try{localStorage.setItem('gllr_sbcfg',JSON.stringify({url:SUPABASE_URL,key:SUPABASE_KEY}));}catch(_){}
@@ -1303,28 +1325,34 @@ document.addEventListener('keydown',ev=>{
   if(ev.key==='Escape'&&selAnc&&!document.querySelector('#cuerpo [data-editing]'))selLimpiar();
 });
 
-/* ═══════════════ CARGA DE HORÓMETROS DESDE EL REPORTE DE COMBUSTIBLE ═══════════════
-   Lee el Excel de despachos, toma la ÚLTIMA lectura de cada equipo y actualiza
-   HR/KM actual y F. lectura. Nada se escribe sin que lo confirmes en pantalla. */
+
+/* ═══════════════ REPORTE DE COMBUSTIBLE ═══════════════
+   Un solo archivo alimenta las dos pestañas:
+     · Equipos      → última lectura de cada equipo (HR/KM actual, F. lectura, HR/día)
+     · Combustible  → la tabla completa de despachos
+   Antes de calcular nada se muestran las inconsistencias para corregirlas a mano. */
 
 const HOR_COLS={
+  vale:['NRO VALE','N° VALE','NRO. VALE'],
   cod:['CODIGO INTERNO','CÓDIGO INTERNO','COD INTERNO'],
   placa:['PLACA'],
   serie:['NRO SERIE','N° SERIE','NUMERO DE SERIE','NRO. SERIE'],
   fecha:['FECHA TRANSAC.','FECHA TRANSAC','FECHA'],
   hora:['HORA TRANSAC.','HORA TRANSAC','HORA'],
   valor:['KM/HM','KM / HM','HOROMETRO','KILOMETRAJE'],
+  gln:['GLN','GALONES'],
   desc:['DESCRIPCION','DESCRIPCIÓN'],
   tipo:['TIPO DE CONTROL']
 };
+const HOR_TOPE={Hr:24,Km:400};       // máximo físico por día
 const horNorm=s=>String(s??'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toUpperCase().replace(/\s+/g,' ').trim();
-const horClave=s=>horNorm(s).replace(/[^A-Z0-9]/g,'');   // para comparar placas y series
+const horClave=s=>horNorm(s).replace(/[^A-Z0-9]/g,'');
+const fmtNum=n=>Number(n).toLocaleString('es-PE');
+const fmtN1=n=>Number(n).toLocaleString('es-PE',{maximumFractionDigits:1});
 
-/* Ubica la fila de encabezados y devuelve el índice de cada columna que interesa */
 function horMapaCols(filas){
   for(let i=0;i<Math.min(12,filas.length);i++){
-    const fila=(filas[i]||[]).map(horNorm);
-    const idx={};
+    const fila=(filas[i]||[]).map(horNorm), idx={};
     for(const [k,alias] of Object.entries(HOR_COLS)){
       const j=fila.findIndex(c=>alias.some(a=>horNorm(a)===c));
       if(j>=0)idx[k]=j;
@@ -1342,54 +1370,37 @@ function horFecha(v){
   const d=new Date(s); return isNaN(d)?null:d;
 }
 const horMin=h=>{const p=String(h??'').split(':');const a=+p[0],b=+p[1];return (isNaN(a)?0:a)*60+(isNaN(b)?0:b);};
+const horIso=d=>{const z=new Date(d.getTime()-d.getTimezoneOffset()*60000);return z.toISOString().slice(0,10);};
 
-/* Del archivo saca una lectura por equipo: la más reciente */
+/* ---------- lectura del archivo ---------- */
 function horLeerFilas(filas,idx,fila0){
   const porEq=new Map();
   for(let i=fila0+1;i<filas.length;i++){
     const f=filas[i]||[];
     const cod=horNorm(f[idx.cod]); if(!cod)continue;
     const val=Number(String(f[idx.valor]??'').replace(/[^0-9.,-]/g,'').replace(',','.'));
-    const fec=horFecha(f[idx.fecha]);
-    if(!isFinite(val)||val<=0||!fec)continue;                       // descarta vacíos y erratas
-    const ts=fec.getTime()+horMin(idx.hora!==undefined?f[idx.hora]:0)*60000;
+    const gl=Number(String(f[idx.gln!==undefined?idx.gln:-1]??'').replace(/[^0-9.,-]/g,'').replace(',','.'));
+    const fec=horFecha(f[idx.fecha]); if(!fec)continue;
+    const hora=idx.hora!==undefined?String(f[idx.hora]??'').trim():'';
+    const ts=fec.getTime()+horMin(hora)*60000;
     if(!porEq.has(cod))porEq.set(cod,{cod,lecturas:[],
       placa:idx.placa!==undefined?horNorm(f[idx.placa]):'',
       serie:idx.serie!==undefined?horNorm(f[idx.serie]):'',
       desc:idx.desc!==undefined?String(f[idx.desc]??''):'',
       tipo:idx.tipo!==undefined?String(f[idx.tipo]??''):''});
-    porEq.get(cod).lecturas.push({ts,val,fec});
+    porEq.get(cod).lecturas.push({ts,fec,fecIso:horIso(fec),hora,
+      vale:idx.vale!==undefined?String(f[idx.vale]??'').trim():'',
+      val:isFinite(val)&&val>0?val:null, gl:isFinite(gl)&&gl>0?gl:null});
   }
   const out=[];
   for(const o of porEq.values()){
     o.lecturas.sort((a,b)=>a.ts-b.ts);
-    const ult=o.lecturas[o.lecturas.length-1];
-    // Los horómetros solo suben: una lectura anterior mayor que la última es un error de tipeo
-    const picos=o.lecturas.filter(l=>l.val>ult.val).length;
-    out.push({...o,valor:ult.val,fecha:ult.fec,n:o.lecturas.length,picos});
+    o.lecturas.forEach((l,i)=>l.k=o.cod+'|'+l.fecIso+'|'+l.hora+'|'+(l.vale||i));
+    out.push(o);
   }
   return out;
 }
-
-/* Promedio de uso diario con los últimos intervalos.
-   Manda el Contador del Maestro; si está vacío se usa el del archivo. */
-const HOR_TOPE={Hr:24,Km:250};
-function horRitmo(lecturas,tipo,N){
-  N=N||4;
-  const tope=HOR_TOPE[tipo]||24, ivs=[];
-  for(let i=1;i<lecturas.length;i++){
-    const dv=lecturas[i].val-lecturas[i-1].val;
-    const dd=(lecturas[i].ts-lecturas[i-1].ts)/86400000;
-    if(dv<=0||dd<=0)continue;              // retroceso o misma marca de tiempo
-    const r=dv/dd;
-    if(r>tope)continue;                     // salto imposible: error de digitación
-    ivs.push(r);
-  }
-  const u=ivs.slice(-N);
-  if(!u.length)return null;
-  return {valor:Math.round(u.reduce((a,b)=>a+b,0)/u.length*10)/10, n:u.length, desc:ivs.length-u.length};
-}
-/* Empareja cada equipo del archivo con el Maestro */
+/* ---------- emparejar con el Maestro ---------- */
 function horEmparejar(regs){
   const porSap=new Map(), porSerie=new Map();
   datos.forEach(e=>{
@@ -1404,91 +1415,203 @@ function horEmparejar(regs){
     else if(p&&porSerie.has(p)){e=porSerie.get(p);via='Placa → Serie';}
     else if(s&&porSerie.has(s)){e=porSerie.get(s);via='N° Serie';}
     else if(s&&porSap.has(s)){e=porSap.get(s);via='N° Serie → Cód. SAP';}
-    return {...r,e,via};
+    const tipo=(e&&(e.contador==='Hr'||e.contador==='Km'))?e.contador:(/HOR/i.test(r.tipo)?'Hr':'Km');
+    return {...r,e,via,tipo,sinContador:!(e&&(e.contador==='Hr'||e.contador==='Km'))};
   });
 }
 
-/* Clasifica: qué se actualiza, qué queda igual, qué hay que revisar */
+/* ---------- detectar lecturas sospechosas ----------
+   El contador solo sube. Se marca una lectura cuando retrocede respecto a
+   la anterior, cuando queda por encima de alguna posterior, o cuando el
+   avance por día supera lo físicamente posible.                        */
+function horDetectar(u){
+  const L=u.lecturas, tope=HOR_TOPE[u.tipo]||24;
+  L.forEach(l=>{l.mal='';l.sug=null;});
+  const V=L.filter(l=>l.val!=null);
+  // 1) picos aislados: un valor que sobresale de sus dos vecinos más allá de lo posible.
+  //    Se marcan primero para que no arrastren a la lectura siguiente.
+  for(let i=0;i<V.length;i++){
+    const a=V[i], p=V[i-1], s=V[i+1];
+    if(p&&s){
+      const ref=Math.max(p.val,s.val);
+      const dias=Math.max((s.ts-p.ts)/86400000,0.5);
+      if(a.val>ref&&(a.val-ref)>tope*dias)
+        a.mal=`sobresale ${fmtNum(Math.round(a.val-ref))} sobre las lecturas vecinas`;
+    }else if(p&&!s){
+      const dias=Math.max((a.ts-p.ts)/86400000,0.5);
+      if(a.val-p.val>tope*dias)a.mal=`avanza ${fmtNum(Math.round(a.val-p.val))} en ${fmtN1(dias)} día(s)`;
+    }
+  }
+  // 2) sobre las lecturas que quedaron sanas, se revisa retroceso y ritmo
+  const S=V.filter(l=>!l.mal);
+  for(let i=1;i<S.length;i++){
+    const a=S[i], p=S[i-1];
+    const d=a.val-p.val, dias=Math.max((a.ts-p.ts)/86400000,0.5);
+    if(d<0)              a.mal='retrocede respecto a la lectura anterior';
+    else if(d>tope*dias) a.mal=`avanza ${fmtNum(Math.round(d))} en ${fmtN1(dias)} día(s)`;
+  }
+  // valor probable: se interpola entre la lectura sana anterior y la siguiente
+  L.forEach((l,i)=>{
+    if(!l.mal)return;
+    const ant=L.slice(0,i).reverse().find(x=>x.val!=null&&!x.mal);
+    const sig=L.slice(i+1).find(x=>x.val!=null&&!x.mal);
+    if(ant&&sig){
+      const f=(l.ts-ant.ts)/(sig.ts-ant.ts||1);
+      l.sug=Math.round(ant.val+(sig.val-ant.val)*f);
+    }else if(ant){
+      const sanas=L.filter(x=>x.val!=null&&!x.mal);
+      let rit=0,n=0;
+      for(let k=1;k<sanas.length;k++){
+        const dd=(sanas[k].ts-sanas[k-1].ts)/86400000;
+        if(dd>0){rit+=(sanas[k].val-sanas[k-1].val)/dd;n++;}
+      }
+      const r=n?rit/n:0;
+      l.sug=Math.round(ant.val+r*Math.max((l.ts-ant.ts)/86400000,0));
+    }else if(sig){ l.sug=sig.val; }
+  });
+  return L.filter(l=>l.mal).length;
+}
+
+/* ---------- ritmo diario con los últimos intervalos ---------- */
+function horRitmo(lecturas,tipo,N){
+  N=N||4;
+  const tope=(tipo==='Hr'?24:250), ivs=[];
+  const L=lecturas.filter(l=>!l.descartar&&horVal(l)!=null);
+  for(let i=1;i<L.length;i++){
+    const dv=horVal(L[i])-horVal(L[i-1]);
+    const dd=(L[i].ts-L[i-1].ts)/86400000;
+    if(dv<=0||dd<=0)continue;
+    const r=dv/dd; if(r>tope)continue;
+    ivs.push(r);
+  }
+  const u=ivs.slice(-N);
+  if(!u.length)return null;
+  return {valor:Math.round(u.reduce((a,b)=>a+b,0)/u.length*10)/10, n:u.length};
+}
+const horVal=l=>(l.corr!=null?l.corr:l.val);
+
+/* ═══════════ PASO 1 · cuadro de correcciones ═══════════ */
+function horCorregir(regs,nomArchivo,seguir){
+  const conProb=regs.filter(u=>u.e&&horDetectar(u)>0);
+  regs.filter(u=>u.e&&!conProb.includes(u)).forEach(u=>horDetectar(u));
+  if(!conProb.length){seguir(regs);return;}
+
+  const bloque=u=>{
+    const L=u.lecturas;
+    return `<div class="cbq">
+      <div class="cbq-h"><b class="mono">${esc(u.e.cod_sap)}</b> ${esc(u.e.equipo||u.desc||'')}
+        <span class="cbq-t">${u.tipo}</span>
+        <span class="cbq-n">${L.filter(l=>l.mal).length} de ${L.length} lectura(s) a revisar</span></div>
+      <table class="cbt"><thead><tr>
+        <th>Fecha</th><th>Hora</th><th>Vale</th><th>KM/HM</th><th>GLN</th>
+        <th>Valor probable<br><small>(cálculo)</small></th><th>Corregir</th><th>Descartar</th></tr></thead><tbody>
+      ${L.map(l=>`<tr class="${l.mal?'bad':''}">
+        <td>${fmtDate(l.fecIso)}</td><td class="c">${esc(l.hora||'')}</td><td class="c mono">${esc(l.vale||'')}</td>
+        <td class="r mono ${l.mal?'hl':''}" title="${esc(l.mal||'')}">${l.val!=null?fmtNum(l.val):'—'}</td>
+        <td class="r">${l.gl!=null?fmtN1(l.gl):'—'}</td>
+        <td class="r sug">${l.sug!=null?fmtNum(l.sug):''}</td>
+        <td>${l.mal?`<input class="cbi" type="number" data-k="${esc(l.k)}" value="${l.sug!=null?l.sug:''}" placeholder="${l.val!=null?l.val:''}">`:''}</td>
+        <td class="c">${l.mal?`<input type="checkbox" class="cbd" data-k="${esc(l.k)}">`:''}</td>
+      </tr>`).join('')}
+      </tbody></table>
+      ${L.filter(l=>l.mal).map(l=>`<div class="cbm">${fmtDate(l.fecIso)}: ${esc(l.mal)}</div>`).join('')}
+    </div>`;
+  };
+
+  document.body.insertAdjacentHTML('beforeend',`<div id="cbWrap"><div id="cbCard">
+    <div class="cbh">
+      <div><h3>Revisar lecturas inconsistentes</h3>
+        <div class="cbs">${esc(nomArchivo)} · ${conProb.length} equipo(s) con lecturas dudosas · nada se descarta sin tu confirmación</div></div>
+      <div class="spacer"></div>
+      <button class="act ghost" id="cbCancel">Cancelar</button>
+      <button class="act ghost" id="cbTodo" title="Aceptar todos los valores probables sugeridos">Usar sugerencias</button>
+      <button class="act primary" id="cbOk">Continuar</button>
+    </div>
+    <div class="cbb">${conProb.map(bloque).join('')}</div>
+  </div></div>`);
+
+  const cerrar=()=>{const e=document.getElementById('cbWrap');if(e)e.remove();};
+  document.getElementById('cbCancel').onclick=()=>{cerrar();appFoot.textContent='Carga cancelada.';};
+  document.getElementById('cbTodo').onclick=()=>{
+    document.querySelectorAll('#cbWrap .cbi').forEach(i=>{
+      const s=i.closest('tr').querySelector('.sug').textContent.replace(/[^\d.-]/g,'');
+      if(s)i.value=s;
+    });
+  };
+  document.getElementById('cbOk').onclick=()=>{
+    const corr=new Map(), desc=new Set();
+    document.querySelectorAll('#cbWrap .cbi').forEach(i=>{
+      const v=Number(i.value); if(i.value!==''&&isFinite(v)&&v>0)corr.set(i.dataset.k,v);
+    });
+    document.querySelectorAll('#cbWrap .cbd:checked').forEach(c=>desc.add(c.dataset.k));
+    // se aplican las decisiones sobre las lecturas
+    regs.forEach(u=>u.lecturas.forEach(l=>{
+      if(desc.has(l.k)){l.descartar=true;l.obs='descartado manualmente';}
+      else if(corr.has(l.k)){l.corr=corr.get(l.k);l.obs=`corregido de ${l.val} a ${corr.get(l.k)}`;}
+      else if(l.mal){l.descartar=true;l.obs='sin corregir: '+l.mal;}
+    }));
+    cerrar(); seguir(regs);
+  };
+}
+
+/* ═══════════ PASO 2 · confirmación y guardado ═══════════ */
 function horAnalizar(regs){
-  const iso=d=>{const z=new Date(d.getTime()-d.getTimezoneOffset()*60000);return z.toISOString().slice(0,10);};
-  const hoy=hoy0();
-  const R={aplicar:[],revisar:[],iguales:[],sinEquipo:[]};
-  for(const r of horEmparejar(regs)){
+  const hoy=hoy0(), R={aplicar:[],iguales:[],sinEquipo:[],despachos:0};
+  for(const r of regs){
+    r.lecturas.forEach(l=>{if(!l.descartar&&horVal(l)!=null)R.despachos++;});
     if(!r.e){R.sinEquipo.push(r);continue;}
-    const act=+r.e.hrkm_actual||0, fIso=iso(r.fecha);
-    const tipo=(r.e.contador==='Hr'||r.e.contador==='Km')?r.e.contador
-              :(/HOR/i.test(r.tipo)?'Hr':'Km');
-    const ri=horRitmo(r.lecturas,tipo);
-    const item={...r,antes:act,despues:r.valor,fechaIso:fIso,tipoCont:tipo,
-                sinContador:!(r.e.contador==='Hr'||r.e.contador==='Km'),
-                hdAntes:(r.e.hr_dia==null||r.e.hr_dia==='')?null:+r.e.hr_dia,
-                hdNuevo:ri?ri.valor:null, hdN:ri?ri.n:0,
-                antesF:r.e.fecha_lectura||'',motivo:''};
-    if(r.valor===act && r.e.fecha_lectura===fIso){R.iguales.push(item);continue;}
-    if(r.valor<act)      item.motivo=`el archivo trae ${fmtNum(r.valor)} y el Maestro ya tiene ${fmtNum(act)}`;
-    else if(r.picos)     item.motivo=`el archivo tiene ${r.picos} lectura(s) mayores que la última`;
-    else if(r.fecha>hoy) item.motivo='la fecha de lectura es futura';
-    else if(item.sinContador) item.motivo='sin Contador en el Maestro: se asumió '+tipo;
-    (item.motivo?R.revisar:R.aplicar).push(item);
+    const buenas=r.lecturas.filter(l=>!l.descartar&&horVal(l)!=null);
+    if(!buenas.length)continue;
+    const ult=buenas[buenas.length-1];
+    const act=+r.e.hrkm_actual||0, val=horVal(ult), fIso=ult.fecIso;
+    const ri=horRitmo(r.lecturas,r.tipo);
+    const item={...r,antes:act,despues:val,fechaIso:fIso,
+      hdAntes:(r.e.hr_dia==null||r.e.hr_dia==='')?null:+r.e.hr_dia,
+      hdNuevo:ri?ri.valor:null, hdN:ri?ri.n:0,
+      nLect:buenas.length, motivo:r.sinContador?'sin Contador en el Maestro: se asumió '+r.tipo:''};
+    if(val===act&&r.e.fecha_lectura===fIso&&!item.hdNuevo)R.iguales.push(item);
+    else R.aplicar.push(item);
   }
   const ord=(a,b)=>String(a.e.cod_sap).localeCompare(String(b.e.cod_sap));
-  R.aplicar.sort(ord); R.revisar.sort(ord); R.iguales.sort(ord);
+  R.aplicar.sort(ord); R.iguales.sort(ord);
   return R;
 }
-const fmtNum=n=>Number(n).toLocaleString('es-PE');
-
-/* ---------- pantalla de confirmación ---------- */
-function horPanel(R,nomArchivo){
-  const fila=(o,marcado)=>`<tr>
-    <td><input type="checkbox" class="hchk" data-id="${o.e.id}" data-val="${o.despues}" data-fec="${o.fechaIso}" data-hd="${o.hdNuevo!=null?o.hdNuevo:''}" ${marcado?'checked':''}></td>
-    <td class="mono">${esc(o.e.cod_sap)}</td>
-    <td>${esc(o.e.equipo||'')}</td>
+function horPanel(R,regs,nomArchivo){
+  const fila=o=>`<tr>
+    <td><input type="checkbox" class="hchk" data-id="${o.e.id}" data-val="${o.despues}" data-fec="${o.fechaIso}" data-hd="${o.hdNuevo!=null?o.hdNuevo:''}" checked></td>
+    <td class="mono">${esc(o.e.cod_sap)}</td><td>${esc(o.e.equipo||'')}</td>
     <td class="mono r">${o.antes?fmtNum(o.antes):'—'}</td>
     <td class="mono r b">${fmtNum(o.despues)}</td>
     <td class="c">${fmtDate(o.fechaIso)}</td>
-    <td class="c">${o.tipoCont||'—'}</td>
+    <td class="c">${o.tipo}</td>
     <td class="mono r">${o.hdAntes!=null?o.hdAntes:'—'}</td>
     <td class="mono r ${o.hdNuevo!=null?'b':''}">${o.hdNuevo!=null?o.hdNuevo:'—'}${o.hdN?`<small> (${o.hdN})</small>`:''}</td>
-    <td class="c">${o.n}</td>
-    <td class="via">${esc(o.via)}</td>
-    <td class="mot">${esc(o.motivo||'')}</td></tr>`;
-  const tabla=(arr,marcado)=>arr.length?`<table class="htb">
-    <thead><tr><th></th><th>Cód. SAP</th><th>Equipo</th><th>HR/KM actual</th><th>Nuevo</th><th>F. lectura</th><th>Cont.</th><th>HR/día</th><th>Nuevo</th><th>Lect.</th><th>Encontrado por</th><th>Observación</th></tr></thead>
-    <tbody>${arr.map(o=>fila(o,marcado)).join('')}</tbody></table>`:'<p class="hvac">— ninguno —</p>';
-
+    <td class="c">${o.nLect}</td><td class="via">${esc(o.via)}</td><td class="mot">${esc(o.motivo||'')}</td></tr>`;
   document.body.insertAdjacentHTML('beforeend',`<div id="horWrap"><div id="horCard">
-    <div class="hhead">
-      <div><h3>Actualizar horómetros</h3><div class="hsub">${esc(nomArchivo)}</div></div>
+    <div class="hhead"><div><h3>Actualizar desde el reporte</h3><div class="hsub">${esc(nomArchivo)}</div></div>
       <div class="spacer"></div>
       <button class="act ghost" id="horCancel">Cancelar</button>
-      <button class="act primary" id="horOk">Aplicar cambios</button>
-    </div>
+      <button class="act primary" id="horOk">Aplicar</button></div>
     <div class="hres">
-      <span class="hb ok">${R.aplicar.length} para actualizar</span>
-      <span class="hb warn">${R.revisar.length} para revisar</span>
+      <span class="hb ok">${R.aplicar.length} equipos a actualizar</span>
+      <span class="hb azul">${R.despachos} despachos para Combustible</span>
       <span class="hb gris">${R.iguales.length} sin cambio</span>
-      <span class="hb bad">${R.sinEquipo.length} sin equipo en el Maestro</span>
+      <span class="hb bad">${R.sinEquipo.length} no están en Equipos</span>
     </div>
     <div class="hbody">
-      <h4>Se actualizan <small>(HR/KM, F. lectura y HR/día · desmarca los que no quieras)</small></h4>
-      ${tabla(R.aplicar,true)}
-      <h4 class="w">Requieren tu revisión <small>(vienen desmarcados)</small></h4>
-      ${tabla(R.revisar,false)}
-      ${R.sinEquipo.length?`<h4 class="r">No están en el Maestro</h4>
-        <p class="hvac">${R.sinEquipo.map(o=>esc(o.cod)+(o.desc?` <i>${esc(o.desc)}</i>`:'')).join(' · ')}</p>`:''}
-      ${R.iguales.length?`<h4>Sin cambio</h4><p class="hvac">${R.iguales.map(o=>esc(o.e.cod_sap)).join(' · ')}</p>`:''}
-    </div>
-  </div></div>`);
+      <h4>Equipos <small>(HR/KM actual, F. lectura y HR/día · desmarca los que no quieras)</small></h4>
+      ${R.aplicar.length?`<table class="htb"><thead><tr><th></th><th>Cód. SAP</th><th>Equipo</th><th>HR/KM</th><th>Nuevo</th><th>F. lectura</th><th>Cont.</th><th>HR/día</th><th>Nuevo</th><th>Lect.</th><th>Encontrado por</th><th>Obs.</th></tr></thead><tbody>${R.aplicar.map(fila).join('')}</tbody></table>`:'<p class="hvac">— ninguno —</p>'}
+      ${R.sinEquipo.length?`<h4 class="r">No están en Equipos <small>(sus despachos no se guardan)</small></h4>
+        <p class="hvac">${R.sinEquipo.map(o=>esc(o.cod)).join(' · ')}</p>`:''}
+    </div></div></div>`);
 
-  const cerrar=()=>{const el=document.getElementById('horWrap');if(el)el.remove();};
+  const cerrar=()=>{const e=document.getElementById('horWrap');if(e)e.remove();};
   document.getElementById('horCancel').onclick=cerrar;
-  document.getElementById('horWrap').addEventListener('click',ev=>{if(ev.target.id==='horWrap')cerrar();});
   document.getElementById('horOk').onclick=async()=>{
-    const chk=[...document.querySelectorAll('#horWrap .hchk:checked')];
-    if(!chk.length){alert('No hay ningún equipo marcado.');return;}
     const btn=document.getElementById('horOk'); btn.disabled=true; btn.textContent='Guardando…';
+    // 1) equipos
     let ok=0,err=0;
-    for(const ch of chk){
+    for(const ch of document.querySelectorAll('#horWrap .hchk:checked')){
       const id=ch.dataset.id, val=Number(ch.dataset.val), fec=ch.dataset.fec;
       const hd=ch.dataset.hd===''?null:Number(ch.dataset.hd);
       const e=getE(id); if(!e)continue;
@@ -1504,9 +1627,29 @@ function horPanel(R,nomArchivo){
       ok++;
     }
     OFF.guardar('maestro_full',datos);
+    // 2) despachos para la pestaña Combustible
+    btn.textContent='Guardando despachos…';
+    const disp=[];
+    regs.forEach(u=>{ if(!u.e)return;
+      u.lecturas.forEach(l=>{
+        if(horVal(l)==null&&!l.descartar)return;
+        disp.push({nro_vale:l.vale||null,cod_sap:u.e.cod_sap,maestro_id:u.e.id,
+          cod_proyec:u.e.cod_proyec||null,fecha:l.fecIso,hora:l.hora||null,
+          contador:l.val,contador_corr:l.corr!=null?l.corr:null,
+          descartado:!!l.descartar,galones:l.gl,obs:l.obs||null});
+      });
+    });
+    let gd=0,ge=0;
+    for(let i=0;i<disp.length;i+=200){
+      const lote=disp.slice(i,i+200);
+      const {error}=await sb.from('combustible')
+        .upsert(lote,{onConflict:'cod_sap,fecha,hora,nro_vale',ignoreDuplicates:false});
+      if(error){ge+=lote.length;console.error(error);} else gd+=lote.length;
+    }
     cerrar(); render();
-    appFoot.textContent=`Horómetros actualizados: ${ok} equipo(s)`+(err?` · ${err} con error`:'');
-    setTimeout(()=>appFoot.textContent='Doble clic en una celda para editar · los cambios se guardan solos.',3500);
+    appFoot.textContent=`Equipos actualizados: ${ok}`+(err?` · ${err} con error`:'')
+      +` · Despachos guardados: ${gd}`+(ge?` · ${ge} con error`:'');
+    setTimeout(()=>appFoot.textContent='Doble clic en una celda para editar · los cambios se guardan solos.',5000);
   };
 }
 
@@ -1518,16 +1661,15 @@ btnHoro.onclick=()=>{
     const f=inp.files&&inp.files[0]; if(!f)return;
     appFoot.textContent='Leyendo '+f.name+'…';
     try{
-      const buf=await f.arrayBuffer();
-      const wb=XLSX.read(buf,{type:'array',cellDates:true});
-      const hoja=wb.Sheets[wb.SheetNames[0]];
-      const filas=XLSX.utils.sheet_to_json(hoja,{header:1,raw:true,defval:''});
+      const wb=XLSX.read(await f.arrayBuffer(),{type:'array',cellDates:true});
+      const filas=XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]],{header:1,raw:true,defval:''});
       const mapa=horMapaCols(filas);
-      if(!mapa){alert('No se reconoció el formato del archivo.\n\nDebe tener las columnas CODIGO INTERNO, FECHA TRANSAC. y KM/HM.');appFoot.textContent='';return;}
-      const regs=horLeerFilas(filas,mapa.idx,mapa.fila);
+      if(!mapa){alert('No se reconoció el formato del archivo.\n\nDebe tener CODIGO INTERNO, FECHA TRANSAC. y KM/HM.');appFoot.textContent='';return;}
+      const regs=horEmparejar(horLeerFilas(filas,mapa.idx,mapa.fila));
       if(!regs.length){alert('El archivo no tiene lecturas válidas.');appFoot.textContent='';return;}
-      horPanel(horAnalizar(regs),f.name+' · '+regs.length+' equipos');
+      const nom=f.name+' · '+regs.length+' equipos';
       appFoot.textContent='';
+      horCorregir(regs,nom,rs=>horPanel(horAnalizar(rs),rs,nom));
     }catch(err){ alert('No se pudo leer el archivo: '+err.message); appFoot.textContent=''; }
   };
   inp.click();
