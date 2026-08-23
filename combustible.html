@@ -175,6 +175,7 @@
   table.rc th.r{text-align:right}
   table.rc th.c{text-align:center}
   table.rc tr.eq{cursor:pointer}
+  table.rc tr.corte td{border-top:2px solid #cbd5e1}
   .b-ok{color:#15803d;font-weight:800}.b-mid{color:#B45309;font-weight:800}.b-bad{color:#dc2626;font-weight:800}
   .bar{height:7px;border-radius:4px;background:#eef1f4;position:relative;overflow:hidden;min-width:56px}
   .bar i{position:absolute;left:0;top:0;height:100%;border-radius:4px}
@@ -376,6 +377,22 @@ const f0=n=>Number(n).toLocaleString('es-PE',{maximumFractionDigits:0});
 const f1=n=>Number(n).toLocaleString('es-PE',{minimumFractionDigits:1,maximumFractionDigits:1});
 const f2=n=>Number(n).toLocaleString('es-PE',{minimumFractionDigits:2,maximumFractionDigits:2});
 const isoDe=d=>{const z=new Date(d.getTime()-d.getTimezoneOffset()*60000);return z.toISOString().slice(0,10);};
+
+/* Mismo criterio de ordenamiento que la tabla de Equipos:
+   1) Status (los tres visibles cuentan igual; DESMOVILIZ. al final)
+   2) Proyecto A-Z   3) ID Familia 1,2,3…   4) Cód. SAP A-Z          */
+const ST_RANK={MOVILIZADO:1,
+               'TRANS. MOV.':1,'TRÁNS. MOV.':1,'TRANSITO MOV.':1,TRANSITO:1,
+               'TRANS. DESM.':1,'TRÁNS. DESM.':1,'TRANSITO DESMOV.':1,
+               'DESMOVILIZ.':2,DESMOVILIZADO:2};
+const idFamNum=e=>{const m=String(e&&e.familia||'').match(/\d+/);return m?+m[0]:99;};
+function ordenEquipos(a,b){
+  const ra=ST_RANK[a.status]||9, rb=ST_RANK[b.status]||9; if(ra!==rb)return ra-rb;
+  const p=String(a.cod_proyec||'').localeCompare(String(b.cod_proyec||'')); if(p)return p;
+  const f=idFamNum(a)-idFamNum(b); if(f)return f;
+  const fe=familiaDe(a).localeCompare(familiaDe(b)); if(fe)return fe;   // agrupa por familia de equipo
+  return String(a.cod_sap||'').localeCompare(String(b.cod_sap||''));
+}
 
 /* ─────────── FAMILIA DE EQUIPOS ───────────
    Agrupa por el tipo de máquina (excavadora, tractor, cargador…),
@@ -588,19 +605,26 @@ function pintarLista(){
 const card=(l,v,s)=>`<div class="rc-c"><div class="l">${l}</div><div class="v">${v}</div><div class="s">${s}</div></div>`;
 function tablaLista(tit,arr,med,tipo){
   if(!arr.length)return '<div class="rc-panel"><div class="rc-tit">'+tit+'</div><div class="vacio">Sin equipos</div></div>';
-  const ord=arr.slice().sort((a,b)=>mejorMenor(tipo)?a.v-b.v:b.v-a.v);
+  // mismo orden que la tabla de Equipos
+  const ord=arr.slice().sort((a,b)=>ordenEquipos(a.e,b.e));
   const mx=Math.max(...ord.map(o=>o.v));
   const nota=v=>{if(!med)return '';const r=v/med;
     return mejorMenor(tipo)?(r<=0.9?'b-ok':(r<=1.15?'b-mid':'b-bad')):(r>=1.1?'b-ok':(r>=0.85?'b-mid':'b-bad'));};
+  let prev=null;
   return '<div class="rc-panel"><div class="rc-tit">'+tit+'</div>'
-   +'<table class="rc"><thead><tr><th>C\u00f3d. SAP</th><th>Familia</th><th class="c">Cargas</th><th class="r">Galones</th><th class="r">'
+   +'<table class="rc"><thead><tr><th>C\u00f3d. SAP</th><th>Proyecto</th><th>Familia</th><th class="c">Cargas</th><th class="r">Galones</th><th class="r">'
    +(tipo==='Hr'?'Horas':'Km')+'</th><th class="r">Rendim.</th><th></th></tr></thead><tbody>'
-   +ord.map(o=>`<tr><td class="mono">${esc(o.e.cod_sap)}</td><td>${esc(o.fam)}</td>
+   +ord.map(o=>{
+      const pr=String(o.e.cod_proyec||'');
+      const k=pr+'|'+o.fam, corte=prev!==null&&k!==prev; prev=k;   // divisor al cambiar de familia
+      return `<tr class="${corte?'corte':''}"><td class="mono">${esc(o.e.cod_sap)}</td>
+      <td>${esc(pr)}</td><td>${esc(o.fam)}</td>
       <td class="c">${o.cargas}</td><td class="r">${f0(o.gl)}</td><td class="r">${f0(o.rec)}</td>
       <td class="r ${nota(o.v)}">${f2(o.v)}</td>
       <td><div class="bar"><i style="width:${Math.max(3,o.v/mx*100)}%;background:${tipo==='Hr'?'#2E75B6':'#0f766e'}"></i></div></td>
-    </tr>`).join('')+'</tbody></table></div>';
+    </tr>`;}).join('')+'</tbody></table></div>';
 }
+
 
 /* ═══════════════ DASHBOARD ═══════════════ */
 let dInit=false;
