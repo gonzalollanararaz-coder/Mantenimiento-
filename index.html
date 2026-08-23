@@ -336,8 +336,8 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
 /* ╔══ pega aquí tus DOS datos (los mismos de tu archivo actual) ══╗ */
-const SUPABASE_URL = "https://hklwvdhzltjsbfvlewbu.supabase.co";   // ← reemplaza
-const SUPABASE_KEY = "sb_publishable_NgDfyDHDI_KByR-qf35EpA_ZuKI5E0K";                 // ← reemplaza
+const SUPABASE_URL = "https://TU-PROYECTO.supabase.co";   // ← reemplaza
+const SUPABASE_KEY = "TU-PUBLISHABLE-KEY";                 // ← reemplaza
 /* ──────────────────────────────────────────────────────────────── */
 const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 try{localStorage.setItem('gllr_sbcfg',JSON.stringify({url:SUPABASE_URL,key:SUPABASE_KEY}));}catch(_){}
@@ -1482,18 +1482,20 @@ function horDetectar(u){
       const dias=Math.max((s.ts-p.ts)/86400000,0.5);
       if(a.val>ref&&(a.val-ref)>tope*dias)
         a.mal=`sobresale ${fmtNum(Math.round(a.val-ref))} sobre las lecturas vecinas`;
-    }else if(p&&!s){
-      const dias=Math.max((a.ts-p.ts)/86400000,0.5);
-      if(a.val-p.val>tope*dias)a.mal=`avanza ${fmtNum(Math.round(a.val-p.val))} en ${fmtN1(dias)} día(s)`;
     }
+    // la última lectura no se juzga aquí: se revisa abajo contra la última sana
   }
   // 2) sobre las lecturas que quedaron sanas, se revisa retroceso y ritmo
+  // Se compara siempre contra la última lectura SANA: así una lectura mala
+  // no arrastra a la siguiente, que suele estar bien.
   const S=V.filter(l=>!l.mal);
-  for(let i=1;i<S.length;i++){
-    const a=S[i], p=S[i-1];
-    const d=a.val-p.val, dias=Math.max((a.ts-p.ts)/86400000,0.5);
+  let bueno=null;
+  for(const a of S){
+    if(!bueno){bueno=a;continue;}
+    const d=a.val-bueno.val, dias=Math.max((a.ts-bueno.ts)/86400000,0.5);
     if(d<0)              a.mal='retrocede respecto a la lectura anterior';
     else if(d>tope*dias) a.mal=`avanza ${fmtNum(Math.round(d))} en ${fmtN1(dias)} día(s)`;
+    else bueno=a;
   }
   // valor probable: se interpola entre la lectura sana anterior y la siguiente
   L.forEach((l,i)=>{
@@ -1678,18 +1680,24 @@ function horPanel(R,regs,nomArchivo){
     regs.forEach(u=>{ if(!u.e)return;
       u.lecturas.forEach(l=>{
         if(horVal(l)==null&&!l.descartar)return;
-        disp.push({nro_vale:l.vale||null,cod_sap:u.e.cod_sap,maestro_id:u.e.id,
-          cod_proyec:u.e.cod_proyec||null,fecha:l.fecIso,hora:l.hora||null,
+        disp.push({nro_vale:l.vale||'',cod_sap:u.e.cod_sap,maestro_id:u.e.id,
+          cod_proyec:u.e.cod_proyec||null,fecha:l.fecIso,hora:l.hora||'',
           contador:l.val,contador_corr:l.corr!=null?l.corr:null,
           descartado:!!l.descartar,galones:l.gl,obs:l.obs||null});
       });
     });
-    let gd=0,ge=0;
+    let gd=0,ge=0,msg='';
     for(let i=0;i<disp.length;i+=200){
       const lote=disp.slice(i,i+200);
       const {error}=await sb.from('combustible')
         .upsert(lote,{onConflict:'cod_sap,fecha,hora,nro_vale',ignoreDuplicates:false});
-      if(error){ge+=lote.length;console.error(error);} else gd+=lote.length;
+      if(error){ge+=lote.length; if(!msg)msg=error.message; console.error(error);} else gd+=lote.length;
+    }
+    if(ge){
+      const falta=/does not exist|schema cache|relation/i.test(msg);
+      alert('Los equipos se actualizaron, pero NO se pudieron guardar los despachos.\n\n'+msg
+        +(falta?'\n\nFalta crear la tabla: ejecuta "tabla_combustible.sql" en Supabase y vuelve a cargar el reporte.'
+               :'\n\nLas correcciones no quedaron guardadas; habrá que repetir la carga.'));
     }
     cerrar(); render();
     appFoot.textContent=`Equipos actualizados: ${ok}`+(err?` · ${err} con error`:'')
