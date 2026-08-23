@@ -133,34 +133,38 @@
   footer{padding:6px 16px;color:var(--muted);font-size:12px;text-align:center;flex-shrink:0}
 
   *{box-sizing:border-box;margin:0;padding:0}
-  body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;background:#eef1f4;color:var(--ink);font-size:14px}
+  body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;background:var(--bg);color:var(--ink);font-size:14px;display:flex;flex-direction:column;height:100vh;overflow:hidden}
   .hide{display:none !important}
   .mono{font-family:"SF Mono",ui-monospace,monospace}
   .spacer{flex:1}
-  #card{background:#fff;border:2px solid #2E75B6;border-radius:9px;padding:8px;margin:10px auto;width:min(1560px,99vw)}
-  .dh-tit{border:2px solid #2E75B6;border-radius:5px;text-align:center;font-size:29px;font-weight:800;color:#1F3864;letter-spacing:.5px;padding:2px}
-  .dh-dep{background:#DEEBF7;text-align:center;font-size:11px;font-weight:800;color:#1F3864;letter-spacing:.6px;padding:2px;margin-top:3px}
-  .dh-sub{border:2px solid #2E75B6;border-radius:5px;text-align:center;font-size:20px;font-weight:700;color:#1F3864;padding:2px;margin-top:3px}
-  .d-body{display:grid;grid-template-columns:160px 1fr 314px;gap:7px;margin-top:7px;align-items:start}
-  .d-side{display:flex;flex-direction:column;gap:6px}
-  .d-logo{border:1px solid #BFD7EE;border-radius:6px;padding:8px;text-align:center;line-height:1.05}
-  .d-logo b{font-size:24px;font-weight:800;color:#1F3864;letter-spacing:1px}
-  .d-logo span{display:block;font-size:6.5px;font-weight:700;color:#2E75B6;letter-spacing:.7px;margin-top:2px}
-  .d-f{display:block;border:1px solid #BFD7EE;border-radius:6px;padding:4px 5px;text-align:center;background:#fff}
-  .d-f select{width:100%;border:none;background:transparent;font-size:14px;font-weight:700;color:#1F3864;text-align:center;cursor:pointer;outline:none}
-  .d-f i{display:block;font-style:normal;font-size:8.5px;color:#808080;letter-spacing:.4px}
-  .d-btn{border:1px solid #BFD7EE;border-radius:6px;background:#fff;padding:6px;font-size:11px;font-weight:700;color:#1F3864;cursor:pointer}
-  .d-btn:hover{background:#DEEBF7}
-  .d-panel{border:1px solid #2E75B6;border-radius:6px;padding:5px 7px;background:#fff}
-  .d-panel+.d-panel{margin-top:7px}
-  .d-pt{text-align:center;font-size:10.5px;font-weight:800;color:#1F3864;letter-spacing:.3px}
-  .d-svg{width:100%;height:auto;display:block}
-  .d-vacio{padding:30px;text-align:center;color:#98a2ad;font-size:11.5px}
-  .d-cards{display:grid;grid-template-columns:repeat(4,1fr);gap:7px;margin-bottom:7px}
-  .dc{background:#fff;border:1px solid #dde3e9;border-radius:9px;padding:7px 10px}
-  .dc-l{font-size:9.5px;font-weight:800;color:#6b747d;text-transform:uppercase;letter-spacing:.4px}
-  .dc-v{font-size:21px;font-weight:800;color:#1F3864;line-height:1.15;margin-top:2px}
-  .dc-s{font-size:9px;color:#98a2ad;margin-top:2px}
+  header{background:var(--steel);color:#fff;padding:8px 16px;display:flex;gap:12px;align-items:center;justify-content:space-between;border-bottom:3px solid var(--amber);flex-shrink:0}
+  header h1{font-size:14px;font-weight:700}
+  header p{font-size:10px;color:#9aa4ad;text-transform:uppercase;letter-spacing:1.5px}
+  header .who{font-size:12px;color:#cdd4da}
+  .toolbar{display:flex;flex-wrap:nowrap;gap:7px;align-items:center;padding:6px 14px;background:#fff;border-bottom:1px solid var(--line);flex-shrink:0;height:44px;overflow-x:auto}
+  .toolbar>*{flex:0 0 auto}
+  .toolbar input,.toolbar select{padding:4px 8px;border:1px solid var(--line);border-radius:7px;font-size:12px;height:26px}
+  .act{border:none;border-radius:7px;padding:0 11px;height:26px;font-size:11.5px;font-weight:700;cursor:pointer;background:#eef0f2;color:var(--ink)}
+  .act:hover{filter:brightness(.96)}
+  .act.primary{background:var(--amber);color:#1a1200}
+  .act.blue{background:#dbeafe;color:#1d4ed8}
+  .act:disabled{opacity:.45;cursor:default}
+  .chip{background:#f1f3f5;border:1px solid var(--line);border-radius:999px;padding:4px 10px;font-size:11px;font-weight:700;color:var(--muted)}
+  footer{padding:6px 16px;color:var(--muted);font-size:12px;text-align:center;flex-shrink:0}
+  /* listado */
+  #rcWrap{flex:1;overflow:auto;padding:10px 14px;min-height:0}
+  .rc-cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:9px;margin-bottom:10px}
+  .rc-c{background:#fff;border:1px solid #dde3e9;border-radius:11px;padding:9px 12px}
+  .rc-c .l{font-size:10px;font-weight:800;color:#6b747d;text-transform:uppercase;letter-spacing:.4px}
+  .rc-c .v{font-size:23px;font-weight:800;line-height:1.15;margin-top:2px;color:#1F3864}
+  .rc-c .s{font-size:9.5px;color:#98a2ad;margin-top:2px}
+  .rc-panel{background:#fff;border:1px solid #dde3e9;border-radius:11px;padding:9px 11px;margin-bottom:10px}
+  .rc-tit{font-size:12px;font-weight:800;color:#1f3864;margin-bottom:6px}
+  .rc-tit small{font-weight:400;color:var(--muted);font-size:10px}
+  .rc-2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+  @media(max-width:1100px){.rc-2{grid-template-columns:1fr}}
+  .obs{color:#B45309;font-size:10.5px;line-height:1.7}
+  .vacio{padding:34px;text-align:center;color:#98a2ad;font-size:12px}
   table.rc{width:100%;border-collapse:collapse;font-size:11.5px}
   table.rc th{background:#f1f4f7;color:#1F3864;font-size:9.5px;text-transform:uppercase;letter-spacing:.3px;padding:4px 6px;text-align:left;position:sticky;top:0;z-index:2}
   table.rc td{padding:3px 6px;border-bottom:1px solid #eef1f4}
@@ -170,8 +174,35 @@
   .b-ok{color:#15803d;font-weight:800}.b-mid{color:#B45309;font-weight:800}.b-bad{color:#dc2626;font-weight:800}
   .bar{height:7px;border-radius:4px;background:#eef1f4;position:relative;overflow:hidden;min-width:56px}
   .bar i{position:absolute;left:0;top:0;height:100%;border-radius:4px}
+  /* dashboard */
+  #dWrap,#bmWrap{position:fixed;inset:0;background:rgba(15,20,26,.6);z-index:9997;display:flex;align-items:flex-start;justify-content:center;overflow:auto;padding:12px}
+  #dCard{background:#fff;border:2px solid #2E75B6;border-radius:9px;padding:8px;width:min(1560px,99vw)}
+  #bmCard{background:#fff;border-radius:12px;width:min(1080px,98vw);box-shadow:0 20px 60px rgba(0,0,0,.35)}
+  .dh-tit{border:2px solid #2E75B6;border-radius:5px;text-align:center;font-size:27px;font-weight:800;color:#1F3864;letter-spacing:.5px;padding:2px}
+  .dh-dep{background:#DEEBF7;text-align:center;font-size:11px;font-weight:800;color:#1F3864;letter-spacing:.6px;padding:2px;margin-top:3px}
+  .dh-sub{border:2px solid #2E75B6;border-radius:5px;text-align:center;font-size:19px;font-weight:700;color:#1F3864;padding:2px;margin-top:3px}
+  .d-body{display:grid;grid-template-columns:158px 1fr 320px;gap:7px;margin-top:7px;align-items:start}
+  .d-side{display:flex;flex-direction:column;gap:6px}
+  .d-logo{border:1px solid #BFD7EE;border-radius:6px;padding:8px;text-align:center;line-height:1.05}
+  .d-logo b{font-size:24px;font-weight:800;color:#1F3864;letter-spacing:1px}
+  .d-logo span{display:block;font-size:6.5px;font-weight:700;color:#2E75B6;letter-spacing:.7px;margin-top:2px}
+  .d-f{display:block;border:1px solid #BFD7EE;border-radius:6px;padding:4px 5px;text-align:center;background:#fff}
+  .d-f select{width:100%;border:none;background:transparent;font-size:12.5px;font-weight:700;color:#1F3864;text-align:center;cursor:pointer;outline:none}
+  .d-f i{display:block;font-style:normal;font-size:8.5px;color:#808080;letter-spacing:.4px}
+  .d-btn{border:1px solid #BFD7EE;border-radius:6px;background:#fff;padding:6px;font-size:11px;font-weight:700;color:#1F3864;cursor:pointer}
+  .d-btn:hover{background:#DEEBF7}
+  .d-btn-x{color:#C00000;border-color:#F1B0B0}
+  .d-panel{border:1px solid #2E75B6;border-radius:6px;padding:5px 7px;background:#fff}
+  .d-panel+.d-panel{margin-top:7px}
+  .d-pt{text-align:center;font-size:10.5px;font-weight:800;color:#1F3864;letter-spacing:.3px;margin-bottom:3px}
+  .d-svg{width:100%;height:auto;display:block}
+  .d-vacio{padding:28px;text-align:center;color:#98a2ad;font-size:11.5px}
+  .d-cards{display:grid;grid-template-columns:repeat(4,1fr);gap:7px;margin-bottom:7px}
+  .dc{background:#fff;border:1px solid #dde3e9;border-radius:9px;padding:7px 10px}
+  .dc-l{font-size:9.5px;font-weight:800;color:#6b747d;text-transform:uppercase;letter-spacing:.4px}
+  .dc-v{font-size:20px;font-weight:800;color:#1F3864;line-height:1.15;margin-top:2px}
+  .dc-s{font-size:9px;color:#98a2ad;margin-top:2px}
   .hint{font-size:10px;color:#6b747d;margin-top:5px;line-height:1.5}
-  .hint b{color:#1F3864}
   .al{display:flex;align-items:baseline;gap:8px;flex-wrap:wrap;font-size:11.5px;padding:4px 8px;border-radius:6px;margin-bottom:4px}
   .al-bad{background:#fef2f2;border-left:3px solid #dc2626}
   .al-ok{background:#f0fdf4;border-left:3px solid #15803d}
@@ -180,66 +211,90 @@
   .ok-msg{color:#15803d;font-size:11.5px;padding:6px}
   .d-pie{margin-top:7px;font-size:10px;color:#6b747d;line-height:1.6;background:#fff;border:1px solid #dde3e9;border-radius:9px;padding:7px 10px}
   .d-pie b{color:#1F3864}
+  /* rangos */
+  .bmh{display:flex;align-items:center;gap:10px;padding:12px 16px;border-bottom:1px solid var(--line)}
+  .bmh h3{font-size:15px;color:#1f3864}
+  .bmb{padding:10px 16px 16px;max-height:72vh;overflow:auto}
+  .bmi{width:74px;border:1px solid var(--amber);border-radius:5px;padding:1px 4px;font-size:11.5px;text-align:right}
+  .bmi:disabled{border-color:var(--line);background:#f7f8f9}
+  .bmdel{border:none;background:#fee2e2;color:#b91c1c;border-radius:5px;cursor:pointer;font-size:11px;padding:1px 6px}
+  .bm-new{display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin-top:10px;padding-top:10px;border-top:1px dashed var(--line)}
+  .bm-new input,.bm-new select{padding:4px 7px;border:1px solid var(--line);border-radius:6px;font-size:11.5px}
+  td.nota{color:#98a2ad;font-size:10px}
   @media(max-width:1200px){.d-body{grid-template-columns:1fr}.d-cards{grid-template-columns:repeat(2,1fr)}}
 </style>
 </head>
 <body>
-<div id="card">
+<header>
+  <div><h1>Rendimiento de Combustible</h1><p>Unidad de Equipos &middot; UDE</p></div>
+  <span class="who" id="who"></span>
+</header>
+
+<div class="toolbar">
+  <select id="fPeriodo">
+    <option value="4s">&Uacute;ltimas 4 semanas</option>
+    <option value="mes">Por mes</option>
+    <option value="rango">Rango de fechas</option>
+    <option value="todo">Todo el historial</option>
+  </select>
+  <select id="fMes" class="hide"></select>
+  <span id="boxRango" class="hide"><input type="date" id="fDesde"> <input type="date" id="fHasta"></span>
+  <select id="fTipo"><option value="">Hr y Km</option><option value="Hr">Solo Hr</option><option value="Km">Solo Km</option></select>
+  <select id="fProy"><option value="">Todos los proyectos</option></select>
+  <input type="search" id="fBusca" placeholder="C&oacute;d. SAP o equipo…" style="width:180px">
+  <span class="chip" id="chN">&mdash;</span>
+  <div class="spacer"></div>
+  <button class="act blue" id="btnDash">&#128202; Dashboard</button>
+  <button class="act" id="btnBench">&#9878; Rangos de referencia</button>
+  <button class="act" id="btnXls" disabled>&#8681; Excel</button>
+  <button class="act" id="btnRec">&#8635;</button>
+</div>
+
+<div id="rcWrap"><div class="vacio">Cargando&hellip;</div></div>
+<footer id="pie">Los despachos se cargan desde la pesta&ntilde;a Equipos con el bot&oacute;n &#9981;.</footer>
+
+<!-- ══ Dashboard ══ -->
+<div id="dWrap" class="hide"><div id="dCard">
   <div class="dh-tit">RENDIMIENTO DE COMBUSTIBLE</div>
   <div class="dh-dep">UNIDAD DE EQUIPOS &middot; UDE</div>
-  <div class="dh-sub" id="dashRotulo">&mdash;</div>
-
+  <div class="dh-sub" id="dRotulo">&mdash;</div>
   <div class="d-body">
     <aside class="d-side">
       <div class="d-logo"><b>JJC</b><span>INGENIER&Iacute;A<br>Y CONSTRUCCI&Oacute;N</span></div>
-      <label class="d-f"><select id="fAnio"></select><i>A&Ntilde;O</i></label>
-      <label class="d-f"><select id="fMes"></select><i>MES</i></label>
-      <label class="d-f"><select id="fSem"></select><i>SEMANA</i></label>
-      <label class="d-f"><select id="fProy"></select><i>PROYECTO</i></label>
-      <label class="d-f"><select id="fFam"></select><i>TIPO DE EQUIPO</i></label>
-      <label class="d-f"><select id="fSap"></select><i>C&Oacute;D. SAP</i></label>
-      <select id="fTipo" class="hide"><option value="Hr">Hr</option><option value="Km">Km</option></select>
-      <button class="d-btn" id="btnLimpiar">Limpiar filtros</button>
-      <button class="d-btn" id="btnXls">&#8681; Excel</button>
-      <div style="text-align:center;font-size:10px;color:#808080">equipos: <b id="chN">0</b></div>
+      <label class="d-f"><select id="dAnio"></select><i>A&Ntilde;O</i></label>
+      <label class="d-f"><select id="dMes"></select><i>MES</i></label>
+      <label class="d-f"><select id="dSem"></select><i>SEMANAS</i></label>
+      <label class="d-f"><select id="dProy"></select><i>PROYECTO</i></label>
+      <label class="d-f"><select id="dFam"></select><i>TIPO DE EQUIPO</i></label>
+      <label class="d-f"><select id="dSap"></select><i>C&Oacute;D. SAP</i></label>
+      <button class="d-btn" id="dLimpiar">Limpiar filtros</button>
+      <button class="d-btn d-btn-x" id="dCerrar">&#10005; Cerrar</button>
+      <div style="text-align:center;font-size:10px;color:#808080">equipos: <b id="dN">0</b></div>
     </aside>
-
     <main>
-      <div class="d-cards" id="dashCards"></div>
-      <div class="d-panel">
-        <div class="d-pt" id="dashTit">CONTROL DE RENDIMIENTO</div>
-        <div id="dashGraf"></div>
-      </div>
-      <div class="d-panel">
-        <div class="d-pt" id="dashTablaTit">Resumen</div>
-        <div id="dashTabla"></div>
-      </div>
-      <div class="d-panel">
-        <div class="d-pt">ALERTAS DE DESVIACI&Oacute;N</div>
-        <div id="dashAlertas"></div>
-      </div>
+      <div class="d-cards" id="dCards"></div>
+      <div class="d-panel"><div class="d-pt" id="dTit">CONTROL DE RENDIMIENTO</div><div id="dGraf"></div></div>
+      <div class="d-panel"><div class="d-pt" id="dTablaTit">Resumen</div><div id="dTabla"></div></div>
+      <div class="d-panel"><div class="d-pt">ALERTAS DE DESVIACI&Oacute;N</div><div id="dAlertas"></div></div>
     </main>
-
     <aside>
-      <div class="d-panel">
-        <div class="d-pt" id="dashGaugeTit">CONSUMO PROMEDIO</div>
-        <div id="dashGauge"></div>
-      </div>
-      <div class="d-panel">
-        <div class="d-pt">COMPARATIVA DE EFICIENCIA</div>
-        <div id="dashComp"></div>
-      </div>
+      <div class="d-panel"><div class="d-pt" id="dGaugeTit">CONSUMO PROMEDIO</div><div id="dGauge"></div></div>
+      <div class="d-panel"><div class="d-pt">COMPARATIVA DE EFICIENCIA</div><div id="dComp"></div></div>
     </aside>
   </div>
+  <div class="d-pie"><b>C&oacute;mo se calcula</b> &middot; Maquinaria: galones &divide; horas (menor es mejor) &middot;
+    Veh&iacute;culos: kil&oacute;metros &divide; galones (mayor es mejor) &middot; promedio ponderado &middot;
+    el <b>Contador</b> del equipo define la f&oacute;rmula &middot; la banda del gr&aacute;fico sale de
+    <b>Rangos de referencia</b>; sin rango, cada equipo se compara con la mediana de su familia.</div>
+</div></div>
 
-  <div class="d-pie">
-    <b>C&oacute;mo se calcula</b> &middot; Maquinaria: galones &divide; horas (menor es mejor) &middot;
-    Veh&iacute;culos: kil&oacute;metros &divide; galones (mayor es mejor) &middot;
-    el promedio es ponderado (se suman totales y se divide al final) &middot;
-    el <b>Contador</b> de cada equipo en la pesta&ntilde;a Equipos define qu&eacute; f&oacute;rmula se aplica &middot;
-    los rangos de referencia salen de la tabla <b>benchmark</b>; si un equipo no tiene, se usa el promedio &plusmn;10%.
-  </div>
-</div>
+<!-- ══ Rangos de referencia ══ -->
+<div id="bmWrap" class="hide"><div id="bmCard">
+  <div class="bmh"><div><h3>Rangos de referencia de consumo</h3>
+    <div style="font-size:11px;color:var(--muted);margin-top:2px">Por familia de equipos, marca y modelo. Se usan como banda del gr&aacute;fico y l&iacute;mites del veloc&iacute;metro.</div></div>
+    <div class="spacer"></div><button class="act" id="bmCerrar">Cerrar</button></div>
+  <div class="bmb" id="bmTabla"></div>
+</div></div>
 
 <script>
 const CFG=(()=>{try{return JSON.parse(localStorage.getItem('gllr_sbcfg')||'null')}catch(_){return null}})();
@@ -281,7 +336,6 @@ function mant(e){
 let DIDX=new Map();
 function reindexDatos(){DIDX=new Map(datos.map(e=>[String(e.id),e]));}
 function getE(id){return DIDX.get(String(id))||null;}
-
 const CAMPOS="id,cod_proyec,cod_sap,equipo,marca,modelo,serie_placa,familia,status,contador,hr_dia,hrkm_actual";
 
 /* ═══════════════════ RENDIMIENTO DE COMBUSTIBLE ═══════════════════
@@ -290,56 +344,84 @@ const CAMPOS="id,cod_proyec,cod_sap,equipo,marca,modelo,serie_placa,familia,stat
 const DC={azul:'#1F3864',azul2:'#2E75B6',azul3:'#9DC3E6',cielo:'#DEEBF7',
           verde:'#00B050',rojo:'#FF0000',ambar:'#FFC000',naranja:'#ED7D31',gris:'#BFBFBF'};
 const MESES=['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Setiembre','Octubre','Noviembre','Diciembre'];
-let DESPACHOS=[], BENCH=[], TRAMOS=[], sel=null;
+let DESPACHOS=[], BENCH=[], TRAMOS=[];
 
 const nrm=s=>String(s??'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toUpperCase().replace(/\s+/g,' ').trim();
 const f0=n=>Number(n).toLocaleString('es-PE',{maximumFractionDigits:0});
 const f1=n=>Number(n).toLocaleString('es-PE',{minimumFractionDigits:1,maximumFractionDigits:1});
 const f2=n=>Number(n).toLocaleString('es-PE',{minimumFractionDigits:2,maximumFractionDigits:2});
-const famNom=e=>String(e&&e.familia||'—').replace(/^\d+[_\s-]*/,'')||'—';
 const isoDe=d=>{const z=new Date(d.getTime()-d.getTimezoneOffset()*60000);return z.toISOString().slice(0,10);};
 
-/* ---------- rango de fechas según los filtros ---------- */
-function rango(){
-  const a=+fAnio.value||new Date().getFullYear();
-  const m=fMes.value, s=fSem.value;
-  if(s!==''){                                   // semana ISO
-    const j=new Date(Date.UTC(a,0,4)),dw=j.getUTCDay()||7,lu=new Date(j);
-    lu.setUTCDate(j.getUTCDate()-(dw-1)+(+s-1)*7);
-    const dom=new Date(lu); dom.setUTCDate(lu.getUTCDate()+6);
-    return {desde:lu.toISOString().slice(0,10),hasta:dom.toISOString().slice(0,10),
-            lab:'Semana '+s+' · '+a, grano:'dia'};
-  }
-  if(m!=='')return {desde:isoDe(new Date(a,+m,1)),hasta:isoDe(new Date(a,+m+1,0)),
-                    lab:MESES[+m]+' '+a, grano:'dia'};
-  return {desde:a+'-01-01',hasta:a+'-12-31',lab:'Año '+a,grano:'mes'};
+/* ─────────── FAMILIA DE EQUIPOS ───────────
+   Agrupa por el tipo de máquina (excavadora, tractor, cargador…),
+   que es distinto del ID Familia (1_EQ PESADO, 2_VEH PESADO…).
+   El nombre viene de la columna Equipo, que llega con variantes y
+   códigos pegados, así que se normaliza aquí.                       */
+const FAM_REGLAS=[
+  [/RETRO\s*EXCAVADORA/,           'RETROEXCAVADORA'],
+  [/EXCAVADORA.*(RUEDA|LLANTA)/,   'EXCAVADORA SOBRE RUEDAS'],
+  [/EXCAVADORA/,                   'EXCAVADORA'],
+  [/MINI\s*CARGADOR/,              'MINICARGADOR'],
+  [/CARGADOR/,                     'CARGADOR FRONTAL'],
+  [/TRACTOR/,                      'TRACTOR SOBRE ORUGAS'],
+  [/MOTONIVELADORA/,               'MOTONIVELADORA'],
+  [/RODILLO/,                      'RODILLO'],
+  [/TORRE|LUMINARIA/,              'TORRE DE ILUMINACION'],
+  [/GRUPO\s*ELECTROGENO|GENERADOR/,'GRUPO ELECTROGENO'],
+  [/MOTOSOLDADORA/,                'MOTOSOLDADORA'],
+  [/COMPRESOR/,                    'COMPRESORA'],
+  [/MARTILLO/,                     'MARTILLO HIDRAULICO'],
+  [/CHANCADORA/,                   'CHANCADORA'],
+  [/PLANTA/,                       'PLANTA'],
+  [/CISTERNA.*COMBUSTIBLE/,        'CISTERNA DE COMBUSTIBLE'],
+  [/CISTERNA/,                     'CISTERNA DE AGUA'],
+  [/VOLQUETE/,                     'VOLQUETE'],
+  [/CAMABAJA|CAMA\s*BAJA|TRACTO/,  'TRACTO CAMABAJA'],
+  [/GRUA/,                         'CAMION GRUA'],
+  [/LUBRICADOR/,                   'CAMION LUBRICADOR'],
+  [/BARANDA/,                      'CAMION BARANDA'],
+  [/CAMIONETA|PICK\s*UP|HILUX/,    'CAMIONETA'],
+  [/SPRINTER|MINIVAN|FURGONETA/,   'MINIVAN'],
+  [/OMNIBUS|MICROBUS|MINI\s*BUS|BUS/,'OMNIBUS'],
+  [/AUTO\s*HORMIGONERA|MIXER/,     'AUTOHORMIGONERA'],
+  [/MONTACARGA/,                   'MONTACARGAS'],
+  [/CAMION/,                       'CAMION']
+];
+function familiaDe(e){
+  let s=nrm(e&&e.equipo);
+  if(!s)return '—';
+  s=s.replace(/\b[A-Z]{2,4}-?\d{2,}\b/g,' ')      // placas y códigos: CFL-931, VCC351
+     .replace(/\b\d+\s*-?\s*JJC\b/g,' ')          // 179-JJC
+     .replace(/\bTSF\d\+?\b/g,' ')                // TSF3+
+     .replace(/\bN[°º]?\s*\d+\b/g,' ')
+     .replace(/\s+/g,' ').trim();
+  for(const [re,nom] of FAM_REGLAS) if(re.test(s))return nom;
+  return s.replace(/\s*\d+\s*$/,'').trim()||'—';
 }
-/* ---------- rango de referencia para un equipo ---------- */
+/* ---------- rango de referencia de un equipo ---------- */
 function benchDe(e,tipo){
   if(!e)return null;
-  const fa=nrm(e.familia), ma=nrm(e.marca), mo=nrm(e.modelo);
+  const fa=familiaDe(e), ma=nrm(e.marca), mo=nrm(e.modelo);
   const cand=BENCH.filter(b=>b.contador===tipo
-    && (!b.familia||nrm(b.familia)===fa)
-    && (!b.marca  ||nrm(b.marca)===ma)
-    && (!b.modelo ||nrm(b.modelo)===mo));
+    && nrm(b.tipo_equipo)===nrm(fa)
+    && (!b.marca ||nrm(b.marca)===ma)
+    && (!b.modelo||nrm(b.modelo)===mo||nrm(mo).startsWith(nrm(b.modelo).split(' ')[0])));
   if(!cand.length)return null;
-  // gana el más específico
-  cand.sort((x,y)=>((y.familia?1:0)+(y.marca?1:0)+(y.modelo?1:0))-((x.familia?1:0)+(x.marca?1:0)+(x.modelo?1:0)));
+  cand.sort((x,y)=>((y.marca?1:0)+(y.modelo?1:0))-((x.marca?1:0)+(x.modelo?1:0)));
   return cand[0];
 }
+const mejorMenor=t=>t==='Hr';
+const contDe=e=>(e&&(e.contador==='Hr'||e.contador==='Km'))?e.contador:'Hr';
 
-/* ---------- tramos: cada par de cargas consecutivas ---------- */
-function armarTramos(){
-  const R=rango();
+/* ---------- tramos entre cargas consecutivas ---------- */
+function tramosDe(desde,hasta,filtro){
   const porEq=new Map();
   for(const d of DESPACHOS){
     if(d.descartado)continue;
     const f=String(d.fecha).slice(0,10);
-    if(f<R.desde||f>R.hasta)continue;
+    if(f<desde||f>hasta)continue;
     const e=getE(d.maestro_id); if(!e)continue;
-    if(fProy.value&&String(e.cod_proyec||'')!==fProy.value)continue;
-    if(fFam.value&&famNom(e)!==fFam.value)continue;
-    if(fSap.value&&String(e.cod_sap||'')!==fSap.value)continue;
+    if(filtro&&!filtro(e))continue;
     const val=d.contador_corr!=null?+d.contador_corr:(d.contador!=null?+d.contador:null);
     const gl=d.galones!=null?+d.galones:null;
     if(gl==null||gl<=0)continue;
@@ -351,27 +433,31 @@ function armarTramos(){
   const out=[];
   for(const {e,regs} of porEq.values()){
     regs.sort((a,b)=>a.ts-b.ts);
-    const tipo=(e.contador==='Hr'||e.contador==='Km')?e.contador:'Hr';
-    const tope=tipo==='Hr'?24:400;
+    const tipo=contDe(e), tope=tipo==='Hr'?24:400;
     for(let i=1;i<regs.length;i++){
       const a=regs[i-1],b=regs[i];
-      let d=(b.val??NaN)-(a.val??NaN);
+      const d=(b.val??NaN)-(a.val??NaN);
       const dias=Math.max((b.ts-a.ts)/86400000,0.5);
-      if(!isFinite(d)||d<=0||d>tope*dias)continue;         // tramo no utilizable
-      out.push({e,tipo,fecha:b.fecha,gl:b.gl,delta:d,
+      if(!isFinite(d)||d<=0||d>tope*dias)continue;
+      out.push({e,tipo,fam:familiaDe(e),fecha:b.fecha,gl:b.gl,delta:d,
                 rend: tipo==='Hr' ? b.gl/d : d/b.gl});
     }
   }
-  TRAMOS=out.sort((a,b)=>a.fecha.localeCompare(b.fecha));
-  return R;
+  return out.sort((a,b)=>a.fecha.localeCompare(b.fecha));
 }
-/* promedio ponderado de un conjunto de tramos */
 function prom(ts,tipo){
   const g=ts.reduce((a,t)=>a+t.gl,0), r=ts.reduce((a,t)=>a+t.delta,0);
   if(!g||!r)return null;
   return tipo==='Hr' ? g/r : r/g;
 }
-const mejorMenor=t=>t==='Hr';
+/* agrupa tramos por equipo */
+function porEquipo(ts){
+  const m=new Map();
+  ts.forEach(t=>{const k=t.e.cod_sap; if(!m.has(k))m.set(k,{e:t.e,tipo:t.tipo,fam:t.fam,ts:[]}); m.get(k).ts.push(t);});
+  return [...m.values()].map(o=>({...o,
+    cargas:o.ts.length+1, gl:o.ts.reduce((a,t)=>a+t.gl,0),
+    rec:o.ts.reduce((a,t)=>a+t.delta,0), v:prom(o.ts,o.tipo)}));
+}
 
 /* ---------- gráfico de control ---------- */
 function svgControl(serie,tipo,media,bm,labX){
@@ -432,86 +518,181 @@ function svgGauge(v,lo,hi,tipo){
   return `<svg viewBox="0 0 ${W} ${H}" class="d-svg">${g}</svg>`;
 }
 
-/* ---------- pintar todo ---------- */
-function pintar(){
-  const R=armarTramos();
-  const rot=[R.lab];
-  if(fProy.value)rot.push(fProy.value);
-  if(fFam.value)rot.push(fFam.value);
-  if(fSap.value)rot.push(fSap.value);
-  dashRotulo.textContent=rot.join(' · ');
 
-  if(!TRAMOS.length){
-    dashGraf.innerHTML='<div class="d-vacio">Sin tramos calculables con estos filtros.</div>';
-    dashGauge.innerHTML=''; dashTabla.innerHTML=''; dashAlertas.innerHTML='';
-    dashCards.innerHTML=''; dashComp.innerHTML=''; chN.textContent='0';
-    return;
+
+/* ═══════════════ VISTA PRINCIPAL: listado por equipo ═══════════════ */
+function rangoLista(){
+  const hoy=new Date(), p=fPeriodo.value;
+  if(p==='4s'){const d=new Date(hoy.getTime()-28*86400000);return {desde:isoDe(d),hasta:isoDe(hoy),lab:'últimas 4 semanas'};}
+  if(p==='mes'&&fMes.value){const [a,m]=fMes.value.split('-').map(Number);
+    return {desde:isoDe(new Date(a,m-1,1)),hasta:isoDe(new Date(a,m,0)),lab:MESES[m-1]+' '+a};}
+  if(p==='rango')return {desde:fDesde.value||'1900-01-01',hasta:fHasta.value||'2999-12-31',
+    lab:(fDesde.value?fmtDate(fDesde.value):'inicio')+' a '+(fHasta.value?fmtDate(fHasta.value):'hoy')};
+  return {desde:'1900-01-01',hasta:'2999-12-31',lab:'todo el historial'};
+}
+function pintarLista(){
+  const R=rangoLista();
+  const q=nrm(fBusca.value), ft=fTipo.value, fp=fProy.value;
+  const ts=tramosDe(R.desde,R.hasta,e=>{
+    if(fp&&String(e.cod_proyec||'')!==fp)return false;
+    if(ft&&contDe(e)!==ft)return false;
+    if(q&&!nrm(e.cod_sap+' '+(e.equipo||'')).includes(q))return false;
+    return true;});
+  const eqs=porEquipo(ts);
+  chN.textContent=eqs.length+' equipo(s)';
+  btnXls.disabled=!eqs.length;
+  pie.textContent=`${eqs.length} equipo(s) · ${R.lab} · el Contador del Maestro define la fórmula.`;
+  if(!eqs.length){rcWrap.innerHTML='<div class="vacio">Sin datos con estos filtros.</div>';return;}
+  const hr=eqs.filter(o=>o.tipo==='Hr'&&o.v!=null), km=eqs.filter(o=>o.tipo==='Km'&&o.v!=null);
+  const med=a=>{if(!a.length)return null;const s=a.map(o=>o.v).sort((x,y)=>x-y);return s[Math.floor(s.length/2)];};
+  const glT=eqs.reduce((a,o)=>a+o.gl,0);
+  const tot=(arr,t)=>{const g=arr.reduce((a,o)=>a+o.gl,0),r=arr.reduce((a,o)=>a+o.rec,0);
+    return g&&r?(t==='Hr'?g/r:r/g):null;};
+  let h='<div class="rc-cards">'
+   +card('Galón total despachado',f0(glT)+' gl',eqs.length+' equipos')
+   +card('Maquinaria (Hr)',tot(hr,'Hr')!=null?f2(tot(hr,'Hr'))+' Gl/Hr':'—',hr.length+' equipos')
+   +card('Vehículos (Km)',tot(km,'Km')!=null?f2(tot(km,'Km'))+' Km/Gl':'—',km.length+' equipos')
+   +card('Tramos usados',ts.length,'entre cargas consecutivas')+'</div>';
+  h+='<div class="rc-2">'+tablaLista('Maquinaria &mdash; Gl/Hr <small>(menor es mejor)</small>',hr,med(hr),'Hr')
+                        +tablaLista('Veh&iacute;culos &mdash; Km/Gl <small>(mayor es mejor)</small>',km,med(km),'Km')+'</div>';
+  const sin=eqs.filter(o=>o.v==null);
+  if(sin.length)h+='<div class="rc-panel"><div class="rc-tit">Sin rendimiento calculable <small>(una sola carga en el periodo)</small></div>'
+    +'<div class="obs">'+sin.map(o=>esc(o.e.cod_sap)).join(' · ')+'</div></div>';
+  rcWrap.innerHTML=h;
+}
+const card=(l,v,s)=>`<div class="rc-c"><div class="l">${l}</div><div class="v">${v}</div><div class="s">${s}</div></div>`;
+function tablaLista(tit,arr,med,tipo){
+  if(!arr.length)return '<div class="rc-panel"><div class="rc-tit">'+tit+'</div><div class="vacio">Sin equipos</div></div>';
+  const ord=arr.slice().sort((a,b)=>mejorMenor(tipo)?a.v-b.v:b.v-a.v);
+  const mx=Math.max(...ord.map(o=>o.v));
+  const nota=v=>{if(!med)return '';const r=v/med;
+    return mejorMenor(tipo)?(r<=0.9?'b-ok':(r<=1.15?'b-mid':'b-bad')):(r>=1.1?'b-ok':(r>=0.85?'b-mid':'b-bad'));};
+  return '<div class="rc-panel"><div class="rc-tit">'+tit+'</div>'
+   +'<table class="rc"><thead><tr><th>C\u00f3d. SAP</th><th>Familia</th><th>Cargas</th><th>Galones</th><th>'
+   +(tipo==='Hr'?'Horas':'Km')+'</th><th>Rendim.</th><th></th></tr></thead><tbody>'
+   +ord.map(o=>`<tr><td class="mono">${esc(o.e.cod_sap)}</td><td>${esc(o.fam)}</td>
+      <td class="c">${o.cargas}</td><td class="r">${f0(o.gl)}</td><td class="r">${f0(o.rec)}</td>
+      <td class="r ${nota(o.v)}">${f2(o.v)}</td>
+      <td><div class="bar"><i style="width:${Math.max(3,o.v/mx*100)}%;background:${tipo==='Hr'?'#2E75B6':'#0f766e'}"></i></div></td>
+    </tr>`).join('')+'</tbody></table></div>';
+}
+
+/* ═══════════════ DASHBOARD ═══════════════ */
+let dInit=false;
+function dRango(){
+  const a=+dAnio.value||new Date().getFullYear(), m=dMes.value, s=dSem.value;
+  const lunes=(y,w)=>{const j=new Date(Date.UTC(y,0,4)),dw=j.getUTCDay()||7,l=new Date(j);
+    l.setUTCDate(j.getUTCDate()-(dw-1)+(w-1)*7);return l;};
+  if(s==='u4'){                                    // últimas 4 semanas con datos
+    const hoy=new Date(), d=new Date(hoy.getTime()-27*86400000);
+    return {desde:isoDe(d),hasta:isoDe(hoy),lab:'Últimas 4 semanas',grano:'dia'};
   }
-  // el tipo manda: si se mezclan Hr y Km se avisa
-  const tipos=[...new Set(TRAMOS.map(t=>t.tipo))];
-  const tipo=tipos.length===1?tipos[0]:(fTipo.value||'Hr');
+  if(s!==''){const l=lunes(a,+s), dom=new Date(l); dom.setUTCDate(l.getUTCDate()+6);
+    return {desde:l.toISOString().slice(0,10),hasta:dom.toISOString().slice(0,10),lab:'Semana '+s+' · '+a,grano:'dia'};}
+  if(m!=='')return {desde:isoDe(new Date(a,+m,1)),hasta:isoDe(new Date(a,+m+1,0)),lab:MESES[+m]+' '+a,grano:'dia'};
+  return {desde:a+'-01-01',hasta:a+'-12-31',lab:'Año '+a,grano:'mes'};
+}
+/* Filtros en cascada: cada uno acota el siguiente y todos afectan al gráfico */
+function dFiltro(e){
+  if(dProy.value&&String(e.cod_proyec||'')!==dProy.value)return false;
+  if(dFam.value&&familiaDe(e)!==dFam.value)return false;
+  if(dSap.value&&String(e.cod_sap||'')!==dSap.value)return false;
+  return true;
+}
+function dRefrescarListas(){
+  const R=dRango();
+  // universo: equipos con despachos en el periodo
+  const conDatos=new Set(DESPACHOS.filter(d=>{const f=String(d.fecha).slice(0,10);
+    return !d.descartado&&f>=R.desde&&f<=R.hasta;}).map(d=>String(d.maestro_id)));
+  const eqs=[...conDatos].map(id=>getE(id)).filter(Boolean);
+  const ps=[...new Set(eqs.map(e=>e.cod_proyec).filter(Boolean))].sort();
+  const pv=dProy.value;
+  dProy.innerHTML='<option value="">Todos</option>'+ps.map(p=>`<option>${esc(p)}</option>`).join('');
+  dProy.value=ps.includes(pv)?pv:'';
+  const e2=eqs.filter(e=>!dProy.value||String(e.cod_proyec||'')===dProy.value);
+  const fams=[...new Set(e2.map(familiaDe))].sort();
+  const fv=dFam.value;
+  dFam.innerHTML='<option value="">Todas</option>'+fams.map(f=>`<option>${esc(f)}</option>`).join('');
+  dFam.value=fams.includes(fv)?fv:'';
+  const e3=e2.filter(e=>!dFam.value||familiaDe(e)===dFam.value);
+  const saps=[...new Set(e3.map(e=>e.cod_sap))].sort();
+  const sv=dSap.value;
+  dSap.innerHTML='<option value="">Todos</option>'+saps.map(s=>`<option>${esc(s)}</option>`).join('');
+  dSap.value=saps.includes(sv)?sv:'';
+}
+function dPintar(){
+  dRefrescarListas();
+  const R=dRango();
+  TRAMOS=tramosDe(R.desde,R.hasta,dFiltro);
+  const rot=[R.lab];
+  if(dProy.value)rot.push(dProy.value);
+  if(dFam.value)rot.push(dFam.value);
+  if(dSap.value)rot.push(dSap.value);
+  dRotulo.textContent=rot.join(' · ');
+  if(!TRAMOS.length){
+    dGraf.innerHTML='<div class="d-vacio">Sin tramos calculables con estos filtros.</div>';
+    dGauge.innerHTML=''; dTabla.innerHTML=''; dAlertas.innerHTML=''; dCards.innerHTML=''; dComp.innerHTML='';
+    dN.textContent='0'; return;
+  }
+  // si se mezclan Hr y Km manda el que tenga más tramos
+  const cuenta={}; TRAMOS.forEach(t=>cuenta[t.tipo]=(cuenta[t.tipo]||0)+1);
+  const tipo=Object.keys(cuenta).sort((a,b)=>cuenta[b]-cuenta[a])[0];
   const T=TRAMOS.filter(t=>t.tipo===tipo);
   const media=prom(T,tipo);
-  const equipos=[...new Set(T.map(t=>t.e.id))];
-  chN.textContent=equipos.length;
-
-  // rango de referencia: si todos comparten uno, se usa
-  let bm=null;
-  const bs=equipos.map(id=>benchDe(getE(id),tipo)).filter(Boolean);
-  if(bs.length&&bs.every(b=>b.minimo===bs[0].minimo&&b.maximo===bs[0].maximo))bm=bs[0];
+  const eqs=porEquipo(T);
+  dN.textContent=eqs.length;
+  // rango de referencia: si todos comparten uno, se dibuja
+  // se dibuja el rango que cubra a más equipos del filtro
+  const cta=new Map();
+  eqs.forEach(o=>{const b=benchDe(o.e,tipo); if(!b)return;
+    const k=b.minimo+'|'+b.maximo;
+    if(!cta.has(k))cta.set(k,{b,n:0}); cta.get(k).n++;});
+  const top=[...cta.values()].sort((x,y)=>y.n-x.n)[0]||null;
+  const bm=top?top.b:null, bmN=top?top.n:0;
   const lo=bm?bm.minimo:media*0.9, hi=bm?bm.maximo:media*1.1;
 
-  // serie del gráfico: por día o por mes
   const key=t=>R.grano==='mes'?t.fecha.slice(0,7):t.fecha;
-  const m=new Map();
-  T.forEach(t=>{const k=key(t); if(!m.has(k))m.set(k,[]); m.get(k).push(t);});
+  const m=new Map(); T.forEach(t=>{const k=key(t); if(!m.has(k))m.set(k,[]); m.get(k).push(t);});
   const serie=[...m.entries()].sort().map(([k,ts])=>({
     lab:R.grano==='mes'?MESES[+k.slice(5,7)-1].slice(0,3)+' '+k.slice(2,4):fmtDate(k),
-    k, v:prom(ts,tipo), gl:ts.reduce((a,t)=>a+t.gl,0), n:ts.length}));
+    v:prom(ts,tipo)}));
 
-  dashTit.textContent='CONTROL DE RENDIMIENTO '+(tipo==='Hr'?'Gl/Hr (menor es mejor)':'Km/Gl (mayor es mejor)');
-  dashGraf.innerHTML=svgControl(serie,tipo,media,bm,R.grano==='mes'?'MES':'FECHA');
-  dashGaugeTit.textContent='CONSUMO PROMEDIO'+(bm?' · rango de referencia':' · ±10% del promedio');
-  dashGauge.innerHTML=svgGauge(media,lo,hi,tipo);
-
-  const glTot=T.reduce((a,t)=>a+t.gl,0), recTot=T.reduce((a,t)=>a+t.delta,0);
-  dashCards.innerHTML=
-    card('Promedio del periodo',media!=null?f2(media):'—',tipo==='Hr'?'Gl/Hr':'Km/Gl')
-   +card('Galones',f0(glTot),T.length+' tramos · '+equipos.length+' equipos')
-   +card(tipo==='Hr'?'Horas':'Kilómetros',f0(recTot),'acumulado del periodo')
-   +card('Referencia',bm?f2(bm.minimo)+' – '+f2(bm.maximo):'±10%',bm?(bm.obs||'de la tabla de benchmark'):'sin benchmark definido');
-
-  tablaResumen(T,tipo,lo,hi,bm);
-  alertas(T,tipo,lo,hi,bm,media);
-  comparativa(T,tipo);
+  dTit.textContent='CONTROL DE RENDIMIENTO · '+(tipo==='Hr'?'Gl/Hr (menor es mejor)':'Km/Gl (mayor es mejor)');
+  dGraf.innerHTML=svgControl(serie,tipo,media,bm,R.grano==='mes'?'MES':'FECHA');
+  dGaugeTit.textContent='CONSUMO PROMEDIO'+(bm?' · rango de referencia':' · ±10% del promedio');
+  dGauge.innerHTML=svgGauge(media,lo,hi,tipo);
+  const glT=T.reduce((a,t)=>a+t.gl,0), recT=T.reduce((a,t)=>a+t.delta,0);
+  dCards.innerHTML=
+    card2('Promedio',media!=null?f2(media):'—',tipo==='Hr'?'Gl/Hr':'Km/Gl')
+   +card2('Galones',f0(glT),T.length+' tramos · '+eqs.length+' equipos')
+   +card2(tipo==='Hr'?'Horas':'Kilómetros',f0(recT),'del periodo')
+   +card2('Referencia',bm?f2(bm.minimo)+'–'+f2(bm.maximo):'±10%',
+      bm?`${(bm.marca||'todas').trim()} · aplica a ${bmN} de ${eqs.length}`:'sin rango definido · se usa ±10%');
+  dResumen(T,tipo,bm,media);
+  dAviso(T,tipo,media);
+  dCompara(T,tipo);
 }
-const card=(l,v,s)=>`<div class="dc"><div class="dc-l">${l}</div><div class="dc-v">${v}</div><div class="dc-s">${s}</div></div>`;
+const card2=(l,v,s)=>`<div class="dc"><div class="dc-l">${l}</div><div class="dc-v">${v}</div><div class="dc-s">${s}</div></div>`;
 
-/* ---------- cuadro resumen con desglose según el filtro ---------- */
-function tablaResumen(T,tipo,lo,hi,bm){
-  let modo,titulo;
-  if(fSap.value){modo='dia';   titulo='Detalle por día · '+fSap.value;}
-  else if(fFam.value){modo='sap'; titulo='Equipos de '+fFam.value;}
-  else {modo='fam'; titulo='Por tipo de equipo'+(fProy.value?' · '+fProy.value:'');}
-
+/* cuadro resumen: baja de nivel según el filtro */
+function dResumen(T,tipo,bm,media){
+  let modo,tit;
+  if(dSap.value){modo='dia'; tit='Detalle por día · '+dSap.value;}
+  else if(dFam.value){modo='sap'; tit='Equipos de '+dFam.value;}
+  else {modo='fam'; tit='Por familia de equipos'+(dProy.value?' · '+dProy.value:'');}
   const m=new Map();
-  T.forEach(t=>{
-    const k = modo==='dia'?t.fecha : modo==='sap'?t.e.cod_sap : famNom(t.e);
-    if(!m.has(k))m.set(k,{k,ts:[],eq:new Set()});
-    m.get(k).ts.push(t); m.get(k).eq.add(t.e.id);
-  });
-  let arr=[...m.values()].map(o=>({...o,
-    n:o.ts.length, gl:o.ts.reduce((a,t)=>a+t.gl,0), rec:o.ts.reduce((a,t)=>a+t.delta,0),
-    v:prom(o.ts,tipo)}));
-  arr.sort(modo==='dia' ? (a,b)=>a.k.localeCompare(b.k)
-                        : (a,b)=>mejorMenor(tipo)?a.v-b.v:b.v-a.v);
+  T.forEach(t=>{const k=modo==='dia'?t.fecha:modo==='sap'?t.e.cod_sap:t.fam;
+    if(!m.has(k))m.set(k,{k,ts:[],eq:new Set()}); m.get(k).ts.push(t); m.get(k).eq.add(t.e.id);});
+  let arr=[...m.values()].map(o=>({...o,n:o.ts.length,gl:o.ts.reduce((a,t)=>a+t.gl,0),
+    rec:o.ts.reduce((a,t)=>a+t.delta,0),v:prom(o.ts,tipo)}));
+  arr.sort(modo==='dia'?(a,b)=>a.k.localeCompare(b.k):(a,b)=>mejorMenor(tipo)?a.v-b.v:b.v-a.v);
   const mx=Math.max(...arr.map(o=>o.v||0))||1;
-  const fuera=v=>v!=null&&(bm?(v<lo||v>hi):(v<lo||v>hi));
-  const cab=modo==='dia'?'Fecha':(modo==='sap'?'Cód. SAP':'Tipo de equipo');
-  dashTablaTit.textContent=titulo;
-  dashTabla.innerHTML=`<table class="rc"><thead><tr>
-      <th>${cab}</th>${modo==='fam'?'<th>Equipos</th>':''}<th>Cargas</th><th>Galones</th>
-      <th>${tipo==='Hr'?'Horas':'Km'}</th><th>Rendim.</th><th></th></tr></thead><tbody>
+  const lo=bm?bm.minimo:media*0.9, hi=bm?bm.maximo:media*1.1;
+  const fuera=v=>v!=null&&(v<lo||v>hi);
+  dTablaTit.textContent=tit;
+  dTabla.innerHTML=`<table class="rc"><thead><tr>
+    <th>${modo==='dia'?'Fecha':(modo==='sap'?'Cód. SAP':'Familia')}</th>${modo==='fam'?'<th>Equipos</th>':''}
+    <th>Cargas</th><th>Galones</th><th>${tipo==='Hr'?'Horas':'Km'}</th><th>Rendim.</th><th></th></tr></thead><tbody>
     ${arr.map(o=>`<tr class="${modo!=='dia'?'eq':''}" data-k="${esc(o.k)}">
       <td class="${modo==='sap'?'mono':''}">${modo==='dia'?fmtDate(o.k):esc(o.k)}</td>
       ${modo==='fam'?`<td class="c">${o.eq.size}</td>`:''}
@@ -519,149 +700,209 @@ function tablaResumen(T,tipo,lo,hi,bm){
       <td class="r ${fuera(o.v)?'b-bad':'b-ok'}">${f2(o.v)}</td>
       <td><div class="bar"><i style="width:${Math.max(3,(o.v/mx)*100)}%;background:${fuera(o.v)?DC.rojo:DC.azul2}"></i></div></td>
     </tr>`).join('')}</tbody></table>
-    ${modo!=='dia'?'<div class="hint">Haz clic en una fila para bajar un nivel de detalle.</div>':''}`;
-  // clic para profundizar
-  dashTabla.querySelectorAll('tr.eq').forEach(tr=>tr.onclick=()=>{
-    if(modo==='fam'){fFam.value=tr.dataset.k;}
-    else if(modo==='sap'){fSap.value=tr.dataset.k;}
-    pintar();
-  });
+    ${modo!=='dia'?'<div class="hint">Haz clic en una fila para bajar un nivel.</div>':''}`;
+  dTabla.querySelectorAll('tr.eq').forEach(tr=>tr.onclick=()=>{
+    if(modo==='fam')dFam.value=tr.dataset.k; else dSap.value=tr.dataset.k;
+    dPintar();});
 }
-/* ---------- alertas de desviación ---------- */
-function alertas(T,tipo,lo,hi,bm,media){
-  const m=new Map();
-  T.forEach(t=>{const k=t.e.cod_sap; if(!m.has(k))m.set(k,{e:t.e,ts:[]}); m.get(k).ts.push(t);});
-  // Sin benchmark, cada equipo se compara contra la mediana de SU MISMO TIPO,
-  // no contra el promedio general: una torre no se mide contra un volquete.
+/* alertas: cada equipo contra su referencia o la mediana de su familia */
+function dAviso(T,tipo,media){
+  const eqs=porEquipo(T);
   const porFam=new Map();
-  for(const {e,ts} of m.values()){
-    const v=prom(ts,tipo); if(v==null)continue;
-    const f=famNom(e); if(!porFam.has(f))porFam.set(f,[]); porFam.get(f).push(v);
-  }
+  eqs.forEach(o=>{if(o.v==null)return;if(!porFam.has(o.fam))porFam.set(o.fam,[]);porFam.get(o.fam).push(o.v);});
   const medFam=new Map([...porFam].map(([k,a])=>{const s=a.slice().sort((x,y)=>x-y);return [k,s[Math.floor(s.length/2)]];}));
   const malos=[];
-  for(const {e,ts} of m.values()){
-    const b=benchDe(e,tipo);
-    const mf=medFam.get(famNom(e))||media;
+  eqs.forEach(o=>{
+    if(o.v==null)return;
+    const b=benchDe(o.e,tipo), mf=medFam.get(o.fam)||media;
     const L=b?b.minimo:mf*0.85, H=b?b.maximo:mf*1.15;
-    const v=prom(ts,tipo); if(v==null)continue;
-    if(v<L||v>H){
-      const exceso=v>H?((v/H-1)*100):((L/v-1)*100);
-      malos.push({sap:e.cod_sap,eq:e.equipo||'',fam:famNom(e),v,L,H,exceso,
-        alto:v>H, ref:b?'referencia':'típico de '+famNom(e), gl:ts.reduce((a,t)=>a+t.gl,0)});
-    }
-  }
-  malos.sort((a,b)=>b.exceso-a.exceso);
-  if(!malos.length){
-    dashAlertas.innerHTML='<div class="ok-msg">✔ Todos los equipos están dentro de su rango de referencia.</div>';return;
-  }
-  dashAlertas.innerHTML=malos.map(o=>{
-    const peor=mejorMenor(tipo)?o.alto:!o.alto;      // en Gl/Hr, alto = malo
-    return `<div class="al ${peor?'al-bad':'al-ok'}">
-      <b class="mono">${esc(o.sap)}</b> <span class="al-eq">${esc(o.eq)}</span>
-      <span class="al-v">${f2(o.v)} ${tipo==='Hr'?'Gl/Hr':'Km/Gl'}</span>
-      <span class="al-d">${peor?'consume':'rinde'} ${f1(o.exceso)}% ${o.alto?'por encima':'por debajo'} del rango ${f2(o.L)}–${f2(o.H)} <i>(${o.ref})</i></span>
+    if(o.v<L||o.v>H){
+      const exc=o.v>H?(o.v/H-1)*100:(L/o.v-1)*100;
+      malos.push({sap:o.e.cod_sap,eq:o.e.equipo||'',v:o.v,L,H,exc,alto:o.v>H,
+        ref:b?'referencia '+(b.marca||'').trim():'típico de '+o.fam,gl:o.gl});}
+  });
+  malos.sort((a,b)=>b.exc-a.exc);
+  if(!malos.length){dAlertas.innerHTML='<div class="ok-msg">✔ Todos los equipos están dentro de su rango.</div>';return;}
+  dAlertas.innerHTML=malos.map(o=>{
+    const peor=mejorMenor(tipo)?o.alto:!o.alto;
+    return `<div class="al ${peor?'al-bad':'al-ok'}"><b class="mono">${esc(o.sap)}</b>
+      <span class="al-eq">${esc(o.eq)}</span><span class="al-v">${f2(o.v)}</span>
+      <span class="al-d">${o.alto?'por encima':'por debajo'} del rango ${f2(o.L)}–${f2(o.H)} <i>(${esc(o.ref)})</i> · ${f1(o.exc)}%</span>
       <span class="al-g">${f0(o.gl)} gl</span></div>`;}).join('');
 }
-/* ---------- comparativa de eficiencia entre unidades ---------- */
-function comparativa(T,tipo){
-  // Índice = rendimiento del equipo ÷ mediana de su familia.
-  // Así se puede comparar una excavadora con un volquete en la misma escala.
-  const porEq=new Map();
-  T.forEach(t=>{const k=t.e.cod_sap; if(!porEq.has(k))porEq.set(k,{e:t.e,ts:[]}); porEq.get(k).ts.push(t);});
-  const eqs=[...porEq.values()].map(o=>({e:o.e,fam:famNom(o.e),v:prom(o.ts,tipo),
-    gl:o.ts.reduce((a,t)=>a+t.gl,0)})).filter(o=>o.v!=null);
-  if(eqs.length<2){dashComp.innerHTML='<div class="d-vacio">Se necesitan al menos dos equipos para comparar.</div>';return;}
-  const porFam=new Map();
-  eqs.forEach(o=>{if(!porFam.has(o.fam))porFam.set(o.fam,[]);porFam.get(o.fam).push(o.v);});
-  const med=new Map([...porFam].map(([k,a])=>{const s=a.slice().sort((x,y)=>x-y);return [k,s[Math.floor(s.length/2)]];}));
-  eqs.forEach(o=>{
-    const m=med.get(o.fam)||o.v;
-    o.idx = mejorMenor(tipo) ? m/o.v : o.v/m;      // >1 siempre significa mejor
-  });
-  eqs.sort((a,b)=>b.idx-a.idx);
-  const glTot=eqs.reduce((a,o)=>a+o.gl,0);
-  const barra=o=>{const p=Math.max(4,Math.min(100,o.idx*50));
-    const col=o.idx>=1.05?DC.verde:(o.idx>=0.95?DC.ambar:DC.rojo);
-    return `<div class="bar"><i style="width:${p}%;background:${col}"></i></div>`;};
-  dashComp.innerHTML=`<table class="rc"><thead><tr>
-      <th>Cód. SAP</th><th>Tipo</th><th>Rendim.</th><th>Índice</th><th></th><th>Galones</th><th>% del gasto</th></tr></thead><tbody>
-    ${eqs.map(o=>`<tr>
-      <td class="mono">${esc(o.e.cod_sap)}</td><td>${esc(o.fam)}</td>
-      <td class="r">${f2(o.v)}</td>
-      <td class="r ${o.idx>=1.05?'b-ok':(o.idx>=0.95?'b-mid':'b-bad')}">${f2(o.idx)}</td>
-      <td>${barra(o)}</td>
-      <td class="r">${f0(o.gl)}</td>
-      <td class="r">${f1(o.gl/glTot*100)}%</td></tr>`).join('')}
+/* comparativa: solo los datos pedidos */
+function dCompara(T,tipo){
+  const eqs=porEquipo(T).filter(o=>o.v!=null);
+  if(!eqs.length){dComp.innerHTML='<div class="d-vacio">Sin datos</div>';return;}
+  eqs.sort((a,b)=>mejorMenor(tipo)?a.v-b.v:b.v-a.v);
+  const mx=Math.max(...eqs.map(o=>o.v));
+  dComp.innerHTML=`<table class="rc"><thead><tr><th>Cód. SAP</th><th>Cargas</th><th>Galones</th>
+    <th>${tipo==='Hr'?'Horas':'Km'}</th><th>Rendim.</th><th></th></tr></thead><tbody>
+    ${eqs.map(o=>`<tr><td class="mono">${esc(o.e.cod_sap)}</td><td class="c">${o.cargas}</td>
+      <td class="r">${f0(o.gl)}</td><td class="r">${f0(o.rec)}</td><td class="r">${f2(o.v)}</td>
+      <td><div class="bar"><i style="width:${Math.max(3,o.v/mx*100)}%;background:${DC.azul2}"></i></div></td>
+    </tr>`).join('')}</tbody></table>`;
+}
+
+/* ---------- apertura con los filtros por defecto ---------- */
+function dAbrir(){
+  dWrap.classList.remove('hide');
+  if(!dInit){
+    dInit=true;
+    const anios=[...new Set(DESPACHOS.map(d=>String(d.fecha).slice(0,4)))].sort().reverse();
+    const act=String(new Date().getFullYear());
+    const lista=anios.length?anios:[act];
+    dAnio.innerHTML=lista.map(a=>`<option>${a}</option>`).join('');
+    dAnio.value=lista.includes(act)?act:lista[0];
+    dMes.innerHTML='<option value="">Todos</option>'+MESES.map((m,i)=>`<option value="${i}">${m}</option>`).join('');
+    dSem.innerHTML='<option value="u4">Últimas 4 semanas</option><option value="">Todas</option>'
+      +Array.from({length:53},(_,i)=>i+1).map(w=>`<option value="${w}">Semana ${w}</option>`).join('');
+    dSem.value='u4';
+    dRefrescarListas();
+    // proyecto con más equipos en el periodo
+    const R=dRango(), cnt={};
+    DESPACHOS.forEach(d=>{const f=String(d.fecha).slice(0,10);
+      if(d.descartado||f<R.desde||f>R.hasta)return;
+      const e=getE(d.maestro_id); if(!e||!e.cod_proyec)return;
+      (cnt[e.cod_proyec]=cnt[e.cod_proyec]||new Set()).add(e.id);});
+    const mejor=Object.entries(cnt).sort((a,b)=>b[1].size-a[1].size)[0];
+    if(mejor)dProy.value=mejor[0];
+    dRefrescarListas();
+    // familia: excavadoras si existen
+    const opt=[...dFam.options].map(o=>o.value);
+    const exc=opt.find(o=>/EXCAVADORA/.test(o)&&!/RETRO/.test(o))||opt.find(o=>/EXCAVADORA/.test(o));
+    if(exc)dFam.value=exc;
+  }
+  dPintar();
+}
+btnDash.onclick=dAbrir;
+dCerrar.onclick=()=>dWrap.classList.add('hide');
+dWrap.addEventListener('click',ev=>{if(ev.target===dWrap)dWrap.classList.add('hide');});
+document.addEventListener('keydown',ev=>{if(ev.key==='Escape'&&!dWrap.classList.contains('hide'))dWrap.classList.add('hide');});
+[dAnio,dMes].forEach(s=>s.onchange=dPintar);
+dSem.onchange=dPintar;
+dProy.onchange=()=>{dFam.value='';dSap.value='';dPintar();};
+dFam.onchange =()=>{dSap.value='';dPintar();};
+dSap.onchange =dPintar;
+dLimpiar.onclick=()=>{dMes.value='';dSem.value='u4';dProy.value='';dFam.value='';dSap.value='';dPintar();};
+
+/* ═══════════════ RANGOS DE REFERENCIA (editable) ═══════════════ */
+function bmAbrir(){
+  bmWrap.classList.remove('hide'); bmPintar();
+}
+function bmPintar(){
+  const fams=[...new Set(datos.map(familiaDe))].sort();
+  const filas=BENCH.slice().sort((a,b)=>(a.contador+a.tipo_equipo+a.marca+a.modelo)
+    .localeCompare(b.contador+b.tipo_equipo+b.marca+b.modelo));
+  const admin=perfil&&perfil.rol==='admin';
+  bmTabla.innerHTML=`<table class="rc"><thead><tr>
+      <th>Familia de equipos</th><th>Marca</th><th>Modelo</th><th>Contador</th>
+      <th>Mínimo</th><th>Máximo</th><th>Nota</th><th></th></tr></thead><tbody>
+    ${filas.map(b=>`<tr data-id="${b.id}">
+      <td>${esc(b.tipo_equipo)}</td><td>${esc(b.marca||'—')}</td><td>${esc(b.modelo||'—')}</td>
+      <td class="c">${esc(b.contador)}</td>
+      <td class="r"><input type="number" step="0.1" class="bmi" data-c="minimo" value="${b.minimo}" ${admin?'':'disabled'}></td>
+      <td class="r"><input type="number" step="0.1" class="bmi" data-c="maximo" value="${b.maximo}" ${admin?'':'disabled'}></td>
+      <td class="nota">${esc(b.obs||'')}</td>
+      <td class="c">${admin?`<button class="bmdel" title="Eliminar">✕</button>`:''}</td></tr>`).join('')}
     </tbody></table>
-    <div class="hint">Índice = rendimiento del equipo comparado con la mediana de su mismo tipo.
-      <b>1,00</b> es el equipo típico de su familia; <b>1,20</b> rinde 20% mejor; <b>0,80</b>, 20% peor.
-      La columna de galones muestra cuánto pesa cada equipo en el gasto: conviene atender primero
-      a los que tienen índice bajo <i>y</i> mucho consumo.</div>`;
+    ${admin?`<div class="bm-new">
+      <input id="bmFam" list="bmFams" placeholder="Familia de equipos" style="min-width:180px">
+      <datalist id="bmFams">${fams.map(f=>`<option>${esc(f)}</option>`).join('')}</datalist>
+      <input id="bmMar" placeholder="Marca (opcional)" style="width:130px">
+      <input id="bmMod" placeholder="Modelo (opcional)" style="width:150px">
+      <select id="bmCon"><option>Hr</option><option>Km</option></select>
+      <input id="bmMin" type="number" step="0.1" placeholder="Mín" style="width:78px">
+      <input id="bmMax" type="number" step="0.1" placeholder="Máx" style="width:78px">
+      <input id="bmObs" placeholder="Nota (opcional)" style="flex:1;min-width:120px">
+      <button class="act primary" id="bmAdd">Agregar</button></div>`
+     :'<div class="hint">Solo los administradores pueden modificar estos rangos.</div>'}`;
+  if(!admin)return;
+  bmTabla.querySelectorAll('.bmi').forEach(i=>i.onchange=async()=>{
+    const id=i.closest('tr').dataset.id, col=i.dataset.c, val=Number(i.value);
+    if(!isFinite(val)){i.value=BENCH.find(b=>String(b.id)===id)[col];return;}
+    const {error}=await sb.from('benchmark').update({[col]:val}).eq('id',id);
+    if(error){alert('No se pudo guardar: '+error.message);return;}
+    const b=BENCH.find(x=>String(x.id)===id); if(b)b[col]=val;
+    if(!dWrap.classList.contains('hide'))dPintar();
+  });
+  bmTabla.querySelectorAll('.bmdel').forEach(b=>b.onclick=async()=>{
+    const tr=b.closest('tr'), id=tr.dataset.id;
+    const o=BENCH.find(x=>String(x.id)===id);
+    if(!confirm('¿Eliminar el rango de '+(o?o.tipo_equipo:'')+'?'))return;
+    const {error}=await sb.from('benchmark').delete().eq('id',id);
+    if(error)return alert('No se pudo eliminar: '+error.message);
+    BENCH=BENCH.filter(x=>String(x.id)!==id); bmPintar();
+    if(!dWrap.classList.contains('hide'))dPintar();
+  });
+  document.getElementById('bmAdd').onclick=async()=>{
+    const fila={tipo_equipo:nrm(bmFam.value),marca:nrm(bmMar.value),modelo:nrm(bmMod.value),
+      contador:bmCon.value,minimo:Number(bmMin.value),maximo:Number(bmMax.value),obs:bmObs.value||null};
+    if(!fila.tipo_equipo)return alert('Indica la familia de equipos.');
+    if(!isFinite(fila.minimo)||!isFinite(fila.maximo)||fila.maximo<=fila.minimo)
+      return alert('Revisa el mínimo y el máximo: el máximo debe ser mayor.');
+    const {data,error}=await sb.from('benchmark').insert(fila).select().single();
+    if(error)return alert('No se pudo agregar: '+error.message);
+    BENCH.push(data); bmPintar();
+    if(!dWrap.classList.contains('hide'))dPintar();
+  };
 }
+btnBench.onclick=bmAbrir;
+bmCerrar.onclick=()=>bmWrap.classList.add('hide');
+bmWrap.addEventListener('click',ev=>{if(ev.target===bmWrap)bmWrap.classList.add('hide');});
 
 
-/* ---------- filtros ---------- */
-function poblarFiltros(){
-  const anios=[...new Set(DESPACHOS.map(d=>String(d.fecha).slice(0,4)))].sort().reverse();
-  const act=String(new Date().getFullYear());
-  const lista=anios.length?anios:[act];
-  fAnio.innerHTML=lista.map(a=>`<option ${a===(lista.includes(act)?act:lista[0])?'selected':''}>${a}</option>`).join('');
-  fMes.innerHTML='<option value="">Todos</option>'+MESES.map((m,i)=>`<option value="${i}">${m}</option>`).join('');
-  fSem.innerHTML='<option value="">Todas</option>'+Array.from({length:53},(_,i)=>i+1).map(w=>`<option value="${w}">Semana ${w}</option>`).join('');
-  const ps=[...new Set(DESPACHOS.map(d=>d.cod_proyec).filter(Boolean))].sort();
-  fProy.innerHTML='<option value="">Todos</option>'+ps.map(p=>`<option>${esc(p)}</option>`).join('');
-  refrescarDependientes();
-}
-/* Tipo de equipo y Cód. SAP se limitan a lo que existe según los filtros de arriba */
-function refrescarDependientes(){
-  const eqs=[...new Set(DESPACHOS.map(d=>d.maestro_id))].map(id=>getE(id)).filter(Boolean)
-    .filter(e=>!fProy.value||String(e.cod_proyec||'')===fProy.value);
-  const fams=[...new Set(eqs.map(famNom))].sort();
-  const famActual=fFam.value;
-  fFam.innerHTML='<option value="">Todos</option>'+fams.map(f=>`<option>${esc(f)}</option>`).join('');
-  if(fams.includes(famActual))fFam.value=famActual;
-  const saps=[...new Set(eqs.filter(e=>!fFam.value||famNom(e)===fFam.value).map(e=>e.cod_sap))].sort();
-  const sapActual=fSap.value;
-  fSap.innerHTML='<option value="">Todos</option>'+saps.map(s=>`<option>${esc(s)}</option>`).join('');
-  if(saps.includes(sapActual))fSap.value=sapActual;
-}
-[fAnio,fMes,fSem].forEach(s=>s.onchange=pintar);
-fProy.onchange=()=>{fFam.value='';fSap.value='';refrescarDependientes();pintar();};
-fFam.onchange =()=>{fSap.value='';refrescarDependientes();pintar();};
-fSap.onchange =pintar;
-btnLimpiar.onclick=()=>{fMes.value='';fSem.value='';fProy.value='';fFam.value='';fSap.value='';refrescarDependientes();pintar();};
+/* ---------- controles del listado ---------- */
+fPeriodo.onchange=()=>{
+  fMes.classList.toggle('hide',fPeriodo.value!=='mes');
+  boxRango.classList.toggle('hide',fPeriodo.value!=='rango');
+  pintarLista();};
+[fMes,fDesde,fHasta,fTipo,fProy].forEach(x=>x.onchange=pintarLista);
+fBusca.oninput=pintarLista;
+btnRec.onclick=()=>cargar();
 btnXls.onclick=()=>{
-  if(!TRAMOS.length)return alert('No hay datos para exportar.');
-  const rows=TRAMOS.map(t=>({'Fecha':t.fecha,'Cód. SAP':t.e.cod_sap,'Equipo':t.e.equipo||'',
-    'Proyecto':t.e.cod_proyec||'','Tipo de equipo':famNom(t.e),'Contador':t.tipo,
-    'Galones':+t.gl.toFixed(1),[t.tipo==='Hr'?'Horas':'Km']:+t.delta.toFixed(1),
-    'Rendimiento':+t.rend.toFixed(3),'Unidad':t.tipo==='Hr'?'Gl/Hr':'Km/Gl'}));
+  const R=rangoLista();
+  const ts=tramosDe(R.desde,R.hasta,e=>(!fProy.value||String(e.cod_proyec||'')===fProy.value)
+    &&(!fTipo.value||contDe(e)===fTipo.value));
+  if(!ts.length)return alert('No hay datos para exportar.');
+  const rows=porEquipo(ts).map(o=>({'Cód. SAP':o.e.cod_sap,'Equipo':o.e.equipo||'','Familia':o.fam,
+    'Proyecto':o.e.cod_proyec||'','Contador':o.tipo,'Cargas':o.cargas,'Galones':+o.gl.toFixed(1),
+    [o.tipo==='Hr'?'Horas':'Km']:+o.rec.toFixed(1),'Rendimiento':o.v!=null?+o.v.toFixed(3):'',
+    'Unidad':o.tipo==='Hr'?'Gl/Hr':'Km/Gl'}));
   const ws=XLSX.utils.json_to_sheet(rows);
-  ws['!cols']=[{wch:11},{wch:11},{wch:28},{wch:10},{wch:20},{wch:9},{wch:9},{wch:9},{wch:11},{wch:8}];
+  ws['!cols']=[{wch:11},{wch:28},{wch:22},{wch:10},{wch:9},{wch:8},{wch:10},{wch:10},{wch:11},{wch:8}];
   const wb=XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb,ws,'Rendimiento');
   XLSX.writeFile(wb,'Rendimiento_'+new Date().toISOString().slice(0,10)+'.xlsx');
 };
 
 /* ---------- arranque ---------- */
+async function cargar(){
+  const {data:dp,error}=await sb.from('combustible').select('*').order('fecha').order('hora');
+  if(error){pie.textContent='No se pudieron cargar los despachos: '+error.message;return;}
+  DESPACHOS=dp||[];
+  const meses=[...new Set(DESPACHOS.map(d=>String(d.fecha).slice(0,7)))].sort().reverse();
+  fMes.innerHTML=meses.map(m=>{const [a,mm]=m.split('-');return `<option value="${m}">${MESES[+mm-1]} ${a}</option>`;}).join('');
+  const ps=[...new Set(DESPACHOS.map(d=>d.cod_proyec).filter(Boolean))].sort();
+  fProy.innerHTML='<option value="">Todos los proyectos</option>'+ps.map(p=>`<option>${esc(p)}</option>`).join('');
+  dInit=false;
+  pintarLista();
+}
 (async()=>{
   const {data:{session}}=await sb.auth.getSession();
   if(!session){document.body.innerHTML='<div style="padding:60px;text-align:center"><h2 style="font-size:18px">Sesi\u00f3n no iniciada</h2><p style="color:#6b747d">Ingresa en la p\u00e1gina principal.</p></div>';return;}
   const {data:p}=await sb.from('profiles').select('id,nombre,rol,estado,paginas').eq('id',session.user.id).single();
   perfil=p||{};
+  who.textContent=(perfil.nombre||session.user.email)+' · '+(perfil.rol||'');
   if(perfil.estado!=='aprobado'||(perfil.rol!=='admin'&&!(Array.isArray(perfil.paginas)&&perfil.paginas.includes('comb')))){
     document.body.innerHTML='<div style="padding:60px;text-align:center;font-family:sans-serif">'
      +'<h2 style="font-size:18px;margin-bottom:10px">Sin acceso a Combustible</h2>'
      +'<p style="color:#6b747d">Un administrador debe habilitarte esta pesta&ntilde;a desde Usuarios.</p></div>';return;}
   const {data:m,error}=await sb.from('maestro').select(CAMPOS).order('cod_proyec').order('id');
-  if(error){dashRotulo.textContent='No se pudo cargar el maestro: '+error.message;return;}
+  if(error){pie.textContent='No se pudo cargar el maestro: '+error.message;return;}
   datos=m||[]; reindexDatos();
   const {data:bm}=await sb.from('benchmark').select('*');
   BENCH=bm||[];
-  const {data:dp,error:e2}=await sb.from('combustible').select('*').order('fecha').order('hora');
-  if(e2){dashRotulo.textContent='No se pudieron cargar los despachos: '+e2.message;return;}
-  DESPACHOS=dp||[];
-  poblarFiltros(); pintar();
+  await cargar();
 })();
 </script>
 </body>
