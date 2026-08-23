@@ -131,58 +131,115 @@
   .chip{background:#f1f3f5;border:1px solid var(--line);border-radius:999px;padding:4px 10px;font-size:11px;font-weight:700;color:var(--muted)}
   .spacer{flex:1}
   footer{padding:6px 16px;color:var(--muted);font-size:12px;text-align:center;flex-shrink:0}
-  /* ===== rendimiento ===== */
-  #rcWrap{flex:1;overflow:auto;padding:10px 14px;min-height:0}
-  .rc-cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:9px;margin-bottom:10px}
-  .rc-c{background:#fff;border:1px solid #dde3e9;border-radius:11px;padding:9px 12px}
-  .rc-c .l{font-size:10px;font-weight:800;color:#6b747d;text-transform:uppercase;letter-spacing:.4px}
-  .rc-c .v{font-size:23px;font-weight:800;line-height:1.15;margin-top:2px}
-  .rc-c .s{font-size:9.5px;color:#98a2ad;margin-top:2px}
-  .rc-panel{background:#fff;border:1px solid #dde3e9;border-radius:11px;padding:9px 11px;margin-bottom:10px}
-  .rc-tit{font-size:12px;font-weight:800;color:#1f3864;margin-bottom:6px;display:flex;align-items:baseline;gap:8px}
-  .rc-tit small{font-weight:400;color:var(--muted);font-size:10px}
+
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;background:#eef1f4;color:var(--ink);font-size:14px}
+  .hide{display:none !important}
+  .mono{font-family:"SF Mono",ui-monospace,monospace}
+  .spacer{flex:1}
+  #card{background:#fff;border:2px solid #2E75B6;border-radius:9px;padding:8px;margin:10px auto;width:min(1560px,99vw)}
+  .dh-tit{border:2px solid #2E75B6;border-radius:5px;text-align:center;font-size:29px;font-weight:800;color:#1F3864;letter-spacing:.5px;padding:2px}
+  .dh-dep{background:#DEEBF7;text-align:center;font-size:11px;font-weight:800;color:#1F3864;letter-spacing:.6px;padding:2px;margin-top:3px}
+  .dh-sub{border:2px solid #2E75B6;border-radius:5px;text-align:center;font-size:20px;font-weight:700;color:#1F3864;padding:2px;margin-top:3px}
+  .d-body{display:grid;grid-template-columns:160px 1fr 314px;gap:7px;margin-top:7px;align-items:start}
+  .d-side{display:flex;flex-direction:column;gap:6px}
+  .d-logo{border:1px solid #BFD7EE;border-radius:6px;padding:8px;text-align:center;line-height:1.05}
+  .d-logo b{font-size:24px;font-weight:800;color:#1F3864;letter-spacing:1px}
+  .d-logo span{display:block;font-size:6.5px;font-weight:700;color:#2E75B6;letter-spacing:.7px;margin-top:2px}
+  .d-f{display:block;border:1px solid #BFD7EE;border-radius:6px;padding:4px 5px;text-align:center;background:#fff}
+  .d-f select{width:100%;border:none;background:transparent;font-size:14px;font-weight:700;color:#1F3864;text-align:center;cursor:pointer;outline:none}
+  .d-f i{display:block;font-style:normal;font-size:8.5px;color:#808080;letter-spacing:.4px}
+  .d-btn{border:1px solid #BFD7EE;border-radius:6px;background:#fff;padding:6px;font-size:11px;font-weight:700;color:#1F3864;cursor:pointer}
+  .d-btn:hover{background:#DEEBF7}
+  .d-panel{border:1px solid #2E75B6;border-radius:6px;padding:5px 7px;background:#fff}
+  .d-panel+.d-panel{margin-top:7px}
+  .d-pt{text-align:center;font-size:10.5px;font-weight:800;color:#1F3864;letter-spacing:.3px}
+  .d-svg{width:100%;height:auto;display:block}
+  .d-vacio{padding:30px;text-align:center;color:#98a2ad;font-size:11.5px}
+  .d-cards{display:grid;grid-template-columns:repeat(4,1fr);gap:7px;margin-bottom:7px}
+  .dc{background:#fff;border:1px solid #dde3e9;border-radius:9px;padding:7px 10px}
+  .dc-l{font-size:9.5px;font-weight:800;color:#6b747d;text-transform:uppercase;letter-spacing:.4px}
+  .dc-v{font-size:21px;font-weight:800;color:#1F3864;line-height:1.15;margin-top:2px}
+  .dc-s{font-size:9px;color:#98a2ad;margin-top:2px}
   table.rc{width:100%;border-collapse:collapse;font-size:11.5px}
-  table.rc th{background:#f1f4f7;color:#1f3864;font-size:10px;text-transform:uppercase;letter-spacing:.3px;padding:4px 6px;text-align:left;position:sticky;top:0;z-index:2}
+  table.rc th{background:#f1f4f7;color:#1F3864;font-size:9.5px;text-transform:uppercase;letter-spacing:.3px;padding:4px 6px;text-align:left;position:sticky;top:0;z-index:2}
   table.rc td{padding:3px 6px;border-bottom:1px solid #eef1f4}
   table.rc td.r{text-align:right}table.rc td.c{text-align:center}
-  table.rc tr:hover td{background:#f9fbfd}
+  table.rc tr:hover td{background:#f7fbff}
   table.rc tr.eq{cursor:pointer}
-  table.rc tr.eq.on td{background:#e8f0fe}
   .b-ok{color:#15803d;font-weight:800}.b-mid{color:#B45309;font-weight:800}.b-bad{color:#dc2626;font-weight:800}
-  .obs{color:#B45309;font-size:10.5px}
-  .vacio{padding:34px;text-align:center;color:#98a2ad;font-size:12px}
-  .rc-2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
-  @media(max-width:1100px){.rc-2{grid-template-columns:1fr}}
-  .bar{height:7px;border-radius:4px;background:#eef1f4;position:relative;overflow:hidden;min-width:60px}
+  .bar{height:7px;border-radius:4px;background:#eef1f4;position:relative;overflow:hidden;min-width:56px}
   .bar i{position:absolute;left:0;top:0;height:100%;border-radius:4px}
+  .hint{font-size:10px;color:#6b747d;margin-top:5px;line-height:1.5}
+  .hint b{color:#1F3864}
+  .al{display:flex;align-items:baseline;gap:8px;flex-wrap:wrap;font-size:11.5px;padding:4px 8px;border-radius:6px;margin-bottom:4px}
+  .al-bad{background:#fef2f2;border-left:3px solid #dc2626}
+  .al-ok{background:#f0fdf4;border-left:3px solid #15803d}
+  .al-eq{color:#404040}.al-v{font-weight:800;color:#1F3864}
+  .al-d{color:#6b747d;font-size:10.5px}.al-g{margin-left:auto;color:#98a2ad;font-size:10.5px}
+  .ok-msg{color:#15803d;font-size:11.5px;padding:6px}
+  .d-pie{margin-top:7px;font-size:10px;color:#6b747d;line-height:1.6;background:#fff;border:1px solid #dde3e9;border-radius:9px;padding:7px 10px}
+  .d-pie b{color:#1F3864}
+  @media(max-width:1200px){.d-body{grid-template-columns:1fr}.d-cards{grid-template-columns:repeat(2,1fr)}}
 </style>
 </head>
 <body>
-<header>
-  <div><h1>Rendimiento de Combustible</h1><p>Unidad de Equipos &middot; UDE</p></div>
-  <span class="who" id="who"></span>
-</header>
+<div id="card">
+  <div class="dh-tit">RENDIMIENTO DE COMBUSTIBLE</div>
+  <div class="dh-dep">UNIDAD DE EQUIPOS &middot; UDE</div>
+  <div class="dh-sub" id="dashRotulo">&mdash;</div>
 
-<div class="toolbar">
-  <select id="fPeriodo">
-    <option value="4s">Últimas 4 semanas</option>
-    <option value="mes">Por mes</option>
-    <option value="rango">Rango de fechas</option>
-    <option value="todo">Todo el historial</option>
-  </select>
-  <select id="fMes" class="hide"></select>
-  <span id="boxRango" class="hide"><input type="date" id="fDesde"> <input type="date" id="fHasta"></span>
-  <select id="fTipo"><option value="">Hr y Km</option><option value="Hr">Solo Hr (Gl/Hr)</option><option value="Km">Solo Km (Km/Gl)</option></select>
-  <select id="fProy"><option value="">Todos los proyectos</option></select>
-  <input type="search" id="fBusca" placeholder="Cód. SAP o equipo…" style="width:180px">
-  <span class="chip" id="chN">&mdash;</span>
-  <div class="spacer"></div>
-  <button class="act" id="btnRec">&#8635; Recargar</button>
-  <button class="act" id="btnXls" disabled>&#8681; Excel</button>
+  <div class="d-body">
+    <aside class="d-side">
+      <div class="d-logo"><b>JJC</b><span>INGENIER&Iacute;A<br>Y CONSTRUCCI&Oacute;N</span></div>
+      <label class="d-f"><select id="fAnio"></select><i>A&Ntilde;O</i></label>
+      <label class="d-f"><select id="fMes"></select><i>MES</i></label>
+      <label class="d-f"><select id="fSem"></select><i>SEMANA</i></label>
+      <label class="d-f"><select id="fProy"></select><i>PROYECTO</i></label>
+      <label class="d-f"><select id="fFam"></select><i>TIPO DE EQUIPO</i></label>
+      <label class="d-f"><select id="fSap"></select><i>C&Oacute;D. SAP</i></label>
+      <select id="fTipo" class="hide"><option value="Hr">Hr</option><option value="Km">Km</option></select>
+      <button class="d-btn" id="btnLimpiar">Limpiar filtros</button>
+      <button class="d-btn" id="btnXls">&#8681; Excel</button>
+      <div style="text-align:center;font-size:10px;color:#808080">equipos: <b id="chN">0</b></div>
+    </aside>
+
+    <main>
+      <div class="d-cards" id="dashCards"></div>
+      <div class="d-panel">
+        <div class="d-pt" id="dashTit">CONTROL DE RENDIMIENTO</div>
+        <div id="dashGraf"></div>
+      </div>
+      <div class="d-panel">
+        <div class="d-pt" id="dashTablaTit">Resumen</div>
+        <div id="dashTabla"></div>
+      </div>
+      <div class="d-panel">
+        <div class="d-pt">ALERTAS DE DESVIACI&Oacute;N</div>
+        <div id="dashAlertas"></div>
+      </div>
+    </main>
+
+    <aside>
+      <div class="d-panel">
+        <div class="d-pt" id="dashGaugeTit">CONSUMO PROMEDIO</div>
+        <div id="dashGauge"></div>
+      </div>
+      <div class="d-panel">
+        <div class="d-pt">COMPARATIVA DE EFICIENCIA</div>
+        <div id="dashComp"></div>
+      </div>
+    </aside>
+  </div>
+
+  <div class="d-pie">
+    <b>C&oacute;mo se calcula</b> &middot; Maquinaria: galones &divide; horas (menor es mejor) &middot;
+    Veh&iacute;culos: kil&oacute;metros &divide; galones (mayor es mejor) &middot;
+    el promedio es ponderado (se suman totales y se divide al final) &middot;
+    el <b>Contador</b> de cada equipo en la pesta&ntilde;a Equipos define qu&eacute; f&oacute;rmula se aplica &middot;
+    los rangos de referencia salen de la tabla <b>benchmark</b>; si un equipo no tiene, se usa el promedio &plusmn;10%.
+  </div>
 </div>
-
-<div id="rcWrap"><div class="vacio">Cargando…</div></div>
-<footer id="pie">Los despachos se cargan desde la pesta&ntilde;a Equipos con el bot&oacute;n &#9981;.</footer>
 
 <script>
 const CFG=(()=>{try{return JSON.parse(localStorage.getItem('gllr_sbcfg')||'null')}catch(_){return null}})();
@@ -193,7 +250,7 @@ if(!CFG||!CFG.url){
   throw new Error('sin configuracion');
 }
 const sb=window.supabase.createClient(CFG.url,CFG.key);
-let datos=[], perfil=null, RC=null, sel=null;
+let datos=[], perfil=null;
 function hoy0(){const d=new Date();d.setHours(0,0,0,0);return d;}
 function dias(a,b){return Math.round((a-b)/86400000);}
 function isoWeek(d){const t=new Date(Date.UTC(d.getFullYear(),d.getMonth(),d.getDate()));const dn=t.getUTCDay()||7;t.setUTCDate(t.getUTCDate()+4-dn);const y=new Date(Date.UTC(t.getUTCFullYear(),0,1));return Math.ceil(((t-y)/86400000+1)/7);}
@@ -224,280 +281,387 @@ function mant(e){
 let DIDX=new Map();
 function reindexDatos(){DIDX=new Map(datos.map(e=>[String(e.id),e]));}
 function getE(id){return DIDX.get(String(id))||null;}
+
 const CAMPOS="id,cod_proyec,cod_sap,equipo,marca,modelo,serie_placa,familia,status,contador,hr_dia,hrkm_actual";
+
+/* ═══════════════════ RENDIMIENTO DE COMBUSTIBLE ═══════════════════
+   Hr → Gl/Hr (menor es mejor) · Km → Km/Gl (mayor es mejor)
+   Promedio ponderado: se suman totales y se divide al final.        */
+const DC={azul:'#1F3864',azul2:'#2E75B6',azul3:'#9DC3E6',cielo:'#DEEBF7',
+          verde:'#00B050',rojo:'#FF0000',ambar:'#FFC000',naranja:'#ED7D31',gris:'#BFBFBF'};
+const MESES=['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Setiembre','Octubre','Noviembre','Diciembre'];
+let DESPACHOS=[], BENCH=[], TRAMOS=[], sel=null;
+
 const nrm=s=>String(s??'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toUpperCase().replace(/\s+/g,' ').trim();
-const clave=s=>nrm(s).replace(/[^A-Z0-9]/g,'');
+const f0=n=>Number(n).toLocaleString('es-PE',{maximumFractionDigits:0});
 const f1=n=>Number(n).toLocaleString('es-PE',{minimumFractionDigits:1,maximumFractionDigits:1});
 const f2=n=>Number(n).toLocaleString('es-PE',{minimumFractionDigits:2,maximumFractionDigits:2});
-const f0=n=>Number(n).toLocaleString('es-PE',{maximumFractionDigits:0});
+const famNom=e=>String(e&&e.familia||'—').replace(/^\d+[_\s-]*/,'')||'—';
+const isoDe=d=>{const z=new Date(d.getTime()-d.getTimezoneOffset()*60000);return z.toISOString().slice(0,10);};
 
-/* ── columnas del reporte ── */
-const COL={cod:['CODIGO INTERNO','CÓDIGO INTERNO'],placa:['PLACA'],serie:['NRO SERIE','NRO. SERIE'],
-  fecha:['FECHA TRANSAC.','FECHA TRANSAC','FECHA'],hora:['HORA TRANSAC.','HORA TRANSAC','HORA'],
-  valor:['KM/HM','KM / HM'],gln:['GLN','GALONES'],desc:['DESCRIPCION','DESCRIPCIÓN'],
-  tipo:['TIPO DE CONTROL'],proy:['PROYECTO']};
-function mapaCols(filas){
-  for(let i=0;i<12&&i<filas.length;i++){
-    const f=(filas[i]||[]).map(nrm), idx={};
-    for(const [k,al] of Object.entries(COL)){const j=f.findIndex(c=>al.some(a=>nrm(a)===c)); if(j>=0)idx[k]=j;}
-    if(idx.cod!==undefined&&idx.valor!==undefined&&idx.fecha!==undefined&&idx.gln!==undefined)return{fila:i,idx};
+/* ---------- rango de fechas según los filtros ---------- */
+function rango(){
+  const a=+fAnio.value||new Date().getFullYear();
+  const m=fMes.value, s=fSem.value;
+  if(s!==''){                                   // semana ISO
+    const j=new Date(Date.UTC(a,0,4)),dw=j.getUTCDay()||7,lu=new Date(j);
+    lu.setUTCDate(j.getUTCDate()-(dw-1)+(+s-1)*7);
+    const dom=new Date(lu); dom.setUTCDate(lu.getUTCDate()+6);
+    return {desde:lu.toISOString().slice(0,10),hasta:dom.toISOString().slice(0,10),
+            lab:'Semana '+s+' · '+a, grano:'dia'};
   }
-  return null;
+  if(m!=='')return {desde:isoDe(new Date(a,+m,1)),hasta:isoDe(new Date(a,+m+1,0)),
+                    lab:MESES[+m]+' '+a, grano:'dia'};
+  return {desde:a+'-01-01',hasta:a+'-12-31',lab:'Año '+a,grano:'mes'};
 }
-function fecha(v){
-  if(v instanceof Date&&!isNaN(v))return v;
-  const s=String(v??'').trim(); if(!s)return null;
-  let m=s.match(/^(\d{4})-(\d{2})-(\d{2})/); if(m)return new Date(+m[1],+m[2]-1,+m[3]);
-  m=s.match(/^(\d{1,2})[\/-](\d{1,2})[\/-](\d{2,4})/);
-  if(m){let a=+m[3]; if(a<100)a+=2000; return new Date(a,+m[2]-1,+m[1]);}
-  const d=new Date(s); return isNaN(d)?null:d;
-}
-const mins=h=>{const p=String(h??'').split(':');const a=+p[0],b=+p[1];return (isNaN(a)?0:a)*60+(isNaN(b)?0:b);};
-
-/* ── agrupar el archivo por equipo ── */
-function leer(filas,idx,f0i){
-  const m=new Map();
-  for(let i=f0i+1;i<filas.length;i++){
-    const f=filas[i]||[]; const cod=nrm(f[idx.cod]); if(!cod)continue;
-    const val=Number(String(f[idx.valor]??'').replace(/[^0-9.,-]/g,'').replace(',','.'));
-    const gl=Number(String(f[idx.gln]??'').replace(/[^0-9.,-]/g,'').replace(',','.'));
-    const fe=fecha(f[idx.fecha]);
-    if(!fe||!isFinite(gl)||gl<=0)continue;
-    const ts=fe.getTime()+mins(idx.hora!==undefined?f[idx.hora]:0)*60000;
-    if(!m.has(cod))m.set(cod,{cod,regs:[],
-      placa:idx.placa!==undefined?nrm(f[idx.placa]):'',
-      serie:idx.serie!==undefined?nrm(f[idx.serie]):'',
-      desc:idx.desc!==undefined?String(f[idx.desc]??''):'',
-      tipoArch:idx.tipo!==undefined?String(f[idx.tipo]??''):'',
-      proy:idx.proy!==undefined?String(f[idx.proy]??''):''});
-    m.get(cod).regs.push({ts,fe,val:isFinite(val)?val:null,gl});
-  }
-  return [...m.values()];
-}
-/* ── emparejar con el Maestro ── */
-function emparejar(regs){
-  const porSap=new Map(),porSer=new Map();
-  datos.forEach(e=>{const s=clave(e.cod_sap); if(s&&!porSap.has(s))porSap.set(s,e);
-    const p=clave(e.serie_placa); if(p&&!porSer.has(p))porSer.set(p,e);});
-  return regs.map(r=>{
-    const c=clave(r.cod),p=clave(r.placa),s=clave(r.serie);
-    const e=(c&&porSap.get(c))||(p&&porSap.get(p))||(p&&porSer.get(p))||(s&&porSer.get(s))||(s&&porSap.get(s))||null;
-    return {...r,e};
-  });
+/* ---------- rango de referencia para un equipo ---------- */
+function benchDe(e,tipo){
+  if(!e)return null;
+  const fa=nrm(e.familia), ma=nrm(e.marca), mo=nrm(e.modelo);
+  const cand=BENCH.filter(b=>b.contador===tipo
+    && (!b.familia||nrm(b.familia)===fa)
+    && (!b.marca  ||nrm(b.marca)===ma)
+    && (!b.modelo ||nrm(b.modelo)===mo));
+  if(!cand.length)return null;
+  // gana el más específico
+  cand.sort((x,y)=>((y.familia?1:0)+(y.marca?1:0)+(y.modelo?1:0))-((x.familia?1:0)+(x.marca?1:0)+(x.modelo?1:0)));
+  return cand[0];
 }
 
-/* ═══ CÁLCULO DE RENDIMIENTO ═══
-   Hr → galones ÷ horas (menor es mejor) · Km → km ÷ galones (mayor es mejor)
-   Promedio ponderado: se suman totales y se divide al final.            */
-function calcular(u){
-  const tipo=(u.e&&(u.e.contador==='Hr'||u.e.contador==='Km'))?u.e.contador
-            :(/HOR/i.test(u.tipoArch)?'Hr':'Km');
-  const sinCont=!(u.e&&(u.e.contador==='Hr'||u.e.contador==='Km'));
-  const regs=u.regs.slice().sort((a,b)=>a.ts-b.ts);
-  // incremento típico con las filas sanas, para detectar saltos anómalos
-  const inc=[];
-  for(let i=1;i<regs.length;i++){
-    const d=(regs[i].val??NaN)-(regs[i-1].val??NaN);
-    const dd=Math.max((regs[i].ts-regs[i-1].ts)/86400000,0.5);
-    if(isFinite(d)&&d>0&&d<=(tipo==='Hr'?24:400)*dd)inc.push(d);   // solo los plausibles
-  }
-  const orden=inc.slice().sort((a,b)=>a-b);
-  const tip=orden.length?orden[Math.floor(orden.length/2)]:0;     // mediana
-  const tramos=[]; let sumaGl=0,sumaRec=0,corr=0,desc=0;
-  for(let i=1;i<regs.length;i++){
-    const a=regs[i-1],b=regs[i];
-    const gl=b.gl; let d=(b.val??NaN)-(a.val??NaN); let obs='';
-    const dias=Math.max((b.ts-a.ts)/86400000,0.5);      // dos cargas el mismo día cuentan como medio día
-    const tope=(tipo==='Hr'?24:400)*dias;                // límite físico: 24 h/día · 400 km/día
-    if(!isFinite(d)||d<=0){ obs=d===0?'contador sin avance':'retroceso del contador'; desc++; d=NaN; }
-    else if(d>tope){ obs='salto imposible ('+f0(d)+' en '+f1(dias)+' d\u00eda(s))'; desc++; d=NaN; }
-    else if(tip>0&&d>tip*3){ obs='salto at\u00edpico ('+f0(d)+' vs '+f0(tip)+' habitual)'; desc++; d=NaN; }
-    let rend=null;
-    if(isFinite(d)){ rend = tipo==='Hr' ? gl/d : d/gl; sumaGl+=gl; sumaRec+=d; }
-    else corr++;
-    tramos.push({fe:b.fe,cont:b.val,gl,d:isFinite(d)?d:null,rend,obs});
-  }
-  const prom = sumaRec>0&&sumaGl>0 ? (tipo==='Hr'? sumaGl/sumaRec : sumaRec/sumaGl) : null;
-  return {...u,tipo,sinCont,tramos,prom,sumaGl,sumaRec,cargas:regs.length,
-          galTotal:regs.reduce((a,r)=>a+r.gl,0),descartes:desc,tipico:tip,
-          desde:regs[0]&&regs[0].fe, hasta:regs[regs.length-1]&&regs[regs.length-1].fe};
-}
-
-/* ── colores según el rendimiento respecto a la mediana del grupo ── */
-function nota(v,med,tipo){
-  if(v==null||!med)return '';
-  const r=v/med;
-  if(tipo==='Hr') return r<=0.9?'b-ok':(r<=1.15?'b-mid':'b-bad');
-  return r>=1.1?'b-ok':(r>=0.85?'b-mid':'b-bad');
-}
-function pintar(){
-  if(!RC){return;}
-  const ft=fTipo.value, fp=fProy.value, q=nrm(fBusca.value);
-  let lista=RC.filter(u=>{
-    if(ft&&u.tipo!==ft)return false;
-    if(fp&&String(u.e.cod_proyec||'')!==fp)return false;
-    if(q){const t=nrm((u.e.cod_sap)+' '+(u.e&&u.e.equipo||u.desc)); if(!t.includes(q))return false;}
-    return true;
-  });
-  chN.textContent=lista.length+' equipo(s)';
-  btnXls.disabled=!lista.length;
-  if(!lista.length){rcWrap.innerHTML='<div class="vacio">Ning\u00fan equipo coincide con el filtro.</div>';return;}
-
-  const hr=lista.filter(u=>u.tipo==='Hr'&&u.prom!=null), km=lista.filter(u=>u.tipo==='Km'&&u.prom!=null);
-  const med=a=>{if(!a.length)return null;const o=a.map(u=>u.prom).sort((x,y)=>x-y);return o[Math.floor(o.length/2)];};
-  const medHr=med(hr), medKm=med(km);
-  const glTot=lista.reduce((a,u)=>a+u.galTotal,0);
-  const totHrGl=hr.reduce((a,u)=>a+u.sumaGl,0), totHrH=hr.reduce((a,u)=>a+u.sumaRec,0);
-  const totKmGl=km.reduce((a,u)=>a+u.sumaGl,0), totKmK=km.reduce((a,u)=>a+u.sumaRec,0);
-
-  let h='<div class="rc-cards">'
-   +card('Gal\u00f3n total despachado',f0(glTot)+' gl',lista.length+' equipos')
-   +card('Maquinaria (Hr)',totHrH>0?f2(totHrGl/totHrH)+' Gl/Hr':'\u2014',hr.length+' equipos \u00b7 '+f0(totHrH)+' h')
-   +card('Veh\u00edculos (Km)',totKmGl>0?f2(totKmK/totKmGl)+' Km/Gl':'\u2014',km.length+' equipos \u00b7 '+f0(totKmK)+' km')
-   +card('Tramos descartados',lista.reduce((a,u)=>a+u.descartes,0),'retrocesos o saltos at\u00edpicos')
-   +'</div>';
-
-  h+='<div class="rc-2">'+tabla('Maquinaria &mdash; Gl/Hr <small>(menor es mejor)</small>',hr,medHr,'Hr')
-                        +tabla('Veh\u00edculos &mdash; Km/Gl <small>(mayor es mejor)</small>',km,medKm,'Km')+'</div>';
-  const sinR=lista.filter(u=>u.prom==null);
-  if(sinR.length)h+='<div class="rc-panel"><div class="rc-tit">Sin rendimiento calculable <small>(una sola carga en el periodo)</small></div>'
-    +'<div class="obs">'+sinR.map(u=>esc(u.e.cod_sap)).join(' \u00b7 ')+'</div></div>';
-  rcWrap.innerHTML=h;
-  rcWrap.querySelectorAll('tr.eq').forEach(tr=>tr.onclick=()=>{sel=tr.dataset.cod;pintar();detalle();});
-}
-const card=(l,v,s)=>`<div class="rc-c"><div class="l">${l}</div><div class="v">${v}</div><div class="s">${s}</div></div>`;
-function tabla(tit,arr,med,tipo){
-  if(!arr.length)return '<div class="rc-panel"><div class="rc-tit">'+tit+'</div><div class="vacio">Sin equipos</div></div>';
-  const ord=arr.slice().sort((a,b)=>tipo==='Hr'?a.prom-b.prom:b.prom-a.prom);
-  const mx=Math.max(...ord.map(u=>u.prom));
-  return '<div class="rc-panel"><div class="rc-tit">'+tit+'</div>'
-   +'<table class="rc"><thead><tr><th>C\u00f3d. SAP</th><th>Equipo</th><th>Cargas</th><th>Galones</th><th>'
-   +(tipo==='Hr'?'Horas':'Km')+'</th><th>Rendim.</th><th></th></tr></thead><tbody>'
-   +ord.map(u=>`<tr class="eq${sel===u.cod?' on':''}" data-cod="${esc(u.cod)}">
-      <td class="mono">${esc(u.e.cod_sap)}${u.sinCont?' <span title="Sin Contador en el Maestro" class="obs">&#9888;</span>':''}</td>
-      <td>${esc(u.e.equipo||u.desc||'')}</td>
-      <td class="c">${u.cargas}</td>
-      <td class="r">${f0(u.sumaGl)}</td>
-      <td class="r">${f0(u.sumaRec)}</td>
-      <td class="r ${nota(u.prom,med,tipo)}">${f2(u.prom)}</td>
-      <td><div class="bar"><i style="width:${Math.max(3,u.prom/mx*100)}%;background:${tipo==='Hr'?'#2E75B6':'#0f766e'}"></i></div></td>
-    </tr>`).join('')+'</tbody></table></div>';
-}
-/* ── detalle tramo a tramo ── */
-function detalle(){
-  const u=RC.find(x=>x.cod===sel); if(!u)return;
-  const uni=u.tipo==='Hr'?'Gl/Hr':'Km/Gl';
-  let h=`<div id="dWrap" style="position:fixed;inset:0;background:rgba(15,20,26,.55);z-index:9998;display:flex;align-items:flex-start;justify-content:center;padding:18px;overflow:auto">
-   <div style="background:#fff;border-radius:12px;width:min(920px,98vw);box-shadow:0 20px 60px rgba(0,0,0,.35)">
-   <div style="display:flex;align-items:center;gap:10px;padding:12px 16px;border-bottom:1px solid var(--line)">
-     <div><h3 style="font-size:14px;color:#1f3864">${esc(u.e.cod_sap)} &middot; ${esc(u.e.equipo||u.desc||'')}</h3>
-     <div style="font-size:11px;color:var(--muted);margin-top:2px">Contador ${u.tipo}${u.sinCont?' (asumido del archivo)':''} &middot; ${u.cargas} cargas &middot; promedio ponderado <b>${u.prom!=null?f2(u.prom):'—'} ${uni}</b></div></div>
-     <div style="flex:1"></div><button class="act" onclick="document.getElementById('dWrap').remove()">Cerrar</button>
-   </div>
-   <div style="padding:10px 16px 16px;max-height:70vh;overflow:auto">
-   <table class="rc"><thead><tr><th>Fecha</th><th>Contador</th><th>Galones</th><th>&Delta; ${u.tipo==='Hr'?'Horas':'Km'}</th><th>Rendim. tramo</th><th>Observaci\u00f3n</th></tr></thead><tbody>`;
-  u.tramos.forEach(t=>{
-    h+=`<tr><td>${fmtDate(t.fe.toISOString().slice(0,10))}</td>
-      <td class="r mono">${t.cont!=null?f0(t.cont):'—'}</td>
-      <td class="r">${f1(t.gl)}</td>
-      <td class="r">${t.d!=null?f0(t.d):'—'}</td>
-      <td class="r">${t.rend!=null?f2(t.rend):'—'}</td>
-      <td class="obs">${esc(t.obs||'')}</td></tr>`;});
-  h+=`</tbody></table>
-   <p style="font-size:10.5px;color:var(--muted);margin-top:8px">El promedio no es el promedio de esta columna: se suman los totales y se divide al final, para que una carga de 60 galones pese m&aacute;s que una de 5.</p>
-   </div></div></div>`;
-  document.body.insertAdjacentHTML('beforeend',h);
-  document.getElementById('dWrap').addEventListener('click',ev=>{if(ev.target.id==='dWrap')ev.target.remove();});
-}
-
-/* ── datos desde la base ── */
-let DESPACHOS=[];
-function rangoActivo(){
-  const hoy=new Date(); const iso=d=>{const z=new Date(d.getTime()-d.getTimezoneOffset()*60000);return z.toISOString().slice(0,10);};
-  const p=fPeriodo.value;
-  if(p==='4s'){const d=new Date(hoy.getTime()-28*86400000);return {desde:iso(d),hasta:iso(hoy),lab:'últimas 4 semanas'};}
-  if(p==='mes'&&fMes.value){const [a,m]=fMes.value.split('-').map(Number);
-    return {desde:iso(new Date(a,m-1,1)),hasta:iso(new Date(a,m,0)),lab:PMS_MES[m-1]+' '+a};}
-  if(p==='rango')return {desde:fDesde.value||'1900-01-01',hasta:fHasta.value||'2999-12-31',
-    lab:(fDesde.value?fmtDate(fDesde.value):'inicio')+' a '+(fHasta.value?fmtDate(fHasta.value):'hoy')};
-  return {desde:'1900-01-01',hasta:'2999-12-31',lab:'todo el historial'};
-}
-const PMS_MES=['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Setiembre','Octubre','Noviembre','Diciembre'];
-
-async function cargarDespachos(){
-  pie.textContent='Cargando despachos…';
-  const {data,error}=await sb.from('combustible').select('*').order('fecha').order('hora');
-  if(error){pie.textContent='No se pudieron cargar los despachos: '+error.message;return;}
-  DESPACHOS=data||[];
-  // meses disponibles
-  const meses=[...new Set(DESPACHOS.map(d=>String(d.fecha).slice(0,7)))].sort().reverse();
-  fMes.innerHTML=meses.map(m=>{const [a,mm]=m.split('-');return `<option value="${m}">${PMS_MES[+mm-1]} ${a}</option>`;}).join('');
-  const ps=[...new Set(DESPACHOS.map(d=>d.cod_proyec).filter(Boolean))].sort();
-  fProy.innerHTML='<option value="">Todos los proyectos</option>'+ps.map(p=>`<option>${esc(p)}</option>`).join('');
-  armar();
-}
-/* agrupa los despachos del periodo por equipo y calcula */
-function armar(){
-  const R=rangoActivo();
+/* ---------- tramos: cada par de cargas consecutivas ---------- */
+function armarTramos(){
+  const R=rango();
   const porEq=new Map();
   for(const d of DESPACHOS){
-    if(d.descartado)continue;                       // lo que se descartó al cargar no entra
+    if(d.descartado)continue;
     const f=String(d.fecha).slice(0,10);
     if(f<R.desde||f>R.hasta)continue;
-    const e=getE(d.maestro_id); if(!e)continue;     // solo equipos de la pestaña Equipos
+    const e=getE(d.maestro_id); if(!e)continue;
+    if(fProy.value&&String(e.cod_proyec||'')!==fProy.value)continue;
+    if(fFam.value&&famNom(e)!==fFam.value)continue;
+    if(fSap.value&&String(e.cod_sap||'')!==fSap.value)continue;
     const val=d.contador_corr!=null?+d.contador_corr:(d.contador!=null?+d.contador:null);
     const gl=d.galones!=null?+d.galones:null;
     if(gl==null||gl<=0)continue;
     const k=String(e.id);
-    if(!porEq.has(k))porEq.set(k,{cod:e.cod_sap,e,desc:e.equipo||'',tipoArch:'',regs:[]});
-    const ts=new Date(f+'T00:00:00').getTime()+(()=>{const p=String(d.hora||'').split(':');const a=+p[0],b=+p[1];return ((isNaN(a)?0:a)*60+(isNaN(b)?0:b))*60000;})();
-    porEq.get(k).regs.push({ts,fe:new Date(f+'T00:00:00'),val,gl});
+    if(!porEq.has(k))porEq.set(k,{e,regs:[]});
+    const hh=String(d.hora||'').split(':'),mm=((+hh[0]||0)*60+(+hh[1]||0))*60000;
+    porEq.get(k).regs.push({ts:new Date(f+'T00:00:00').getTime()+mm,fecha:f,val,gl});
   }
-  RC=[...porEq.values()].map(calcular);
-  pie.textContent=`${RC.length} equipo(s) · ${R.lab} · el Contador del Maestro define la fórmula.`;
-  sel=null; pintar();
+  const out=[];
+  for(const {e,regs} of porEq.values()){
+    regs.sort((a,b)=>a.ts-b.ts);
+    const tipo=(e.contador==='Hr'||e.contador==='Km')?e.contador:'Hr';
+    const tope=tipo==='Hr'?24:400;
+    for(let i=1;i<regs.length;i++){
+      const a=regs[i-1],b=regs[i];
+      let d=(b.val??NaN)-(a.val??NaN);
+      const dias=Math.max((b.ts-a.ts)/86400000,0.5);
+      if(!isFinite(d)||d<=0||d>tope*dias)continue;         // tramo no utilizable
+      out.push({e,tipo,fecha:b.fecha,gl:b.gl,delta:d,
+                rend: tipo==='Hr' ? b.gl/d : d/b.gl});
+    }
+  }
+  TRAMOS=out.sort((a,b)=>a.fecha.localeCompare(b.fecha));
+  return R;
 }
-fPeriodo.onchange=()=>{
-  fMes.classList.toggle('hide',fPeriodo.value!=='mes');
-  boxRango.classList.toggle('hide',fPeriodo.value!=='rango');
-  armar();
-};
-[fMes,fDesde,fHasta].forEach(x=>x.onchange=armar);
-btnRec.onclick=cargarDespachos;
+/* promedio ponderado de un conjunto de tramos */
+function prom(ts,tipo){
+  const g=ts.reduce((a,t)=>a+t.gl,0), r=ts.reduce((a,t)=>a+t.delta,0);
+  if(!g||!r)return null;
+  return tipo==='Hr' ? g/r : r/g;
+}
+const mejorMenor=t=>t==='Hr';
 
-[fTipo,fProy].forEach(s=>s.onchange=pintar); fBusca.oninput=pintar;
+/* ---------- gráfico de control ---------- */
+function svgControl(serie,tipo,media,bm,labX){
+  if(!serie.length)return '<div class="d-vacio">Sin tramos calculables en este periodo</div>';
+  const W=940,H=300,L=52,R=16,T=18,B=64,n=serie.length;
+  const vs=serie.map(p=>p.v).concat(media||[]).concat(bm?[bm.minimo,bm.maximo]:[]);
+  let lo=Math.min(...vs), hi=Math.max(...vs);
+  const pad=(hi-lo)*0.18||Math.max(hi*0.2,0.5); lo=Math.max(0,lo-pad); hi=hi+pad;
+  const y=v=>T+(hi-v)/(hi-lo)*(H-T-B);
+  const x=i=>n===1?(L+(W-L-R)/2):L+i*(W-L-R)/(n-1);
+  let g='';
+  for(let k=0;k<=5;k++){const v=lo+(hi-lo)*k/5;
+    g+=`<line x1="${L}" y1="${y(v)}" x2="${W-R}" y2="${y(v)}" stroke="#e8ebee"/>`
+      +`<text x="${L-6}" y="${y(v)+3.5}" text-anchor="end" font-size="10" fill="#404040">${f2(v)}</text>`;}
+  if(bm){
+    g+=`<rect x="${L}" y="${y(bm.maximo)}" width="${W-L-R}" height="${Math.abs(y(bm.minimo)-y(bm.maximo))}" fill="${DC.cielo}" opacity=".55"/>`
+      +`<line x1="${L}" y1="${y(bm.minimo)}" x2="${W-R}" y2="${y(bm.minimo)}" stroke="${DC.verde}" stroke-width="1.2" stroke-dasharray="4 3"/>`
+      +`<line x1="${L}" y1="${y(bm.maximo)}" x2="${W-R}" y2="${y(bm.maximo)}" stroke="${DC.rojo}" stroke-width="1.2" stroke-dasharray="4 3"/>`
+      +`<text x="${W-R-3}" y="${y(bm.maximo)-3}" text-anchor="end" font-size="9" fill="${DC.rojo}">máx ${f2(bm.maximo)}</text>`
+      +`<text x="${W-R-3}" y="${y(bm.minimo)+11}" text-anchor="end" font-size="9" fill="${DC.verde}">mín ${f2(bm.minimo)}</text>`;
+  }
+  if(media!=null){
+    g+=`<line x1="${L}" y1="${y(media)}" x2="${W-R}" y2="${y(media)}" stroke="${DC.azul}" stroke-width="1.6"/>`
+      +`<text x="${L+3}" y="${y(media)-4}" font-size="9.5" font-weight="700" fill="${DC.azul}">promedio ${f2(media)}</text>`;
+  }
+  g+=`<polyline fill="none" stroke="${DC.azul2}" stroke-width="2" points="${serie.map((p,i)=>x(i)+','+y(p.v)).join(' ')}"/>`;
+  serie.forEach((p,i)=>{
+    const fuera=bm?(p.v<bm.minimo||p.v>bm.maximo):(media!=null&&Math.abs(p.v-media)/media>0.10);
+    g+=`<circle cx="${x(i)}" cy="${y(p.v)}" r="${n>40?2.5:3.6}" fill="${fuera?DC.rojo:DC.azul2}"/>`;
+    if(n<=26)g+=`<text x="${x(i)}" y="${y(p.v)-8}" text-anchor="middle" font-size="8.5" font-weight="700" fill="${fuera?DC.rojo:DC.azul}">${f2(p.v)}</text>`;
+    if(n<=32)g+=`<text x="${x(i)}" y="${H-B+10}" text-anchor="end" font-size="8.5" fill="#404040" transform="rotate(-55 ${x(i)} ${H-B+10})">${esc(p.lab)}</text>`;
+  });
+  g+=`<text x="${(L+W-R)/2}" y="${H-4}" text-anchor="middle" font-size="9" fill="#808080">${esc(labX)}</text>`;
+  g+=`<text x="12" y="${T-4}" font-size="9" fill="#808080">${tipo==='Hr'?'Gl/Hr':'Km/Gl'}</text>`;
+  return `<svg viewBox="0 0 ${W} ${H}" class="d-svg">${g}</svg>`;
+}
+/* ---------- velocímetro ---------- */
+function svgGauge(v,lo,hi,tipo){
+  const W=300,H=200,cx=150,cy=155,rE=112,rI=64;
+  if(v==null)return '<div class="d-vacio">Sin datos</div>';
+  const a=lo-(hi-lo)*0.35, b=hi+(hi-lo)*0.35;
+  const cl=x=>Math.max(a,Math.min(b,x));
+  const ang=x=>Math.PI*(1-(cl(x)-a)/(b-a));
+  const P=(x,r)=>[cx+r*Math.cos(ang(x)),cy-r*Math.sin(ang(x))];
+  const banda=(p,q,col)=>{const[x1,y1]=P(p,rE),[x2,y2]=P(q,rE),[x3,y3]=P(q,rI),[x4,y4]=P(p,rI);
+    return `<path d="M${x1},${y1} A${rE},${rE} 0 0 1 ${x2},${y2} L${x3},${y3} A${rI},${rI} 0 0 0 ${x4},${y4} Z" fill="${col}"/>`;};
+  // en Gl/Hr lo bajo es bueno; en Km/Gl es al revés
+  const bueno=mejorMenor(tipo)?DC.verde:DC.rojo, malo=mejorMenor(tipo)?DC.rojo:DC.verde;
+  let g=banda(a,lo,bueno)+banda(lo,hi,DC.ambar)+banda(hi,b,malo);
+  [[a,f2(a)],[lo,f2(lo)],[hi,f2(hi)],[b,f2(b)]].forEach(([x,t])=>{
+    const[tx,ty]=P(x,rE+14);
+    g+=`<text x="${tx}" y="${ty+3}" text-anchor="middle" font-size="9" fill="#404040">${t}</text>`;});
+  const[nx,ny]=P(v,rE-8);
+  g+=`<line x1="${cx}" y1="${cy}" x2="${nx}" y2="${ny}" stroke="#1a1a1a" stroke-width="2.8" stroke-linecap="round"/>`
+    +`<circle cx="${cx}" cy="${cy}" r="6" fill="#1a1a1a"/>`
+    +`<text x="${cx}" y="${cy+30}" text-anchor="middle" font-size="21" font-weight="800" fill="#1a1a1a">${f2(v)}</text>`
+    +`<text x="${cx}" y="${cy+44}" text-anchor="middle" font-size="9.5" fill="#808080">${tipo==='Hr'?'Gl/Hr':'Km/Gl'}</text>`;
+  return `<svg viewBox="0 0 ${W} ${H}" class="d-svg">${g}</svg>`;
+}
 
+/* ---------- pintar todo ---------- */
+function pintar(){
+  const R=armarTramos();
+  const rot=[R.lab];
+  if(fProy.value)rot.push(fProy.value);
+  if(fFam.value)rot.push(fFam.value);
+  if(fSap.value)rot.push(fSap.value);
+  dashRotulo.textContent=rot.join(' · ');
+
+  if(!TRAMOS.length){
+    dashGraf.innerHTML='<div class="d-vacio">Sin tramos calculables con estos filtros.</div>';
+    dashGauge.innerHTML=''; dashTabla.innerHTML=''; dashAlertas.innerHTML='';
+    dashCards.innerHTML=''; dashComp.innerHTML=''; chN.textContent='0';
+    return;
+  }
+  // el tipo manda: si se mezclan Hr y Km se avisa
+  const tipos=[...new Set(TRAMOS.map(t=>t.tipo))];
+  const tipo=tipos.length===1?tipos[0]:(fTipo.value||'Hr');
+  const T=TRAMOS.filter(t=>t.tipo===tipo);
+  const media=prom(T,tipo);
+  const equipos=[...new Set(T.map(t=>t.e.id))];
+  chN.textContent=equipos.length;
+
+  // rango de referencia: si todos comparten uno, se usa
+  let bm=null;
+  const bs=equipos.map(id=>benchDe(getE(id),tipo)).filter(Boolean);
+  if(bs.length&&bs.every(b=>b.minimo===bs[0].minimo&&b.maximo===bs[0].maximo))bm=bs[0];
+  const lo=bm?bm.minimo:media*0.9, hi=bm?bm.maximo:media*1.1;
+
+  // serie del gráfico: por día o por mes
+  const key=t=>R.grano==='mes'?t.fecha.slice(0,7):t.fecha;
+  const m=new Map();
+  T.forEach(t=>{const k=key(t); if(!m.has(k))m.set(k,[]); m.get(k).push(t);});
+  const serie=[...m.entries()].sort().map(([k,ts])=>({
+    lab:R.grano==='mes'?MESES[+k.slice(5,7)-1].slice(0,3)+' '+k.slice(2,4):fmtDate(k),
+    k, v:prom(ts,tipo), gl:ts.reduce((a,t)=>a+t.gl,0), n:ts.length}));
+
+  dashTit.textContent='CONTROL DE RENDIMIENTO '+(tipo==='Hr'?'Gl/Hr (menor es mejor)':'Km/Gl (mayor es mejor)');
+  dashGraf.innerHTML=svgControl(serie,tipo,media,bm,R.grano==='mes'?'MES':'FECHA');
+  dashGaugeTit.textContent='CONSUMO PROMEDIO'+(bm?' · rango de referencia':' · ±10% del promedio');
+  dashGauge.innerHTML=svgGauge(media,lo,hi,tipo);
+
+  const glTot=T.reduce((a,t)=>a+t.gl,0), recTot=T.reduce((a,t)=>a+t.delta,0);
+  dashCards.innerHTML=
+    card('Promedio del periodo',media!=null?f2(media):'—',tipo==='Hr'?'Gl/Hr':'Km/Gl')
+   +card('Galones',f0(glTot),T.length+' tramos · '+equipos.length+' equipos')
+   +card(tipo==='Hr'?'Horas':'Kilómetros',f0(recTot),'acumulado del periodo')
+   +card('Referencia',bm?f2(bm.minimo)+' – '+f2(bm.maximo):'±10%',bm?(bm.obs||'de la tabla de benchmark'):'sin benchmark definido');
+
+  tablaResumen(T,tipo,lo,hi,bm);
+  alertas(T,tipo,lo,hi,bm,media);
+  comparativa(T,tipo);
+}
+const card=(l,v,s)=>`<div class="dc"><div class="dc-l">${l}</div><div class="dc-v">${v}</div><div class="dc-s">${s}</div></div>`;
+
+/* ---------- cuadro resumen con desglose según el filtro ---------- */
+function tablaResumen(T,tipo,lo,hi,bm){
+  let modo,titulo;
+  if(fSap.value){modo='dia';   titulo='Detalle por día · '+fSap.value;}
+  else if(fFam.value){modo='sap'; titulo='Equipos de '+fFam.value;}
+  else {modo='fam'; titulo='Por tipo de equipo'+(fProy.value?' · '+fProy.value:'');}
+
+  const m=new Map();
+  T.forEach(t=>{
+    const k = modo==='dia'?t.fecha : modo==='sap'?t.e.cod_sap : famNom(t.e);
+    if(!m.has(k))m.set(k,{k,ts:[],eq:new Set()});
+    m.get(k).ts.push(t); m.get(k).eq.add(t.e.id);
+  });
+  let arr=[...m.values()].map(o=>({...o,
+    n:o.ts.length, gl:o.ts.reduce((a,t)=>a+t.gl,0), rec:o.ts.reduce((a,t)=>a+t.delta,0),
+    v:prom(o.ts,tipo)}));
+  arr.sort(modo==='dia' ? (a,b)=>a.k.localeCompare(b.k)
+                        : (a,b)=>mejorMenor(tipo)?a.v-b.v:b.v-a.v);
+  const mx=Math.max(...arr.map(o=>o.v||0))||1;
+  const fuera=v=>v!=null&&(bm?(v<lo||v>hi):(v<lo||v>hi));
+  const cab=modo==='dia'?'Fecha':(modo==='sap'?'Cód. SAP':'Tipo de equipo');
+  dashTablaTit.textContent=titulo;
+  dashTabla.innerHTML=`<table class="rc"><thead><tr>
+      <th>${cab}</th>${modo==='fam'?'<th>Equipos</th>':''}<th>Cargas</th><th>Galones</th>
+      <th>${tipo==='Hr'?'Horas':'Km'}</th><th>Rendim.</th><th></th></tr></thead><tbody>
+    ${arr.map(o=>`<tr class="${modo!=='dia'?'eq':''}" data-k="${esc(o.k)}">
+      <td class="${modo==='sap'?'mono':''}">${modo==='dia'?fmtDate(o.k):esc(o.k)}</td>
+      ${modo==='fam'?`<td class="c">${o.eq.size}</td>`:''}
+      <td class="c">${o.n}</td><td class="r">${f0(o.gl)}</td><td class="r">${f0(o.rec)}</td>
+      <td class="r ${fuera(o.v)?'b-bad':'b-ok'}">${f2(o.v)}</td>
+      <td><div class="bar"><i style="width:${Math.max(3,(o.v/mx)*100)}%;background:${fuera(o.v)?DC.rojo:DC.azul2}"></i></div></td>
+    </tr>`).join('')}</tbody></table>
+    ${modo!=='dia'?'<div class="hint">Haz clic en una fila para bajar un nivel de detalle.</div>':''}`;
+  // clic para profundizar
+  dashTabla.querySelectorAll('tr.eq').forEach(tr=>tr.onclick=()=>{
+    if(modo==='fam'){fFam.value=tr.dataset.k;}
+    else if(modo==='sap'){fSap.value=tr.dataset.k;}
+    pintar();
+  });
+}
+/* ---------- alertas de desviación ---------- */
+function alertas(T,tipo,lo,hi,bm,media){
+  const m=new Map();
+  T.forEach(t=>{const k=t.e.cod_sap; if(!m.has(k))m.set(k,{e:t.e,ts:[]}); m.get(k).ts.push(t);});
+  // Sin benchmark, cada equipo se compara contra la mediana de SU MISMO TIPO,
+  // no contra el promedio general: una torre no se mide contra un volquete.
+  const porFam=new Map();
+  for(const {e,ts} of m.values()){
+    const v=prom(ts,tipo); if(v==null)continue;
+    const f=famNom(e); if(!porFam.has(f))porFam.set(f,[]); porFam.get(f).push(v);
+  }
+  const medFam=new Map([...porFam].map(([k,a])=>{const s=a.slice().sort((x,y)=>x-y);return [k,s[Math.floor(s.length/2)]];}));
+  const malos=[];
+  for(const {e,ts} of m.values()){
+    const b=benchDe(e,tipo);
+    const mf=medFam.get(famNom(e))||media;
+    const L=b?b.minimo:mf*0.85, H=b?b.maximo:mf*1.15;
+    const v=prom(ts,tipo); if(v==null)continue;
+    if(v<L||v>H){
+      const exceso=v>H?((v/H-1)*100):((L/v-1)*100);
+      malos.push({sap:e.cod_sap,eq:e.equipo||'',fam:famNom(e),v,L,H,exceso,
+        alto:v>H, ref:b?'referencia':'típico de '+famNom(e), gl:ts.reduce((a,t)=>a+t.gl,0)});
+    }
+  }
+  malos.sort((a,b)=>b.exceso-a.exceso);
+  if(!malos.length){
+    dashAlertas.innerHTML='<div class="ok-msg">✔ Todos los equipos están dentro de su rango de referencia.</div>';return;
+  }
+  dashAlertas.innerHTML=malos.map(o=>{
+    const peor=mejorMenor(tipo)?o.alto:!o.alto;      // en Gl/Hr, alto = malo
+    return `<div class="al ${peor?'al-bad':'al-ok'}">
+      <b class="mono">${esc(o.sap)}</b> <span class="al-eq">${esc(o.eq)}</span>
+      <span class="al-v">${f2(o.v)} ${tipo==='Hr'?'Gl/Hr':'Km/Gl'}</span>
+      <span class="al-d">${peor?'consume':'rinde'} ${f1(o.exceso)}% ${o.alto?'por encima':'por debajo'} del rango ${f2(o.L)}–${f2(o.H)} <i>(${o.ref})</i></span>
+      <span class="al-g">${f0(o.gl)} gl</span></div>`;}).join('');
+}
+/* ---------- comparativa de eficiencia entre unidades ---------- */
+function comparativa(T,tipo){
+  // Índice = rendimiento del equipo ÷ mediana de su familia.
+  // Así se puede comparar una excavadora con un volquete en la misma escala.
+  const porEq=new Map();
+  T.forEach(t=>{const k=t.e.cod_sap; if(!porEq.has(k))porEq.set(k,{e:t.e,ts:[]}); porEq.get(k).ts.push(t);});
+  const eqs=[...porEq.values()].map(o=>({e:o.e,fam:famNom(o.e),v:prom(o.ts,tipo),
+    gl:o.ts.reduce((a,t)=>a+t.gl,0)})).filter(o=>o.v!=null);
+  if(eqs.length<2){dashComp.innerHTML='<div class="d-vacio">Se necesitan al menos dos equipos para comparar.</div>';return;}
+  const porFam=new Map();
+  eqs.forEach(o=>{if(!porFam.has(o.fam))porFam.set(o.fam,[]);porFam.get(o.fam).push(o.v);});
+  const med=new Map([...porFam].map(([k,a])=>{const s=a.slice().sort((x,y)=>x-y);return [k,s[Math.floor(s.length/2)]];}));
+  eqs.forEach(o=>{
+    const m=med.get(o.fam)||o.v;
+    o.idx = mejorMenor(tipo) ? m/o.v : o.v/m;      // >1 siempre significa mejor
+  });
+  eqs.sort((a,b)=>b.idx-a.idx);
+  const glTot=eqs.reduce((a,o)=>a+o.gl,0);
+  const barra=o=>{const p=Math.max(4,Math.min(100,o.idx*50));
+    const col=o.idx>=1.05?DC.verde:(o.idx>=0.95?DC.ambar:DC.rojo);
+    return `<div class="bar"><i style="width:${p}%;background:${col}"></i></div>`;};
+  dashComp.innerHTML=`<table class="rc"><thead><tr>
+      <th>Cód. SAP</th><th>Tipo</th><th>Rendim.</th><th>Índice</th><th></th><th>Galones</th><th>% del gasto</th></tr></thead><tbody>
+    ${eqs.map(o=>`<tr>
+      <td class="mono">${esc(o.e.cod_sap)}</td><td>${esc(o.fam)}</td>
+      <td class="r">${f2(o.v)}</td>
+      <td class="r ${o.idx>=1.05?'b-ok':(o.idx>=0.95?'b-mid':'b-bad')}">${f2(o.idx)}</td>
+      <td>${barra(o)}</td>
+      <td class="r">${f0(o.gl)}</td>
+      <td class="r">${f1(o.gl/glTot*100)}%</td></tr>`).join('')}
+    </tbody></table>
+    <div class="hint">Índice = rendimiento del equipo comparado con la mediana de su mismo tipo.
+      <b>1,00</b> es el equipo típico de su familia; <b>1,20</b> rinde 20% mejor; <b>0,80</b>, 20% peor.
+      La columna de galones muestra cuánto pesa cada equipo en el gasto: conviene atender primero
+      a los que tienen índice bajo <i>y</i> mucho consumo.</div>`;
+}
+
+
+/* ---------- filtros ---------- */
+function poblarFiltros(){
+  const anios=[...new Set(DESPACHOS.map(d=>String(d.fecha).slice(0,4)))].sort().reverse();
+  const act=String(new Date().getFullYear());
+  const lista=anios.length?anios:[act];
+  fAnio.innerHTML=lista.map(a=>`<option ${a===(lista.includes(act)?act:lista[0])?'selected':''}>${a}</option>`).join('');
+  fMes.innerHTML='<option value="">Todos</option>'+MESES.map((m,i)=>`<option value="${i}">${m}</option>`).join('');
+  fSem.innerHTML='<option value="">Todas</option>'+Array.from({length:53},(_,i)=>i+1).map(w=>`<option value="${w}">Semana ${w}</option>`).join('');
+  const ps=[...new Set(DESPACHOS.map(d=>d.cod_proyec).filter(Boolean))].sort();
+  fProy.innerHTML='<option value="">Todos</option>'+ps.map(p=>`<option>${esc(p)}</option>`).join('');
+  refrescarDependientes();
+}
+/* Tipo de equipo y Cód. SAP se limitan a lo que existe según los filtros de arriba */
+function refrescarDependientes(){
+  const eqs=[...new Set(DESPACHOS.map(d=>d.maestro_id))].map(id=>getE(id)).filter(Boolean)
+    .filter(e=>!fProy.value||String(e.cod_proyec||'')===fProy.value);
+  const fams=[...new Set(eqs.map(famNom))].sort();
+  const famActual=fFam.value;
+  fFam.innerHTML='<option value="">Todos</option>'+fams.map(f=>`<option>${esc(f)}</option>`).join('');
+  if(fams.includes(famActual))fFam.value=famActual;
+  const saps=[...new Set(eqs.filter(e=>!fFam.value||famNom(e)===fFam.value).map(e=>e.cod_sap))].sort();
+  const sapActual=fSap.value;
+  fSap.innerHTML='<option value="">Todos</option>'+saps.map(s=>`<option>${esc(s)}</option>`).join('');
+  if(saps.includes(sapActual))fSap.value=sapActual;
+}
+[fAnio,fMes,fSem].forEach(s=>s.onchange=pintar);
+fProy.onchange=()=>{fFam.value='';fSap.value='';refrescarDependientes();pintar();};
+fFam.onchange =()=>{fSap.value='';refrescarDependientes();pintar();};
+fSap.onchange =pintar;
+btnLimpiar.onclick=()=>{fMes.value='';fSem.value='';fProy.value='';fFam.value='';fSap.value='';refrescarDependientes();pintar();};
 btnXls.onclick=()=>{
-  if(!RC)return;
-  const ft=fTipo.value,fp=fProy.value,q=nrm(fBusca.value);
-  const lista=RC.filter(u=>(!ft||u.tipo===ft)&&(!fp||String(u.e.cod_proyec||'')===fp)
-    &&(!q||nrm((u.e.cod_sap)+' '+(u.e&&u.e.equipo||u.desc)).includes(q)));
-  const rows=lista.map(u=>({'Cód. SAP':u.e.cod_sap,'Equipo':u.e.equipo||u.desc||'',
-    'Proyecto':u.e.cod_proyec||'','Contador':u.tipo,'Cargas':u.cargas,
-    'Galones':+u.sumaGl.toFixed(1),[u.tipo==='Hr'?'Horas':'Km']:+u.sumaRec.toFixed(1),
-    'Rendimiento':u.prom!=null?+u.prom.toFixed(3):'',
-    'Unidad':u.tipo==='Hr'?'Gl/Hr':'Km/Gl','Tramos descartados':u.descartes}));
+  if(!TRAMOS.length)return alert('No hay datos para exportar.');
+  const rows=TRAMOS.map(t=>({'Fecha':t.fecha,'Cód. SAP':t.e.cod_sap,'Equipo':t.e.equipo||'',
+    'Proyecto':t.e.cod_proyec||'','Tipo de equipo':famNom(t.e),'Contador':t.tipo,
+    'Galones':+t.gl.toFixed(1),[t.tipo==='Hr'?'Horas':'Km']:+t.delta.toFixed(1),
+    'Rendimiento':+t.rend.toFixed(3),'Unidad':t.tipo==='Hr'?'Gl/Hr':'Km/Gl'}));
   const ws=XLSX.utils.json_to_sheet(rows);
-  ws['!cols']=[{wch:11},{wch:30},{wch:10},{wch:9},{wch:8},{wch:10},{wch:10},{wch:12},{wch:8},{wch:10}];
+  ws['!cols']=[{wch:11},{wch:11},{wch:28},{wch:10},{wch:20},{wch:9},{wch:9},{wch:9},{wch:11},{wch:8}];
   const wb=XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb,ws,'Rendimiento');
-  XLSX.writeFile(wb,'Rendimiento_combustible_'+new Date().toISOString().slice(0,10)+'.xlsx');
+  XLSX.writeFile(wb,'Rendimiento_'+new Date().toISOString().slice(0,10)+'.xlsx');
 };
 
-/* ── arranque ── */
+/* ---------- arranque ---------- */
 (async()=>{
   const {data:{session}}=await sb.auth.getSession();
   if(!session){document.body.innerHTML='<div style="padding:60px;text-align:center"><h2 style="font-size:18px">Sesi\u00f3n no iniciada</h2><p style="color:#6b747d">Ingresa en la p\u00e1gina principal.</p></div>';return;}
   const {data:p}=await sb.from('profiles').select('id,nombre,rol,estado,paginas').eq('id',session.user.id).single();
-  perfil=p||{}; who.textContent=(perfil.nombre||session.user.email)+' · '+(perfil.rol||'');
+  perfil=p||{};
   if(perfil.estado!=='aprobado'||(perfil.rol!=='admin'&&!(Array.isArray(perfil.paginas)&&perfil.paginas.includes('comb')))){
     document.body.innerHTML='<div style="padding:60px;text-align:center;font-family:sans-serif">'
      +'<h2 style="font-size:18px;margin-bottom:10px">Sin acceso a Combustible</h2>'
      +'<p style="color:#6b747d">Un administrador debe habilitarte esta pesta&ntilde;a desde Usuarios.</p></div>';return;}
   const {data:m,error}=await sb.from('maestro').select(CAMPOS).order('cod_proyec').order('id');
-  if(error){pie.textContent='No se pudo cargar el maestro: '+error.message;return;}
+  if(error){dashRotulo.textContent='No se pudo cargar el maestro: '+error.message;return;}
   datos=m||[]; reindexDatos();
-  fPeriodo.onchange();          // deja visible el control que corresponda
-  await cargarDespachos();
+  const {data:bm}=await sb.from('benchmark').select('*');
+  BENCH=bm||[];
+  const {data:dp,error:e2}=await sb.from('combustible').select('*').order('fecha').order('hora');
+  if(e2){dashRotulo.textContent='No se pudieron cargar los despachos: '+e2.message;return;}
+  DESPACHOS=dp||[];
+  poblarFiltros(); pintar();
 })();
 </script>
 </body>
