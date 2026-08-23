@@ -221,6 +221,8 @@
   .cbq-h{font-size:12px;color:#1f3864;margin-bottom:5px;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
   .cbq-t{background:#e8f0fe;color:#1d4ed8;border-radius:999px;padding:1px 8px;font-size:10px;font-weight:800}
   .cbq-n{color:#B45309;font-size:10.5px;margin-left:auto}
+  .cbq-tq{background:#e8f0fe;color:#1d4ed8;border-radius:999px;padding:1px 8px;font-size:10px;font-weight:700}
+  table.cbt input.cbg{width:74px;border:1px solid #f87171;border-radius:5px;padding:1px 4px;font-size:11.5px;text-align:right;margin-top:2px}
   table.cbt{width:100%;border-collapse:collapse;font-size:11.5px}
   table.cbt th{background:#f1f4f7;color:#1f3864;font-size:9.5px;text-transform:uppercase;letter-spacing:.3px;padding:3px 6px;text-align:left;line-height:1.2}
   table.cbt td{padding:2px 6px;border-bottom:1px solid #eef1f4}
@@ -336,8 +338,8 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
 /* ╔══ pega aquí tus DOS datos (los mismos de tu archivo actual) ══╗ */
-const SUPABASE_URL = "https://hklwvdhzltjsbfvlewbu.supabase.co";   // ← reemplaza
-const SUPABASE_KEY = "sb_publishable_NgDfyDHDI_KByR-qf35EpA_ZuKI5E0K";                 // ← reemplaza
+const SUPABASE_URL = "https://TU-PROYECTO.supabase.co";   // ← reemplaza
+const SUPABASE_KEY = "TU-PUBLISHABLE-KEY";                 // ← reemplaza
 /* ──────────────────────────────────────────────────────────────── */
 const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 try{localStorage.setItem('gllr_sbcfg',JSON.stringify({url:SUPABASE_URL,key:SUPABASE_KEY}));}catch(_){}
@@ -612,7 +614,7 @@ btnOut.onclick=gateOut.onclick=()=>sb.auth.signOut();
 function hoy0(){const d=new Date();d.setHours(0,0,0,0);return d;}
 function dias(a,b){return Math.round((a-b)/86400000);}
 function isoWeek(d){const t=new Date(Date.UTC(d.getFullYear(),d.getMonth(),d.getDate()));const dn=t.getUTCDay()||7;t.setUTCDate(t.getUTCDate()+4-dn);const y=new Date(Date.UTC(t.getUTCFullYear(),0,1));return Math.ceil(((t-y)/86400000+1)/7);}
-const CAMPOS="id,status,cod_proyec,familia,cod_sap,equipo,marca,modelo,serie_placa,anio,color,potencia,capacidad,peso_bruto,tanque_comb,fecha_ingreso,hrkm_ingreso,nivel_comb_ing,chk_ingreso,inf_ingreso,ubic_ingreso,fecha_desmov,hrkm_salida,nivel_comb_sal,chk_salida,inf_salida,ubic_salida,propietario,certif_operat,soat,poliza,rev_tec,tarjeta_circ,hrkm_actual,fecha_lectura,hr_dia,contador,hrkm_ult_mntto,fecha_ult_mntto,pm_realizado,frecuencia,obs,updated_at";
+const CAMPOS="id,status,cod_proyec,familia,cod_sap,equipo,marca,modelo,serie_placa,anio,color,potencia,capacidad,peso_bruto,tanque_comb,fecha_ingreso,hrkm_ingreso,nivel_comb_ing,chk_ingreso,inf_ingreso,ubic_ingreso,fecha_desmov,hrkm_salida,nivel_comb_sal,chk_salida,inf_salida,ubic_salida,propietario,certif_operat,soat,poliza,rev_tec,tarjeta_circ,hrkm_actual,fecha_lectura,hr_dia,contador,tanque_comb,hrkm_ult_mntto,fecha_ult_mntto,pm_realizado,frecuencia,obs,updated_at";
 function roundToFreq(V,F){
   V=Number(V)||0; F=Number(F)||0;
   if(F<=0)return Math.round(V);
@@ -1471,7 +1473,11 @@ function horEmparejar(regs){
    avance por día supera lo físicamente posible.                        */
 function horDetectar(u){
   const L=u.lecturas, tope=HOR_TOPE[u.tipo]||24;
-  L.forEach(l=>{l.mal='';l.sug=null;});
+  L.forEach(l=>{l.mal='';l.sug=null;l.malGl='';});
+  // el abastecimiento no puede superar la capacidad del tanque (Datos Técnicos)
+  const tq=Number(String(u.e&&u.e.tanque_comb||'').replace(/[^0-9.,]/g,'').replace(',','.'));
+  if(isFinite(tq)&&tq>0)L.forEach(l=>{
+    if(l.gl!=null&&l.gl>tq)l.malGl=`${fmtN1(l.gl)} gl supera el tanque de ${fmtN1(tq)} gl`;});
   const V=L.filter(l=>l.val!=null);
   // 1) picos aislados: un valor que sobresale de sus dos vecinos más allá de lo posible.
   //    Se marcan primero para que no arrastren a la lectura siguiente.
@@ -1539,8 +1545,8 @@ const horVal=l=>(l.corr!=null?l.corr:l.val);
 
 /* ═══════════ PASO 1 · cuadro de correcciones ═══════════ */
 function horCorregir(regs,nomArchivo,seguir){
-  const conProb=regs.filter(u=>u.e&&horDetectar(u)>0);
-  regs.filter(u=>u.e&&!conProb.includes(u)).forEach(u=>horDetectar(u));
+  regs.forEach(u=>{if(u.e)horDetectar(u);});
+  const conProb=regs.filter(u=>u.e&&u.lecturas.some(l=>l.mal||l.malGl));
   if(!conProb.length){seguir(regs);return;}
 
   const bloque=u=>{
@@ -1548,20 +1554,22 @@ function horCorregir(regs,nomArchivo,seguir){
     return `<div class="cbq">
       <div class="cbq-h"><b class="mono">${esc(u.e.cod_sap)}</b> ${esc(u.e.equipo||u.desc||'')}
         <span class="cbq-t">${u.tipo}</span>
-        <span class="cbq-n">${L.filter(l=>l.mal).length} de ${L.length} lectura(s) a revisar</span></div>
+        ${u.e&&u.e.tanque_comb?`<span class="cbq-tq">tanque ${esc(String(u.e.tanque_comb))} gl</span>`:''}
+        <span class="cbq-n">${L.filter(l=>l.mal||l.malGl).length} de ${L.length} lectura(s) a revisar</span></div>
       <table class="cbt"><thead><tr>
         <th>Fecha</th><th>Hora</th><th>Vale</th><th>KM/HM</th><th>GLN</th>
         <th>Valor probable<br><small>(cálculo)</small></th><th>Corregir</th><th>Descartar</th></tr></thead><tbody>
-      ${L.map(l=>`<tr class="${l.mal?'bad':''}">
+      ${L.map(l=>`<tr class="${(l.mal||l.malGl)?'bad':''}">
         <td>${fmtDate(l.fecIso)}</td><td class="c">${esc(l.hora||'')}</td><td class="c mono">${esc(l.vale||'')}</td>
         <td class="r mono ${l.mal?'hl':''}" title="${esc(l.mal||'')}">${l.val!=null?fmtNum(l.val):'—'}</td>
-        <td class="r">${l.gl!=null?fmtN1(l.gl):'—'}</td>
+        <td class="r ${l.malGl?'hl':''}" title="${esc(l.malGl||'')}">${l.gl!=null?fmtN1(l.gl):'—'}</td>
         <td class="r sug">${l.sug!=null?fmtNum(l.sug):''}</td>
-        <td>${l.mal?`<input class="cbi" type="number" data-k="${esc(l.k)}" value="${l.sug!=null?l.sug:''}" placeholder="${l.val!=null?l.val:''}">`:''}</td>
-        <td class="c">${l.mal?`<input type="checkbox" class="cbd" data-k="${esc(l.k)}">`:''}</td>
+        <td>${l.mal?`<input class="cbi" type="number" data-k="${esc(l.k)}" value="${l.sug!=null?l.sug:''}" placeholder="${l.val!=null?l.val:''}">`:''}
+             ${l.malGl?`<input class="cbg" type="number" step="0.1" data-k="${esc(l.k)}" value="${l.gl}" title="Galones a corregir">`:''}</td>
+        <td class="c">${(l.mal||l.malGl)?`<input type="checkbox" class="cbd" data-k="${esc(l.k)}">`:''}</td>
       </tr>`).join('')}
       </tbody></table>
-      ${L.filter(l=>l.mal).map(l=>`<div class="cbm">${fmtDate(l.fecIso)}: ${esc(l.mal)}</div>`).join('')}
+      ${L.filter(l=>l.mal||l.malGl).map(l=>`<div class="cbm">${fmtDate(l.fecIso)}: ${esc([l.mal,l.malGl].filter(Boolean).join(' · '))}</div>`).join('')}
     </div>`;
   };
 
@@ -1591,11 +1599,18 @@ function horCorregir(regs,nomArchivo,seguir){
       const v=Number(i.value); if(i.value!==''&&isFinite(v)&&v>0)corr.set(i.dataset.k,v);
     });
     document.querySelectorAll('#cbWrap .cbd:checked').forEach(c=>desc.add(c.dataset.k));
+    const cgl=new Map();
+    document.querySelectorAll('#cbWrap .cbg').forEach(i=>{
+      const v=Number(i.value); if(i.value!==''&&isFinite(v)&&v>0)cgl.set(i.dataset.k,v);});
     // se aplican las decisiones sobre las lecturas
     regs.forEach(u=>u.lecturas.forEach(l=>{
       if(desc.has(l.k)){l.descartar=true;l.obs='descartado manualmente';}
       else if(corr.has(l.k)){l.corr=corr.get(l.k);l.obs=`corregido de ${l.val} a ${corr.get(l.k)}`;}
       else if(l.mal){l.descartar=true;l.obs='sin corregir: '+l.mal;}
+      if(cgl.has(l.k)&&cgl.get(l.k)!==l.gl){
+        l.obs=(l.obs?l.obs+' · ':'')+`galones corregidos de ${l.gl} a ${cgl.get(l.k)}`;
+        l.gl=cgl.get(l.k);
+      }else if(l.malGl&&!desc.has(l.k)){ l.obs=(l.obs?l.obs+' · ':'')+l.malGl; }
     }));
     cerrar(); seguir(regs);
   };

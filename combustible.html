@@ -170,18 +170,24 @@
   table.rc td{padding:3px 6px;border-bottom:1px solid #eef1f4}
   table.rc td.r{text-align:right}table.rc td.c{text-align:center}
   table.rc tr:hover td{background:#f7fbff}
+
+  /* el encabezado se alinea con su columna */
+  table.rc th.r{text-align:right}
+  table.rc th.c{text-align:center}
   table.rc tr.eq{cursor:pointer}
   .b-ok{color:#15803d;font-weight:800}.b-mid{color:#B45309;font-weight:800}.b-bad{color:#dc2626;font-weight:800}
   .bar{height:7px;border-radius:4px;background:#eef1f4;position:relative;overflow:hidden;min-width:56px}
   .bar i{position:absolute;left:0;top:0;height:100%;border-radius:4px}
   /* dashboard */
-  #dWrap,#bmWrap{position:fixed;inset:0;background:rgba(15,20,26,.6);z-index:9997;display:flex;align-items:flex-start;justify-content:center;overflow:auto;padding:12px}
+  #dWrap,#bmWrap,#dpWrap{position:fixed;inset:0;background:rgba(15,20,26,.6);z-index:9997;display:flex;align-items:flex-start;justify-content:center;overflow:auto;padding:12px}
   #dCard{background:#fff;border:2px solid #2E75B6;border-radius:9px;padding:8px;width:min(1560px,99vw)}
   #bmCard{background:#fff;border-radius:12px;width:min(1080px,98vw);box-shadow:0 20px 60px rgba(0,0,0,.35)}
   .dh-tit{border:2px solid #2E75B6;border-radius:5px;text-align:center;font-size:27px;font-weight:800;color:#1F3864;letter-spacing:.5px;padding:2px}
   .dh-dep{background:#DEEBF7;text-align:center;font-size:11px;font-weight:800;color:#1F3864;letter-spacing:.6px;padding:2px;margin-top:3px}
   .dh-sub{border:2px solid #2E75B6;border-radius:5px;text-align:center;font-size:19px;font-weight:700;color:#1F3864;padding:2px;margin-top:3px}
-  .d-body{display:grid;grid-template-columns:158px 1fr 320px;gap:7px;margin-top:7px;align-items:start}
+  .d-body{display:grid;grid-template-columns:158px 1fr;gap:7px;margin-top:7px;align-items:start}
+  .d-g2{display:grid;grid-template-columns:1fr 300px;gap:7px;margin-top:7px}
+  .d-g2>.d-panel{margin-top:0}
   .d-side{display:flex;flex-direction:column;gap:6px}
   .d-logo{border:1px solid #BFD7EE;border-radius:6px;padding:8px;text-align:center;line-height:1.05}
   .d-logo b{font-size:24px;font-weight:800;color:#1F3864;letter-spacing:1px}
@@ -212,6 +218,12 @@
   .d-pie{margin-top:7px;font-size:10px;color:#6b747d;line-height:1.6;background:#fff;border:1px solid #dde3e9;border-radius:9px;padding:7px 10px}
   .d-pie b{color:#1F3864}
   /* rangos */
+
+  #dpCard{background:#fff;border-radius:12px;width:min(1180px,98vw);box-shadow:0 20px 60px rgba(0,0,0,.35)}
+  .dpi{width:92px;border:1px solid var(--line);border-radius:5px;padding:1px 4px;font-size:11.5px;text-align:right}
+  .dpi.dpo{width:150px;text-align:left}
+  .dpi.exc{border-color:#dc2626;background:#fef2f2;color:#b91c1c;font-weight:700}
+  .dpi.ok{border-color:#15803d;background:#f0fdf4}
   .bmh{display:flex;align-items:center;gap:10px;padding:12px 16px;border-bottom:1px solid var(--line)}
   .bmh h3{font-size:15px;color:#1f3864}
   .bmb{padding:10px 16px 16px;max-height:72vh;overflow:auto}
@@ -221,7 +233,7 @@
   .bm-new{display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin-top:10px;padding-top:10px;border-top:1px dashed var(--line)}
   .bm-new input,.bm-new select{padding:4px 7px;border:1px solid var(--line);border-radius:6px;font-size:11.5px}
   td.nota{color:#98a2ad;font-size:10px}
-  @media(max-width:1200px){.d-body{grid-template-columns:1fr}.d-cards{grid-template-columns:repeat(2,1fr)}}
+  @media(max-width:1200px){.d-body,.d-g2{grid-template-columns:1fr}.d-cards{grid-template-columns:repeat(2,1fr)}}
 </style>
 </head>
 <body>
@@ -245,6 +257,7 @@
   <span class="chip" id="chN">&mdash;</span>
   <div class="spacer"></div>
   <button class="act blue" id="btnDash">&#128202; Dashboard</button>
+  <button class="act" id="btnDesp">&#129534; Despachos</button>
   <button class="act" id="btnBench">&#9878; Rangos de referencia</button>
   <button class="act" id="btnXls" disabled>&#8681; Excel</button>
   <button class="act" id="btnRec">&#8635;</button>
@@ -267,6 +280,8 @@
       <label class="d-f"><select id="dProy"></select><i>PROYECTO</i></label>
       <label class="d-f"><select id="dFam"></select><i>TIPO DE EQUIPO</i></label>
       <label class="d-f"><select id="dSap"></select><i>C&Oacute;D. SAP</i></label>
+      <label class="d-f"><select id="dGrano"></select><i>AGRUPAR EJE X</i></label>
+      <button class="d-btn" id="dVolver" disabled>&#8592; Volver</button>
       <button class="d-btn" id="dLimpiar">Limpiar filtros</button>
       <button class="d-btn d-btn-x" id="dCerrar">&#10005; Cerrar</button>
       <div style="text-align:center;font-size:10px;color:#808080">equipos: <b id="dN">0</b></div>
@@ -274,18 +289,28 @@
     <main>
       <div class="d-cards" id="dCards"></div>
       <div class="d-panel"><div class="d-pt" id="dTit">CONTROL DE RENDIMIENTO</div><div id="dGraf"></div></div>
-      <div class="d-panel"><div class="d-pt" id="dTablaTit">Resumen</div><div id="dTabla"></div></div>
+      <div class="d-g2">
+        <div class="d-panel"><div class="d-pt" id="dTablaTit">Resumen</div><div id="dTabla"></div></div>
+        <div class="d-panel"><div class="d-pt" id="dGaugeTit">CONSUMO PROMEDIO</div><div id="dGauge"></div></div>
+      </div>
       <div class="d-panel"><div class="d-pt">ALERTAS DE DESVIACI&Oacute;N</div><div id="dAlertas"></div></div>
     </main>
-    <aside>
-      <div class="d-panel"><div class="d-pt" id="dGaugeTit">CONSUMO PROMEDIO</div><div id="dGauge"></div></div>
-      <div class="d-panel"><div class="d-pt">COMPARATIVA DE EFICIENCIA</div><div id="dComp"></div></div>
-    </aside>
   </div>
   <div class="d-pie"><b>C&oacute;mo se calcula</b> &middot; Maquinaria: galones &divide; horas (menor es mejor) &middot;
     Veh&iacute;culos: kil&oacute;metros &divide; galones (mayor es mejor) &middot; promedio ponderado &middot;
     el <b>Contador</b> del equipo define la f&oacute;rmula &middot; la banda del gr&aacute;fico sale de
     <b>Rangos de referencia</b>; sin rango, cada equipo se compara con la mediana de su familia.</div>
+</div></div>
+
+<!-- ══ Despachos: corregir datos cargados ══ -->
+<div id="dpWrap" class="hide"><div id="dpCard">
+  <div class="bmh"><div><h3>Despachos cargados</h3>
+    <div style="font-size:11px;color:var(--muted);margin-top:2px">Corrige el contador o los galones, o marca un despacho para que no entre al c&aacute;lculo. El dato original nunca se pierde.</div></div>
+    <div class="spacer"></div>
+    <input type="search" id="dpBusca" placeholder="C&oacute;d. SAP…" style="width:150px">
+    <select id="dpFiltro"><option value="">Todos</option><option value="corr">Corregidos</option><option value="desc">Descartados</option><option value="tq">Sobre el tanque</option></select>
+    <button class="act" id="dpCerrar">Cerrar</button></div>
+  <div class="bmb" id="dpTabla"></div>
 </div></div>
 
 <!-- ══ Rangos de referencia ══ -->
@@ -336,7 +361,7 @@ function mant(e){
 let DIDX=new Map();
 function reindexDatos(){DIDX=new Map(datos.map(e=>[String(e.id),e]));}
 function getE(id){return DIDX.get(String(id))||null;}
-const CAMPOS="id,cod_proyec,cod_sap,equipo,marca,modelo,serie_placa,familia,status,contador,hr_dia,hrkm_actual";
+const CAMPOS="id,cod_proyec,cod_sap,equipo,marca,modelo,serie_placa,familia,status,contador,tanque_comb,hr_dia,hrkm_actual";
 
 /* ═══════════════════ RENDIMIENTO DE COMBUSTIBLE ═══════════════════
    Hr → Gl/Hr (menor es mejor) · Km → Km/Gl (mayor es mejor)
@@ -476,8 +501,8 @@ function svgControl(serie,tipo,media,bm,labX){
     g+=`<rect x="${L}" y="${y(bm.maximo)}" width="${W-L-R}" height="${Math.abs(y(bm.minimo)-y(bm.maximo))}" fill="${DC.cielo}" opacity=".55"/>`
       +`<line x1="${L}" y1="${y(bm.minimo)}" x2="${W-R}" y2="${y(bm.minimo)}" stroke="${DC.verde}" stroke-width="1.2" stroke-dasharray="4 3"/>`
       +`<line x1="${L}" y1="${y(bm.maximo)}" x2="${W-R}" y2="${y(bm.maximo)}" stroke="${DC.rojo}" stroke-width="1.2" stroke-dasharray="4 3"/>`
-      +`<text x="${W-R-3}" y="${y(bm.maximo)-3}" text-anchor="end" font-size="9" fill="${DC.rojo}">máx ${f2(bm.maximo)}</text>`
-      +`<text x="${W-R-3}" y="${y(bm.minimo)+11}" text-anchor="end" font-size="9" fill="${DC.verde}">mín ${f2(bm.minimo)}</text>`;
+      +`<text x="${W-R-3}" y="${y(bm.maximo)-3}" text-anchor="end" font-size="9" fill="${DC.rojo}">máx ${f2(bm.maximo)}${bm.auto?' (+20%)':''}</text>`
+      +`<text x="${W-R-3}" y="${y(bm.minimo)+11}" text-anchor="end" font-size="9" fill="${DC.verde}">mín ${f2(bm.minimo)}${bm.auto?' (−20%)':''}</text>`;
   }
   if(media!=null){
     g+=`<line x1="${L}" y1="${y(media)}" x2="${W-R}" y2="${y(media)}" stroke="${DC.azul}" stroke-width="1.6"/>`
@@ -485,7 +510,7 @@ function svgControl(serie,tipo,media,bm,labX){
   }
   g+=`<polyline fill="none" stroke="${DC.azul2}" stroke-width="2" points="${serie.map((p,i)=>x(i)+','+y(p.v)).join(' ')}"/>`;
   serie.forEach((p,i)=>{
-    const fuera=bm?(p.v<bm.minimo||p.v>bm.maximo):(media!=null&&Math.abs(p.v-media)/media>0.10);
+    const fuera=bm?(p.v<bm.minimo||p.v>bm.maximo):false;
     g+=`<circle cx="${x(i)}" cy="${y(p.v)}" r="${n>40?2.5:3.6}" fill="${fuera?DC.rojo:DC.azul2}"/>`;
     if(n<=26)g+=`<text x="${x(i)}" y="${y(p.v)-8}" text-anchor="middle" font-size="8.5" font-weight="700" fill="${fuera?DC.rojo:DC.azul}">${f2(p.v)}</text>`;
     if(n<=32)g+=`<text x="${x(i)}" y="${H-B+10}" text-anchor="end" font-size="8.5" fill="#404040" transform="rotate(-55 ${x(i)} ${H-B+10})">${esc(p.lab)}</text>`;
@@ -568,8 +593,8 @@ function tablaLista(tit,arr,med,tipo){
   const nota=v=>{if(!med)return '';const r=v/med;
     return mejorMenor(tipo)?(r<=0.9?'b-ok':(r<=1.15?'b-mid':'b-bad')):(r>=1.1?'b-ok':(r>=0.85?'b-mid':'b-bad'));};
   return '<div class="rc-panel"><div class="rc-tit">'+tit+'</div>'
-   +'<table class="rc"><thead><tr><th>C\u00f3d. SAP</th><th>Familia</th><th>Cargas</th><th>Galones</th><th>'
-   +(tipo==='Hr'?'Horas':'Km')+'</th><th>Rendim.</th><th></th></tr></thead><tbody>'
+   +'<table class="rc"><thead><tr><th>C\u00f3d. SAP</th><th>Familia</th><th class="c">Cargas</th><th class="r">Galones</th><th class="r">'
+   +(tipo==='Hr'?'Horas':'Km')+'</th><th class="r">Rendim.</th><th></th></tr></thead><tbody>'
    +ord.map(o=>`<tr><td class="mono">${esc(o.e.cod_sap)}</td><td>${esc(o.fam)}</td>
       <td class="c">${o.cargas}</td><td class="r">${f0(o.gl)}</td><td class="r">${f0(o.rec)}</td>
       <td class="r ${nota(o.v)}">${f2(o.v)}</td>
@@ -579,18 +604,29 @@ function tablaLista(tit,arr,med,tipo){
 
 /* ═══════════════ DASHBOARD ═══════════════ */
 let dInit=false;
+let dPila=[];        // historial de niveles para el botón Volver
+function dVolverPaso(){
+  const p=dPila.pop(); if(!p)return;
+  dFam.value=p.fam; dSap.value=p.sap; dPintar();
+}
+
 function dRango(){
   const a=+dAnio.value||new Date().getFullYear(), m=dMes.value, s=dSem.value;
   const lunes=(y,w)=>{const j=new Date(Date.UTC(y,0,4)),dw=j.getUTCDay()||7,l=new Date(j);
     l.setUTCDate(j.getUTCDate()-(dw-1)+(w-1)*7);return l;};
-  if(s==='u4'){                                    // últimas 4 semanas con datos
-    const hoy=new Date(), d=new Date(hoy.getTime()-27*86400000);
-    return {desde:isoDe(d),hasta:isoDe(hoy),lab:'Últimas 4 semanas',grano:'dia'};
-  }
-  if(s!==''){const l=lunes(a,+s), dom=new Date(l); dom.setUTCDate(l.getUTCDate()+6);
-    return {desde:l.toISOString().slice(0,10),hasta:dom.toISOString().slice(0,10),lab:'Semana '+s+' · '+a,grano:'dia'};}
-  if(m!=='')return {desde:isoDe(new Date(a,+m,1)),hasta:isoDe(new Date(a,+m+1,0)),lab:MESES[+m]+' '+a,grano:'dia'};
-  return {desde:a+'-01-01',hasta:a+'-12-31',lab:'Año '+a,grano:'mes'};
+  let R;
+  if(s==='u4'){const hoy=new Date(), d=new Date(hoy.getTime()-27*86400000);
+    R={desde:isoDe(d),hasta:isoDe(hoy),lab:'Últimas 4 semanas'};}
+  else if(s!==''){const l=lunes(a,+s), dom=new Date(l); dom.setUTCDate(l.getUTCDate()+6);
+    R={desde:l.toISOString().slice(0,10),hasta:dom.toISOString().slice(0,10),lab:'Semana '+s+' · '+a};}
+  else if(m!=='')R={desde:isoDe(new Date(a,+m,1)),hasta:isoDe(new Date(a,+m+1,0)),lab:MESES[+m]+' '+a};
+  else R={desde:a+'-01-01',hasta:a+'-12-31',lab:'Año '+a};
+  // el eje X se agrupa según cuánto abarca el periodo; se puede forzar a mano
+  const dias=(new Date(R.hasta)-new Date(R.desde))/86400000;
+  const auto = dias<=35 ? 'dia' : (dias<=200 ? 'semana' : 'mes');
+  R.grano = (dGrano&&dGrano.value)?dGrano.value:auto;
+  R.auto=auto;
+  return R;
 }
 /* Filtros en cascada: cada uno acota el siguiente y todos afectan al gráfico */
 function dFiltro(e){
@@ -620,6 +656,20 @@ function dRefrescarListas(){
   dSap.innerHTML='<option value="">Todos</option>'+saps.map(s=>`<option>${esc(s)}</option>`).join('');
   dSap.value=saps.includes(sv)?sv:'';
 }
+/* agrupa una fecha en día, semana o mes */
+function cubo(f,g){
+  if(g==='mes')return f.slice(0,7);
+  if(g==='semana'){const d=new Date(f+'T00:00:00');
+    const j=new Date(Date.UTC(d.getFullYear(),0,4)), t=new Date(Date.UTC(d.getFullYear(),d.getMonth(),d.getDate()));
+    const w=1+Math.round(((t-j)/86400000-3+((j.getUTCDay()||7)-1))/7);
+    return d.getFullYear()+'-S'+String(w).padStart(2,'0');}
+  return f;
+}
+function cuboLab(k,g){
+  if(g==='mes')return MESES[+k.slice(5,7)-1].slice(0,3)+' '+k.slice(2,4);
+  if(g==='semana')return 'Sem '+(+k.slice(6));
+  return fmtDate(k);
+}
 function dPintar(){
   dRefrescarListas();
   const R=dRango();
@@ -631,8 +681,8 @@ function dPintar(){
   dRotulo.textContent=rot.join(' · ');
   if(!TRAMOS.length){
     dGraf.innerHTML='<div class="d-vacio">Sin tramos calculables con estos filtros.</div>';
-    dGauge.innerHTML=''; dTabla.innerHTML=''; dAlertas.innerHTML=''; dCards.innerHTML=''; dComp.innerHTML='';
-    dN.textContent='0'; return;
+    dGauge.innerHTML=''; dTabla.innerHTML=''; dAlertas.innerHTML=''; dCards.innerHTML='';
+    dN.textContent='0'; dVolver.disabled=!dPila.length; return;
   }
   // si se mezclan Hr y Km manda el que tenga más tramos
   const cuenta={}; TRAMOS.forEach(t=>cuenta[t.tipo]=(cuenta[t.tipo]||0)+1);
@@ -641,6 +691,7 @@ function dPintar(){
   const media=prom(T,tipo);
   const eqs=porEquipo(T);
   dN.textContent=eqs.length;
+  dVolver.disabled=!dPila.length;
   // rango de referencia: si todos comparten uno, se dibuja
   // se dibuja el rango que cubra a más equipos del filtro
   const cta=new Map();
@@ -649,52 +700,49 @@ function dPintar(){
     if(!cta.has(k))cta.set(k,{b,n:0}); cta.get(k).n++;});
   const top=[...cta.values()].sort((x,y)=>y.n-x.n)[0]||null;
   const bm=top?top.b:null, bmN=top?top.n:0;
-  const lo=bm?bm.minimo:media*0.9, hi=bm?bm.maximo:media*1.1;
+  const lo=bm?bm.minimo:media*0.8, hi=bm?bm.maximo:media*1.2;
 
-  const key=t=>R.grano==='mes'?t.fecha.slice(0,7):t.fecha;
-  const m=new Map(); T.forEach(t=>{const k=key(t); if(!m.has(k))m.set(k,[]); m.get(k).push(t);});
-  const serie=[...m.entries()].sort().map(([k,ts])=>({
-    lab:R.grano==='mes'?MESES[+k.slice(5,7)-1].slice(0,3)+' '+k.slice(2,4):fmtDate(k),
-    v:prom(ts,tipo)}));
+  const m=new Map(); T.forEach(t=>{const k=cubo(t.fecha,R.grano); if(!m.has(k))m.set(k,[]); m.get(k).push(t);});
+  const serie=[...m.entries()].sort().map(([k,ts])=>({lab:cuboLab(k,R.grano),v:prom(ts,tipo)}));
 
   dTit.textContent='CONTROL DE RENDIMIENTO · '+(tipo==='Hr'?'Gl/Hr (menor es mejor)':'Km/Gl (mayor es mejor)');
-  dGraf.innerHTML=svgControl(serie,tipo,media,bm,R.grano==='mes'?'MES':'FECHA');
-  dGaugeTit.textContent='CONSUMO PROMEDIO'+(bm?' · rango de referencia':' · ±10% del promedio');
+  const banda=bm||(media!=null?{minimo:media*0.8,maximo:media*1.2,auto:true}:null);
+  dGraf.innerHTML=svgControl(serie,tipo,media,banda,{dia:'FECHA',semana:'SEMANA',mes:'MES'}[R.grano]);
+  dGaugeTit.textContent='CONSUMO PROMEDIO'+(bm?' · rango de referencia':' · ±20% del promedio');
   dGauge.innerHTML=svgGauge(media,lo,hi,tipo);
   const glT=T.reduce((a,t)=>a+t.gl,0), recT=T.reduce((a,t)=>a+t.delta,0);
   dCards.innerHTML=
     card2('Promedio',media!=null?f2(media):'—',tipo==='Hr'?'Gl/Hr':'Km/Gl')
    +card2('Galones',f0(glT),T.length+' tramos · '+eqs.length+' equipos')
    +card2(tipo==='Hr'?'Horas':'Kilómetros',f0(recT),'del periodo')
-   +card2('Referencia',bm?f2(bm.minimo)+'–'+f2(bm.maximo):'±10%',
-      bm?`${(bm.marca||'todas').trim()} · aplica a ${bmN} de ${eqs.length}`:'sin rango definido · se usa ±10%');
-  dResumen(T,tipo,bm,media);
+   +card2('Referencia',bm?f2(bm.minimo)+'–'+f2(bm.maximo):'±20%',
+      bm?`${(bm.marca||'todas').trim()} · aplica a ${bmN} de ${eqs.length}`:'sin rango definido · se usa ±20%');
+  dResumen(T,tipo,bm,media,R);
   dAviso(T,tipo,media);
-  dCompara(T,tipo);
 }
 const card2=(l,v,s)=>`<div class="dc"><div class="dc-l">${l}</div><div class="dc-v">${v}</div><div class="dc-s">${s}</div></div>`;
 
 /* cuadro resumen: baja de nivel según el filtro */
-function dResumen(T,tipo,bm,media){
+function dResumen(T,tipo,bm,media,R){
   let modo,tit;
-  if(dSap.value){modo='dia'; tit='Detalle por día · '+dSap.value;}
+  if(dSap.value){modo='dia'; tit='Detalle · '+dSap.value;}
   else if(dFam.value){modo='sap'; tit='Equipos de '+dFam.value;}
   else {modo='fam'; tit='Por familia de equipos'+(dProy.value?' · '+dProy.value:'');}
   const m=new Map();
-  T.forEach(t=>{const k=modo==='dia'?t.fecha:modo==='sap'?t.e.cod_sap:t.fam;
+  T.forEach(t=>{const k=modo==='dia'?cubo(t.fecha,R.grano):modo==='sap'?t.e.cod_sap:t.fam;
     if(!m.has(k))m.set(k,{k,ts:[],eq:new Set()}); m.get(k).ts.push(t); m.get(k).eq.add(t.e.id);});
   let arr=[...m.values()].map(o=>({...o,n:o.ts.length,gl:o.ts.reduce((a,t)=>a+t.gl,0),
     rec:o.ts.reduce((a,t)=>a+t.delta,0),v:prom(o.ts,tipo)}));
   arr.sort(modo==='dia'?(a,b)=>a.k.localeCompare(b.k):(a,b)=>mejorMenor(tipo)?a.v-b.v:b.v-a.v);
   const mx=Math.max(...arr.map(o=>o.v||0))||1;
-  const lo=bm?bm.minimo:media*0.9, hi=bm?bm.maximo:media*1.1;
+  const lo=bm?bm.minimo:media*0.8, hi=bm?bm.maximo:media*1.2;
   const fuera=v=>v!=null&&(v<lo||v>hi);
   dTablaTit.textContent=tit;
   dTabla.innerHTML=`<table class="rc"><thead><tr>
-    <th>${modo==='dia'?'Fecha':(modo==='sap'?'Cód. SAP':'Familia')}</th>${modo==='fam'?'<th>Equipos</th>':''}
-    <th>Cargas</th><th>Galones</th><th>${tipo==='Hr'?'Horas':'Km'}</th><th>Rendim.</th><th></th></tr></thead><tbody>
+    <th>${modo==='dia'?({dia:'Fecha',semana:'Semana',mes:'Mes'}[R.grano]):(modo==='sap'?'Cód. SAP':'Familia')}</th>${modo==='fam'?'<th class="c">Equipos</th>':''}
+    <th class="c">Cargas</th><th class="r">Galones</th><th class="r">${tipo==='Hr'?'Horas':'Km'}</th><th class="r">Rendim.</th><th></th></tr></thead><tbody>
     ${arr.map(o=>`<tr class="${modo!=='dia'?'eq':''}" data-k="${esc(o.k)}">
-      <td class="${modo==='sap'?'mono':''}">${modo==='dia'?fmtDate(o.k):esc(o.k)}</td>
+      <td class="${modo==='sap'?'mono':''}">${modo==='dia'?cuboLab(o.k,R.grano):esc(o.k)}</td>
       ${modo==='fam'?`<td class="c">${o.eq.size}</td>`:''}
       <td class="c">${o.n}</td><td class="r">${f0(o.gl)}</td><td class="r">${f0(o.rec)}</td>
       <td class="r ${fuera(o.v)?'b-bad':'b-ok'}">${f2(o.v)}</td>
@@ -702,6 +750,7 @@ function dResumen(T,tipo,bm,media){
     </tr>`).join('')}</tbody></table>
     ${modo!=='dia'?'<div class="hint">Haz clic en una fila para bajar un nivel.</div>':''}`;
   dTabla.querySelectorAll('tr.eq').forEach(tr=>tr.onclick=()=>{
+    dPila.push({fam:dFam.value,sap:dSap.value});          // para poder retroceder
     if(modo==='fam')dFam.value=tr.dataset.k; else dSap.value=tr.dataset.k;
     dPintar();});
 }
@@ -715,7 +764,7 @@ function dAviso(T,tipo,media){
   eqs.forEach(o=>{
     if(o.v==null)return;
     const b=benchDe(o.e,tipo), mf=medFam.get(o.fam)||media;
-    const L=b?b.minimo:mf*0.85, H=b?b.maximo:mf*1.15;
+    const L=b?b.minimo:mf*0.8, H=b?b.maximo:mf*1.2;
     if(o.v<L||o.v>H){
       const exc=o.v>H?(o.v/H-1)*100:(L/o.v-1)*100;
       malos.push({sap:o.e.cod_sap,eq:o.e.equipo||'',v:o.v,L,H,exc,alto:o.v>H,
@@ -731,19 +780,6 @@ function dAviso(T,tipo,media){
       <span class="al-g">${f0(o.gl)} gl</span></div>`;}).join('');
 }
 /* comparativa: solo los datos pedidos */
-function dCompara(T,tipo){
-  const eqs=porEquipo(T).filter(o=>o.v!=null);
-  if(!eqs.length){dComp.innerHTML='<div class="d-vacio">Sin datos</div>';return;}
-  eqs.sort((a,b)=>mejorMenor(tipo)?a.v-b.v:b.v-a.v);
-  const mx=Math.max(...eqs.map(o=>o.v));
-  dComp.innerHTML=`<table class="rc"><thead><tr><th>Cód. SAP</th><th>Cargas</th><th>Galones</th>
-    <th>${tipo==='Hr'?'Horas':'Km'}</th><th>Rendim.</th><th></th></tr></thead><tbody>
-    ${eqs.map(o=>`<tr><td class="mono">${esc(o.e.cod_sap)}</td><td class="c">${o.cargas}</td>
-      <td class="r">${f0(o.gl)}</td><td class="r">${f0(o.rec)}</td><td class="r">${f2(o.v)}</td>
-      <td><div class="bar"><i style="width:${Math.max(3,o.v/mx*100)}%;background:${DC.azul2}"></i></div></td>
-    </tr>`).join('')}</tbody></table>`;
-}
-
 /* ---------- apertura con los filtros por defecto ---------- */
 function dAbrir(){
   dWrap.classList.remove('hide');
@@ -758,6 +794,8 @@ function dAbrir(){
     dSem.innerHTML='<option value="u4">Últimas 4 semanas</option><option value="">Todas</option>'
       +Array.from({length:53},(_,i)=>i+1).map(w=>`<option value="${w}">Semana ${w}</option>`).join('');
     dSem.value='u4';
+    dGrano.innerHTML='<option value="">Automático</option><option value="dia">Día</option>'
+      +'<option value="semana">Semana</option><option value="mes">Mes</option>';
     dRefrescarListas();
     // proyecto con más equipos en el periodo
     const R=dRango(), cnt={};
@@ -779,12 +817,73 @@ btnDash.onclick=dAbrir;
 dCerrar.onclick=()=>dWrap.classList.add('hide');
 dWrap.addEventListener('click',ev=>{if(ev.target===dWrap)dWrap.classList.add('hide');});
 document.addEventListener('keydown',ev=>{if(ev.key==='Escape'&&!dWrap.classList.contains('hide'))dWrap.classList.add('hide');});
-[dAnio,dMes].forEach(s=>s.onchange=dPintar);
+[dAnio,dMes,dGrano].forEach(s=>s.onchange=dPintar);
 dSem.onchange=dPintar;
-dProy.onchange=()=>{dFam.value='';dSap.value='';dPintar();};
-dFam.onchange =()=>{dSap.value='';dPintar();};
+dProy.onchange=()=>{dPila=[];dFam.value='';dSap.value='';dPintar();};
+dFam.onchange =()=>{dPila=[];dSap.value='';dPintar();};
 dSap.onchange =dPintar;
-dLimpiar.onclick=()=>{dMes.value='';dSem.value='u4';dProy.value='';dFam.value='';dSap.value='';dPintar();};
+dVolver.onclick=dVolverPaso;
+dLimpiar.onclick=()=>{dPila=[];dMes.value='';dSem.value='u4';dProy.value='';dFam.value='';dSap.value='';dGrano.value='';dPintar();};
+
+
+/* ═══════════════ DESPACHOS: corregir lo ya cargado ═══════════════ */
+function dpAbrir(){dpWrap.classList.remove('hide');dpPintar();}
+function tanqueDe(e){
+  const t=Number(String(e&&e.tanque_comb||'').replace(/[^0-9.,]/g,'').replace(',','.'));
+  return isFinite(t)&&t>0?t:null;
+}
+function dpPintar(){
+  const R=rangoLista(), q=nrm(dpBusca.value), f=dpFiltro.value;
+  let filas=DESPACHOS.filter(d=>{
+    const fe=String(d.fecha).slice(0,10);
+    if(fe<R.desde||fe>R.hasta)return false;
+    if(q&&!nrm(d.cod_sap).includes(q))return false;
+    const e=getE(d.maestro_id), tq=tanqueDe(e);
+    if(f==='corr'&&d.contador_corr==null)return false;
+    if(f==='desc'&&!d.descartado)return false;
+    if(f==='tq'&&!(tq&&d.galones>tq))return false;
+    return true;});
+  filas.sort((a,b)=>String(a.cod_sap).localeCompare(String(b.cod_sap))||String(a.fecha).localeCompare(String(b.fecha)));
+  if(!filas.length){dpTabla.innerHTML='<div class="vacio">Sin despachos con estos filtros.</div>';return;}
+  dpTabla.innerHTML=`<table class="rc"><thead><tr>
+      <th>Cód. SAP</th><th>Fecha</th><th class="c">Hora</th><th class="c">Vale</th>
+      <th class="r">Contador</th><th class="r">Corregido</th><th class="r">Galones</th>
+      <th class="c">Descartar</th><th>Nota</th></tr></thead><tbody>
+    ${filas.slice(0,400).map(d=>{
+      const e=getE(d.maestro_id), tq=tanqueDe(e), exceso=tq&&d.galones>tq;
+      return `<tr data-id="${d.id}">
+      <td class="mono">${esc(d.cod_sap)}</td><td>${fmtDate(String(d.fecha).slice(0,10))}</td>
+      <td class="c">${esc(d.hora||'')}</td><td class="c mono">${esc(d.nro_vale||'')}</td>
+      <td class="r mono">${d.contador!=null?f0(d.contador):'—'}</td>
+      <td class="r"><input class="dpi" data-c="contador_corr" type="number" step="1" value="${d.contador_corr??''}" placeholder="—"></td>
+      <td class="r"><input class="dpi ${exceso?'exc':''}" data-c="galones" type="number" step="0.1" value="${d.galones??''}"
+           title="${exceso?'Supera el tanque de '+f1(tq)+' gl':(tq?'Tanque: '+f1(tq)+' gl':'')}"></td>
+      <td class="c"><input type="checkbox" class="dpd" ${d.descartado?'checked':''}></td>
+      <td><input class="dpi dpo" data-c="obs" value="${esc(d.obs||'')}" placeholder="motivo"></td></tr>`;}).join('')}
+    </tbody></table>
+    <div class="hint">${filas.length>400?`Mostrando 400 de ${filas.length}. Afina la búsqueda o el periodo. · `:''}
+      Los cambios se guardan al salir de la celda.</div>`;
+  dpTabla.querySelectorAll('.dpi').forEach(i=>i.onchange=()=>dpGuardar(i.closest('tr'),i.dataset.c,i));
+  dpTabla.querySelectorAll('.dpd').forEach(cb=>cb.onchange=()=>dpGuardar(cb.closest('tr'),'descartado',cb));
+}
+async function dpGuardar(tr,col,ctrl){
+  const id=tr.dataset.id, d=DESPACHOS.find(x=>String(x.id)===id); if(!d)return;
+  let val;
+  if(col==='descartado')val=ctrl.checked;
+  else if(col==='obs')val=ctrl.value||null;
+  else {val=ctrl.value===''?null:Number(ctrl.value);
+        if(val!=null&&!isFinite(val)){ctrl.value=d[col]??'';return;}}
+  const {error}=await sb.from('combustible').update({[col]:val}).eq('id',id).select('id');
+  if(error){alert('No se pudo guardar: '+error.message);ctrl.value=d[col]??'';return;}
+  d[col]=val;
+  ctrl.classList.add('ok'); setTimeout(()=>ctrl.classList.remove('ok'),900);
+  pintarLista();
+  if(!dWrap.classList.contains('hide'))dPintar();
+}
+btnDesp.onclick=dpAbrir;
+dpCerrar.onclick=()=>dpWrap.classList.add('hide');
+dpBusca.oninput=dpPintar; dpFiltro.onchange=dpPintar;
+dpWrap.addEventListener('click',ev=>{if(ev.target===dpWrap)dpWrap.classList.add('hide');});
 
 /* ═══════════════ RANGOS DE REFERENCIA (editable) ═══════════════ */
 function bmAbrir(){
