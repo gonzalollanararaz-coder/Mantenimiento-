@@ -324,7 +324,7 @@
   <section id="paneUsers" class="hide">
     <div class="padwrap">
       <table style="width:100%;border-collapse:collapse;background:#fff;border-radius:10px;overflow:hidden">
-        <thead><tr><th style="background:#2a333d;color:#fff;padding:11px;text-align:left">Nombre</th><th style="background:#2a333d;color:#fff;padding:11px;text-align:left">Correo</th><th style="background:#2a333d;color:#fff;padding:11px;text-align:left">Rol</th><th style="background:#2a333d;color:#fff;padding:11px;text-align:left">Estado</th><th style="background:#2a333d;color:#fff;padding:11px;text-align:left">Obras (proyectos)</th><th style="background:#2a333d;color:#fff;padding:11px;text-align:left">Acciones</th></tr></thead>
+        <thead><tr><th style="background:#2a333d;color:#fff;padding:11px;text-align:left">Nombre</th><th style="background:#2a333d;color:#fff;padding:11px;text-align:left">Correo</th><th style="background:#2a333d;color:#fff;padding:11px;text-align:left">Rol</th><th style="background:#2a333d;color:#fff;padding:11px;text-align:left">Estado</th><th style="background:#2a333d;color:#fff;padding:11px;text-align:left">Obras (proyectos)</th><th style="background:#2a333d;color:#fff;padding:11px;text-align:left">Pestañas</th><th style="background:#2a333d;color:#fff;padding:11px;text-align:left">Acciones</th></tr></thead>
         <tbody id="cuerpoUsers"></tbody>
       </table>
     </div>
@@ -336,8 +336,8 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
 /* ╔══ pega aquí tus DOS datos (los mismos de tu archivo actual) ══╗ */
-const SUPABASE_URL = "https://hklwvdhzltjsbfvlewbu.supabase.co";   // ← reemplaza
-const SUPABASE_KEY = "sb_publishable_NgDfyDHDI_KByR-qf35EpA_ZuKI5E0K";                 // ← reemplaza
+const SUPABASE_URL = "https://TU-PROYECTO.supabase.co";   // ← reemplaza
+const SUPABASE_KEY = "TU-PUBLISHABLE-KEY";                 // ← reemplaza
 /* ──────────────────────────────────────────────────────────────── */
 const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 try{localStorage.setItem('gllr_sbcfg',JSON.stringify({url:SUPABASE_URL,key:SUPABASE_KEY}));}catch(_){}
@@ -532,17 +532,29 @@ const FROZEN_HCOL='#002060', ID_BAND='#0F243E';
 const DOCS=['certif_operat','soat','poliza','rev_tec','tarjeta_circ'];
 const FCALC=['_alerta','_sem','_alertamntto']; // columnas calculadas con filtro
 /* Los estados llevan espacios y puntos: se normalizan para usarlos como clase CSS */
+/* Pestañas que se pueden habilitar por usuario.
+   Para agregar una nueva basta con sumarla aquí y en la fila de pestañas. */
+const PAGINAS=[
+  {k:'pms', lab:'PM-S',        arch:'pms.html'},
+  {k:'comb',lab:'Combustible', arch:'combustible.html'}
+];
+function puedePagina(k){
+  if(!perfil)return false;
+  if(perfil.rol==='admin')return true;
+  return Array.isArray(perfil.paginas)&&perfil.paginas.includes(k);
+}
 function stSlug(s){return String(s||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'')
   .toUpperCase().replace(/[^A-Z0-9]+/g,'-').replace(/^-+|-+$/g,'');}
 const ESTADOS=["MOVILIZADO","TRANS. MOV.","TRANS. DESM.","DESMOVILIZ."];
 /* ¿está fuera de obra? "TRANS. DESM." NO cuenta: sigue en obra, solo en tránsito de salida */
 function esDesmov(s){return /^DESMOVILIZ/.test(stSlug(s));}
 /* los dos tránsitos se ordenan junto a los movilizados; se conservan los nombres antiguos */
-/* 1er nivel de orden: MOVILIZADO → TRANS. MOV. → TRANS. DESM. → DESMOVILIZ. */
+/* 1er nivel de orden: los tres estados visibles cuentan como uno solo
+   (MOVILIZADO, TRANS. MOV. y TRANS. DESM.); DESMOVILIZ. va al final. */
 const ST_RANK={MOVILIZADO:1,
-               'TRANS. MOV.':2,'TRÁNS. MOV.':2,'TRANSITO MOV.':2,TRANSITO:2,
-               'TRANS. DESM.':3,'TRÁNS. DESM.':3,'TRANSITO DESMOV.':3,
-               'DESMOVILIZ.':4,DESMOVILIZADO:4};
+               'TRANS. MOV.':1,'TRÁNS. MOV.':1,'TRANSITO MOV.':1,TRANSITO:1,
+               'TRANS. DESM.':1,'TRÁNS. DESM.':1,'TRANSITO DESMOV.':1,
+               'DESMOVILIZ.':2,DESMOVILIZADO:2};
 const collapsed={tec:true,mov:true,des:true,prov:true,doc:true}, colFilters={};
 let selId=null, selIds=new Set(), undoStack=[];
 
@@ -561,8 +573,17 @@ function mostrarGate(){
   else startGate();
   mostrar("gate");
 }
+/* Muestra u oculta las pestañas según los permisos del usuario */
+function aplicarPermisos(){
+  PAGINAS.forEach(p=>{
+    const b=document.querySelector(`nav button[data-tab="${p.k}"]`);
+    if(b)b.style.display=puedePagina(p.k)?'':'none';
+  });
+  const bu=document.querySelector('nav button[data-tab="users"]');
+  if(bu)bu.style.display=(perfil&&perfil.rol==='admin')?'':'none';
+}
 async function entrarApp(){
-  stopGate();mostrar("app");
+  stopGate();mostrar("app");aplicarPermisos();
   who.textContent=(perfil.nombre||perfil.email)+(perfil.rol==="admin"?" · Admin":"");
   if(perfil.rol==="admin")tabUsers.style.display="inline-block";
   await cargar();startPoll();
@@ -1168,7 +1189,16 @@ function stopPoll(){if(pollTimer)clearInterval(pollTimer);}
 let pmsWin=null;
 const PMSCH = ('BroadcastChannel' in window) ? new BroadcastChannel('gllr_pms') : null;
 
-function abrirPMS(qs){ pmsWin=window.open('pms.html'+(qs||''),'_blank'); return pmsWin; }
+/* Cada pestaña usa un nombre fijo de ventana: si ya está abierta, el navegador
+   reutiliza esa misma en lugar de crear otra, y se le da el foco. */
+const VENT={};
+function abrirVentana(archivo,nombre,qs){
+  const w=window.open(archivo+(qs||''),nombre);
+  if(w){VENT[nombre]=w; try{w.focus();}catch(_){}}
+  else alert('El navegador bloqueó la ventana emergente.\n\nPermite las ventanas emergentes de este sitio para abrir la pestaña.');
+  return w;
+}
+function abrirPMS(qs){ pmsWin=abrirVentana('pms.html','gllr_pms',qs); return pmsWin; }
 
 /* ¿hay alguna pestaña PM-S viva? espera un instante su respuesta */
 function pmsViva(ms=350){
@@ -1207,8 +1237,12 @@ async function programarSeleccion(){
 }
 document.querySelectorAll("nav button").forEach(b=>b.onclick=()=>{
   const t=b.dataset.tab;
-  if(t==="pms"){abrirPMS();return;}                 // se abre en otra pestaña del navegador
-  if(t==="comb"){window.open("combustible.html","_blank");return;}   // ventana aparte, como PM-S
+  const pag=PAGINAS.find(p=>p.k===t);
+  if(pag){
+    if(!puedePagina(t)){alert('No tienes acceso a la pestaña '+pag.lab+'.\n\nPídeselo a un administrador.');return;}
+    if(t==="pms")abrirPMS(); else abrirVentana(pag.arch,'gllr_'+t);
+    return;
+  }
   document.querySelectorAll("nav button").forEach(x=>x.classList.remove("on"));b.classList.add("on");
   paneEq.classList.toggle("hide",t!=="eq");paneUsers.classList.toggle("hide",t!=="users");
   if(t==="users")cargarUsuarios();
@@ -1216,8 +1250,8 @@ document.querySelectorAll("nav button").forEach(b=>b.onclick=()=>{
 
 /* admin */
 async function cargarUsuarios(){
-  const {data,error}=await sb.from("profiles").select("id,nombre,email,rol,estado,proyectos,created_at").order("created_at");
-  if(error){cuerpoUsers.innerHTML=`<tr><td colspan="6" style="padding:20px">${error.message}</td></tr>`;return;}
+  const {data,error}=await sb.from("profiles").select("id,nombre,email,rol,estado,proyectos,paginas,created_at").order("created_at");
+  if(error){cuerpoUsers.innerHTML=`<tr><td colspan="7" style="padding:20px">${error.message}</td></tr>`;return;}
   const PROY=[...new Set(datos.map(e=>e.cod_proyec).filter(Boolean))].sort();
   cuerpoUsers.innerHTML="";
   data.forEach(u=>{const yo=u.id===perfil.id,tr=document.createElement("tr");
@@ -1227,20 +1261,31 @@ async function cargarUsuarios(){
       : (PROY.length
           ? PROY.map(p=>`<label style="display:inline-flex;align-items:center;gap:3px;margin:0 8px 4px 0;font-size:12px"><input type="checkbox" data-uid="${u.id}" data-proy="${esc(p)}" ${asign.includes(p)?"checked":""}> ${esc(p)}</label>`).join("")
           : `<span style="color:#999">Aún no hay proyectos cargados</span>`);
+    const pags=Array.isArray(u.paginas)?u.paginas:[];
+    const pagsCell = u.rol==="admin"
+      ? `<span style="color:#15803d;font-weight:600">Entra a todas</span>`
+      : PAGINAS.map(p=>`<label style="display:inline-flex;align-items:center;gap:3px;margin:0 8px 4px 0;font-size:12px"><input type="checkbox" data-uid="${u.id}" data-pag="${p.k}" ${pags.includes(p.k)?"checked":""}> ${esc(p.lab)}</label>`).join("");
     tr.innerHTML=`<td style="padding:11px;border-bottom:1px solid #eceef1">${esc(u.nombre||"—")}${yo?' <span style="color:#999">(tú)</span>':''}</td>
       <td style="padding:11px;border-bottom:1px solid #eceef1">${esc(u.email)}</td>
       <td style="padding:11px;border-bottom:1px solid #eceef1">${u.rol}</td>
       <td style="padding:11px;border-bottom:1px solid #eceef1"><span class="badge ${u.estado}">${u.estado}</span></td>
       <td style="padding:11px;border-bottom:1px solid #eceef1;max-width:320px">${obrasCell}</td>
+      <td style="padding:11px;border-bottom:1px solid #eceef1;max-width:230px">${pagsCell}</td>
       <td style="padding:11px;border-bottom:1px solid #eceef1;white-space:nowrap">${u.estado!=="aprobado"?`<button class="mini ap" data-act="aprobar" data-id="${u.id}">Aprobar</button>`:""}${u.estado!=="bloqueado"&&!yo?`<button class="mini bl" data-act="bloquear" data-id="${u.id}">Bloquear</button>`:""}${u.rol!=="admin"?`<button class="mini adm" data-act="admin" data-id="${u.id}">Hacer admin</button>`:""}</td>`;
     cuerpoUsers.appendChild(tr);});
 }
 cuerpoUsers.addEventListener("click",async ev=>{const id=ev.target.dataset.id,act=ev.target.dataset.act;if(!id)return;const cambio=act==="aprobar"?{estado:"aprobado"}:act==="bloquear"?{estado:"bloqueado"}:{rol:"admin"};const {error}=await sb.from("profiles").update(cambio).eq("id",id);if(error)return alert("No se pudo: "+error.message);cargarUsuarios();});
 cuerpoUsers.addEventListener("change",async ev=>{
   const cb=ev.target; const uid=cb.dataset.uid; if(!uid||cb.type!=="checkbox")return;
-  const marcadas=[...cuerpoUsers.querySelectorAll(`input[type=checkbox][data-uid="${uid}"]:checked`)].map(x=>x.dataset.proy);
-  const {error}=await sb.from("profiles").update({proyectos:marcadas}).eq("id",uid);
-  if(error){alert("No se pudo guardar la obra: "+error.message);cb.checked=!cb.checked;}
+  const esPag=!!cb.dataset.pag;
+  const sel=`input[type=checkbox][data-uid="${uid}"][${esPag?'data-pag':'data-proy'}]:checked`;
+  const marcadas=[...cuerpoUsers.querySelectorAll(sel)].map(x=>esPag?x.dataset.pag:x.dataset.proy);
+  const campo=esPag?{paginas:marcadas}:{proyectos:marcadas};
+  const {error}=await sb.from("profiles").update(campo).eq("id",uid);
+  if(error){alert("No se pudo guardar: "+error.message);cb.checked=!cb.checked;return;}
+  if(uid===perfil.id){                       // si te cambias a ti mismo, se refleja al momento
+    perfil[esPag?'paginas':'proyectos']=marcadas; aplicarPermisos();
+  }
 });
 
 

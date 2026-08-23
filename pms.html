@@ -1233,9 +1233,13 @@ document.addEventListener('keydown',ev=>{if(ev.key==='Escape'&&!dashWrap.classLi
 (async()=>{
   const {data:{session}}=await sb.auth.getSession();
   if(!session){document.body.innerHTML='<div style="padding:60px;text-align:center"><h2 style="font-size:18px">Sesi&oacute;n no iniciada</h2><p style="color:#6b747d">Ingresa en la p&aacute;gina principal y vuelve a pulsar PM-S.</p></div>';return;}
-  const {data:p}=await sb.from('profiles').select('id,nombre,rol,estado,proyectos').eq('id',session.user.id).single();
+  const {data:p}=await sb.from('profiles').select('id,nombre,rol,estado,proyectos,paginas').eq('id',session.user.id).single();
   perfil=p||{}; who.textContent=(perfil.nombre||session.user.email)+' · '+(perfil.rol||'');
   if(perfil.estado!=='aprobado'){document.body.innerHTML='<div style="padding:60px;text-align:center"><h2 style="font-size:18px">Acceso pendiente</h2><p style="color:#6b747d">Tu cuenta a&uacute;n no est&aacute; aprobada.</p></div>';return;}
+  if(perfil.rol!=='admin'&&!(Array.isArray(perfil.paginas)&&perfil.paginas.includes('pms'))){
+    document.body.innerHTML='<div style="padding:60px;text-align:center;font-family:sans-serif">'
+     +'<h2 style="font-size:18px;margin-bottom:10px">Sin acceso a PM-S</h2>'
+     +'<p style="color:#6b747d">Un administrador debe habilitarte esta pesta&ntilde;a desde Usuarios.</p></div>';return;}
 
   let m=null;
   try{
