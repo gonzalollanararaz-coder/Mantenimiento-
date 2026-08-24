@@ -112,9 +112,9 @@
   .off-bad{background:#fee2e2;color:#b91c1c;border-color:#fca5a5}
 
   /* selección tipo Excel */
-  .pms td.xsel{background:#cfe4f7 !important;box-shadow:inset 0 0 0 1px #9dc3e6}
-  .pms td.xanc{box-shadow:inset 0 0 0 2px #1d4ed8 !important}
-  .pms thead th.xcol{background:#1d4ed8 !important}
+  .pms td.xsel{background:#bbf7d0 !important;box-shadow:inset 0 0 0 1px #86efac}
+  .pms td.xanc{box-shadow:inset 0 0 0 2px #15803d !important}
+  .pms thead th.xcol{background:#15803d !important}
   #pmsBody{user-select:none}
   footer{padding:7px 16px;color:var(--muted);font-size:12px;text-align:center;flex-shrink:0}
   /* ===== PM-S ===== */
@@ -136,6 +136,10 @@
   .pms td.pms-ed{cursor:cell}
   .pms td.pms-ed:hover{background:#fff7e6}
   .pms td .fij{color:#B45309}
+  .pms td input.om-inp{width:100%;text-align:right;font-family:"SF Mono",ui-monospace,monospace;letter-spacing:.3px}
+  .pms td input[type=number]{-moz-appearance:textfield}
+  .pms td input[type=number]::-webkit-outer-spin-button,
+  .pms td input[type=number]::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
   .pms td[data-editing]{padding:0;box-shadow:inset 0 0 0 2px var(--amber)}
   .pms td[data-editing] input{width:100%;border:none;background:#fff;font:inherit;padding:1px 4px;outline:none;text-align:center}
   .pms tbody td.idx{padding:0 4px;text-align:center;color:var(--muted);font-family:"SF Mono",monospace;background:#f8fafc;font-size:10px;white-space:nowrap}
@@ -622,7 +626,7 @@ function pmsHead(){
       +`<div style="font-size:9px;opacity:.9;line-height:1.1">${PMS_DIA[i]}</div>`
       +`<div style="font-size:11px;font-weight:${esH?800:600};line-height:1.1">${String(d.getUTCDate()).padStart(2,'0')}</div></th>`;
   });
-  [['OM*',V,84],['HR / KM*',V,72],['FECHA<br>EJECUCION*',V,78],['ESTADO*',G,92],['%<br>DESFASE',G,62],['SEMANA',G,54]]
+  [['OM*',V,96],['HR / KM*',V,72],['FECHA<br>EJECUCION*',V,78],['ESTADO*',G,92],['%<br>DESFASE',G,62],['SEMANA',G,54]]
     .forEach(([l,bg,w])=>h+=`<th style="background:${bg};min-width:${w}px"><div class="hlab">${l}</div></th>`);
   h+='</tr>';
 
@@ -789,10 +793,11 @@ pmsBody.addEventListener('dblclick',ev=>{
   else if(k==='tipo_pm') ctrl=`<select>${['','PM1','PM2','PM3','PM4'].map(o=>`<option value="${o}" ${((r.tipo_pm||'')===o)?'selected':''}>${o||'(automático)'}</option>`).join('')}</select>`;
   else if(k==='estado') ctrl=`<select>${['','PROGRAMADO','PENDIENTE','EJECUTADO','REPROGRAMADO'].map(o=>`<option value="${o}" ${((r.estado||'')===o)?'selected':''}>${o||'(automático)'}</option>`).join('')}</select>`;
   else if(k==='tiempo_req') ctrl=`<input type="text" list="pmsTiempos" placeholder="(automático)" value="${esc(r.tiempo_req||'')}">`;
-  else ctrl=`<input type="number" step="1" min="0" max="999999999" value="${r.om??''}">`;
+  // sin flechas de incremento: se comían el ancho y cortaban el número
+  else ctrl=`<input type="text" inputmode="numeric" maxlength="9" class="om-inp" value="${r.om??''}">`;
   td.dataset.editing='1'; td.innerHTML=ctrl;
   const inp=td.querySelector('input,select'); inp.focus(); try{inp.select&&inp.select();}catch(_){}
-  if(k==='om')inp.oninput=()=>{inp.value=inp.value.replace(/[^0-9]/g,'').slice(0,9);};
+  if(k==='om')inp.oninput=()=>{const v=inp.value.replace(/[^0-9]/g,'').slice(0,9); if(v!==inp.value)inp.value=v;};
   if(inp.tagName==='SELECT')inp.onchange=()=>inp.blur();
 });
 pmsBody.addEventListener('focusout',ev=>{
