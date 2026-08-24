@@ -110,6 +110,12 @@
   .off-ok{background:#dcfce7;color:#15803d;border-color:#86efac}
   .off-warn{background:#fef3c7;color:#B45309;border-color:#fcd34d}
   .off-bad{background:#fee2e2;color:#b91c1c;border-color:#fca5a5}
+
+  /* selección tipo Excel */
+  .pms td.xsel{background:#cfe4f7 !important;box-shadow:inset 0 0 0 1px #9dc3e6}
+  .pms td.xanc{box-shadow:inset 0 0 0 2px #1d4ed8 !important}
+  .pms thead th.xcol{background:#1d4ed8 !important}
+  #pmsBody{user-select:none}
   footer{padding:7px 16px;color:var(--muted);font-size:12px;text-align:center;flex-shrink:0}
   /* ===== PM-S ===== */
   #pmsWrap{padding:0;overflow:auto;flex:1;min-height:0;contain:paint}
@@ -129,6 +135,7 @@
   .pms td.pms-day.dom{background:#fef2f2}
   .pms td.pms-ed{cursor:cell}
   .pms td.pms-ed:hover{background:#fff7e6}
+  .pms td .fij{color:#B45309}
   .pms td[data-editing]{padding:0;box-shadow:inset 0 0 0 2px var(--amber)}
   .pms td[data-editing] input{width:100%;border:none;background:#fff;font:inherit;padding:1px 4px;outline:none;text-align:center}
   .pms tbody td.idx{padding:0 4px;text-align:center;color:var(--muted);font-family:"SF Mono",monospace;background:#f8fafc;font-size:10px;white-space:nowrap}
@@ -159,7 +166,7 @@
   <button class="act primary" id="pmsBtnAdd">&#65291; MNTTO</button>
   <button class="act" id="pmsBtnHoy">Semana actual</button>
   <input type="number" id="pmsBuscarSem" min="1" max="53" placeholder="Buscar semana" style="width:120px">
-  <button class="act" id="pmsBtnVerEjec">Mostrar ejecutados</button>
+  <button class="act" id="pmsBtnVerEjec">Mostrar realizados</button>
   <button class="act clear" id="pmsBtnClear">&#10005; Borrar filtros</button>
   <button class="act" id="pmsBtnUndo" disabled title="Deshacer el último cambio (Ctrl+Z)">&#8630; Deshacer</button>
   <button class="act" id="pmsBtnExcel" title="Descargar lo que se ve en la tabla">&#8681; Excel</button>
@@ -504,7 +511,7 @@ function pmsFila(r){
   if(hp==null && r.hrkm_ejec!=null && freq) hp = roundToFreq(+r.hrkm_ejec,freq);
   const tipo = r.tipo_pm || pmsTipoPM(e&&e.marca, e&&e.modelo, hp);
   const treq = r.tiempo_req || pmsTiempo(tipo, e&&e.familia);
-  const est  = pmsEstado(r);
+  const est  = r.estado || pmsEstado(r);        // manual si lo fijaste; si no, calculado
   const desf = (hpReal && freq && r.hrkm_ejec!=null && r.hrkm_ejec!=='') ? (+r.hrkm_ejec-hp)/freq*100 : null;
   const fSem = r.fecha_prog || null;          // la SEMANA sale de Fecha Prog.
   return {r,e,freq,hp,hpReal,desf,
@@ -519,6 +526,10 @@ let PMS_SAPX=new Map();
 function pmsReindexSap(){PMS_SAPX=new Map();for(const e of datos){const k=String(e.cod_sap||'').trim();if(k&&!PMS_SAPX.has(k))PMS_SAPX.set(k,e);}}
 function pmsPorSap(sap){return PMS_SAPX.get(String(sap||'').trim())||null;}
 /* ---- ESTADO ---- */
+/* Una fila está realizada cuando su estado es EJECUTADO o REPROGRAMADO.
+   Ambos se ocultan con el mismo botón: lo que ya se hizo deja de estorbar. */
+const PMS_HECHO={EJECUTADO:1,REPROGRAMADO:1};
+const esHecho=est=>!!PMS_HECHO[est];
 function pmsEstado(r){
   const lleno = String(r.om??'').trim()!=='' && r.hrkm_ejec!=null && String(r.hrkm_ejec).trim()!=='' && String(r.fecha_ejec??'').trim()!=='';
   if(lleno){
@@ -611,7 +622,7 @@ function pmsHead(){
       +`<div style="font-size:9px;opacity:.9;line-height:1.1">${PMS_DIA[i]}</div>`
       +`<div style="font-size:11px;font-weight:${esH?800:600};line-height:1.1">${String(d.getUTCDate()).padStart(2,'0')}</div></th>`;
   });
-  [['OM*',V,84],['HR / KM*',V,72],['FECHA<br>EJECUCION*',V,78],['ESTADO',G,92],['%<br>DESFASE',G,62],['SEMANA',G,54]]
+  [['OM*',V,84],['HR / KM*',V,72],['FECHA<br>EJECUCION*',V,78],['ESTADO*',G,92],['%<br>DESFASE',G,62],['SEMANA',G,54]]
     .forEach(([l,bg,w])=>h+=`<th style="background:${bg};min-width:${w}px"><div class="hlab">${l}</div></th>`);
   h+='</tr>';
 
@@ -658,7 +669,7 @@ function pmsRowHTML(f,di){
    +`<td class="pms-c mono pms-ed" data-pmsk="om">${esc(r.om||'')}</td>`
    +`<td class="pms-c mono pms-ed" data-pmsk="hrkm_ejec">${r.hrkm_ejec!=null?Number(r.hrkm_ejec).toLocaleString('es-PE'):''}</td>`
    +`<td class="pms-c pms-ed" data-pmsk="fecha_ejec">${fmtDate(r.fecha_ejec)}</td>`
-   +`<td class="pms-c est-${f.est}">${f.est}</td>`
+   +`<td class="pms-c est-${f.est} pms-ed" data-pmsk="estado"${r.estado?' title="Fijado a mano"':''}>${f.est}${r.estado?' <b class="fij">·</b>':''}</td>`
    +`<td class="pms-c mono ${dfCls}">${f.desf==null?'—':f.desf.toFixed(1)+'%'}</td>`
    +`<td class="pms-c">${f.sem||''}</td></tr>`;
 }
@@ -698,7 +709,7 @@ function pmsRender(){
   // en un histórico de ~380 registros eso deja la tabla en unas pocas decenas de <tr>.
   const estF=(pmsColF['est']||'').toLowerCase();
   const ocultarEjec = !pmsVerEjec && !estF.includes('ejec');
-  const visibles = ocultarEjec ? filas.filter(f=>f.est!=='EJECUTADO') : filas;
+  const visibles = ocultarEjec ? filas.filter(f=>!esHecho(f.est)) : filas;
   let h='';
   visibles.forEach(f=>{ h+=pmsRowHTML(f, bal.has(f.r.id)?bal.get(f.r.id):-1); });
   pmsBody.innerHTML=h||`<tr><td colspan="24" style="padding:24px;text-align:center;color:#6b747d">Sin registros. Usa “＋ MNTTO” o “Programar mntto” desde Equipos.</td></tr>`;
@@ -719,7 +730,7 @@ function pmsAplicar(){
   let n=0,ver=0;
   for(const m of PMSX){
     const f=m.f,r=f.r; let ok=true;
-    if(f.est==='EJECUTADO' && !pmsVerEjec && !estF.includes('ejec')) ok=false;
+    if(esHecho(f.est) && !pmsVerEjec && !estF.includes('ejec')) ok=false;
     if(ok&&q&&String(f.sem)!==q) ok=false;
     if(ok)for(const [k,v] of cf){
       const val = k==='_n'?'' : k==='om'?String(r.om||'') : k==='hrkm'?String(r.hrkm_ejec??'')
@@ -731,9 +742,9 @@ function pmsAplicar(){
     if(m.tr.style.display!==d)m.tr.style.display=d;
     if(ok){n++;if(m.rn&&m.rn.textContent!=n)m.rn.textContent=n;}
   }
-  ver=pmsFilas.reduce((a,f)=>a+(f.est==='EJECUTADO'?1:0),0);
+  ver=pmsFilas.reduce((a,f)=>a+(esHecho(f.est)?1:0),0);
   pmsCount.textContent=n+' fila(s)';
-  pmsCountEjec.textContent=ver+' ejecutado(s)';
+  pmsCountEjec.textContent=ver+' realizado(s)';
 }
 let pmsFiltT; function pmsAplicarD(){clearTimeout(pmsFiltT);pmsFiltT=setTimeout(pmsAplicar,80);}
 
@@ -747,8 +758,8 @@ pmsThead.addEventListener('input',ev=>{
     const nuevo=pmsThead.querySelector(`[data-pmsf="${foco}"]`);if(nuevo){nuevo.focus();nuevo.setSelectionRange(nuevo.value.length,nuevo.value.length);}return;}
   pmsAplicarD();});
 pmsBuscarSem.oninput=pmsAplicarD;
-pmsBtnVerEjec.onclick=()=>{pmsVerEjec=!pmsVerEjec;pmsBtnVerEjec.textContent=pmsVerEjec?'Ocultar ejecutados':'Mostrar ejecutados';pmsBtnVerEjec.classList.toggle('primary',pmsVerEjec);pmsRender();};
-pmsBtnClear.onclick=()=>{pmsColF={};pmsBuscarSem.value='';pmsVerEjec=false;pmsBtnVerEjec.textContent='Mostrar ejecutados';pmsBtnVerEjec.classList.remove('primary');pmsRender();};
+pmsBtnVerEjec.onclick=()=>{pmsVerEjec=!pmsVerEjec;pmsBtnVerEjec.textContent=pmsVerEjec?'Ocultar realizados':'Mostrar realizados';pmsBtnVerEjec.classList.toggle('primary',pmsVerEjec);pmsRender();};
+pmsBtnClear.onclick=()=>{pmsColF={};pmsBuscarSem.value='';pmsVerEjec=false;pmsBtnVerEjec.textContent='Mostrar realizados';pmsBtnVerEjec.classList.remove('primary');pmsRender();};
 pmsBtnHoy.onclick=()=>{const H=hoy0();pmsSemana.value=isoWeek(H);pmsAnio.value=H.getFullYear();pmsRender();};
 
 pmsBody.addEventListener('click',async ev=>{
@@ -776,6 +787,7 @@ pmsBody.addEventListener('dblclick',ev=>{
   else if(k==='hrkm_ejec') ctrl=`<input type="number" step="1" value="${r.hrkm_ejec??''}">`;
   else if(k==='hrkm_prog') ctrl=`<input type="number" step="1" min="0" value="${r.hrkm_prog??(f.hp??'')}">`;
   else if(k==='tipo_pm') ctrl=`<select>${['','PM1','PM2','PM3','PM4'].map(o=>`<option value="${o}" ${((r.tipo_pm||'')===o)?'selected':''}>${o||'(automático)'}</option>`).join('')}</select>`;
+  else if(k==='estado') ctrl=`<select>${['','PROGRAMADO','PENDIENTE','EJECUTADO','REPROGRAMADO'].map(o=>`<option value="${o}" ${((r.estado||'')===o)?'selected':''}>${o||'(automático)'}</option>`).join('')}</select>`;
   else if(k==='tiempo_req') ctrl=`<input type="text" list="pmsTiempos" placeholder="(automático)" value="${esc(r.tiempo_req||'')}">`;
   else ctrl=`<input type="number" step="1" min="0" max="999999999" value="${r.om??''}">`;
   td.dataset.editing='1'; td.innerHTML=ctrl;
@@ -804,7 +816,7 @@ async function pmsCommit(td,raw){
   else if(k==='om') val=String(parseInt(raw,10));
   else if(k==='hrkm_ejec'||k==='hrkm_prog') val=Number(raw);
   else val=raw;
-  if((k==='tipo_pm'||k==='tiempo_req')&&val!=null) val=String(val).trim()||null;
+  if((k==='tipo_pm'||k==='tiempo_req'||k==='estado')&&val!=null) val=String(val).trim()||null;
   if((r[k]??null)===(val??null)){pmsRender();return;}
   const prev=r[k]??null;
   r[k]=val;
@@ -824,7 +836,7 @@ async function pmsCommit(td,raw){
   setTimeout(()=>appFoot.textContent='Doble clic en una celda para editar · los cambios se guardan solos.',1200);
   // om / tipo_pm / tiempo_req no cambian el orden, la semana ni el reparto de días:
   // basta con repintar esa fila en vez de las ~380
-  const soloFila=(k==='om'||k==='tipo_pm'||k==='tiempo_req');
+  const soloFila=(k==='om'||k==='tipo_pm'||k==='tiempo_req');   // 'estado' no: cambia el orden y qué se ve
   if(soloFila&&pmsRefrescarFila(id))pmsAplicar(); else pmsRender();
 }
 /* ---- alta de filas ---- */
@@ -997,8 +1009,8 @@ document.addEventListener('keydown',ev=>{
 pmsBtnExcel.onclick=()=>{
   const vis=PMSX.filter(m=>m.tr.style.display!=='none');
   if(!vis.length)return alert('No hay filas visibles para exportar.');
-  if(!pmsVerEjec&&pmsFilas.some(f=>f.est==='EJECUTADO')&&
-     !confirm('Se exportará solo lo que está a la vista.\n\nLos mantenimientos EJECUTADOS están ocultos. Si los necesitas, pulsa “Mostrar ejecutados” y vuelve a exportar.\n\n¿Continuar?'))return;
+  if(!pmsVerEjec&&pmsFilas.some(f=>esHecho(f.est))&&
+     !confirm('Se exportará solo lo que está a la vista.\n\nLos mantenimientos ya realizados están ocultos. Si los necesitas, pulsa “Mostrar realizados” y vuelve a exportar.\n\n¿Continuar?'))return;
   const wk=+pmsSemana.value||isoWeek(hoy0()), yr=+pmsAnio.value||hoy0().getFullYear();
   const filas=vis.map((m,i)=>{
     const f=m.f, r=f.r;
@@ -1228,6 +1240,73 @@ dashLimpiar.onclick=()=>{dashMes.value='';dashSem.value='';dashProy.value='';das
 [dashAnio,dashMes,dashSem,dashProy,dashFam,dashSap].forEach(s=>s.onchange=dashRender);
 dashWrap.addEventListener('click',ev=>{if(ev.target===dashWrap)dashWrap.classList.add('hide');});
 document.addEventListener('keydown',ev=>{if(ev.key==='Escape'&&!dashWrap.classList.contains('hide'))dashWrap.classList.add('hide');});
+
+/* ═══════════════ SELECCIÓN TIPO EXCEL ═══════════════
+   Arrastrar o Shift+clic marca un rectángulo; Ctrl+C lo copia con
+   tabulaciones. Se resalta también el encabezado de las columnas. */
+let xAnc=null, xFoco=null, xArr=false;
+function xPos(td){
+  const tr=td&&td.closest&&td.closest('#pmsBody tr[data-pmsid]');
+  if(!tr)return null;
+  return {tr,td,f:tr.sectionRowIndex,c:td.cellIndex};
+}
+function xRect(){
+  if(!xAnc||!xFoco)return null;
+  return {f1:Math.min(xAnc.f,xFoco.f),f2:Math.max(xAnc.f,xFoco.f),
+          c1:Math.min(xAnc.c,xFoco.c),c2:Math.max(xAnc.c,xFoco.c)};
+}
+function xPintar(){
+  pmsBody.querySelectorAll('td.xsel,td.xanc').forEach(t=>t.classList.remove('xsel','xanc'));
+  pmsThead.querySelectorAll('th.xcol').forEach(t=>t.classList.remove('xcol'));
+  const R=xRect(); if(!R)return;
+  const filas=pmsBody.rows;
+  for(let f=R.f1;f<=R.f2;f++){
+    const tr=filas[f]; if(!tr||tr.style.display==='none')continue;
+    for(let cx=R.c1;cx<=R.c2;cx++){const td=tr.cells[cx]; if(td)td.classList.add('xsel');}
+  }
+  if(xAnc&&xAnc.td)xAnc.td.classList.add('xanc');
+  const filaCols=[...pmsThead.rows].find(r=>r.classList.contains('pms-cols'));
+  if(filaCols)for(let cx=R.c1;cx<=R.c2;cx++){const th=filaCols.cells[cx]; if(th)th.classList.add('xcol');}
+  const n=(R.f2-R.f1+1)*(R.c2-R.c1+1);
+  if(n>1)appFoot.textContent=`${R.f2-R.f1+1} fila(s) × ${R.c2-R.c1+1} columna(s) · Ctrl+C para copiar`;
+}
+pmsBody.addEventListener('mousedown',ev=>{
+  if(ev.button!==0)return;
+  if(ev.target.closest('[data-editing]')||ev.target.closest('button'))return;
+  const p=xPos(ev.target.closest('td')); if(!p)return;
+  if(ev.shiftKey&&xAnc)xFoco=p; else {xAnc=p;xFoco=p;xArr=true;}
+  xPintar();
+});
+pmsBody.addEventListener('mouseover',ev=>{
+  if(!xArr)return;
+  const p=xPos(ev.target.closest('td')); if(!p)return;
+  xFoco=p; xPintar();
+});
+document.addEventListener('mouseup',()=>{xArr=false;});
+document.addEventListener('copy',ev=>{
+  const R=xRect(); if(!R)return;
+  if(document.activeElement&&/INPUT|SELECT|TEXTAREA/.test(document.activeElement.tagName))return;
+  const filas=pmsBody.rows, lineas=[];
+  for(let f=R.f1;f<=R.f2;f++){
+    const tr=filas[f]; if(!tr||tr.style.display==='none')continue;
+    const col=[];
+    for(let cx=R.c1;cx<=R.c2;cx++){
+      const td=tr.cells[cx];
+      let t=td?td.textContent.replace(/\s+/g,' ').trim():'';
+      if(td&&td.classList.contains('idx'))t=t.replace(/[✕✖]/g,'').trim();
+      col.push(t);
+    }
+    lineas.push(col.join('\t'));
+  }
+  if(!lineas.length)return;
+  ev.clipboardData.setData('text/plain',lineas.join('\n'));
+  ev.preventDefault();
+  appFoot.textContent=`Copiado: ${lineas.length} fila(s) × ${R.c2-R.c1+1} columna(s)`;
+  setTimeout(()=>appFoot.textContent='Doble clic en una celda para editar · los cambios se guardan solos.',2200);
+});
+document.addEventListener('keydown',ev=>{
+  if(ev.key==='Escape'&&xAnc&&!pmsBody.querySelector('[data-editing]')){xAnc=null;xFoco=null;xPintar();}
+});
 
 /* ── arranque ── */
 (async()=>{
