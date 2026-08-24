@@ -794,10 +794,22 @@ pmsBody.addEventListener('dblclick',ev=>{
   else if(k==='estado') ctrl=`<select>${['','PROGRAMADO','PENDIENTE','EJECUTADO','REPROGRAMADO'].map(o=>`<option value="${o}" ${((r.estado||'')===o)?'selected':''}>${o||'(automático)'}</option>`).join('')}</select>`;
   else if(k==='tiempo_req') ctrl=`<input type="text" list="pmsTiempos" placeholder="(automático)" value="${esc(r.tiempo_req||'')}">`;
   // sin flechas de incremento: se comían el ancho y cortaban el número
-  else ctrl=`<input type="text" inputmode="numeric" maxlength="9" class="om-inp" value="${r.om??''}">`;
+  else ctrl=`<input type="text" inputmode="numeric" class="om-inp" value="${r.om??''}">`;
   td.dataset.editing='1'; td.innerHTML=ctrl;
   const inp=td.querySelector('input,select'); inp.focus(); try{inp.select&&inp.select();}catch(_){}
-  if(k==='om')inp.oninput=()=>{const v=inp.value.replace(/[^0-9]/g,'').slice(0,9); if(v!==inp.value)inp.value=v;};
+  if(k==='om'){
+    // primero se quitan espacios, puntos, comas y apóstrofos; después se corta a 9
+    const limpiar=()=>{const v=inp.value.replace(/[^0-9]/g,'').slice(0,9); if(v!==inp.value)inp.value=v;};
+    inp.oninput=limpiar;
+    inp.addEventListener('paste',ev=>{          // pegado desde SAP o Excel
+      const t=(ev.clipboardData||window.clipboardData);
+      if(!t)return;
+      const d=String(t.getData('text')||'').replace(/[^0-9]/g,'').slice(0,9);
+      if(!d)return;
+      ev.preventDefault(); inp.value=d;
+      try{inp.setSelectionRange(d.length,d.length);}catch(_){}
+    });
+  }
   if(inp.tagName==='SELECT')inp.onchange=()=>inp.blur();
 });
 pmsBody.addEventListener('focusout',ev=>{
