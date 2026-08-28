@@ -998,11 +998,26 @@ btnXls.onclick=()=>{
   XLSX.writeFile(wb,'Rendimiento_'+new Date().toISOString().slice(0,10)+'.xlsx');
 };
 
+/* Al volver a esta ventana después de un rato se recargan los datos:
+   así no se trabaja sobre una pantalla que quedó vieja mientras otro
+   usuario estaba grabando. */
+let _ultimaCarga=Date.now();
+function marcarCarga(){_ultimaCarga=Date.now();}
+document.addEventListener('visibilitychange',()=>{
+  if(document.hidden)return;
+  if(Date.now()-_ultimaCarga < 60000)return;      // hace menos de un minuto: no hace falta
+  cargar();
+});
+window.addEventListener('focus',()=>{
+  if(Date.now()-_ultimaCarga < 60000)return;
+  cargar();
+});
+
 /* ---------- arranque ---------- */
 async function cargar(){
   const {data:dp,error}=await sb.from('combustible').select('*').order('fecha').order('hora');
   if(error){pie.textContent='No se pudieron cargar los despachos: '+error.message;return;}
-  DESPACHOS=dp||[];
+  DESPACHOS=dp||[]; marcarCarga();
   const meses=[...new Set(DESPACHOS.map(d=>String(d.fecha).slice(0,7)))].sort().reverse();
   fMes.innerHTML=meses.map(m=>{const [a,mm]=m.split('-');return `<option value="${m}">${MESES[+mm-1]} ${a}</option>`;}).join('');
   const ps=[...new Set(DESPACHOS.map(d=>d.cod_proyec).filter(Boolean))].sort();

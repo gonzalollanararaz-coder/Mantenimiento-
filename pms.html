@@ -301,22 +301,43 @@ const OFF = (() => {
   const quitar=id=>tx('cola','readwrite',s=>s.delete(id));
 
   let online=navigator.onLine, avisar=null, sincronizando=false;
-  const atascadas=new Map();          // no salieron tras varios intentos (una entrada por operación)
+  const atascadas=new Map();
+  const desechados=[];              // envíos descartados por estar desfasados          // no salieron tras varios intentos (una entrada por operación)
 
   /* Envía a Supabase todo lo que quedó pendiente, en el orden en que se hizo */
-  async function sincronizar(sb){
-    if(sincronizando||!navigator.onLine)return {ok:0,fail:0};
+  const VENCE_MS=8*3600*1000;        // un cambio pendiente más de 8 h ya no se envía solo
+  async function sincronizar(sb,forzar){
+    if(sincronizando||!navigator.onLine)return {ok:0,fail:0,vencidos:0};
     sincronizando=true;
-    let ok=0,fail=0;
+    let ok=0,fail=0,vencidos=0,obsoletos=0;
     try{
-      const ops=await pendientes();
+      let ops=await pendientes();
+      if(!forzar){
+        const viejos=ops.filter(o=>Date.now()-(o.ts||0)>VENCE_MS);
+        vencidos=viejos.length;
+        ops=ops.filter(o=>Date.now()-(o.ts||0)<=VENCE_MS);
+      }
       const trabadas=new Set();           // filas con un envío fallado: se respeta su orden
       for(const op of ops){
         const fila=op.tabla+'#'+op.id_fila;
         if(trabadas.has(fila)){fail++;continue;}
         try{
           let r;
-          if(op.accion==='update')      r=await sb.from(op.tabla).update(op.datos).eq('id',op.id_fila).select('id');
+          if(op.accion==='update'){
+            // Solo se aplica si la fila sigue igual que cuando se encoló:
+            // si otro usuario la cambió después, el envío se descarta.
+            let q=sb.from(op.tabla).update(op.datos).eq('id',op.id_fila);
+            if(op.base)q=q.eq('updated_at',op.base);
+            r=await q.select('id');
+            if(op.base&&r&&!r.error&&Array.isArray(r.data)&&r.data.length===0){
+              const {data:act}=await sb.from(op.tabla).select('id').eq('id',op.id_fila).limit(1);
+              if(act&&act.length){                       // la fila existe: la cambió alguien más
+                await quitar(op.id); atascadas.delete(op.id); obsoletos++;
+                desechados.push({...op,motivo:'otro usuario modificó esa fila después'});
+                continue;
+              }
+            }
+          }
           else if(op.accion==='insert') r=await sb.from(op.tabla).insert(op.datos).select('id');
           else if(op.accion==='delete') r=await sb.from(op.tabla).delete().eq('id',op.id_fila).select('id');
           if(r&&r.error)throw r.error;
@@ -332,7 +353,7 @@ const OFF = (() => {
       }
     } finally { sincronizando=false; }
     if(avisar)avisar();
-    return {ok,fail};
+    return {ok,fail,vencidos,obsoletos};
   }
   async function cuantosPendientes(){ try{ return (await pendientes()).length; }catch(_){ return 0; } }
 
@@ -342,7 +363,9 @@ const OFF = (() => {
     addEventListener('offline',()=>{online=false;cb&&cb();});
   }
   return {guardar,leer,meta,encolar,pendientes,quitar,sincronizar,cuantosPendientes,vigilar,
-          get atascadas(){return [...atascadas.values()];}, limpiarCola:()=>tx('cola','readwrite',s=>s.clear()),
+          get atascadas(){return [...atascadas.values()];},
+          get desechados(){return desechados;},
+          VENCE_MS, limpiarCola:()=>tx('cola','readwrite',s=>s.clear()),
           get online(){return navigator.onLine;}};
 })();
 
@@ -388,8 +411,39 @@ let _pendCache=0;
 function refrescarPendientes(){return OFF.cuantosPendientes().then(n=>{_pendCache=n;return n;});}
 refrescarPendientes();
 
+
+/* Cambios que quedaron pendientes demasiado tiempo: no se envían solos,
+   porque podrían pisar lo que otro usuario grabó mientras tanto. Se
+   consulta al usuario una vez por sesión. */
+let _avisoVencidos=false;
+async function revisarPendientesViejos(){
+  if(_avisoVencidos)return; 
+  const ops=await OFF.pendientes();
+  const viejos=ops.filter(o=>Date.now()-(o.ts||0)>OFF.VENCE_MS);
+  if(!viejos.length)return;
+  _avisoVencidos=true;
+  const lista=viejos.slice(0,10).map(o=>{
+    const h=Math.round((Date.now()-(o.ts||0))/3600000);
+    return ` · ${o.tabla} #${o.id_fila} — ${JSON.stringify(o.datos||{}).slice(0,50)} (hace ${h} h)`;
+  }).join('\n');
+  const enviar=confirm(
+    `Hay ${viejos.length} cambio(s) que quedaron sin enviar hace más de 8 horas:\n\n${lista}`
+    +(viejos.length>10?'\n · …':'')
+    +`\n\nSon datos viejos: si los envías ahora podrían reemplazar algo más reciente que grabó otra persona.\n\n`
+    +`Aceptar = enviarlos igual\nCancelar = descartarlos`);
+  if(enviar){
+    const r=await OFF.sincronizar(sb,true);
+    alert(`Enviados: ${r.ok}`+(r.obsoletos?` · ${r.obsoletos} se descartaron porque la fila ya había cambiado`:'')
+      +(r.fail?` · ${r.fail} con error`:''));
+  }else{
+    for(const o of viejos)await OFF.quitar(o.id);
+    alert('Los cambios viejos se descartaron. Se conserva lo que está en el servidor.');
+  }
+  offPintarEstado();
+  if(typeof recargarTrasSync==='function')recargarTrasSync();
+}
 /* Envuelve una escritura: si hay internet va directo; si no, entra a la cola */
-async function offEscribir(sb,tabla,accion,{id_fila=null,datos=null}={}){
+async function offEscribir(sb,tabla,accion,{id_fila=null,datos=null,base=null}={}){
   if(navigator.onLine){
     let r;
     if(accion==='update')      r=await sb.from(tabla).update(datos).eq('id',id_fila).select('id');
@@ -406,7 +460,7 @@ async function offEscribir(sb,tabla,accion,{id_fila=null,datos=null}={}){
     const red=/fetch|network|Failed to fetch|NetworkError/i.test(r.error.message||'');
     if(!red)return {error:r.error,local:false};
   }
-  await OFF.encolar({tabla,accion,id_fila,datos,ts:Date.now()});
+  await OFF.encolar({tabla,accion,id_fila,datos,base,ts:Date.now()});
   offPintarEstado(); if(typeof refrescarPendientes==='function')refrescarPendientes();
   return {error:null,data:null,local:true};
 }
@@ -586,7 +640,7 @@ async function pmsCargar(){
     if(!data){pmsBody.innerHTML='<tr><td colspan="24" style="padding:20px;color:#b91c1c">Sin conexión y sin datos guardados en este equipo.</td></tr>';return;}
     appFoot.textContent='Mostrando la última copia guardada en este equipo.';
   }
-  pmsData=data||[]; pmsCargado=true; pmsRender();
+  pmsData=data||[]; pmsCargado=true; pmsRender(); marcarCarga();
 }
 /* tras enviar la cola, refresca desde el servidor */
 async function recargarTrasSync(){ if(pmsCargado)await pmsCargar(); }
@@ -835,10 +889,33 @@ async function pmsCommit(td,raw){
   else val=raw;
   if((k==='tipo_pm'||k==='tiempo_req'||k==='estado')&&val!=null) val=String(val).trim()||null;
   if((r[k]??null)===(val??null)){pmsRender();return;}
+  // Cada orden de mantenimiento es única: si el número ya está en otra fila se avisa
+  // antes de intentar guardarlo, en vez de dejar que lo rechace la base de datos.
+  if(k==='om'&&val){
+    const otra=pmsData.find(x=>String(x.id)!==String(id)&&String(x.om||'')===String(val));
+    if(otra){
+      const f=pmsFila(otra);
+      alert(`La OM ${val} ya está registrada en otra fila:\n\n`
+        +`   ${otra.cod_sap}  ${f.equipo||''}\n`
+        +`   Fecha programada: ${fmtDate(otra.fecha_prog)||'—'}${otra.fecha_ejec?'   ·   Ejecutada: '+fmtDate(otra.fecha_ejec):''}\n\n`
+        +`Cada orden de mantenimiento solo puede usarse una vez. Revisa el número.`);
+      pmsEnfocar(otra.id,otra.fecha_prog);
+      return;
+    }
+  }
   const prev=r[k]??null;
   r[k]=val;
-  const res=await offEscribir(sb,'pm_prog','update',{id_fila:id,datos:{[k]:val}});
-  if(res.error){appFoot.textContent='⚠️ No se guardó: '+res.error.message;r[k]=prev;pmsRender();return;}
+  const res=await offEscribir(sb,'pm_prog','update',{id_fila:id,datos:{[k]:val},base:r.updated_at||null});
+  if(res.error){
+    const m=res.error.message||'';
+    const dup=/pm_prog_om_unico|duplicate key/i.test(m);
+    appFoot.textContent = dup ? `⚠️ La OM ${val} ya está usada en otra fila; no se guardó.`
+                              : '⚠️ No se guardó: '+m;
+    appFoot.style.color='#b91c1c';
+    setTimeout(()=>{appFoot.style.color='';},4000);
+    if(dup)alert(`La OM ${val} ya está registrada en otra fila.\n\nPuede que otro usuario la haya ingresado hace un momento. Pulsa Actualizar y revisa el número.`);
+    r[k]=prev; pmsRender(); return;
+  }
   OFF.guardar('pm_prog',pmsData);
   pmsPushUndo({tipo:'edit',id,k,old:prev});
   // reflejar en el maestro: HR/KM ult. y F. ult.
@@ -1325,6 +1402,21 @@ document.addEventListener('keydown',ev=>{
   if(ev.key==='Escape'&&xAnc&&!pmsBody.querySelector('[data-editing]')){xAnc=null;xFoco=null;xPintar();}
 });
 
+/* Al volver a esta ventana después de un rato se recargan los datos:
+   así no se trabaja sobre una pantalla que quedó vieja mientras otro
+   usuario estaba grabando. */
+let _ultimaCarga=Date.now();
+function marcarCarga(){_ultimaCarga=Date.now();}
+document.addEventListener('visibilitychange',()=>{
+  if(document.hidden)return;
+  if(Date.now()-_ultimaCarga < 60000)return;      // hace menos de un minuto: no hace falta
+  pmsCargar();
+});
+window.addEventListener('focus',()=>{
+  if(Date.now()-_ultimaCarga < 60000)return;
+  pmsCargar();
+});
+
 /* ── arranque ── */
 (async()=>{
   const {data:{session}}=await sb.auth.getSession();
@@ -1354,7 +1446,11 @@ document.addEventListener('keydown',ev=>{
 if('serviceWorker' in navigator){
   navigator.serviceWorker.register('sw.js').catch(e=>console.warn('SW no registrado:',e));
 }
-OFF.vigilar(()=>{ offPintarEstado(); if(navigator.onLine)OFF.sincronizar(sb).then(r=>{ if(r.ok){offPintarEstado(); if(typeof recargarTrasSync==='function')recargarTrasSync(); }}); });
+OFF.vigilar(()=>{ offPintarEstado(); if(navigator.onLine)OFF.sincronizar(sb).then(r=>{
+  if(r.ok||r.obsoletos){offPintarEstado(); if(typeof recargarTrasSync==='function')recargarTrasSync();}
+  if(r.obsoletos)appFoot.textContent=`${r.obsoletos} cambio(s) no se aplicaron: otro usuario ya había modificado esas filas.`;
+}); });
+setTimeout(revisarPendientesViejos,1500);
 offPintarEstado();
 setInterval(()=>{ if(navigator.onLine&&!document.hidden)OFF.sincronizar(sb).then(r=>{if(r.ok)offPintarEstado();}); },30000);
 
