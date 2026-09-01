@@ -48,6 +48,7 @@
   .desc{max-width:300px;line-height:1.35}
   .dim{color:var(--muted)}
   .std{color:#2E75B6;font-style:normal;font-size:10px}
+  .clave{color:#1F3864;font-weight:700;font-size:10.5px;letter-spacing:-.2px}
   .warn{color:#B45309;font-size:10px}
   .pend{color:#98a2ad;font-size:10.5px}
   .pill{border-radius:999px;padding:1px 9px;font-size:10px;font-weight:800;display:inline-block}
@@ -102,7 +103,7 @@
   <span class="chip" id="chN">&mdash;</span>
   <div class="spacer"></div>
   <button class="act primary" id="btnNuevo">+ Muestra</button>
-  <button class="act" id="btnSubir">&#11014; Subir planilla</button>
+  <button class="act" id="btnSubir" title="Planilla de envío o resultados de laboratorio: se reconoce solo">&#11014; Subir archivo</button>
   <button class="act" id="btnXls">&#8681; Excel</button>
   <button class="act" id="btnEq">&#9878; Equivalencias</button>
   <button class="act" id="btnRec">&#8635;</button>
@@ -177,6 +178,17 @@ function sistemaStd(txt){
   return EQS.get(k)||null;
 }
 
+/* Clave única de una muestra: EQUIPO_SISTEMA_FECHA
+   ejemplo: ECV109_MOTOR_02.24.26
+   El sistema se recorta a 5 caracteres y la fecha va MM.DD.AA.
+   Sirve para enlazar el resultado del laboratorio con su fila de la planilla. */
+function claveMuestra(sap,sistema,fecha){
+  if(!sap||!fecha)return null;
+  const s=nrm(sistema||'').replace(/[^A-Z0-9]/g,'').slice(0,5)||'XXXXX';
+  const [a,m,d]=String(fecha).slice(0,10).split('-');
+  if(!a||!m||!d)return null;
+  return `${nrm(sap)}_${s}_${m}.${d}.${a.slice(2)}`;
+}
 /* ---------- fechas y números tolerantes ---------- */
 function aFecha(v){
   if(v instanceof Date&&!isNaN(v))return isoDe(v);
@@ -297,6 +309,12 @@ function leerResultados(filas,fuente){
 }
 /* Enlaza cada resultado con su fila de la planilla */
 function enlazarPlanilla(r){
+  // 1) por clave EQUIPO_SISTEMA_FECHA
+  const k=claveMuestra(r.cod_sap,r.sistema_std||r.componente,r.fecha);
+  if(k){
+    const p=PLAN.find(x=>claveMuestra(x.cod_sap,x.sistema_std||x.sistema,x.f_muestreo)===k);
+    if(p)return p;
+  }
   if(r.cod_frasco){
     const p=PLAN.find(x=>x.nro_frasco&&nrm(x.nro_frasco)===nrm(r.cod_frasco));
     if(p)return p;
@@ -326,7 +344,7 @@ function verVista(v){
   boxPlan.classList.toggle('hide',v!=='plan');
   boxRes.classList.toggle('hide',v!=='res');
   boxAle.classList.toggle('hide',v!=='ale');
-  btnSubir.textContent = v==='plan'?'⬆ Subir planilla':'⬆ Subir resultados';
+  btnSubir.textContent='⬆ Subir archivo';
   btnSubir.classList.toggle('hide',v==='ale');
   btnNuevo.classList.toggle('hide',v!=='plan');
   pintar();
@@ -347,7 +365,7 @@ function filtrarPlan(){
     if(d&&f&&f<d)return false;
     if(h&&f&&f>h)return false;
     if(o&&String(p.obra||'')!==o)return false;
-    if(q&&!nrm(`${p.cod_sap} ${p.nro_frasco||''} ${p.sistema||''} ${p.nro_planilla||''} ${p.nro_muestra||''}`).includes(q))return false;
+    if(q&&!nrm(`${p.cod_sap} ${p.nro_frasco||''} ${p.sistema||''} ${p.nro_planilla||''} ${p.nro_muestra||''} ${claveMuestra(p.cod_sap,p.sistema_std||p.sistema,p.f_muestreo)||''}`).includes(q))return false;
     return true;
   });
 }
@@ -363,13 +381,14 @@ function pintarPlan(){
   if(!L.length){boxPlan.innerHTML='<div class="vacio">Sin muestras registradas con estos filtros.</div>';return;}
   let prev=null;
   boxPlan.innerHTML=`<table class="t"><thead><tr>
-    <th>Muestreo</th><th>Obra</th><th>Planilla</th><th class="c">Frasco</th><th>Cód. SAP</th><th>Equipo</th>
+    <th>Clave</th><th>Muestreo</th><th>Obra</th><th>Planilla</th><th class="c">Frasco</th><th>Cód. SAP</th><th>Equipo</th>
     <th>Sistema</th><th>Tipo aceite</th><th class="r">Horómetro</th><th class="r">Hrs aceite</th>
     <th class="c">Tipo</th><th class="c">Resultado</th><th></th></tr></thead><tbody>
     ${L.map(p=>{
       const e=getE(p.maestro_id), r=RES.find(x=>x.planilla_id===p.id);
       const corte=prev!==null&&String(p.f_muestreo||'')!==prev; prev=String(p.f_muestreo||'');
       return `<tr class="${corte?'corte':''}" data-pid="${p.id}">
+        <td class="mono clave">${esc(claveMuestra(p.cod_sap,p.sistema_std||p.sistema,p.f_muestreo)||'—')}</td>
         <td>${fmtDate(p.f_muestreo)}</td><td>${esc(p.obra||'')}</td><td>${esc(p.nro_planilla||'')}</td>
         <td class="c mono">${esc(p.nro_frasco||'')}</td><td class="mono">${esc(p.cod_sap||'')}</td>
         <td>${esc(e?e.equipo:'')}</td>
@@ -397,7 +416,7 @@ function filtrarRes(){
     if(es&&r.estado_std!==es)return false;
     if(si&&r.sistema_std!==si)return false;
     if(fu&&r.fuente!==fu)return false;
-    if(q&&!nrm(`${r.cod_sap} ${r.nro_muestra} ${r.componente||''} ${r.observacion||''}`).includes(q))return false;
+    if(q&&!nrm(`${r.cod_sap} ${r.nro_muestra} ${r.componente||''} ${r.observacion||''} ${claveMuestra(r.cod_sap,r.sistema_std||r.componente,r.fecha)||''}`).includes(q))return false;
     return true;
   });
 }
@@ -411,12 +430,13 @@ function pintarRes(){
     +card('Normales',n('NORMAL'),'sin novedad','ok');
   if(!L.length){boxRes.innerHTML='<div class="vacio">Sin resultados con estos filtros.</div>';return;}
   boxRes.innerHTML=`<table class="t"><thead><tr>
-    <th>Fecha</th><th>Fuente</th><th>N° Muestra</th><th>Cód. SAP</th><th>Equipo</th><th>Componente</th>
+    <th>Clave</th><th>Fecha</th><th>Fuente</th><th>N° Muestra</th><th>Cód. SAP</th><th>Equipo</th><th>Componente</th>
     <th>Sistema</th><th class="r">Horóm.</th><th class="c">Estado lab.</th><th class="c">Estado</th>
     <th>Observación</th><th class="c">Planilla</th><th class="c">PDF</th></tr></thead><tbody>
     ${L.slice(0,800).map(r=>{
       const e=getE(r.maestro_id);
       return `<tr data-rid="${r.id}">
+        <td class="mono clave">${esc(claveMuestra(r.cod_sap,r.sistema_std||r.componente,r.fecha)||'—')}</td>
         <td>${fmtDate(r.fecha)}</td><td>${esc(r.fuente)}</td><td class="mono">${esc(r.nro_muestra)}</td>
         <td class="mono">${esc(r.cod_sap||'')}</td><td>${esc(e?e.equipo:'')}</td>
         <td>${esc(r.componente||'')}</td>
@@ -438,7 +458,8 @@ function detalleRes(id){
   const ks=Object.keys(an);
   document.body.insertAdjacentHTML('beforeend',`<div class="modal" id="mdet"><div class="mc">
     <div class="mh"><div><h3>${esc(r.nro_muestra)} · ${esc(r.cod_sap||'')} ${esc(e?e.equipo:'')}</h3>
-      <div class="sub">${esc(r.fuente)} · ${fmtDate(r.fecha)} · ${esc(r.componente||'')}
+      <div class="sub"><b class="clave">${esc(claveMuestra(r.cod_sap,r.sistema_std||r.componente,r.fecha)||'')}</b>
+        · ${esc(r.fuente)} · ${fmtDate(r.fecha)} · ${esc(r.componente||'')}
         ${r.sistema_std?'→ '+esc(r.sistema_std):''}</div></div>
       <div class="spacer"></div>
       <span class="pill e-${r.estado_std||'NA'}">${esc(r.estado_std||'?')}</span>
@@ -533,6 +554,17 @@ const card=(l,v,s,cls)=>`<div class="c"><div class="l">${l}</div><div class="v $
 
 
 /* ═══════════════ SUBIR ARCHIVO ═══════════════ */
+/* Reconoce el archivo por sus columnas, no por el nombre */
+function detectarTipo(filas,nombre,hoja){
+  const t=nrm(nombre+' '+hoja);
+  if(/INGRESO|FESA|LUBTEC|MARCO/.test(t))return leerHoja(filas,['N° MUESTRA','EQUIPO','COMPONENTE'])?'res':null;
+  if(/PLANILLA/.test(t))return leerHoja(filas,['N° Frasco','Sistema'])?'plan':null;
+  // sin pistas en el nombre: se mira el contenido
+  if(leerHoja(filas,['N° MUESTRA','EQUIPO','COMPONENTE','ESTADO']))return 'res';
+  if(leerHoja(filas,['N° Frasco','Sistema','Muestreo']))return 'plan';
+  return null;
+}
+
 btnSubir.onclick=()=>{
   const i=document.createElement('input'); i.type='file'; i.accept='.xlsx,.xls,.csv';
   i.onchange=async()=>{
@@ -542,8 +574,14 @@ btnSubir.onclick=()=>{
       const wb=XLSX.read(await f.arrayBuffer(),{type:'array',cellDates:true});
       const hoja=wb.Sheets[wb.SheetNames[0]];
       const filas=XLSX.utils.sheet_to_json(hoja,{header:1,raw:true,defval:''});
-      if(vista==='plan')await subirPlanilla(filas,f.name);
-      else await subirResultados(filas,f.name,wb.SheetNames[0]);
+      // se reconoce solo si es una planilla de envío o un ingreso de laboratorio,
+      // sin importar en qué vista estés
+      const tipo=detectarTipo(filas,f.name,wb.SheetNames[0]);
+      if(tipo==='plan'){ verVista('plan'); await subirPlanilla(filas,f.name); }
+      else if(tipo==='res'){ verVista('res'); await subirResultados(filas,f.name,wb.SheetNames[0]); }
+      else alert('No se reconoció el formato del archivo.\n\n'
+        +'Se esperaba una PLANILLA DE MUESTRAS (con N° Frasco, Código del Equipo, Sistema, Muestreo)\n'
+        +'o un archivo de laboratorio (con N° MUESTRA, EQUIPO, COMPONENTE, FECHA, ESTADO).');
     }catch(err){ alert('No se pudo leer el archivo: '+err.message); }
     pie.textContent='';
   };
@@ -698,7 +736,8 @@ btnXls.onclick=()=>{
   if(vista==='plan'){
     nombre='Planilla_envio';
     rows=filtrarPlan().map(p=>{const e=getE(p.maestro_id), r=RES.find(x=>x.planilla_id===p.id);
-      return {'Obra':p.obra||'','N° de Planilla':p.nro_planilla||'','N° Frasco':p.nro_frasco||'',
+      return {'Clave':claveMuestra(p.cod_sap,p.sistema_std||p.sistema,p.f_muestreo)||'',
+        'Obra':p.obra||'','N° de Planilla':p.nro_planilla||'','N° Frasco':p.nro_frasco||'',
         'Código del Equipo':p.cod_sap||'','Equipo':e?e.equipo:'','Marca':p.marca||'','Modelo':p.modelo||'',
         'Serie':p.serie||'','Sistema':p.sistema||'','Sistema estándar':p.sistema_std||'',
         'Tipo de Aceite':p.tipo_aceite||'','Cnt. (Galones)':p.galones??'','Horometro':p.horometro??'',
@@ -708,7 +747,8 @@ btnXls.onclick=()=>{
   }else if(vista==='res'){
     nombre='Resultados';
     rows=filtrarRes().map(r=>{const e=getE(r.maestro_id);
-      const base={'FUENTE':r.fuente,'EQUIPO':r.cod_sap||'','Descripción':e?e.equipo:'',
+      const base={'Clave':claveMuestra(r.cod_sap,r.sistema_std||r.componente,r.fecha)||'',
+        'FUENTE':r.fuente,'EQUIPO':r.cod_sap||'','Descripción':e?e.equipo:'',
         'COMPONENTE':r.componente||'','SISTEMA (estandarizado)':r.sistema_std||'','Horometro':r.horometro??'',
         'N° MUESTRA':r.nro_muestra,'CÓDIGO FRASCO':r.cod_frasco||'','FECHA':r.fecha||'',
         'ESTADO':r.estado||'','ESTADO ESTÁNDAR':r.estado_std||'','OBRA':r.obra||'',

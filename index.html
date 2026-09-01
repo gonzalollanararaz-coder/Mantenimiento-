@@ -291,9 +291,7 @@
     <button class="on" id="tabEq" data-tab="eq">Equipos</button>
     <button id="tabPms" data-tab="pms">PM-S</button>
     <button id="tabComb" data-tab="comb">Combustible</button>
-    <button id="tabPartes" data-tab="partes">Partes</button>
     <button id="tabSos" data-tab="sos">SOS</button>
-    <button id="tabCampo" data-tab="campo">Parte Diario</button>
     <button id="tabUsers" data-tab="users" style="display:none">Usuarios</button>
   </nav>
 
@@ -341,8 +339,8 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
 /* ╔══ pega aquí tus DOS datos (los mismos de tu archivo actual) ══╗ */
-const SUPABASE_URL = "https://hklwvdhzltjsbfvlewbu.supabase.co";   // ← reemplaza
-const SUPABASE_KEY = "sb_publishable_NgDfyDHDI_KByR-qf35EpA_ZuKI5E0K";                 // ← reemplaza
+const SUPABASE_URL = "https://TU-PROYECTO.supabase.co";   // ← reemplaza
+const SUPABASE_KEY = "TU-PUBLISHABLE-KEY";                 // ← reemplaza
 /* ──────────────────────────────────────────────────────────────── */
 const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 try{localStorage.setItem('gllr_sbcfg',JSON.stringify({url:SUPABASE_URL,key:SUPABASE_KEY}));}catch(_){}
@@ -596,9 +594,7 @@ const FCALC=['_alerta','_sem','_alertamntto']; // columnas calculadas con filtro
 const PAGINAS=[
   {k:'pms',   lab:'PM-S',        arch:'pms.html'},
   {k:'comb',  lab:'Combustible', arch:'combustible.html'},
-  {k:'partes',lab:'Partes',      arch:'partes.html'},
-  {k:'sos',   lab:'SOS',         arch:'sos.html'},
-  {k:'campo', lab:'Parte Diario',arch:'campo.html'}
+  {k:'sos',   lab:'SOS',         arch:'sos.html'}
 ];
 function puedePagina(k){
   if(!perfil)return false;
