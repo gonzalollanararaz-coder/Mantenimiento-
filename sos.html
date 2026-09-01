@@ -1,0 +1,894 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>SOS &mdash; Muestreo de Aceites</title>
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#1c232b">
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+  :root{--steel:#1c232b;--amber:#FFCD11;--line:#dfe3e7;--ink:#1a1d21;--muted:#6b747d;--bg:#f4f6f8}
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;background:var(--bg);color:var(--ink);font-size:14px;display:flex;flex-direction:column;height:100vh;overflow:hidden}
+  .hide{display:none !important}
+  .mono{font-family:"SF Mono",ui-monospace,monospace}
+  .spacer{flex:1}
+  header{background:var(--steel);color:#fff;padding:8px 16px;display:flex;gap:12px;align-items:center;justify-content:space-between;border-bottom:3px solid var(--amber);flex-shrink:0}
+  header h1{font-size:14px;font-weight:700}
+  header p{font-size:10px;color:#9aa4ad;text-transform:uppercase;letter-spacing:1.5px}
+  header .who{font-size:12px;color:#cdd4da}
+  nav{background:#fff;border-bottom:1px solid var(--line);padding:0 16px;display:flex;gap:4px;flex-shrink:0}
+  nav button{background:none;border:none;padding:11px 16px;cursor:pointer;font-size:13px;font-weight:600;color:var(--muted);border-bottom:3px solid transparent}
+  nav button.on{color:var(--ink);border-bottom-color:var(--amber)}
+  .toolbar{display:flex;flex-wrap:nowrap;gap:7px;align-items:center;padding:6px 14px;background:#fff;border-bottom:1px solid var(--line);flex-shrink:0;height:44px;overflow-x:auto}
+  .toolbar>*{flex:0 0 auto}
+  .toolbar input,.toolbar select{padding:4px 8px;border:1px solid var(--line);border-radius:7px;font-size:12px;height:26px}
+  .act{border:none;border-radius:7px;padding:0 11px;height:26px;font-size:11.5px;font-weight:700;cursor:pointer;background:#eef0f2;color:var(--ink)}
+  .act:hover{filter:brightness(.96)}
+  .act.primary{background:var(--amber);color:#1a1200}
+  .act.bad{background:#fee2e2;color:#b91c1c}
+  .chip{background:#f1f3f5;border:1px solid var(--line);border-radius:999px;padding:4px 10px;font-size:11px;font-weight:700;color:var(--muted)}
+  footer{padding:6px 16px;color:var(--muted);font-size:12px;text-align:center;flex-shrink:0}
+  #wrap{flex:1;overflow:auto;padding:10px 14px;min-height:0}
+  .cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:9px;margin-bottom:10px}
+  .c{background:#fff;border:1px solid var(--line);border-radius:11px;padding:9px 12px}
+  .c .l{font-size:10px;font-weight:800;color:var(--muted);text-transform:uppercase;letter-spacing:.4px}
+  .c .v{font-size:22px;font-weight:800;color:#1F3864;line-height:1.15;margin-top:2px}
+  .c .v.bad{color:#dc2626}.c .v.warn{color:#B45309}.c .v.ok{color:#15803d}
+  .c .s{font-size:9.5px;color:#98a2ad;margin-top:2px}
+  table.t{width:100%;border-collapse:collapse;font-size:11.5px;background:#fff}
+  table.t th{background:#1F3864;color:#fff;font-size:9.5px;text-transform:uppercase;letter-spacing:.3px;padding:6px;text-align:left;position:sticky;top:0;z-index:2}
+  table.t th.c,table.t td.c{text-align:center}
+  table.t th.r,table.t td.r{text-align:right}
+  table.t td{padding:4px 6px;border-bottom:1px solid #eef1f4;vertical-align:middle}
+  table.t tbody tr:hover td{background:#f7fbff}
+  table.t tr.corte td{border-top:2px solid #cbd5e1}
+  .desc{max-width:300px;line-height:1.35}
+  .dim{color:var(--muted)}
+  .std{color:#2E75B6;font-style:normal;font-size:10px}
+  .warn{color:#B45309;font-size:10px}
+  .pend{color:#98a2ad;font-size:10.5px}
+  .pill{border-radius:999px;padding:1px 9px;font-size:10px;font-weight:800;display:inline-block}
+  .e-NORMAL{background:#dcfce7;color:#15803d}
+  .e-PRECAUCION{background:#fef3c7;color:#B45309}
+  .e-CRITICO{background:#fee2e2;color:#b91c1c}
+  .e-NA{background:#eef0f2;color:#6b747d}
+  .b-bad{color:#dc2626;font-weight:800}.b-mid{color:#B45309;font-weight:700}
+  .mini{border:none;background:#eef0f2;border-radius:6px;padding:2px 7px;cursor:pointer;font-size:12px}
+  .vacio{padding:44px;text-align:center;color:#98a2ad}
+  .hint{font-size:10.5px;color:var(--muted);margin-top:6px;line-height:1.5}
+  input.ed{width:100%;border:1px solid var(--line);border-radius:5px;padding:3px 5px;font-size:11.5px}
+  input.ed.lg{min-width:150px}
+  select.ed{border:1px solid var(--line);border-radius:5px;padding:3px 4px;font-size:11px}
+  .ed.ok{border-color:#15803d;background:#f0fdf4}
+  .modal{position:fixed;inset:0;background:rgba(15,20,26,.55);z-index:99;display:flex;align-items:flex-start;justify-content:center;padding:18px;overflow:auto}
+  .mc{background:#fff;border-radius:12px;width:min(940px,98vw);box-shadow:0 20px 60px rgba(0,0,0,.35)}
+  .mh{display:flex;align-items:center;gap:10px;padding:12px 16px;border-bottom:1px solid var(--line)}
+  .mh h3{font-size:15px;color:#1f3864}
+  .mh .sub{font-size:11px;color:var(--muted);margin-top:2px}
+  .mb{padding:12px 16px 18px;max-height:74vh;overflow:auto}
+  .campo{margin-bottom:12px}
+  .campo b{display:block;font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.4px;margin-bottom:4px}
+  .an{display:grid;grid-template-columns:repeat(auto-fill,minmax(155px,1fr));gap:6px}
+  .an>div{background:#f6f8fa;border-radius:8px;padding:6px 9px;font-size:11.5px;display:flex;justify-content:space-between;gap:8px}
+  .an span{color:var(--muted)}.an b{color:#1F3864}
+  .form{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:12px}
+  .form label{font-size:11px;font-weight:700;color:var(--muted);display:flex;flex-direction:column;gap:4px}
+  .form label.full{grid-column:1/-1}
+  .eqnew{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px;padding-top:8px;border-top:1px dashed var(--line)}
+  .eqnew input,.eqnew select{padding:6px 8px;border:1px solid var(--line);border-radius:7px;font-size:12px;flex:1;min-width:120px}
+  .form input,.form select{padding:8px;border:1px solid var(--line);border-radius:8px;font-size:13px;font-weight:400;color:var(--ink)}
+</style>
+</head>
+<body>
+<header>
+  <div><h1>SOS &mdash; Muestreo de Aceites</h1><p>Unidad de Equipos &middot; UDE</p></div>
+  <span class="who" id="who"></span>
+</header>
+<nav>
+  <button id="tab_plan" class="on">Planilla de env&iacute;o</button>
+  <button id="tab_res">Resultados</button>
+  <button id="tab_ale">Seguimiento de alertas</button>
+</nav>
+<div class="toolbar">
+  <input type="date" id="fDesde"><input type="date" id="fHasta">
+  <select id="fObra"><option value="">Todas las obras</option></select>
+  <select id="fEstado"><option value="">Todos los estados</option><option value="CRITICO">Cr&iacute;tico</option><option value="PRECAUCION">Precauci&oacute;n</option><option value="NORMAL">Normal</option></select>
+  <select id="fSistema"><option value="">Todos los sistemas</option></select>
+  <select id="fFuente"><option value="">Los 3 laboratorios</option><option>FESA</option><option>LUBTEC</option><option>MARCO PERUANA</option></select>
+  <input type="search" id="fBusca" placeholder="Equipo, frasco, n&deg; muestra&hellip;" style="width:200px">
+  <span class="chip" id="chN">&mdash;</span>
+  <div class="spacer"></div>
+  <button class="act primary" id="btnNuevo">+ Muestra</button>
+  <button class="act" id="btnSubir">&#11014; Subir planilla</button>
+  <button class="act" id="btnXls">&#8681; Excel</button>
+  <button class="act" id="btnEq">&#9878; Equivalencias</button>
+  <button class="act" id="btnRec">&#8635;</button>
+</div>
+<div id="wrap">
+  <div class="cards" id="cards"></div>
+  <div id="boxPlan"></div>
+  <div id="boxRes" class="hide"></div>
+  <div id="boxAle" class="hide"></div>
+</div>
+<footer id="pie">Cargando&hellip;</footer>
+<script>
+const CFG=(()=>{try{return JSON.parse(localStorage.getItem('gllr_sbcfg')||'null')}catch(_){return null}})();
+if(!CFG||!CFG.url){
+  document.body.innerHTML='<div style="padding:60px;text-align:center;font-family:sans-serif">'
+   +'<h2 style="font-size:18px;margin-bottom:10px">Abre primero la p&aacute;gina principal</h2>'
+   +'<p style="color:#6b747d">Esta pesta&ntilde;a toma la conexi&oacute;n y la sesi&oacute;n desde el Maestro de Equipos.</p></div>';
+  throw new Error('sin configuracion');
+}
+const sb=window.supabase.createClient(CFG.url,CFG.key);
+function hoy0(){const d=new Date();d.setHours(0,0,0,0);return d;}
+function dias(a,b){return Math.round((a-b)/86400000);}
+function isoWeek(d){const t=new Date(Date.UTC(d.getFullYear(),d.getMonth(),d.getDate()));const dn=t.getUTCDay()||7;t.setUTCDate(t.getUTCDate()+4-dn);const y=new Date(Date.UTC(t.getUTCFullYear(),0,1));return Math.ceil(((t-y)/86400000+1)/7);}
+function esc(s){return String(s??"").replace(/&/g,"&amp;").replace(/"/g,"&quot;").replace(/</g,"&lt;")}
+function fmtDate(v){if(!v)return"";const p=String(v).split("-");return p.length===3?`${p[2]}/${p[1]}/${p[0].slice(2)}`:String(v);}
+function famNum(e){const m=String(e.familia||'').match(/\d+/);return m?+m[0]:99;}
+function roundToFreq(V,F){
+  V=Number(V)||0; F=Number(F)||0;
+  if(F<=0)return Math.round(V);
+  const L=Math.floor(V/F)*F, U=L+F, band=F*0.2;
+  if((V-L)<band)return L;
+  if((U-V)<=band)return U;
+  const idx=Math.floor((V-L)/band+0.5);
+  return L+idx*band;
+}
+function mant(e){
+  if(e.__mant)return e.__mant;              // caché: se recalcula solo al editar el equipo
+  const H=hoy0(),freq=+e.frecuencia||0,pmr=roundToFreq(+e.hrkm_ult_mntto||0,freq),act=+e.hrkm_actual||0,hd=+e.hr_dia||0;
+  let proy=act; if(e.fecha_lectura){const dd=Math.max(0,dias(H,new Date(e.fecha_lectura)));proy=act+dd*hd;}
+  const proximo=freq?(pmr+freq):0; const restante=proximo-proy;
+  let est="na";const margen=Math.max(freq*0.15,25);
+  if(freq)est=restante<=0?"bad":(restante<=margen?"warn":"ok");
+  let fprox="",sem="",fproxDate=null;
+  if(hd>0&&freq){const dd=Math.floor(restante/hd)+1;fproxDate=new Date(H.getTime()+dd*86400000);fprox=fmtDate(fproxDate.toISOString().slice(0,10));sem=isoWeek(fproxDate);}
+  return (e.__mant={proy:Math.round(proy),proximo:Math.round(proximo),restante:Math.round(restante),est,fprox,sem,fproxDate});
+}
+
+
+
+/* ═══════════════════ SOS · MUESTREO DE ACEITES ═══════════════════ */
+let datos=[], DIDX=new Map(), perfil=null;
+let PLAN=[], RES=[], ALE=[], EQE=new Map(), EQS=new Map(), EQLE=[], EQLS=[];
+let vista='plan';
+
+const nrm=s=>String(s??'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toUpperCase().replace(/\s+/g,' ').trim();
+const f0=n=>Number(n).toLocaleString('es-PE',{maximumFractionDigits:0});
+const f1=n=>Number(n).toLocaleString('es-PE',{maximumFractionDigits:1});
+const getE=id=>DIDX.get(String(id))||null;
+const isoDe=d=>{const z=new Date(d.getTime()-d.getTimezoneOffset()*60000);return z.toISOString().slice(0,10);};
+
+/* ---------- uniformar estado y sistema ---------- */
+function estadoStd(txt){
+  const k=nrm(txt); if(!k)return null;
+  if(EQE.has(k))return EQE.get(k);
+  if(/CRITIC|ACCION REQUERIDA|OBSERVACION/.test(k))return 'CRITICO';
+  if(/PRECAU|ALERTA|MONITOREAR/.test(k))return 'PRECAUCION';
+  if(/NORMAL|NO SE REQUIERE/.test(k))return 'NORMAL';
+  return null;                       // desconocido: se avisa para agregarlo
+}
+function sistemaStd(txt){
+  const k=nrm(txt); if(!k)return null;
+  return EQS.get(k)||null;
+}
+
+/* ---------- fechas y números tolerantes ---------- */
+function aFecha(v){
+  if(v instanceof Date&&!isNaN(v))return isoDe(v);
+  // Excel a veces entrega la fecha como número de serie (días desde 1899-12-30).
+  // Sin este caso, "45942" se leía como el año 45942.
+  const n=Number(v);
+  if(isFinite(n)&&n>20000&&n<80000&&String(v).trim().length<=7)
+    return new Date(Date.UTC(1899,11,30)+Math.round(n)*86400000).toISOString().slice(0,10);
+  const s=String(v??'').trim(); if(!s||s==='-')return null;
+  let m=s.match(/^(\d{4})-(\d{2})-(\d{2})/); if(m)return s.slice(0,10);
+  m=s.match(/^(\d{1,2})[\/-](\d{1,2})[\/-](\d{2,4})/);
+  if(m){let a=+m[3]; if(a<100)a+=2000;
+    return `${a}-${String(+m[2]).padStart(2,'0')}-${String(+m[1]).padStart(2,'0')}`;}
+  const d=new Date(s);
+  if(isNaN(d))return null;
+  const y=d.getFullYear();
+  return (y<1990||y>2100)?null:isoDe(d);      // descarta años imposibles
+}
+function aNum(v){
+  if(v==null||v==='')return null;
+  const n=Number(String(v).replace(/[^0-9.,-]/g,'').replace(',','.'));
+  return isFinite(n)?n:null;
+}
+
+/* ---------- lectura de un Excel: ubica el encabezado ---------- */
+function leerHoja(filas,claves){
+  for(let i=0;i<Math.min(14,filas.length);i++){
+    const f=(filas[i]||[]).map(nrm);
+    const hay=claves.filter(k=>f.some(c=>c===nrm(k))).length;
+    if(hay>=Math.min(3,claves.length)){
+      const cols={}; (filas[i]||[]).forEach((c,j)=>{const k=nrm(c); if(k&&!(k in cols))cols[k]=j;});
+      return {fila:i,cols};
+    }
+  }
+  return null;
+}
+const val=(f,cols,...nombres)=>{
+  for(const n of nombres){const j=cols[nrm(n)]; if(j!==undefined&&f[j]!==''&&f[j]!=null)return f[j];}
+  return null;
+};
+
+/* ═══════ PLANILLA DE ENVÍO ═══════ */
+const PLAN_COLS=['Obra','N° de Planilla','Item','N° Frasco','Código del Equipo','Marca','Modelo','Serie',
+  'Sistema','Tipo de Aceite','Horometro','Muestreo','Envio'];
+function leerPlanilla(filas){
+  const m=leerHoja(filas,['N° Frasco','Sistema','Obra','Codigo del Equipo','Horometro']);
+  if(!m)return null;
+  const out=[];
+  for(let i=m.fila+1;i<filas.length;i++){
+    const f=filas[i]||[];
+    const sap=String(val(f,m.cols,'Código del Equipo','Codigo del Equipo','Código\ndel Equipo','EQUIPO')??'').trim();
+    const sis=String(val(f,m.cols,'Sistema')??'').trim();
+    if(!sap&&!sis)continue;
+    const e=datos.find(x=>nrm(x.cod_sap)===nrm(sap));
+    out.push({
+      obra:String(val(f,m.cols,'Obra')??'').trim()||null,
+      nro_planilla:String(val(f,m.cols,'N° de Planilla','Nro de Planilla')??'').trim()||null,
+      item:aNum(val(f,m.cols,'Item')),
+      nro_frasco:String(val(f,m.cols,'N° Frasco','Nro Frasco')??'').trim()||null,
+      cod_sap:sap||null, maestro_id:e?e.id:null,
+      marca:String(val(f,m.cols,'Marca')??'').trim()||(e?e.marca:null),
+      modelo:String(val(f,m.cols,'Modelo')??'').trim()||(e?e.modelo:null),
+      serie:String(val(f,m.cols,'Serie')??'').trim()||(e?e.serie_placa:null),
+      sistema:sis||null, sistema_std:sistemaStd(sis),
+      tipo_aceite:String(val(f,m.cols,'Tipo de Aceite')??'').trim()||null,
+      galones:aNum(val(f,m.cols,'Cnt.\n(Galones)','Cnt. (Galones)','Galones')),
+      horometro:aNum(val(f,m.cols,'Horometro','Horómetro')),
+      horas_aceite:aNum(val(f,m.cols,'Horas\ndel aceite','Horas del aceite')),
+      cant_agregado:aNum(val(f,m.cols,'Cant.\nAgregado','Cant. Agregado')),
+      f_muestreo:aFecha(val(f,m.cols,'Muestreo')),
+      f_envio:aFecha(val(f,m.cols,'Envio','Envío')),
+      tipo:String(val(f,m.cols,'Tipo:\n[Cambio]\n[Muestra]','Tipo')??'').trim()||null,
+      observacion:String(val(f,m.cols,'Observacion:','Observación')??'').trim()||null,
+      validacion:String(val(f,m.cols,'Validación (vs. STOCK)','Validacion')??'').trim()||null
+    });
+  }
+  return out;
+}
+
+/* ═══════ RESULTADOS: los 3 laboratorios a un solo formato ═══════ */
+/* Columnas de análisis que se guardan tal cual vengan */
+const ANALISIS=['Hierro (ppm)','Cromo (ppm)','Plomo (ppm)','Cobre (ppm)','Estaño (ppm)','Aluminio (ppm)',
+ 'Niquel (ppm)','Plata (ppm)','Silicio (ppm)','Indice PQ','V40','V100','Hollin','Oxidacion','Nitracion',
+ 'Sulfatacion','ISO','ISO 4406 >5','ISO 4406 >10','ISO 4406 >15','4µm','6µm','10µm','14µm','18µm','21µm',
+ '38µm','50µm','70µm','TBN (mg KOH/g)','Agua (% V)','Diesel (%)','Refrigerante (%)','Sodio (ppm)',
+ 'Boro (ppm)','Magnesio (ppm)','Calcio (ppm)','Zinc (ppm)','Fosforo (ppm)'];
+
+function leerResultados(filas,fuente){
+  const m=leerHoja(filas,['N° MUESTRA','EQUIPO','COMPONENTE','FECHA','ESTADO']);
+  if(!m)return null;
+  const out=[];
+  for(let i=m.fila+1;i<filas.length;i++){
+    const f=filas[i]||[];
+    const nro=String(val(f,m.cols,'N° MUESTRA','Nro Muestra','N MUESTRA')??'').trim();
+    if(!nro)continue;
+    const sap=String(val(f,m.cols,'EQUIPO')??'').trim();
+    const comp=String(val(f,m.cols,'COMPONENTE')??'').trim();
+    const est=String(val(f,m.cols,'ESTADO')??'').trim();
+    const e=datos.find(x=>nrm(x.cod_sap)===nrm(sap));
+    const an={};
+    ANALISIS.forEach(k=>{const v=val(f,m.cols,k); const n=aNum(v);
+      if(n!=null)an[k]=n; else if(v!=null&&String(v).trim()&&String(v).trim()!=='-')an[k]=String(v).trim();});
+    out.push({
+      fuente, nro_muestra:nro,
+      cod_frasco:String(val(f,m.cols,'CÓDIGO FRASCO (si aplica)','No. de Etiqueta','Codigo Frasco')??'').trim()||null,
+      cod_sap:sap||null, maestro_id:e?e.id:null,
+      obra:String(val(f,m.cols,'OBRA','Nombre del Cliente','Cuenta')??'').trim()||(e?e.cod_proyec:null),
+      componente:comp||null, sistema_std:sistemaStd(comp),
+      fecha:aFecha(val(f,m.cols,'FECHA','Fecha de muestreo')),
+      horometro:aNum(val(f,m.cols,'HORAS','Horometro','Horómetro')),
+      estado:est||null, estado_std:estadoStd(est),
+      observacion:String(val(f,m.cols,'Interpretacion','Recomendaciones','Comentarios','Observación del reporte')??'').trim()||null,
+      link_pdf:String(val(f,m.cols,'Link al reporte PDF (OneDrive)','Link PDF')??'').trim()||null,
+      analisis:Object.keys(an).length?an:null
+    });
+  }
+  return out;
+}
+/* Enlaza cada resultado con su fila de la planilla */
+function enlazarPlanilla(r){
+  if(r.cod_frasco){
+    const p=PLAN.find(x=>x.nro_frasco&&nrm(x.nro_frasco)===nrm(r.cod_frasco));
+    if(p)return p;
+  }
+  // sin frasco: mismo equipo, mismo sistema y la fecha de muestreo más cercana
+  const cand=PLAN.filter(x=>nrm(x.cod_sap)===nrm(r.cod_sap)
+    && (!r.sistema_std||!x.sistema_std||x.sistema_std===r.sistema_std));
+  if(!cand.length)return null;
+  if(!r.fecha)return cand[0];
+  const t=new Date(r.fecha+'T00:00:00').getTime();
+  let mejor=null,dmin=Infinity;
+  cand.forEach(x=>{
+    if(!x.f_muestreo)return;
+    const d=Math.abs(new Date(x.f_muestreo+'T00:00:00').getTime()-t)/86400000;
+    if(d<dmin){dmin=d;mejor=x;}
+  });
+  return dmin<=45?mejor:null;      // más de mes y medio de diferencia: no se asume
+}
+
+
+/* ═══════════════ VISTAS ═══════════════ */
+function verVista(v){
+  vista=v;
+  ['plan','res','ale'].forEach(k=>{
+    document.getElementById('tab_'+k).classList.toggle('on',k===v);
+  });
+  boxPlan.classList.toggle('hide',v!=='plan');
+  boxRes.classList.toggle('hide',v!=='res');
+  boxAle.classList.toggle('hide',v!=='ale');
+  btnSubir.textContent = v==='plan'?'⬆ Subir planilla':'⬆ Subir resultados';
+  btnSubir.classList.toggle('hide',v==='ale');
+  btnNuevo.classList.toggle('hide',v!=='plan');
+  pintar();
+}
+['plan','res','ale'].forEach(k=>document.getElementById('tab_'+k).onclick=()=>verVista(k));
+
+function pintar(){
+  if(vista==='plan')pintarPlan();
+  else if(vista==='res')pintarRes();
+  else pintarAle();
+}
+
+/* ───────── PLANILLA ───────── */
+function filtrarPlan(){
+  const q=nrm(fBusca.value), o=fObra.value, d=fDesde.value, h=fHasta.value;
+  return PLAN.filter(p=>{
+    const f=p.f_muestreo||'';
+    if(d&&f&&f<d)return false;
+    if(h&&f&&f>h)return false;
+    if(o&&String(p.obra||'')!==o)return false;
+    if(q&&!nrm(`${p.cod_sap} ${p.nro_frasco||''} ${p.sistema||''} ${p.nro_planilla||''} ${p.nro_muestra||''}`).includes(q))return false;
+    return true;
+  });
+}
+function pintarPlan(){
+  const L=filtrarPlan().sort((a,b)=>String(b.f_muestreo||'').localeCompare(String(a.f_muestreo||''))
+    ||String(a.cod_sap||'').localeCompare(String(b.cod_sap||'')));
+  chN.textContent=L.length+' muestra(s)';
+  const conRes=L.filter(p=>RES.some(r=>r.planilla_id===p.id)).length;
+  cards.innerHTML=card('Muestras enviadas',L.length,new Set(L.map(p=>p.cod_sap)).size+' equipos')
+    +card('Con resultado',conRes,L.length-conRes+' pendientes de laboratorio')
+    +card('Planillas',new Set(L.map(p=>p.nro_planilla).filter(Boolean)).size,'distintas')
+    +card('Sin sistema uniformado',L.filter(p=>p.sistema&&!p.sistema_std).length,'revisar equivalencias');
+  if(!L.length){boxPlan.innerHTML='<div class="vacio">Sin muestras registradas con estos filtros.</div>';return;}
+  let prev=null;
+  boxPlan.innerHTML=`<table class="t"><thead><tr>
+    <th>Muestreo</th><th>Obra</th><th>Planilla</th><th class="c">Frasco</th><th>Cód. SAP</th><th>Equipo</th>
+    <th>Sistema</th><th>Tipo aceite</th><th class="r">Horómetro</th><th class="r">Hrs aceite</th>
+    <th class="c">Tipo</th><th class="c">Resultado</th><th></th></tr></thead><tbody>
+    ${L.map(p=>{
+      const e=getE(p.maestro_id), r=RES.find(x=>x.planilla_id===p.id);
+      const corte=prev!==null&&String(p.f_muestreo||'')!==prev; prev=String(p.f_muestreo||'');
+      return `<tr class="${corte?'corte':''}" data-pid="${p.id}">
+        <td>${fmtDate(p.f_muestreo)}</td><td>${esc(p.obra||'')}</td><td>${esc(p.nro_planilla||'')}</td>
+        <td class="c mono">${esc(p.nro_frasco||'')}</td><td class="mono">${esc(p.cod_sap||'')}</td>
+        <td>${esc(e?e.equipo:'')}</td>
+        <td>${esc(p.sistema||'')}${p.sistema_std&&nrm(p.sistema_std)!==nrm(p.sistema)?` <i class="std">→ ${esc(p.sistema_std)}</i>`:''}
+            ${p.sistema&&!p.sistema_std?' <b class="warn">sin equivalencia</b>':''}</td>
+        <td>${esc(p.tipo_aceite||'')}</td>
+        <td class="r mono">${p.horometro!=null?f0(p.horometro):''}</td>
+        <td class="r">${p.horas_aceite!=null?f0(p.horas_aceite):''}</td>
+        <td class="c">${esc(p.tipo||'')}</td>
+        <td class="c">${r?`<span class="pill e-${r.estado_std||'NA'}">${esc(r.estado_std||'—')}</span>`:'<span class="pend">pendiente</span>'}</td>
+        <td class="c"><button class="mini" data-edit="${p.id}">✎</button></td></tr>`;}).join('')}
+    </tbody></table>`;
+  boxPlan.querySelectorAll('[data-edit]').forEach(b=>b.onclick=ev=>{ev.stopPropagation();formPlan(b.dataset.edit);});
+}
+
+/* ───────── RESULTADOS ───────── */
+function filtrarRes(){
+  const q=nrm(fBusca.value), o=fObra.value, d=fDesde.value, h=fHasta.value;
+  const es=fEstado.value, si=fSistema.value, fu=fFuente.value;
+  return RES.filter(r=>{
+    const f=r.fecha||'';
+    if(d&&f&&f<d)return false;
+    if(h&&f&&f>h)return false;
+    if(o&&String(r.obra||'')!==o)return false;
+    if(es&&r.estado_std!==es)return false;
+    if(si&&r.sistema_std!==si)return false;
+    if(fu&&r.fuente!==fu)return false;
+    if(q&&!nrm(`${r.cod_sap} ${r.nro_muestra} ${r.componente||''} ${r.observacion||''}`).includes(q))return false;
+    return true;
+  });
+}
+function pintarRes(){
+  const L=filtrarRes().sort((a,b)=>String(b.fecha||'').localeCompare(String(a.fecha||'')));
+  chN.textContent=L.length+' resultado(s)';
+  const n=e=>L.filter(r=>r.estado_std===e).length;
+  cards.innerHTML=card('Resultados',L.length,new Set(L.map(r=>r.cod_sap)).size+' equipos')
+    +card('Críticos',n('CRITICO'),'requieren acción','bad')
+    +card('Precaución',n('PRECAUCION'),'a vigilar','warn')
+    +card('Normales',n('NORMAL'),'sin novedad','ok');
+  if(!L.length){boxRes.innerHTML='<div class="vacio">Sin resultados con estos filtros.</div>';return;}
+  boxRes.innerHTML=`<table class="t"><thead><tr>
+    <th>Fecha</th><th>Fuente</th><th>N° Muestra</th><th>Cód. SAP</th><th>Equipo</th><th>Componente</th>
+    <th>Sistema</th><th class="r">Horóm.</th><th class="c">Estado lab.</th><th class="c">Estado</th>
+    <th>Observación</th><th class="c">Planilla</th><th class="c">PDF</th></tr></thead><tbody>
+    ${L.slice(0,800).map(r=>{
+      const e=getE(r.maestro_id);
+      return `<tr data-rid="${r.id}">
+        <td>${fmtDate(r.fecha)}</td><td>${esc(r.fuente)}</td><td class="mono">${esc(r.nro_muestra)}</td>
+        <td class="mono">${esc(r.cod_sap||'')}</td><td>${esc(e?e.equipo:'')}</td>
+        <td>${esc(r.componente||'')}</td>
+        <td>${esc(r.sistema_std||'')}${r.componente&&!r.sistema_std?'<b class="warn">sin equivalencia</b>':''}</td>
+        <td class="r mono">${r.horometro!=null?f0(r.horometro):''}</td>
+        <td class="c dim">${esc(r.estado||'')}</td>
+        <td class="c"><span class="pill e-${r.estado_std||'NA'}">${esc(r.estado_std||'?')}</span></td>
+        <td class="desc">${esc((r.observacion||'').slice(0,120))}</td>
+        <td class="c">${r.planilla_id?'✓':'<span class="dim">—</span>'}</td>
+        <td class="c">${r.link_pdf?`<a href="${esc(r.link_pdf)}" target="_blank">PDF</a>`:''}</td></tr>`;}).join('')}
+    </tbody></table>
+    ${L.length>800?`<div class="hint">Mostrando 800 de ${L.length}. Afina los filtros.</div>`:''}`;
+  boxRes.querySelectorAll('tbody tr').forEach(tr=>tr.onclick=()=>detalleRes(tr.dataset.rid));
+}
+function detalleRes(id){
+  const r=RES.find(x=>String(x.id)===String(id)); if(!r)return;
+  const e=getE(r.maestro_id);
+  const an=r.analisis||{};
+  const ks=Object.keys(an);
+  document.body.insertAdjacentHTML('beforeend',`<div class="modal" id="mdet"><div class="mc">
+    <div class="mh"><div><h3>${esc(r.nro_muestra)} · ${esc(r.cod_sap||'')} ${esc(e?e.equipo:'')}</h3>
+      <div class="sub">${esc(r.fuente)} · ${fmtDate(r.fecha)} · ${esc(r.componente||'')}
+        ${r.sistema_std?'→ '+esc(r.sistema_std):''}</div></div>
+      <div class="spacer"></div>
+      <span class="pill e-${r.estado_std||'NA'}">${esc(r.estado_std||'?')}</span>
+      <button class="act" onclick="document.getElementById('mdet').remove()">Cerrar</button></div>
+    <div class="mb">
+      ${r.observacion?`<div class="campo"><b>Observación del reporte</b><div style="line-height:1.5">${esc(r.observacion)}</div></div>`:''}
+      ${ks.length?`<div class="campo"><b>Análisis</b><div class="an">
+        ${ks.map(k=>`<div><span>${esc(k)}</span><b>${esc(String(an[k]))}</b></div>`).join('')}</div></div>`:''}
+      ${r.link_pdf?`<div class="campo"><a class="act primary" href="${esc(r.link_pdf)}" target="_blank">Abrir reporte PDF</a></div>`:''}
+    </div></div></div>`);
+  document.getElementById('mdet').addEventListener('click',ev=>{if(ev.target.id==='mdet')ev.target.remove();});
+}
+
+/* ───────── SEGUIMIENTO DE ALERTAS ───────── */
+function pintarAle(){
+  // toda muestra crítica o en precaución entra al seguimiento
+  const base=RES.filter(r=>r.estado_std==='CRITICO'||r.estado_std==='PRECAUCION');
+  const q=nrm(fBusca.value), o=fObra.value, d=fDesde.value, h=fHasta.value, es=fEstado.value;
+  const L=base.filter(r=>{
+    const f=r.fecha||'';
+    if(d&&f&&f<d)return false;
+    if(h&&f&&f>h)return false;
+    if(o&&String(r.obra||'')!==o)return false;
+    if(es&&r.estado_std!==es)return false;
+    if(q&&!nrm(`${r.cod_sap} ${r.nro_muestra} ${r.sistema_std||''}`).includes(q))return false;
+    return true;
+  }).sort((a,b)=>{
+    const pa=a.estado_std==='CRITICO'?0:1, pb=b.estado_std==='CRITICO'?0:1;
+    return pa-pb||String(b.fecha||'').localeCompare(String(a.fecha||''));
+  });
+  chN.textContent=L.length+' alerta(s)';
+  const seg=n=>L.filter(r=>(ale(r).estado_seg||'OM abierta')===n).length;
+  cards.innerHTML=card('Alertas',L.length,L.filter(r=>r.estado_std==='CRITICO').length+' críticas','bad')
+    +card('OM abierta',seg('OM abierta'),'sin atender aún','warn')
+    +card('En ejecución',seg('En ejecución'),'trabajo en curso')
+    +card('Cerradas',seg('Cerrado'),'atendidas','ok');
+  if(!L.length){boxAle.innerHTML='<div class="vacio">No hay muestras en estado crítico o precaución.</div>';return;}
+  const hoy=new Date();
+  boxAle.innerHTML=`<table class="t"><thead><tr>
+    <th>N° Muestra</th><th>Cód. SAP</th><th>Sistema</th><th class="c">Estado</th><th class="r">Horóm.</th>
+    <th>Observación del reporte</th><th>N° OM SAP*</th><th>Acciones correctivas*</th>
+    <th class="c">F. indicación*</th><th class="c">Seguimiento*</th><th class="r">Días</th><th>Link PDF*</th></tr></thead><tbody>
+    ${L.map(r=>{
+      const a=ale(r), e=getE(r.maestro_id);
+      let dias='';
+      if(a.f_indicacion&&(a.estado_seg||'OM abierta')!=='Cerrado'){
+        dias=Math.max(0,Math.round((hoy-new Date(a.f_indicacion+'T00:00:00'))/86400000));
+      }
+      return `<tr data-rid="${r.id}">
+        <td class="mono">${esc(r.nro_muestra)}</td><td class="mono">${esc(r.cod_sap||'')}</td>
+        <td>${esc(r.sistema_std||r.componente||'')}</td>
+        <td class="c"><span class="pill e-${r.estado_std}">${esc(r.estado_std)}</span></td>
+        <td class="r mono">${r.horometro!=null?f0(r.horometro):''}</td>
+        <td class="desc dim">${esc((r.observacion||'').slice(0,90))}</td>
+        <td><input class="ed" data-c="om_sap" value="${esc(a.om_sap||'')}" placeholder="OM"></td>
+        <td><input class="ed lg" data-c="acciones" value="${esc(a.acciones||'')}" placeholder="qué se hará"></td>
+        <td class="c"><input class="ed" type="date" data-c="f_indicacion" value="${a.f_indicacion||''}"></td>
+        <td class="c"><select class="ed" data-c="estado_seg">
+          ${['OM abierta','En ejecución','Cerrado'].map(o=>`<option ${((a.estado_seg||'OM abierta')===o)?'selected':''}>${o}</option>`).join('')}
+        </select></td>
+        <td class="r ${dias>30?'b-bad':(dias>15?'b-mid':'')}">${dias!==''?dias:''}</td>
+        <td><input class="ed lg" data-c="link_pdf" value="${esc(a.link_pdf||r.link_pdf||'')}" placeholder="enlace"></td>
+      </tr>`;}).join('')}
+    </tbody></table>
+    <div class="hint">Las columnas con * son editables; se guardan al salir de la celda.
+      Los días se cuentan desde la fecha de indicación y dejan de correr al cerrar.</div>`;
+  boxAle.querySelectorAll('.ed').forEach(el=>el.onchange=()=>guardarAlerta(el.closest('tr').dataset.rid,el));
+}
+function ale(r){ return ALE.find(a=>String(a.resultado_id)===String(r.id))||{}; }
+async function guardarAlerta(rid,ctrl){
+  const r=RES.find(x=>String(x.id)===String(rid)); if(!r)return;
+  const col=ctrl.dataset.c;
+  let val=ctrl.value===''?null:ctrl.value;
+  let a=ALE.find(x=>String(x.resultado_id)===String(r.id));
+  try{
+    if(a){
+      const {error}=await sb.from('sos_alertas').update({[col]:val}).eq('id',a.id).select('id');
+      if(error)throw error;
+      a[col]=val;
+    }else{
+      const nueva={resultado_id:r.id,nro_muestra:r.nro_muestra,link_pdf:r.link_pdf||null,[col]:val};
+      const {data,error}=await sb.from('sos_alertas').insert(nueva).select().single();
+      if(error)throw error;
+      ALE.push(data);
+    }
+    ctrl.classList.add('ok'); setTimeout(()=>ctrl.classList.remove('ok'),900);
+    if(col==='f_indicacion'||col==='estado_seg')pintarAle();
+  }catch(e){ alert('No se pudo guardar: '+e.message); pintarAle(); }
+}
+
+const card=(l,v,s,cls)=>`<div class="c"><div class="l">${l}</div><div class="v ${cls||''}">${v}</div><div class="s">${s}</div></div>`;
+
+
+/* ═══════════════ SUBIR ARCHIVO ═══════════════ */
+btnSubir.onclick=()=>{
+  const i=document.createElement('input'); i.type='file'; i.accept='.xlsx,.xls,.csv';
+  i.onchange=async()=>{
+    const f=i.files&&i.files[0]; if(!f)return;
+    pie.textContent='Leyendo '+f.name+'…';
+    try{
+      const wb=XLSX.read(await f.arrayBuffer(),{type:'array',cellDates:true});
+      const hoja=wb.Sheets[wb.SheetNames[0]];
+      const filas=XLSX.utils.sheet_to_json(hoja,{header:1,raw:true,defval:''});
+      if(vista==='plan')await subirPlanilla(filas,f.name);
+      else await subirResultados(filas,f.name,wb.SheetNames[0]);
+    }catch(err){ alert('No se pudo leer el archivo: '+err.message); }
+    pie.textContent='';
+  };
+  i.click();
+};
+
+async function subirPlanilla(filas,nom){
+  const regs=leerPlanilla(filas);
+  if(!regs||!regs.length){alert('No se reconoció el formato.\n\nDebe tener las columnas de la PLANILLA DE MUESTRAS: N° Frasco, Código del Equipo, Sistema, Muestreo…');return;}
+  const clave=p=>[p.nro_planilla||'',p.nro_frasco||'',p.cod_sap||'',p.sistema||''].join('|');
+  const yaHay=new Set(PLAN.map(clave));
+  const nuevos=regs.filter(p=>!yaHay.has(clave(p)));
+  const sinEq=regs.filter(p=>!p.maestro_id&&p.cod_sap);
+  const sinSis=regs.filter(p=>p.sistema&&!p.sistema_std);
+  if(!confirm(`${nom}\n\n`
+    +`Muestras leídas: ${regs.length}\n`
+    +`Nuevas para agregar: ${nuevos.length}\n`
+    +`Ya registradas (se omiten): ${regs.length-nuevos.length}\n`
+    +(sinEq.length?`Códigos que no están en Equipos: ${sinEq.length}\n`:'')
+    +(sinSis.length?`Sistemas sin equivalencia: ${sinSis.length}\n`:'')
+    +`\n¿Guardar?`))return;
+  if(!nuevos.length)return;
+  let ok=0,err='';
+  for(let i=0;i<nuevos.length;i+=200){
+    const {error}=await sb.from('sos_planilla').insert(nuevos.slice(i,i+200));
+    if(error){err=error.message;break;} ok+=Math.min(200,nuevos.length-i);
+  }
+  if(err)alert('Se guardaron '+ok+' y luego hubo un error:\n'+err);
+  await cargarTodo();
+  pie.textContent=`${ok} muestra(s) agregadas a la planilla.`;
+}
+
+async function subirResultados(filas,nom,hoja){
+  // el laboratorio se deduce del nombre de la hoja o del archivo
+  const t=nrm(hoja+' '+nom);
+  let fuente = /FESA/.test(t)?'FESA' : /LUBTEC/.test(t)?'LUBTEC' : /MARCO/.test(t)?'MARCO PERUANA' : null;
+  if(!fuente){
+    fuente=prompt('¿De qué laboratorio es este archivo?\n\nEscribe: FESA, LUBTEC o MARCO','FESA');
+    if(!fuente)return;
+    fuente=nrm(fuente).startsWith('MARCO')?'MARCO PERUANA':nrm(fuente);
+  }
+  const regs=leerResultados(filas,fuente);
+  if(!regs||!regs.length){alert('No se reconoció el formato.\n\nDebe tener las columnas N° MUESTRA, EQUIPO, COMPONENTE, FECHA y ESTADO.');return;}
+  // enlazar con la planilla y detectar lo que falta uniformar
+  regs.forEach(r=>{const p=enlazarPlanilla(r); r.planilla_id=p?p.id:null;});
+  const yaHay=new Set(RES.map(r=>r.fuente+'|'+nrm(r.nro_muestra)));
+  const nuevos=regs.filter(r=>!yaHay.has(r.fuente+'|'+nrm(r.nro_muestra)));
+  const sinEst=[...new Set(regs.filter(r=>r.estado&&!r.estado_std).map(r=>r.estado))];
+  const sinSis=[...new Set(regs.filter(r=>r.componente&&!r.sistema_std).map(r=>r.componente))];
+  const enl=nuevos.filter(r=>r.planilla_id).length;
+  let msg=`${nom}  ·  laboratorio: ${fuente}\n\n`
+    +`Resultados leídos: ${regs.length}\n`
+    +`Nuevos para agregar: ${nuevos.length}\n`
+    +`Ya registrados (se omiten): ${regs.length-nuevos.length}\n`
+    +`Enlazados con una muestra de la planilla: ${enl} de ${nuevos.length}\n`;
+  if(sinEst.length)msg+=`\n⚠ Estados sin equivalencia (quedarán sin uniformar):\n  ${sinEst.slice(0,6).join(', ')}${sinEst.length>6?'…':''}\n`;
+  if(sinSis.length)msg+=`\n⚠ Sistemas sin equivalencia:\n  ${sinSis.slice(0,6).join(', ')}${sinSis.length>6?'…':''}\n`;
+  msg+='\n¿Guardar?';
+  if(!confirm(msg))return;
+  if(!nuevos.length)return;
+  let ok=0,err='';
+  for(let i=0;i<nuevos.length;i+=150){
+    const {error}=await sb.from('sos_resultados').insert(nuevos.slice(i,i+150));
+    if(error){err=error.message;break;} ok+=Math.min(150,nuevos.length-i);
+  }
+  if(err)alert('Se guardaron '+ok+' y luego hubo un error:\n'+err);
+  // los que quedaron enlazados actualizan el N° de muestra en la planilla
+  for(const r of nuevos.filter(x=>x.planilla_id)){
+    await sb.from('sos_planilla').update({nro_muestra:r.nro_muestra}).eq('id',r.planilla_id);
+  }
+  await cargarTodo();
+  pie.textContent=`${ok} resultado(s) agregados · ${enl} enlazados con la planilla.`;
+  if(sinEst.length||sinSis.length)
+    alert('Quedaron textos sin equivalencia.\n\nAgrégalos en las tablas sos_eq_estado / sos_eq_sistema y vuelve a cargar el archivo para que se uniformen.');
+}
+
+/* ═══════════════ INGRESO MANUAL A LA PLANILLA ═══════════════ */
+function formPlan(id){
+  const p=id?PLAN.find(x=>String(x.id)===String(id)):{};
+  const eqs=datos.slice().sort((a,b)=>String(a.cod_sap).localeCompare(String(b.cod_sap)));
+  const sis=[...new Set([...EQS.values()])].sort();
+  document.body.insertAdjacentHTML('beforeend',`<div class="modal" id="mpl"><div class="mc">
+    <div class="mh"><h3>${id?'Editar muestra':'Nueva muestra'}</h3><div class="spacer"></div>
+      ${id?'<button class="act bad" id="plDel">Eliminar</button>':''}
+      <button class="act" id="plCan">Cancelar</button>
+      <button class="act primary" id="plOk">Guardar</button></div>
+    <div class="mb"><div class="form">
+      <label>Obra<input id="p_obra" value="${esc(p.obra||'')}"></label>
+      <label>N° de planilla<input id="p_pla" value="${esc(p.nro_planilla||'')}"></label>
+      <label>N° de frasco<input id="p_fra" value="${esc(p.nro_frasco||'')}"></label>
+      <label>Equipo<select id="p_eq"><option value="">—</option>
+        ${eqs.map(e=>`<option value="${e.id}" ${String(p.maestro_id)===String(e.id)?'selected':''}>${esc(e.cod_sap)} · ${esc(e.equipo||'')}</option>`).join('')}
+      </select></label>
+      <label>Sistema<input id="p_sis" list="sisl" value="${esc(p.sistema||'')}">
+        <datalist id="sisl">${sis.map(s=>`<option>${esc(s)}</option>`).join('')}</datalist></label>
+      <label>Tipo de aceite<input id="p_ace" value="${esc(p.tipo_aceite||'')}"></label>
+      <label>Horómetro<input id="p_hor" type="number" step="1" value="${p.horometro??''}"></label>
+      <label>Horas del aceite<input id="p_hac" type="number" step="1" value="${p.horas_aceite??''}"></label>
+      <label>Cantidad (galones)<input id="p_gal" type="number" step="0.1" value="${p.galones??''}"></label>
+      <label>Cantidad agregada<input id="p_agr" type="number" step="0.1" value="${p.cant_agregado??''}"></label>
+      <label>Fecha de muestreo<input id="p_fm" type="date" value="${p.f_muestreo||''}"></label>
+      <label>Fecha de envío<input id="p_fe" type="date" value="${p.f_envio||''}"></label>
+      <label>Tipo<select id="p_tip">
+        ${['','Muestra','Cambio'].map(o=>`<option ${String(p.tipo||'')===o?'selected':''}>${o}</option>`).join('')}</select></label>
+      <label class="full">Observación<input id="p_obs" value="${esc(p.observacion||'')}"></label>
+    </div></div></div></div>`);
+  const cerrar=()=>{const e=document.getElementById('mpl');if(e)e.remove();};
+  document.getElementById('plCan').onclick=cerrar;
+  document.getElementById('mpl').addEventListener('click',ev=>{if(ev.target.id==='mpl')cerrar();});
+  const del=document.getElementById('plDel');
+  if(del)del.onclick=async()=>{
+    if(!confirm('¿Eliminar esta muestra de la planilla?'))return;
+    const {error}=await sb.from('sos_planilla').delete().eq('id',p.id);
+    if(error)return alert('No se pudo eliminar: '+error.message);
+    cerrar(); await cargarTodo();
+  };
+  document.getElementById('plOk').onclick=async()=>{
+    const eid=document.getElementById('p_eq').value;
+    const e=eid?getE(eid):null;
+    const sisTxt=document.getElementById('p_sis').value.trim();
+    const d={
+      obra:document.getElementById('p_obra').value.trim()||(e?e.cod_proyec:null),
+      nro_planilla:document.getElementById('p_pla').value.trim()||null,
+      nro_frasco:document.getElementById('p_fra').value.trim()||null,
+      cod_sap:e?e.cod_sap:null, maestro_id:e?e.id:null,
+      marca:e?e.marca:null, modelo:e?e.modelo:null, serie:e?e.serie_placa:null,
+      sistema:sisTxt||null, sistema_std:sistemaStd(sisTxt)||(sisTxt||null),
+      tipo_aceite:document.getElementById('p_ace').value.trim()||null,
+      horometro:aNum(document.getElementById('p_hor').value),
+      horas_aceite:aNum(document.getElementById('p_hac').value),
+      galones:aNum(document.getElementById('p_gal').value),
+      cant_agregado:aNum(document.getElementById('p_agr').value),
+      f_muestreo:document.getElementById('p_fm').value||null,
+      f_envio:document.getElementById('p_fe').value||null,
+      tipo:document.getElementById('p_tip').value||null,
+      observacion:document.getElementById('p_obs').value.trim()||null,
+      registrado_por:perfil?perfil.nombre:null
+    };
+    if(!d.maestro_id){alert('Elige el equipo.');return;}
+    if(!d.f_muestreo){alert('Indica la fecha de muestreo.');return;}
+    const {error}= id ? await sb.from('sos_planilla').update(d).eq('id',p.id)
+                      : await sb.from('sos_planilla').insert(d);
+    if(error)return alert('No se pudo guardar: '+error.message);
+    cerrar(); await cargarTodo();
+  };
+}
+btnNuevo.onclick=()=>formPlan(null);
+
+/* ═══════════════ EXCEL ═══════════════ */
+btnXls.onclick=()=>{
+  let rows=[],nombre='SOS';
+  if(vista==='plan'){
+    nombre='Planilla_envio';
+    rows=filtrarPlan().map(p=>{const e=getE(p.maestro_id), r=RES.find(x=>x.planilla_id===p.id);
+      return {'Obra':p.obra||'','N° de Planilla':p.nro_planilla||'','N° Frasco':p.nro_frasco||'',
+        'Código del Equipo':p.cod_sap||'','Equipo':e?e.equipo:'','Marca':p.marca||'','Modelo':p.modelo||'',
+        'Serie':p.serie||'','Sistema':p.sistema||'','Sistema estándar':p.sistema_std||'',
+        'Tipo de Aceite':p.tipo_aceite||'','Cnt. (Galones)':p.galones??'','Horometro':p.horometro??'',
+        'Horas del aceite':p.horas_aceite??'','Cant. Agregado':p.cant_agregado??'',
+        'Muestreo':p.f_muestreo||'','Envio':p.f_envio||'','Tipo':p.tipo||'','Observacion':p.observacion||'',
+        'N° Muestra':p.nro_muestra||'','Estado resultado':r?(r.estado_std||''):''};});
+  }else if(vista==='res'){
+    nombre='Resultados';
+    rows=filtrarRes().map(r=>{const e=getE(r.maestro_id);
+      const base={'FUENTE':r.fuente,'EQUIPO':r.cod_sap||'','Descripción':e?e.equipo:'',
+        'COMPONENTE':r.componente||'','SISTEMA (estandarizado)':r.sistema_std||'','Horometro':r.horometro??'',
+        'N° MUESTRA':r.nro_muestra,'CÓDIGO FRASCO':r.cod_frasco||'','FECHA':r.fecha||'',
+        'ESTADO':r.estado||'','ESTADO ESTÁNDAR':r.estado_std||'','OBRA':r.obra||'',
+        'Observación del reporte':r.observacion||'','Link al reporte PDF':r.link_pdf||''};
+      Object.entries(r.analisis||{}).forEach(([k,v])=>base[k]=v);
+      return base;});
+  }else{
+    nombre='Seguimiento_alertas';
+    const hoy=new Date();
+    rows=RES.filter(r=>r.estado_std==='CRITICO'||r.estado_std==='PRECAUCION').map(r=>{
+      const a=ale(r);
+      let dias='';
+      if(a.f_indicacion&&(a.estado_seg||'OM abierta')!=='Cerrado')
+        dias=Math.max(0,Math.round((hoy-new Date(a.f_indicacion+'T00:00:00'))/86400000));
+      return {'N° Muestra':r.nro_muestra,'Código de Equipo':r.cod_sap||'','Sistema':r.sistema_std||r.componente||'',
+        'Estado':r.estado_std,'Horómetro':r.horometro??'','Observación del reporte':r.observacion||'',
+        'N° OM SAP':a.om_sap||'','Acciones correctivas':a.acciones||'','Fecha de indicación':a.f_indicacion||'',
+        'Estado de seguimiento':a.estado_seg||'OM abierta','Días transcurridos':dias,
+        'Link al reporte PDF':a.link_pdf||r.link_pdf||''};});
+  }
+  if(!rows.length)return alert('No hay datos para exportar.');
+  const ws=XLSX.utils.json_to_sheet(rows);
+  const wb=XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb,ws,nombre.slice(0,30));
+  XLSX.writeFile(wb,`SOS_${nombre}_${new Date().toISOString().slice(0,10)}.xlsx`);
+};
+
+
+/* ═══════════════ EQUIVALENCIAS (uniformar los 3 laboratorios) ═══════════════ */
+function eqAbrir(){
+  const admin=perfil&&perfil.rol==='admin';
+  // textos que aparecen en los datos pero aún no tienen equivalencia
+  const faltaE=[...new Set(RES.filter(r=>r.estado&&!r.estado_std).map(r=>r.estado))].sort();
+  const faltaS=[...new Set([...RES.filter(r=>r.componente&&!r.sistema_std).map(r=>r.componente),
+                            ...PLAN.filter(p=>p.sistema&&!p.sistema_std).map(p=>p.sistema)])].sort();
+  const stds=[...new Set([...EQS.values()])].sort();
+  document.body.insertAdjacentHTML('beforeend',`<div class="modal" id="meq"><div class="mc">
+    <div class="mh"><div><h3>Equivalencias</h3>
+      <div class="sub">Uniforman el texto de cada laboratorio a un estado y un sistema comunes.</div></div>
+      <div class="spacer"></div><button class="act" id="eqCer">Cerrar</button></div>
+    <div class="mb">
+      ${(faltaE.length||faltaS.length)?`<div class="campo"><b>Sin equivalencia en los datos cargados</b>
+        ${faltaE.length?`<div class="warn" style="font-size:12px;margin-bottom:4px">Estados: ${faltaE.map(esc).join(' · ')}</div>`:''}
+        ${faltaS.length?`<div class="warn" style="font-size:12px">Sistemas: ${faltaS.map(esc).join(' · ')}</div>`:''}
+        <div class="hint">Agrégalos abajo y vuelve a cargar el archivo para que se uniformen.</div></div>`
+       :'<div class="campo"><b>Estado</b><div style="color:#15803d;font-size:12px">Todo lo cargado está uniformado.</div></div>'}
+      <div class="campo"><b>Estados</b>
+        <table class="t"><thead><tr><th>Texto del laboratorio</th><th>Laboratorio</th><th>Estado estándar</th>${admin?'<th></th>':''}</tr></thead>
+        <tbody id="eqTE"></tbody></table>
+        ${admin?`<div class="eqnew">
+          <input id="e_txt" placeholder="Texto tal como lo escribe el laboratorio" list="faltaE">
+          <datalist id="faltaE">${faltaE.map(t=>`<option>${esc(t)}</option>`).join('')}</datalist>
+          <input id="e_lab" placeholder="Laboratorio" style="max-width:150px">
+          <select id="e_std"><option>NORMAL</option><option>PRECAUCION</option><option>CRITICO</option></select>
+          <button class="act primary" id="e_add">Agregar</button></div>`:''}
+      </div>
+      <div class="campo"><b>Sistemas</b>
+        <table class="t"><thead><tr><th>Texto del laboratorio</th><th>Sistema estándar</th>${admin?'<th></th>':''}</tr></thead>
+        <tbody id="eqTS"></tbody></table>
+        ${admin?`<div class="eqnew">
+          <input id="s_txt" placeholder="Texto tal como aparece" list="faltaS">
+          <datalist id="faltaS">${faltaS.map(t=>`<option>${esc(t)}</option>`).join('')}</datalist>
+          <input id="s_std" placeholder="Sistema estándar" list="stdl">
+          <datalist id="stdl">${stds.map(t=>`<option>${esc(t)}</option>`).join('')}</datalist>
+          <button class="act primary" id="s_add">Agregar</button></div>`:''}
+      </div>
+      ${admin?'':'<div class="hint">Solo los administradores pueden modificar estas tablas.</div>'}
+    </div></div></div>`);
+  eqPintarTablas();
+  const cerrar=()=>{const e=document.getElementById('meq');if(e)e.remove();};
+  document.getElementById('eqCer').onclick=cerrar;
+  document.getElementById('meq').addEventListener('click',ev=>{if(ev.target.id==='meq')cerrar();});
+  if(!admin)return;
+  document.getElementById('e_add').onclick=async()=>{
+    const t=document.getElementById('e_txt').value.trim();
+    if(!t)return alert('Escribe el texto del laboratorio.');
+    const d={texto:t,laboratorio:document.getElementById('e_lab').value.trim()||null,
+             estandar:document.getElementById('e_std').value};
+    const {error}=await sb.from('sos_eq_estado').insert(d);
+    if(error)return alert('No se pudo agregar: '+error.message);
+    EQE.set(nrm(t),nrm(d.estandar)); EQLE.push(d);
+    document.getElementById('e_txt').value='';
+    eqPintarTablas(); reNormalizar();
+  };
+  document.getElementById('s_add').onclick=async()=>{
+    const t=document.getElementById('s_txt').value.trim(), s=document.getElementById('s_std').value.trim();
+    if(!t||!s)return alert('Completa el texto y el sistema estándar.');
+    const {error}=await sb.from('sos_eq_sistema').insert({texto:t,estandar:s});
+    if(error)return alert('No se pudo agregar: '+error.message);
+    EQS.set(nrm(t),s); EQLS.push({texto:t,estandar:s});
+    document.getElementById('s_txt').value='';
+    eqPintarTablas(); reNormalizar();
+  };
+}
+function eqPintarTablas(){
+  const te=document.getElementById('eqTE'), ts=document.getElementById('eqTS');
+  if(!te)return;
+  const admin=perfil&&perfil.rol==='admin';
+  te.innerHTML=EQLE.slice().sort((a,b)=>a.estandar.localeCompare(b.estandar)||a.texto.localeCompare(b.texto))
+    .map(x=>`<tr><td>${esc(x.texto)}</td><td class="dim">${esc(x.laboratorio||'')}</td>
+      <td><span class="pill e-${nrm(x.estandar)}">${esc(nrm(x.estandar))}</span></td>
+      ${admin&&x.id?`<td class="c"><button class="mini" data-de="${x.id}">✕</button></td>`:(admin?'<td></td>':'')}</tr>`).join('');
+  ts.innerHTML=EQLS.slice().sort((a,b)=>a.estandar.localeCompare(b.estandar)||a.texto.localeCompare(b.texto))
+    .map(x=>`<tr><td>${esc(x.texto)}</td><td>${esc(x.estandar)}</td>
+      ${admin&&x.id?`<td class="c"><button class="mini" data-ds="${x.id}">✕</button></td>`:(admin?'<td></td>':'')}</tr>`).join('');
+  te.querySelectorAll('[data-de]').forEach(b=>b.onclick=async()=>{
+    if(!confirm('¿Eliminar esta equivalencia?'))return;
+    await sb.from('sos_eq_estado').delete().eq('id',b.dataset.de);
+    const i=EQLE.findIndex(x=>String(x.id)===b.dataset.de);
+    if(i>=0){EQE.delete(nrm(EQLE[i].texto));EQLE.splice(i,1);}
+    eqPintarTablas(); reNormalizar();});
+  ts.querySelectorAll('[data-ds]').forEach(b=>b.onclick=async()=>{
+    if(!confirm('¿Eliminar esta equivalencia?'))return;
+    await sb.from('sos_eq_sistema').delete().eq('id',b.dataset.ds);
+    const i=EQLS.findIndex(x=>String(x.id)===b.dataset.ds);
+    if(i>=0){EQS.delete(nrm(EQLS[i].texto));EQLS.splice(i,1);}
+    eqPintarTablas(); reNormalizar();});
+}
+/* al cambiar una equivalencia se vuelven a uniformar los datos ya guardados */
+async function reNormalizar(){
+  const camb=[];
+  RES.forEach(r=>{
+    const e=estadoStd(r.estado), s=sistemaStd(r.componente);
+    if(e!==r.estado_std||s!==r.sistema_std){r.estado_std=e;r.sistema_std=s;camb.push(r);}
+  });
+  const cambP=[];
+  PLAN.forEach(p=>{const s=sistemaStd(p.sistema);
+    if(s!==p.sistema_std){p.sistema_std=s;cambP.push(p);}});
+  for(const r of camb) await sb.from('sos_resultados').update({estado_std:r.estado_std,sistema_std:r.sistema_std}).eq('id',r.id);
+  for(const p of cambP) await sb.from('sos_planilla').update({sistema_std:p.sistema_std}).eq('id',p.id);
+  if(camb.length||cambP.length)pie.textContent=`Se uniformaron ${camb.length} resultado(s) y ${cambP.length} muestra(s).`;
+  pintar();
+}
+btnEq.onclick=eqAbrir;
+
+/* ═══════════════ CARGA ═══════════════ */
+[fBusca].forEach(x=>x.oninput=pintar);
+[fObra,fDesde,fHasta,fEstado,fSistema,fFuente].forEach(x=>x.onchange=pintar);
+btnRec.onclick=()=>cargarTodo();
+
+async function cargarTodo(){
+  pie.textContent='Cargando…';
+  const [pl,re,al]=await Promise.all([
+    sb.from('sos_planilla').select('*').order('f_muestreo',{ascending:false}).limit(5000),
+    sb.from('sos_resultados').select('*').order('fecha',{ascending:false}).limit(5000),
+    sb.from('sos_alertas').select('*')
+  ]);
+  if(pl.error||re.error){pie.textContent='No se pudo cargar: '+((pl.error||re.error).message);return;}
+  PLAN=pl.data||[]; RES=re.data||[]; ALE=al.data||[];
+  const obras=[...new Set([...PLAN.map(p=>p.obra),...RES.map(r=>r.obra)].filter(Boolean))].sort();
+  fObra.innerHTML='<option value="">Todas las obras</option>'+obras.map(o=>`<option>${esc(o)}</option>`).join('');
+  const siss=[...new Set(RES.map(r=>r.sistema_std).filter(Boolean))].sort();
+  fSistema.innerHTML='<option value="">Todos los sistemas</option>'+siss.map(s=>`<option>${esc(s)}</option>`).join('');
+  pie.textContent=`${PLAN.length} muestra(s) en planilla · ${RES.length} resultado(s) · ${ALE.length} en seguimiento.`;
+  pintar();
+}
+
+(async()=>{
+  const {data:{session}}=await sb.auth.getSession();
+  if(!session){document.body.innerHTML='<div style="padding:60px;text-align:center"><h2 style="font-size:18px">Sesi\u00f3n no iniciada</h2><p style="color:#6b747d">Ingresa en la p\u00e1gina principal.</p></div>';return;}
+  const {data:p}=await sb.from('profiles').select('id,nombre,rol,estado,paginas').eq('id',session.user.id).single();
+  perfil=p||{};
+  who.textContent=(perfil.nombre||session.user.email)+' · '+(perfil.rol||'');
+  if(perfil.estado!=='aprobado'||(perfil.rol!=='admin'&&!(Array.isArray(perfil.paginas)&&perfil.paginas.includes('sos')))){
+    document.body.innerHTML='<div style="padding:60px;text-align:center;font-family:sans-serif">'
+     +'<h2 style="font-size:18px;margin-bottom:10px">Sin acceso a SOS</h2>'
+     +'<p style="color:#6b747d">Un administrador debe habilitarte esta pesta&ntilde;a desde Usuarios.</p></div>';return;}
+  const {data:m}=await sb.from('maestro').select('id,cod_sap,equipo,marca,modelo,serie_placa,cod_proyec,familia,status');
+  datos=m||[]; DIDX=new Map(datos.map(e=>[String(e.id),e]));
+  const [ee,es]=await Promise.all([
+    sb.from('sos_eq_estado').select('*'), sb.from('sos_eq_sistema').select('*')
+  ]);
+  // el archivo trae "CRÍTICO" con tilde y "PRECAUCION" sin ella: se unifica
+  EQLE=ee.data||[]; EQLS=es.data||[];
+  EQLE.forEach(x=>EQE.set(nrm(x.texto),nrm(x.estandar)));
+  EQLS.forEach(x=>EQS.set(nrm(x.texto),String(x.estandar).trim()));
+  const hoy=new Date(), ini=new Date(hoy.getFullYear(),0,1);
+  fDesde.value=isoDe(ini); fHasta.value=isoDe(hoy);
+  await cargarTodo();
+})();
+
+</script>
+</body>
+</html>
