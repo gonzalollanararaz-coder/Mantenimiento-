@@ -45,7 +45,15 @@
   table.t td{padding:4px 6px;border-bottom:1px solid #eef1f4;vertical-align:middle}
   table.t tbody tr:hover td{background:#f7fbff}
   table.t tr.corte td{border-top:2px solid #cbd5e1}
-  .desc{max-width:300px;line-height:1.35}
+  /* Filas de una sola línea: el texto que no entra se corta con puntos
+     suspensivos y se lee completo al abrir la fila. */
+  table.t td{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:280px}
+  table.t td.desc{max-width:380px}
+  table.t tbody tr{height:26px}
+  /* la vista de alertas lleva campos editables: ahí no se recorta */
+  #boxAle table.t td{overflow:visible;max-width:none;white-space:normal}
+  #boxAle table.t td.desc{max-width:320px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+
   .dim{color:var(--muted)}
   .std{color:#2E75B6;font-style:normal;font-size:10px}
   .clave{color:#1F3864;font-weight:700;font-size:10.5px;letter-spacing:-.2px}
@@ -71,6 +79,7 @@
   .mh .sub{font-size:11px;color:var(--muted);margin-top:2px}
   .mb{padding:12px 16px 18px;max-height:74vh;overflow:auto}
   .campo{margin-bottom:12px}
+  .mb .campo div{white-space:normal}
   .campo b{display:block;font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.4px;margin-bottom:4px}
   .an{display:grid;grid-template-columns:repeat(auto-fill,minmax(155px,1fr));gap:6px}
   .an>div{background:#f6f8fa;border-radius:8px;padding:6px 9px;font-size:11.5px;display:flex;justify-content:space-between;gap:8px}
@@ -444,11 +453,12 @@ function pintarRes(){
         <td class="r mono">${r.horometro!=null?f0(r.horometro):''}</td>
         <td class="c dim">${esc(r.estado||'')}</td>
         <td class="c"><span class="pill e-${r.estado_std||'NA'}">${esc(r.estado_std||'?')}</span></td>
-        <td class="desc">${esc((r.observacion||'').slice(0,120))}</td>
+        <td class="desc" title="${esc(r.observacion||'')}">${esc(r.observacion||'')}</td>
         <td class="c">${r.planilla_id?'✓':'<span class="dim">—</span>'}</td>
         <td class="c">${r.link_pdf?`<a href="${esc(r.link_pdf)}" target="_blank">PDF</a>`:''}</td></tr>`;}).join('')}
     </tbody></table>
-    ${L.length>800?`<div class="hint">Mostrando 800 de ${L.length}. Afina los filtros.</div>`:''}`;
+    <div class="hint">Haz clic en una fila para ver la observación completa y todos los parámetros del análisis.
+      ${L.length>800?`· Mostrando 800 de ${L.length}: afina los filtros.`:''}</div>`;
   boxRes.querySelectorAll('tbody tr').forEach(tr=>tr.onclick=()=>detalleRes(tr.dataset.rid));
 }
 function detalleRes(id){
@@ -513,7 +523,7 @@ function pintarAle(){
         <td>${esc(r.sistema_std||r.componente||'')}</td>
         <td class="c"><span class="pill e-${r.estado_std}">${esc(r.estado_std)}</span></td>
         <td class="r mono">${r.horometro!=null?f0(r.horometro):''}</td>
-        <td class="desc dim">${esc((r.observacion||'').slice(0,90))}</td>
+        <td class="desc dim" title="${esc(r.observacion||'')}">${esc(r.observacion||'')}</td>
         <td><input class="ed" data-c="om_sap" value="${esc(a.om_sap||'')}" placeholder="OM"></td>
         <td><input class="ed lg" data-c="acciones" value="${esc(a.acciones||'')}" placeholder="qué se hará"></td>
         <td class="c"><input class="ed" type="date" data-c="f_indicacion" value="${a.f_indicacion||''}"></td>
@@ -601,7 +611,7 @@ async function subirPlanilla(filas,nom){
     +`Nuevas para agregar: ${nuevos.length}\n`
     +`Ya registradas (se omiten): ${regs.length-nuevos.length}\n`
     +(sinEq.length?`Códigos que no están en Equipos: ${sinEq.length}\n`:'')
-    +(sinSis.length?`Sistemas sin equivalencia: ${sinSis.length}\n`:'')
+    +(sinSis.length?`Sistemas sin equivalencia: ${sinSis.length} (los podrás asignar después)\n`:'')
     +`\n¿Guardar?`))return;
   if(!nuevos.length)return;
   let ok=0,err='';
@@ -654,8 +664,18 @@ async function subirResultados(filas,nom,hoja){
   }
   await cargarTodo();
   pie.textContent=`${ok} resultado(s) agregados · ${enl} enlazados con la planilla.`;
-  if(sinEst.length||sinSis.length)
-    alert('Quedaron textos sin equivalencia.\n\nAgrégalos en las tablas sos_eq_estado / sos_eq_sistema y vuelve a cargar el archivo para que se uniformen.');
+  if(sinEst.length||sinSis.length){
+    // se nombra exactamente qué falta y se ofrece resolverlo al momento
+    const det=(sinEst.length?`Estados sin equivalencia (${sinEst.length}):\n   ${sinEst.join('\n   ')}\n\n`:'')
+             +(sinSis.length?`Sistemas sin equivalencia (${sinSis.length}):\n   ${sinSis.slice(0,15).join('\n   ')}`
+               +(sinSis.length>15?`\n   … y ${sinSis.length-15} más`:'')+'\n':'');
+    const abrir=confirm(
+      `Los resultados se guardaron, pero estos textos del laboratorio todavía no tienen equivalencia,\n`
+      +`así que esas filas quedan sin uniformar y no entran en los filtros ni en las alertas:\n\n${det}\n`
+      +`¿Abrir el panel de Equivalencias para asignarlas ahora?\n`
+      +`(al guardarlas, los datos ya cargados se corrigen solos)`);
+    if(abrir)eqAbrir();
+  }
 }
 
 /* ═══════════════ INGRESO MANUAL A LA PLANILLA ═══════════════ */
