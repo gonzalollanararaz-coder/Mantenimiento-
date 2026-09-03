@@ -1,0 +1,290 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Partes Diarios &mdash; UDE</title>
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#1c232b">
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+  :root{--steel:#1c232b;--amber:#FFCD11;--line:#dfe3e7;--ink:#1a1d21;--muted:#6b747d;--bg:#f4f6f8}
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;background:var(--bg);color:var(--ink);font-size:14px;display:flex;flex-direction:column;height:100vh;overflow:hidden}
+  .hide{display:none !important}
+  .mono{font-family:"SF Mono",ui-monospace,monospace}
+  .spacer{flex:1}
+  header{background:var(--steel);color:#fff;padding:8px 16px;display:flex;gap:12px;align-items:center;justify-content:space-between;border-bottom:3px solid var(--amber);flex-shrink:0}
+  header h1{font-size:14px;font-weight:700}
+  header p{font-size:10px;color:#9aa4ad;text-transform:uppercase;letter-spacing:1.5px}
+  header .who{font-size:12px;color:#cdd4da}
+  .toolbar{display:flex;flex-wrap:nowrap;gap:7px;align-items:center;padding:6px 14px;background:#fff;border-bottom:1px solid var(--line);flex-shrink:0;height:44px;overflow-x:auto}
+  .toolbar>*{flex:0 0 auto}
+  .toolbar input,.toolbar select{padding:4px 8px;border:1px solid var(--line);border-radius:7px;font-size:12px;height:26px}
+  .act{border:none;border-radius:7px;padding:0 11px;height:26px;font-size:11.5px;font-weight:700;cursor:pointer;background:#eef0f2;color:var(--ink)}
+  .act:hover{filter:brightness(.96)}
+  .act.primary{background:var(--amber);color:#1a1200}
+  .act:disabled{opacity:.45;cursor:default}
+  .chip{background:#f1f3f5;border:1px solid var(--line);border-radius:999px;padding:4px 10px;font-size:11px;font-weight:700;color:var(--muted)}
+  footer{padding:6px 16px;color:var(--muted);font-size:12px;text-align:center;flex-shrink:0}
+  #wrap{flex:1;overflow:auto;padding:10px 14px;min-height:0}
+  .cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:9px;margin-bottom:10px}
+  .c{background:#fff;border:1px solid var(--line);border-radius:11px;padding:9px 12px}
+  .c .l{font-size:10px;font-weight:800;color:var(--muted);text-transform:uppercase;letter-spacing:.4px}
+  .c .v{font-size:22px;font-weight:800;color:#1F3864;line-height:1.15;margin-top:2px}
+  .c .s{font-size:9.5px;color:#98a2ad;margin-top:2px}
+  table.t{width:100%;border-collapse:collapse;font-size:11.5px;background:#fff}
+  table.t th{background:#1F3864;color:#fff;font-size:9.5px;text-transform:uppercase;letter-spacing:.3px;padding:6px;text-align:left;position:sticky;top:0;z-index:2}
+  table.t th.c,table.t td.c{text-align:center}
+  table.t th.r,table.t td.r{text-align:right}
+  table.t td{padding:5px 6px;border-bottom:1px solid #eef1f4;vertical-align:top}
+  table.t tbody tr{cursor:pointer}
+  table.t tbody tr:hover td{background:#f7fbff}
+  table.t tr.corte td{border-top:2px solid #cbd5e1}
+  .pill{border-radius:999px;padding:1px 8px;font-size:10px;font-weight:800;display:inline-block}
+  .p-PREVENTIVO{background:#dcfce7;color:#15803d}
+  .p-CORRECTIVO{background:#fef3c7;color:#B45309}
+  .p-INSPECCION{background:#e8f0fe;color:#1d4ed8}
+  .p-OTRO{background:#eef0f2;color:#6b747d}
+  .desc{max-width:420px;line-height:1.4}
+  .vacio{padding:44px;text-align:center;color:#98a2ad}
+  /* detalle */
+  #det{position:fixed;inset:0;background:rgba(15,20,26,.55);z-index:99;display:flex;align-items:flex-start;justify-content:center;padding:18px;overflow:auto}
+  #detC{background:#fff;border-radius:12px;width:min(900px,98vw);box-shadow:0 20px 60px rgba(0,0,0,.35)}
+  .dh{display:flex;align-items:center;gap:10px;padding:12px 16px;border-bottom:1px solid var(--line)}
+  .dh h3{font-size:15px;color:#1f3864}
+  .db{padding:12px 16px 18px;max-height:74vh;overflow:auto}
+  .campo{margin-bottom:12px}
+  .campo b{display:block;font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.4px;margin-bottom:3px}
+  .g2{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px}
+  .fts{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:8px;margin-top:6px}
+  .fts a{display:block;aspect-ratio:4/3;border-radius:9px;overflow:hidden;background:#eef0f2}
+  .fts img{width:100%;height:100%;object-fit:cover;display:block}
+</style>
+</head>
+<body>
+<header>
+  <div><h1>Partes Diarios de Trabajo</h1><p>Unidad de Equipos &middot; UDE</p></div>
+  <span class="who" id="who"></span>
+</header>
+
+<div class="toolbar">
+  <input type="date" id="fDesde"><input type="date" id="fHasta">
+  <select id="fProy"><option value="">Todos los proyectos</option></select>
+  <select id="fTipo"><option value="">Todos los tipos</option><option>PREVENTIVO</option><option>CORRECTIVO</option><option>INSPECCION</option><option>OTRO</option></select>
+  <select id="fMec"><option value="">Todos los mec&aacute;nicos</option></select>
+  <input type="search" id="fBusca" placeholder="C&oacute;d. SAP, equipo, OM o texto&hellip;" style="width:220px">
+  <span class="chip" id="chN">&mdash;</span>
+  <div class="spacer"></div>
+  <button class="act" id="btnXls">&#8681; Excel</button>
+  <button class="act" id="btnRec">&#8635;</button>
+</div>
+
+<div id="wrap"><div class="vacio">Cargando&hellip;</div></div>
+<footer id="pie">Los partes los registran los mec&aacute;nicos desde el celular.</footer>
+
+<script>
+const CFG=(()=>{try{return JSON.parse(localStorage.getItem('gllr_sbcfg')||'null')}catch(_){return null}})();
+if(!CFG||!CFG.url){
+  document.body.innerHTML='<div style="padding:60px;text-align:center;font-family:sans-serif">'
+   +'<h2 style="font-size:18px;margin-bottom:10px">Abre primero la p&aacute;gina principal</h2>'
+   +'<p style="color:#6b747d">Esta pesta&ntilde;a toma la conexi&oacute;n y la sesi&oacute;n desde el Maestro de Equipos.</p></div>';
+  throw new Error('sin configuracion');
+}
+const sb=window.supabase.createClient(CFG.url,CFG.key);
+let perfil=null, datos=[], PARTES=[], REPS={}, mecanicos=[];
+function hoy0(){const d=new Date();d.setHours(0,0,0,0);return d;}
+function dias(a,b){return Math.round((a-b)/86400000);}
+function isoWeek(d){const t=new Date(Date.UTC(d.getFullYear(),d.getMonth(),d.getDate()));const dn=t.getUTCDay()||7;t.setUTCDate(t.getUTCDate()+4-dn);const y=new Date(Date.UTC(t.getUTCFullYear(),0,1));return Math.ceil(((t-y)/86400000+1)/7);}
+function esc(s){return String(s??"").replace(/&/g,"&amp;").replace(/"/g,"&quot;").replace(/</g,"&lt;")}
+function fmtDate(v){if(!v)return"";const p=String(v).split("-");return p.length===3?`${p[2]}/${p[1]}/${p[0].slice(2)}`:String(v);}
+function famNum(e){const m=String(e.familia||'').match(/\d+/);return m?+m[0]:99;}
+function roundToFreq(V,F){
+  V=Number(V)||0; F=Number(F)||0;
+  if(F<=0)return Math.round(V);
+  const L=Math.floor(V/F)*F, U=L+F, band=F*0.2;
+  if((V-L)<band)return L;
+  if((U-V)<=band)return U;
+  const idx=Math.floor((V-L)/band+0.5);
+  return L+idx*band;
+}
+function mant(e){
+  if(e.__mant)return e.__mant;              // caché: se recalcula solo al editar el equipo
+  const H=hoy0(),freq=+e.frecuencia||0,pmr=roundToFreq(+e.hrkm_ult_mntto||0,freq),act=+e.hrkm_actual||0,hd=+e.hr_dia||0;
+  let proy=act; if(e.fecha_lectura){const dd=Math.max(0,dias(H,new Date(e.fecha_lectura)));proy=act+dd*hd;}
+  const proximo=freq?(pmr+freq):0; const restante=proximo-proy;
+  let est="na";const margen=Math.max(freq*0.15,25);
+  if(freq)est=restante<=0?"bad":(restante<=margen?"warn":"ok");
+  let fprox="",sem="",fproxDate=null;
+  if(hd>0&&freq){const dd=Math.floor(restante/hd)+1;fproxDate=new Date(H.getTime()+dd*86400000);fprox=fmtDate(fproxDate.toISOString().slice(0,10));sem=isoWeek(fproxDate);}
+  return (e.__mant={proy:Math.round(proy),proximo:Math.round(proximo),restante:Math.round(restante),est,fprox,sem,fproxDate});
+}
+
+
+let DIDX=new Map();
+function getE(id){return DIDX.get(String(id))||null;}
+const nrm=s=>String(s??'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toUpperCase();
+const f0=n=>Number(n).toLocaleString('es-PE',{maximumFractionDigits:0});
+const f1=n=>Number(n).toLocaleString('es-PE',{maximumFractionDigits:1});
+const URLFOTO=r=>`${CFG.url}/storage/v1/object/public/partes/${r}`;
+
+/* mismo criterio de orden que la tabla de Equipos */
+const ST_RANK={MOVILIZADO:1,'TRANS. MOV.':1,'TRANS. DESM.':1,TRANSITO:1,'DESMOVILIZ.':2,DESMOVILIZADO:2};
+const idFamNum=e=>{const m=String(e&&e.familia||'').match(/\d+/);return m?+m[0]:99;};
+
+function filtrar(){
+  const d=fDesde.value||'1900-01-01', h=fHasta.value||'2999-12-31';
+  const q=nrm(fBusca.value), pr=fProy.value, tp=fTipo.value, me=fMec.value;
+  return PARTES.filter(p=>{
+    const f=String(p.fecha).slice(0,10);
+    if(f<d||f>h)return false;
+    if(pr&&String(p.cod_proyec||'')!==pr)return false;
+    if(tp&&p.tipo!==tp)return false;
+    if(me&&!(p.mecanicos||[]).includes(me))return false;
+    if(q){const e=getE(p.maestro_id);
+      const t=nrm(`${p.cod_sap} ${e?e.equipo:''} ${p.om||''} ${p.descripcion||''} ${(p.mecanicos||[]).join(' ')}`);
+      if(!t.includes(q))return false;}
+    return true;
+  });
+}
+function pintar(){
+  const L=filtrar();
+  chN.textContent=L.length+' parte(s)';
+  btnXls.disabled=!L.length;
+  const hh=L.reduce((a,p)=>a+(+p.hh||0),0);
+  const eqs=new Set(L.map(p=>p.cod_sap)).size;
+  const porTipo=t=>L.filter(p=>p.tipo===t).length;
+  let h='<div class="cards">'
+   +card('Partes registrados',L.length,eqs+' equipos distintos')
+   +card('Horas hombre',f1(hh),'suma del periodo')
+   +card('Correctivos',porTipo('CORRECTIVO'),porTipo('PREVENTIVO')+' preventivos')
+   +card('En proceso',L.filter(p=>p.estado==='EN PROCESO').length,'trabajos sin cerrar')
+   +'</div>';
+  if(!L.length){wrap.innerHTML=h+'<div class="vacio">Ning&uacute;n parte coincide con el filtro.</div>';return;}
+  // orden: fecha reciente primero y, dentro del día, por equipo
+  const ord=L.slice().sort((a,b)=>String(b.fecha).localeCompare(String(a.fecha))
+    ||String(a.cod_proyec||'').localeCompare(String(b.cod_proyec||''))
+    ||String(a.cod_sap).localeCompare(String(b.cod_sap)));
+  let prev=null;
+  h+='<table class="t"><thead><tr><th>Fecha</th><th>Proyecto</th><th>C&oacute;d. SAP</th><th>Equipo</th>'
+   +'<th class="c">Tipo</th><th>Trabajo realizado</th><th>Mec&aacute;nicos</th><th class="r">HH</th>'
+   +'<th class="r">Hor&oacute;metro</th><th class="c">OM</th><th class="c">Fotos</th></tr></thead><tbody>'
+   +ord.map(p=>{
+      const e=getE(p.maestro_id);
+      const corte=prev!==null&&String(p.fecha)!==prev; prev=String(p.fecha);
+      return `<tr class="${corte?'corte':''}" data-id="${p.id}">
+        <td>${fmtDate(String(p.fecha).slice(0,10))}</td>
+        <td>${esc(p.cod_proyec||'')}</td>
+        <td class="mono">${esc(p.cod_sap)}</td>
+        <td>${esc(e?e.equipo:'')}</td>
+        <td class="c"><span class="pill p-${esc(p.tipo||'OTRO')}">${esc(p.tipo||'')}</span></td>
+        <td class="desc">${esc(p.descripcion||'')}${p.estado==='EN PROCESO'?' <b style="color:#B45309">· en proceso</b>':''}</td>
+        <td>${esc((p.mecanicos||[]).join(', '))}</td>
+        <td class="r">${p.hh?f1(p.hh):''}</td>
+        <td class="r mono">${p.horometro?f0(p.horometro):''}</td>
+        <td class="c mono">${esc(p.om||'')}</td>
+        <td class="c">${(p.fotos||[]).length||''}</td></tr>`;}).join('')
+   +'</tbody></table>';
+  wrap.innerHTML=h;
+  wrap.querySelectorAll('tbody tr').forEach(tr=>tr.onclick=()=>detalle(tr.dataset.id));
+}
+const card=(l,v,s)=>`<div class="c"><div class="l">${l}</div><div class="v">${v}</div><div class="s">${s}</div></div>`;
+
+async function detalle(id){
+  const p=PARTES.find(x=>String(x.id)===String(id)); if(!p)return;
+  const e=getE(p.maestro_id);
+  let reps=REPS[id];
+  if(!reps){
+    const {data}=await sb.from('parte_repuestos').select('*').eq('parte_id',id);
+    reps=REPS[id]=data||[];
+  }
+  document.body.insertAdjacentHTML('beforeend',`<div id="det"><div id="detC">
+    <div class="dh"><div><h3>${esc(p.cod_sap)} &middot; ${esc(e?e.equipo:'')}</h3>
+      <div style="font-size:11px;color:var(--muted);margin-top:2px">${fmtDate(String(p.fecha).slice(0,10))} &middot;
+        ${esc(p.cod_proyec||'')} &middot; registrado por ${esc(p.registrado_por||'—')}</div></div>
+      <div class="spacer"></div><button class="act" onclick="document.getElementById('det').remove()">Cerrar</button></div>
+    <div class="db">
+      <div class="g2">
+        <div class="campo"><b>Tipo</b><span class="pill p-${esc(p.tipo||'OTRO')}">${esc(p.tipo||'')}</span></div>
+        <div class="campo"><b>Estado</b>${esc(p.estado||'')}</div>
+        <div class="campo"><b>Orden de mantenimiento</b>${esc(p.om||'—')}</div>
+        <div class="campo"><b>Hor&oacute;metro tomado</b>${p.horometro?f0(p.horometro):'—'}</div>
+        <div class="campo"><b>Horas hombre</b>${p.hh?f1(p.hh):'—'}</div>
+      </div>
+      <div class="campo"><b>Trabajo realizado</b><div style="line-height:1.5">${esc(p.descripcion||'')}</div></div>
+      <div class="campo"><b>Mec&aacute;nicos</b>${esc((p.mecanicos||[]).join(', '))||'—'}</div>
+      ${reps.length?`<div class="campo"><b>Repuestos e insumos</b>
+        <table class="t" style="margin-top:4px"><thead><tr><th>Descripci&oacute;n</th><th class="r">Cantidad</th><th class="c">Unidad</th></tr></thead>
+        <tbody>${reps.map(r=>`<tr><td>${esc(r.descripcion)}</td><td class="r">${r.cantidad??''}</td><td class="c">${esc(r.unidad||'')}</td></tr>`).join('')}</tbody></table></div>`:''}
+      ${(p.fotos||[]).length?`<div class="campo"><b>Fotos</b><div class="fts">
+        ${p.fotos.map(r=>`<a href="${URLFOTO(r)}" target="_blank"><img src="${URLFOTO(r)}" loading="lazy"></a>`).join('')}</div></div>`:''}
+      ${p.obs?`<div class="campo"><b>Observaciones</b>${esc(p.obs)}</div>`:''}
+    </div></div></div>`);
+  document.getElementById('det').addEventListener('click',ev=>{if(ev.target.id==='det')ev.target.remove();});
+}
+
+btnXls.onclick=()=>{
+  const L=filtrar(); if(!L.length)return;
+  const rows=L.map(p=>{const e=getE(p.maestro_id);return{
+    'Fecha':String(p.fecha).slice(0,10),'Proyecto':p.cod_proyec||'','Cód. SAP':p.cod_sap,
+    'Equipo':e?e.equipo:'','Tipo':p.tipo||'','Trabajo realizado':p.descripcion||'',
+    'Mecánicos':(p.mecanicos||[]).join(', '),'Horas hombre':p.hh??'','Horómetro':p.horometro??'',
+    'OM':p.om||'','Estado':p.estado||'','Registrado por':p.registrado_por||'','Fotos':(p.fotos||[]).length};});
+  const ws=XLSX.utils.json_to_sheet(rows);
+  ws['!cols']=[{wch:11},{wch:10},{wch:11},{wch:26},{wch:12},{wch:52},{wch:26},{wch:11},{wch:11},{wch:11},{wch:12},{wch:20},{wch:7}];
+  const wb=XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb,ws,'Partes');
+  XLSX.writeFile(wb,'Partes_diarios_'+new Date().toISOString().slice(0,10)+'.xlsx');
+};
+[fDesde,fHasta,fProy,fTipo,fMec].forEach(x=>x.onchange=pintar);
+fBusca.oninput=pintar;
+btnRec.onclick=()=>cargar();
+
+/* Supabase entrega como máximo 1.000 filas por consulta. Esta función
+   pide de a mil hasta traerlas todas, para que no falten periodos. */
+async function traerTodo(tabla,orden,asc){
+  const PASO=1000; let desde=0, out=[];
+  for(;;){
+    let q=sb.from(tabla).select('*');
+    if(orden)q=q.order(orden,{ascending:asc!==false});
+    const {data,error}=await q.range(desde,desde+PASO-1);
+    if(error)return {data:out,error};
+    out=out.concat(data||[]);
+    if(!data||data.length<PASO)break;
+    desde+=PASO;
+    if(desde>200000)break;                       // tope de seguridad
+  }
+  return {data:out,error:null};
+}
+async function cargar(){
+  pie.textContent='Cargando…';
+  const {data,error}=await traerTodo('partes','fecha',false);
+  if(error){pie.textContent='No se pudieron cargar los partes: '+error.message;return;}
+  PARTES=data||[]; REPS={};
+  const ps=[...new Set(PARTES.map(p=>p.cod_proyec).filter(Boolean))].sort();
+  fProy.innerHTML='<option value="">Todos los proyectos</option>'+ps.map(p=>`<option>${esc(p)}</option>`).join('');
+  const ms=[...new Set(PARTES.flatMap(p=>p.mecanicos||[]))].sort();
+  fMec.innerHTML='<option value="">Todos los mecánicos</option>'+ms.map(m=>`<option>${esc(m)}</option>`).join('');
+  pie.textContent=`${PARTES.length} parte(s) en la base · los registran los mecánicos desde el celular.`;
+  pintar();
+}
+(async()=>{
+  const {data:{session}}=await sb.auth.getSession();
+  if(!session){document.body.innerHTML='<div style="padding:60px;text-align:center"><h2 style="font-size:18px">Sesi\u00f3n no iniciada</h2><p style="color:#6b747d">Ingresa en la p\u00e1gina principal.</p></div>';return;}
+  const {data:p}=await sb.from('profiles').select('id,nombre,rol,estado,paginas').eq('id',session.user.id).single();
+  perfil=p||{};
+  who.textContent=(perfil.nombre||session.user.email)+' · '+(perfil.rol||'');
+  if(perfil.estado!=='aprobado'||(perfil.rol!=='admin'&&!(Array.isArray(perfil.paginas)&&perfil.paginas.includes('partes')))){
+    document.body.innerHTML='<div style="padding:60px;text-align:center;font-family:sans-serif">'
+     +'<h2 style="font-size:18px;margin-bottom:10px">Sin acceso a Partes</h2>'
+     +'<p style="color:#6b747d">Un administrador debe habilitarte esta pesta&ntilde;a desde Usuarios.</p></div>';return;}
+  const {data:m}=await sb.from('maestro').select('id,cod_sap,equipo,marca,modelo,cod_proyec,familia,status');
+  datos=m||[]; DIDX=new Map(datos.map(e=>[String(e.id),e]));
+  const hoy=new Date(), ini=new Date(hoy.getTime()-30*86400000);
+  const iso=d=>new Date(d.getTime()-d.getTimezoneOffset()*60000).toISOString().slice(0,10);
+  fDesde.value=iso(ini); fHasta.value=iso(hoy);
+  await cargar();
+})();
+</script>
+</body>
+</html>

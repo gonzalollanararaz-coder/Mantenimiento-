@@ -908,12 +908,28 @@ btnEq.onclick=eqAbrir;
 [fObra,fDesde,fHasta,fEstado,fSistema,fFuente].forEach(x=>x.onchange=pintar);
 btnRec.onclick=()=>cargarTodo();
 
+/* Supabase entrega como máximo 1.000 filas por consulta. Esta función
+   pide de a mil hasta traerlas todas, para que no falten periodos. */
+async function traerTodo(tabla,orden,asc){
+  const PASO=1000; let desde=0, out=[];
+  for(;;){
+    let q=sb.from(tabla).select('*');
+    if(orden)q=q.order(orden,{ascending:asc!==false});
+    const {data,error}=await q.range(desde,desde+PASO-1);
+    if(error)return {data:out,error};
+    out=out.concat(data||[]);
+    if(!data||data.length<PASO)break;
+    desde+=PASO;
+    if(desde>200000)break;                       // tope de seguridad
+  }
+  return {data:out,error:null};
+}
 async function cargarTodo(){
   pie.textContent='Cargando…';
   const [pl,re,al]=await Promise.all([
-    sb.from('sos_planilla').select('*').order('f_muestreo',{ascending:false}).limit(5000),
-    sb.from('sos_resultados').select('*').order('fecha',{ascending:false}).limit(5000),
-    sb.from('sos_alertas').select('*')
+    traerTodo('sos_planilla','f_muestreo',false),
+    traerTodo('sos_resultados','fecha',false),
+    traerTodo('sos_alertas')
   ]);
   if(pl.error||re.error){pie.textContent='No se pudo cargar: '+((pl.error||re.error).message);return;}
   PLAN=pl.data||[]; RES=re.data||[]; ALE=al.data||[];

@@ -341,8 +341,8 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
 /* ╔══ pega aquí tus DOS datos (los mismos de tu archivo actual) ══╗ */
-const SUPABASE_URL = "https://hklwvdhzltjsbfvlewbu.supabase.co";   // ← reemplaza
-const SUPABASE_KEY = "sb_publishable_NgDfyDHDI_KByR-qf35EpA_ZuKI5E0K";                 // ← reemplaza
+const SUPABASE_URL = "https://TU-PROYECTO.supabase.co";   // ← reemplaza
+const SUPABASE_KEY = "TU-PUBLISHABLE-KEY";                 // ← reemplaza
 /* ──────────────────────────────────────────────────────────────── */
 const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 try{localStorage.setItem('gllr_sbcfg',JSON.stringify({url:SUPABASE_URL,key:SUPABASE_KEY}));}catch(_){}
@@ -1874,9 +1874,17 @@ function horPanel(R,regs,nomArchivo){
     const fechas=disp.map(d=>d.fecha).sort();
     const yaHay=new Set();
     if(fechas.length){
-      const {data:prev}=await sb.from('combustible').select('cod_sap,fecha,hora,nro_vale')
-        .gte('fecha',fechas[0]).lte('fecha',fechas[fechas.length-1]);
-      (prev||[]).forEach(r=>yaHay.add([r.cod_sap,r.fecha,r.hora||'',r.nro_vale||''].join('|')));
+      /* Supabase devuelve como máximo 1.000 filas por consulta: se pide de a
+         mil hasta agotar el rango, para no dar por nuevo algo ya guardado. */
+      const PASO=1000;
+      for(let desde=0;;desde+=PASO){
+        const {data:prev,error:e0}=await sb.from('combustible').select('cod_sap,fecha,hora,nro_vale')
+          .gte('fecha',fechas[0]).lte('fecha',fechas[fechas.length-1])
+          .order('fecha').range(desde,desde+PASO-1);
+        if(e0)break;
+        (prev||[]).forEach(r=>yaHay.add([r.cod_sap,r.fecha,r.hora||'',r.nro_vale||''].join('|')));
+        if(!prev||prev.length<PASO)break;
+      }
     }
     const enviar=disp.filter(d=>{
       const k=[d.cod_sap,d.fecha,d.hora,d.nro_vale].join('|');
