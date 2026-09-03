@@ -584,7 +584,7 @@ function pintarLista(){
   chN.textContent=eqs.length+' equipo(s)';
   btnXls.disabled=!eqs.length;
   pie.textContent=`${eqs.length} equipo(s) · ${R.lab} · el Contador del Maestro define la fórmula.`;
-  if(!eqs.length){rcWrap.innerHTML='<div class="vacio">Sin datos con estos filtros.</div>';return;}
+  if(!eqs.length){rcWrap.innerHTML=porQueVacio(R);return;}
   const hr=eqs.filter(o=>o.tipo==='Hr'&&o.v!=null), km=eqs.filter(o=>o.tipo==='Km'&&o.v!=null);
   const med=a=>{if(!a.length)return null;const s=a.map(o=>o.v).sort((x,y)=>x-y);return s[Math.floor(s.length/2)];};
   const glT=eqs.reduce((a,o)=>a+o.gl,0);
@@ -601,6 +601,42 @@ function pintarLista(){
   if(sin.length)h+='<div class="rc-panel"><div class="rc-tit">Sin rendimiento calculable <small>(una sola carga en el periodo)</small></div>'
     +'<div class="obs">'+sin.map(o=>esc(o.e.cod_sap)).join(' · ')+'</div></div>';
   rcWrap.innerHTML=h;
+}
+/* Cuando no hay nada que mostrar, se explica el motivo en lugar de
+   dejar la pantalla en blanco: casi siempre es el periodo, o despachos
+   descartados, o equipos que no están en el Maestro. */
+function porQueVacio(R){
+  const n=DESPACHOS.length;
+  if(!n)return '<div class="vacio">No hay despachos guardados.<br>'
+    +'<small>Cárgalos desde la pesta&ntilde;a Equipos con el bot&oacute;n &#9981;.</small></div>';
+  const enRango=DESPACHOS.filter(d=>{const f=String(d.fecha).slice(0,10);return f>=R.desde&&f<=R.hasta;});
+  const desc=DESPACHOS.filter(d=>d.descartado).length;
+  const sinEq=DESPACHOS.filter(d=>!getE(d.maestro_id)).length;
+  const sinGl=DESPACHOS.filter(d=>!(d.galones>0)).length;
+  const fechas=DESPACHOS.map(d=>String(d.fecha).slice(0,10)).sort();
+  const filas=[];
+  filas.push(['Despachos guardados en total',n]);
+  filas.push(['Dentro del periodo elegido',enRango.length]);
+  if(desc)filas.push(['Marcados como descartados',desc]);
+  if(sinEq)filas.push(['Cuyo equipo ya no está en el Maestro',sinEq]);
+  if(sinGl)filas.push(['Sin galones registrados',sinGl]);
+  filas.push(['Un solo despacho por equipo (no da tramo)','—']);
+  let causa='';
+  if(!enRango.length) causa=`Ninguno cae en <b>${esc(R.lab)}</b>. Los datos que hay van del
+      <b>${fmtDate(fechas[0])}</b> al <b>${fmtDate(fechas[fechas.length-1])}</b>: cambia el periodo arriba a
+      "Todo el historial" o al mes que corresponda.`;
+  else if(desc>=enRango.length*0.9) causa=`Casi todos los despachos del periodo est&aacute;n <b>descartados</b>.
+      Rev&iacute;salos con el bot&oacute;n <b>Despachos</b> y desmarca los que s&iacute; valgan.`;
+  else if(sinEq>=enRango.length*0.9) causa=`Los despachos del periodo pertenecen a equipos que <b>no est&aacute;n
+      en la pesta&ntilde;a Equipos</b>.`;
+  else causa=`Hay ${enRango.length} despacho(s) en el periodo, pero ninguno forma un tramo:
+      el rendimiento necesita <b>dos cargas del mismo equipo</b> con el contador avanzando entre ellas.`;
+  return `<div class="rc-panel" style="max-width:640px;margin:30px auto">
+    <div class="rc-tit">Sin datos que mostrar</div>
+    <p style="font-size:12.5px;line-height:1.6;color:#404040;margin-bottom:10px">${causa}</p>
+    <table class="rc"><tbody>${filas.map(([a,b])=>
+      `<tr><td>${a}</td><td class="r"><b>${b}</b></td></tr>`).join('')}</tbody></table>
+  </div>`;
 }
 const card=(l,v,s)=>`<div class="rc-c"><div class="l">${l}</div><div class="v">${v}</div><div class="s">${s}</div></div>`;
 function tablaLista(tit,arr,med,tipo){
