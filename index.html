@@ -235,6 +235,15 @@
   table.cbt input[type=number]{width:88px;border:1px solid var(--amber);border-radius:5px;padding:1px 4px;font-size:11.5px;text-align:right}
   .cbm{font-size:10.5px;color:#B45309;margin-top:3px}
   .hb.azul{background:#dbeafe;color:#1d4ed8}
+
+  #fmWrap{position:fixed;inset:0;background:rgba(15,20,26,.55);z-index:9997;display:flex;align-items:flex-start;justify-content:center;padding:24px;overflow:auto}
+  #fmCard{background:#fff;border-radius:12px;width:min(620px,96vw);box-shadow:0 20px 60px rgba(0,0,0,.35)}
+  .fmop{display:flex;gap:12px;align-items:center;border:1px solid var(--line);border-radius:10px;padding:11px 13px;margin-bottom:9px}
+  .fmop>div{flex:1}
+  .fmop b{font-size:13px;color:#1f3864}
+  .fmop p{font-size:11.5px;color:var(--muted);margin:3px 0 4px;line-height:1.45}
+  .fmop small{font-size:10px;color:#98a2ad;font-family:ui-monospace,monospace}
+  .fmnota{font-size:11px;color:#B45309;background:#fffbe6;border-radius:8px;padding:8px 10px;line-height:1.5}
   footer{padding:10px 16px;color:var(--muted);font-size:12px;text-align:center}
 
   /* admin */
@@ -319,7 +328,9 @@
       <button class="act ghost ic" id="btnUndo" disabled title="Deshacer el último cambio (Ctrl+Z)">↶</button>
       <button class="act ghost ic" id="btnAgrupar" title="Contraer todos los grupos de columnas">⊟</button>
       <button class="act ghost ic" id="btnDesagrupar" title="Expandir todos los grupos de columnas">⊞</button>
-      <button class="act ghost ic" id="btnHoro" title="Actualizar horómetros desde el reporte de combustible">⛽</button>
+      <button class="act ghost ic" id="btnHoro" title="Cargar el reporte de consumo de combustible (actualiza horómetros y alimenta la pestaña Combustible)">⛽</button>
+      <button class="act ghost ic" id="btnHoroSolo" title="Cargar solo horómetros y fechas (no afecta el reporte de combustible)">⏱</button>
+      <button class="act ghost ic" id="btnFormatos" title="Descargar los formatos de ejemplo">📄</button>
       <button class="act ghost ic" id="btnExcel" title="Descargar en Excel">⬇</button>
       <button class="act ghost ic" id="btnRefresh" title="Volver a cargar los datos">↻</button>
     </div>
@@ -341,8 +352,8 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
 /* ╔══ pega aquí tus DOS datos (los mismos de tu archivo actual) ══╗ */
-const SUPABASE_URL = "https://hklwvdhzltjsbfvlewbu.supabase.co";   // ← reemplaza
-const SUPABASE_KEY = "sb_publishable_NgDfyDHDI_KByR-qf35EpA_ZuKI5E0K";                 // ← reemplaza
+const SUPABASE_URL = "https://TU-PROYECTO.supabase.co";   // ← reemplaza
+const SUPABASE_KEY = "TU-PUBLISHABLE-KEY";                 // ← reemplaza
 /* ──────────────────────────────────────────────────────────────── */
 const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 try{localStorage.setItem('gllr_sbcfg',JSON.stringify({url:SUPABASE_URL,key:SUPABASE_KEY}));}catch(_){}
@@ -1797,7 +1808,8 @@ function horAnalizar(regs){
   R.aplicar.sort(ord); R.iguales.sort(ord);
   return R;
 }
-function horPanel(R,regs,nomArchivo){
+function horPanel(R,regs,nomArchivo,modo){
+  const soloHoro = modo==='horo';     // carga de horómetros: no toca HR/día ni despachos
   const fila=o=>`<tr>
     <td><input type="checkbox" class="hchk" data-id="${o.e.id}" data-val="${o.despues}" data-fec="${o.fechaIso}" data-hd="${o.hdNuevo!=null?o.hdNuevo:''}" data-hk="${o.avanza?1:0}" checked></td>
     <td class="mono">${esc(o.e.cod_sap)}</td><td>${esc(o.e.equipo||'')}</td>
@@ -1805,8 +1817,8 @@ function horPanel(R,regs,nomArchivo){
     <td class="mono r ${o.avanza?'b':'nc'}">${fmtNum(o.despues)}${o.avanza?'':' <small>↺</small>'}</td>
     <td class="c ${o.avanza?'':'nc'}">${fmtDate(o.fechaIso)}</td>
     <td class="c">${o.tipo}</td>
-    <td class="mono r">${o.hdAntes!=null?o.hdAntes:'—'}</td>
-    <td class="mono r ${o.hdNuevo!=null?'b':''}">${o.hdNuevo!=null?o.hdNuevo:'—'}${o.hdN?`<small> (${o.hdN})</small>`:''}</td>
+    ${soloHoro?'':`<td class="mono r">${o.hdAntes!=null?o.hdAntes:'—'}</td>
+    <td class="mono r ${o.hdNuevo!=null?'b':''}">${o.hdNuevo!=null?o.hdNuevo:'—'}${o.hdN?`<small> (${o.hdN})</small>`:''}</td>`}
     <td class="c">${o.nLect}</td><td class="via">${esc(o.via)}</td><td class="mot">${esc(o.motivo||'')}</td></tr>`;
   document.body.insertAdjacentHTML('beforeend',`<div id="horWrap"><div id="horCard">
     <div class="hhead"><div><h3>Actualizar desde el reporte</h3><div class="hsub">${esc(nomArchivo)}</div></div>
@@ -1815,14 +1827,15 @@ function horPanel(R,regs,nomArchivo){
       <button class="act primary" id="horOk">Aplicar</button></div>
     <div class="hres">
       <span class="hb ok">${R.aplicar.length} equipos a actualizar</span>
-      <span class="hb azul">${R.despachos} despachos para Combustible</span>
-      ${R.repetidos?`<span class="hb warn">${R.repetidos} repetido(s) en el archivo</span>`:''}
+      ${soloHoro?'<span class="hb azul">solo horómetros · no afecta el reporte de combustible</span>'
+        :`<span class="hb azul">${R.despachos} despachos para Combustible</span>
+          ${R.repetidos?`<span class="hb warn">${R.repetidos} repetido(s) en el archivo</span>`:''}`}
       <span class="hb gris">${R.iguales.length} sin cambio</span>
       <span class="hb bad">${R.sinEquipo.length} no están en Equipos</span>
     </div>
     <div class="hbody">
-      <h4>Equipos <small>(el HR/KM tachado no se toca: el Maestro ya tiene un dato igual o más reciente · el HR/día sí se recalcula)</small></h4>
-      ${R.aplicar.length?`<table class="htb"><thead><tr><th></th><th>Cód. SAP</th><th>Equipo</th><th>HR/KM</th><th>Nuevo</th><th>F. lectura</th><th>Cont.</th><th>HR/día</th><th>Nuevo</th><th>Lect.</th><th>Encontrado por</th><th>Obs.</th></tr></thead><tbody>${R.aplicar.map(fila).join('')}</tbody></table>`:'<p class="hvac">— ninguno —</p>'}
+      <h4>Equipos <small>(el HR/KM tachado no se toca: el Maestro ya tiene un dato igual o más reciente${soloHoro?'':' · el HR/día sí se recalcula'})</small></h4>
+      ${R.aplicar.length?`<table class="htb"><thead><tr><th></th><th>Cód. SAP</th><th>Equipo</th><th>HR/KM</th><th>Nuevo</th><th>F. lectura</th><th>Cont.</th>${soloHoro?'':'<th>HR/día</th><th>Nuevo</th>'}<th>Lect.</th><th>Encontrado por</th><th>Obs.</th></tr></thead><tbody>${R.aplicar.map(fila).join('')}</tbody></table>`:'<p class="hvac">— ninguno —</p>'}
       ${R.sinEquipo.length?`<h4 class="r">No están en Equipos <small>(sus despachos no se guardan)</small></h4>
         <p class="hvac">${R.sinEquipo.map(o=>esc(o.cod)).join(' · ')}</p>`:''}
     </div></div></div>`);
@@ -1841,7 +1854,7 @@ function horPanel(R,regs,nomArchivo){
       const antes={hrkm_actual:e.hrkm_actual,fecha_lectura:e.fecha_lectura,hr_dia:e.hr_dia};
       const dat={};
       if(avanza){dat.hrkm_actual=val; dat.fecha_lectura=fec;}   // solo si avanza
-      if(hd!=null&&isFinite(hd))dat.hr_dia=hd;                   // el ritmo sí se recalcula siempre
+      if(!soloHoro&&hd!=null&&isFinite(hd))dat.hr_dia=hd;        // el ritmo solo lo recalcula el reporte de combustible
       if(!Object.keys(dat).length)continue;
       const r=await offEscribir(sb,'maestro','update',{id_fila:id,datos:dat});
       if(r.error){err++;continue;}
@@ -1854,6 +1867,12 @@ function horPanel(R,regs,nomArchivo){
       ok++;
     }
     OFF.guardar('maestro_full',datos);
+    if(soloHoro){                     // este archivo no alimenta la pestaña Combustible
+      cerrar(); render();
+      appFoot.textContent=`Horómetros actualizados: ${ok}`+(err?` · ${err} con error`:'');
+      setTimeout(()=>appFoot.textContent='Doble clic en una celda para editar · los cambios se guardan solos.',5000);
+      return;
+    }
     // 2) despachos para la pestaña Combustible
     btn.textContent='Guardando despachos…';
     const disp=[];
@@ -1950,6 +1969,136 @@ btnHoro.onclick=()=>{
   };
   inp.click();
 };
+
+/* ═══════════ CARGA SOLO DE HORÓMETROS ═══════════
+   Formato "Ingreso Masivo de Horómetros": Equipo, Fecha, Horom.fin / Kilom.fin.
+   Actualiza HR/KM actual y F. lectura, y nada más: no guarda despachos ni
+   toca el HR/día, porque este archivo no trae consumo. */
+const HS_COLS={
+  cod:['Equipo','EQUIPO','Cod. SAP','Código'],
+  fecha:['Fecha','FECHA'],
+  hor:['Horom.fin','Horom. fin','HOROM.FIN','Horometro fin'],
+  km:['Kilom.fin','Kilom. fin','KILOM.FIN','Kilometraje fin'],
+  obra:['Obra','OBRA']
+};
+function hsMapa(filas){
+  for(let i=0;i<Math.min(14,filas.length);i++){
+    const fila=(filas[i]||[]).map(horNorm), idx={};
+    for(const [k,alias] of Object.entries(HS_COLS)){
+      const j=fila.findIndex(cc=>alias.some(a=>horNorm(a)===cc));
+      if(j>=0)idx[k]=j;
+    }
+    if(idx.cod!==undefined&&idx.fecha!==undefined&&(idx.hor!==undefined||idx.km!==undefined))
+      return {fila:i,idx};
+  }
+  return null;
+}
+function hsLeer(filas,idx,fila0){
+  const porEq=new Map();
+  for(let i=fila0+1;i<filas.length;i++){
+    const f=filas[i]||[];
+    const cod=horNorm(f[idx.cod]); if(!cod)continue;
+    const fec=horFecha(f[idx.fecha]); if(!fec)continue;
+    const vh=idx.hor!==undefined?Number(String(f[idx.hor]??'').replace(/[^0-9.,-]/g,'').replace(',','.')):NaN;
+    const vk=idx.km !==undefined?Number(String(f[idx.km ]??'').replace(/[^0-9.,-]/g,'').replace(',','.')):NaN;
+    const esKm=!(isFinite(vh)&&vh>0)&&isFinite(vk)&&vk>0;
+    const val=esKm?vk:vh;
+    if(!isFinite(val)||val<=0)continue;
+    if(!porEq.has(cod))porEq.set(cod,{cod,lecturas:[],placa:'',serie:'',desc:'',tipo:esKm?'Kilometraje':'Horometro'});
+    const o=porEq.get(cod);
+    const fIso=horIso(fec), ts=fec.getTime();
+    /* Varias filas del mismo equipo y día (turnos o partes distintos):
+       se queda la lectura final más alta, que es la del cierre del día. */
+    const ya=o.lecturas.find(l=>l.fecIso===fIso);
+    if(ya){ if(val>ya.val)ya.val=val; }
+    else o.lecturas.push({ts,fec,fecIso:fIso,hora:'',vale:'',val,gl:null});
+  }
+  const out=[];
+  for(const o of porEq.values()){
+    o.lecturas.sort((a,b)=>a.ts-b.ts);
+    o.lecturas.forEach((l,i)=>l.k=o.cod+'|'+l.fecIso+'|'+i);
+    out.push(o);
+  }
+  return out;
+}
+btnHoroSolo.onclick=()=>{
+  const inp=document.createElement('input');
+  inp.type='file'; inp.accept='.xls,.xlsx,.csv';
+  inp.onchange=async()=>{
+    const f=inp.files&&inp.files[0]; if(!f)return;
+    appFoot.textContent='Leyendo '+f.name+'…';
+    try{
+      const wb=XLSX.read(await f.arrayBuffer(),{type:'array',cellDates:true});
+      const filas=XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]],{header:1,raw:true,defval:''});
+      const mapa=hsMapa(filas);
+      if(!mapa){
+        alert('No se reconoció el formato.\n\nDebe tener las columnas Equipo, Fecha y Horom.fin (o Kilom.fin).\n\n'
+          +'Puedes descargar el formato de ejemplo con el botón 📄.');
+        appFoot.textContent=''; return;
+      }
+      const regs=horEmparejar(hsLeer(filas,mapa.idx,mapa.fila));
+      if(!regs.length){alert('El archivo no tiene lecturas válidas.');appFoot.textContent='';return;}
+      const nom=f.name+' · '+regs.length+' equipos · solo horómetros';
+      appFoot.textContent='';
+      horCorregir(regs,nom,rs=>horPanel(horAnalizar(rs),rs,nom,'horo'));
+    }catch(err){ alert('No se pudo leer el archivo: '+err.message); appFoot.textContent=''; }
+  };
+  inp.click();
+};
+
+/* ═══════════ FORMATOS DE EJEMPLO ═══════════ */
+btnFormatos.onclick=()=>{
+  document.body.insertAdjacentHTML('beforeend',`<div id="fmWrap"><div id="fmCard">
+    <div class="cbh"><div><h3>Formatos de carga</h3>
+      <div class="cbs">Descarga el modelo y llénalo con tus datos.</div></div>
+      <div class="spacer"></div><button class="act ghost" id="fmCer">Cerrar</button></div>
+    <div style="padding:14px 16px 18px">
+      <div class="fmop"><div><b>⛽ Reporte de consumo de combustible</b>
+        <p>Actualiza el horómetro y la fecha de lectura, calcula el HR/día y alimenta la pestaña Combustible.</p>
+        <small>Columnas: NRO VALE · CODIGO INTERNO · PLACA · NRO SERIE · FECHA TRANSAC. · HORA TRANSAC. · KM/HM · GLN</small></div>
+        <button class="act primary" id="fmA">Descargar</button></div>
+      <div class="fmop"><div><b>⏱ Ingreso masivo de horómetros</b>
+        <p>Actualiza solo el horómetro y la fecha de lectura. No guarda despachos ni cambia el HR/día.</p>
+        <small>Columnas: Obra · Equipo · Fecha · Horom.ini · Horom.fin · Kilom.ini · Kilom.fin</small></div>
+        <button class="act primary" id="fmB">Descargar</button></div>
+      <div class="fmnota">En ambos casos el horómetro solo avanza: si el archivo trae una lectura
+        menor o más antigua que la registrada, el dato del Maestro se conserva.</div>
+    </div></div></div>`);
+  const cer=()=>{const e=document.getElementById('fmWrap');if(e)e.remove();};
+  document.getElementById('fmCer').onclick=cer;
+  document.getElementById('fmWrap').addEventListener('click',ev=>{if(ev.target.id==='fmWrap')cer();});
+  document.getElementById('fmA').onclick=()=>bajarFormato('comb');
+  document.getElementById('fmB').onclick=()=>bajarFormato('horo');
+};
+function bajarFormato(tipo){
+  const hoy=hoy0(), iso=d=>{const z=new Date(d.getTime()-d.getTimezoneOffset()*60000);return z.toISOString().slice(0,10);};
+  const ayer=new Date(hoy.getTime()-86400000);
+  const muestra=datos.filter(e=>String(e.status||'').toUpperCase().startsWith('MOVILIZ')).slice(0,3);
+  const eqs=muestra.length?muestra:[{cod_sap:'EEX047',cod_proyec:'P-0171',serie_placa:'SERIE-1',hrkm_actual:2450},
+                                    {cod_sap:'ETI101',cod_proyec:'P-0171',serie_placa:'SERIE-2',hrkm_actual:5000}];
+  let rows,nombre;
+  if(tipo==='comb'){
+    nombre='Formato_reporte_combustible.xlsx';
+    rows=[];
+    eqs.forEach((e,i)=>{
+      [[ayer,60],[hoy,55]].forEach(([f,gl],k)=>rows.push({
+        'PROYECTO':e.cod_proyec||'','NRO VALE':String(1000+i*2+k),'CODIGO INTERNO':e.cod_sap,
+        'PLACA':'','NRO SERIE':e.serie_placa||'','DESCRIPCION':e.equipo||'','TIPO DE CONTROL':'Horometro',
+        'FECHA TRANSAC.':iso(f),'HORA TRANSAC.':k?'15:30':'08:15',
+        'KM/HM':(+e.hrkm_actual||1000)+k*9,'GLN':gl}));
+    });
+  }else{
+    nombre='Formato_ingreso_horometros.xlsx';
+    rows=eqs.map((e,i)=>({'Obra':e.cod_proyec||'','Equipo':e.cod_sap,'Proveedor':'JJC','Operador':'',
+      'Turno':'D','Parte':'*','Fecha':iso(hoy),
+      'Horom.ini':(+e.hrkm_actual||1000),'Horom.fin':(+e.hrkm_actual||1000)+8,
+      'Kilom.ini':'','Kilom.fin':'','HTrab':8,'Observaciones':''}));
+  }
+  const ws=XLSX.utils.json_to_sheet(rows);
+  ws['!cols']=Object.keys(rows[0]).map(k=>({wch:Math.max(11,k.length+2)}));
+  const wb=XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb,ws,'Formato');
+  XLSX.writeFile(wb,nombre);
+}
 
 /* ── modo offline: service worker + copia local + sincronizacion ── */
 if('serviceWorker' in navigator){
