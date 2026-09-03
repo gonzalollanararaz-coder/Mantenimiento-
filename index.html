@@ -339,8 +339,8 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
 /* ╔══ pega aquí tus DOS datos (los mismos de tu archivo actual) ══╗ */
-const SUPABASE_URL = "https://hklwvdhzltjsbfvlewbu.supabase.co";   // ← reemplaza
-const SUPABASE_KEY = "sb_publishable_NgDfyDHDI_KByR-qf35EpA_ZuKI5E0K";                 // ← reemplaza
+const SUPABASE_URL = "https://TU-PROYECTO.supabase.co";   // ← reemplaza
+const SUPABASE_KEY = "TU-PUBLISHABLE-KEY";                 // ← reemplaza
 /* ──────────────────────────────────────────────────────────────── */
 const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 try{localStorage.setItem('gllr_sbcfg',JSON.stringify({url:SUPABASE_URL,key:SUPABASE_KEY}));}catch(_){}
@@ -1691,9 +1691,15 @@ function horCorregir(regs,nomArchivo,seguir){
 
 /* ═══════════ PASO 2 · confirmación y guardado ═══════════ */
 function horAnalizar(regs){
-  const hoy=hoy0(), R={aplicar:[],iguales:[],sinEquipo:[],despachos:0};
+  const hoy=hoy0(), R={aplicar:[],iguales:[],sinEquipo:[],despachos:0,repetidos:0};
+  const vistas=new Set();
   for(const r of regs){
-    r.lecturas.forEach(l=>{if(!l.descartar&&horVal(l)!=null)R.despachos++;});
+    r.lecturas.forEach(l=>{
+      if(l.descartar||horVal(l)==null)return;
+      R.despachos++;
+      const k=[r.e?r.e.cod_sap:r.cod,l.fecIso,l.hora||'',l.vale||''].join('|');
+      if(vistas.has(k))R.repetidos++; else vistas.add(k);
+    });
     if(!r.e){R.sinEquipo.push(r);continue;}
     const buenas=r.lecturas.filter(l=>!l.descartar&&horVal(l)!=null);
     if(!buenas.length)continue;
@@ -1730,6 +1736,7 @@ function horPanel(R,regs,nomArchivo){
     <div class="hres">
       <span class="hb ok">${R.aplicar.length} equipos a actualizar</span>
       <span class="hb azul">${R.despachos} despachos para Combustible</span>
+      ${R.repetidos?`<span class="hb warn">${R.repetidos} repetido(s) en el archivo</span>`:''}
       <span class="hb gris">${R.iguales.length} sin cambio</span>
       <span class="hb bad">${R.sinEquipo.length} no están en Equipos</span>
     </div>
@@ -1792,8 +1799,24 @@ function horPanel(R,regs,nomArchivo){
       if(d.contador_corr!=null||d.descartado||d.obs)return true;   // corregido ahora
       omitidos++; return false;                            // ya estaba: se respeta
     });
-    for(let i=0;i<enviar.length;i+=200){
-      const lote=enviar.slice(i,i+200);
+    /* El reporte puede traer dos filas con el mismo equipo, fecha, hora y vale
+       (un vale repetido, o filas sin hora). La base no admite dos veces la misma
+       clave en un solo envío, así que se deja una sola: la corregida si la hay,
+       y si no la última, que es la que el archivo da por buena. */
+    const porClave=new Map();
+    let repetidos=0;
+    for(const d of enviar){
+      const k=[d.cod_sap,d.fecha,d.hora,d.nro_vale].join('|');
+      const ant=porClave.get(k);
+      if(!ant){porClave.set(k,d);continue;}
+      repetidos++;
+      const mejor=(d.contador_corr!=null||d.descartado||d.obs)?d
+                 :(ant.contador_corr!=null||ant.descartado||ant.obs)?ant:d;
+      porClave.set(k,mejor);
+    }
+    const unicos=[...porClave.values()];
+    for(let i=0;i<unicos.length;i+=200){
+      const lote=unicos.slice(i,i+200);
       const {error}=await sb.from('combustible')
         .upsert(lote,{onConflict:'cod_sap,fecha,hora,nro_vale',ignoreDuplicates:false});
       if(error){ge+=lote.length; if(!msg)msg=error.message; console.error(error);} else gd+=lote.length;
@@ -1807,6 +1830,7 @@ function horPanel(R,regs,nomArchivo){
     cerrar(); render();
     appFoot.textContent=`Equipos actualizados: ${ok}`+(err?` · ${err} con error`:'')
       +` · Despachos guardados: ${gd}`+(omitidos?` · ${omitidos} ya estaban y se respetaron`:'')
+      +(repetidos?` · ${repetidos} fila(s) repetidas en el archivo se unificaron`:'')
       +(ge?` · ${ge} con error`:'');
     setTimeout(()=>appFoot.textContent='Doble clic en una celda para editar · los cambios se guardan solos.',5000);
   };
