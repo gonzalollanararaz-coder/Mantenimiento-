@@ -199,6 +199,7 @@
   .htb td.r{text-align:right}.htb td.c{text-align:center}.htb td.b{font-weight:800;color:#15803d}
   .htb td.via{color:var(--muted);font-size:10.5px}
   .htb td.mot{color:#B45309;font-size:10.5px}
+  .htb td.nc{color:#98a2ad;text-decoration:line-through}
   .htb tr:hover td{background:#f9fbfd}
   .hvac{color:var(--muted);font-size:11px;padding:3px 0;line-height:1.7}
   .hvac i{color:#98a2ad}
@@ -339,8 +340,8 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
 /* ╔══ pega aquí tus DOS datos (los mismos de tu archivo actual) ══╗ */
-const SUPABASE_URL = "https://hklwvdhzltjsbfvlewbu.supabase.co";   // ← reemplaza
-const SUPABASE_KEY = "sb_publishable_NgDfyDHDI_KByR-qf35EpA_ZuKI5E0K";                 // ← reemplaza
+const SUPABASE_URL = "https://TU-PROYECTO.supabase.co";   // ← reemplaza
+const SUPABASE_KEY = "TU-PUBLISHABLE-KEY";                 // ← reemplaza
 /* ──────────────────────────────────────────────────────────────── */
 const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 try{localStorage.setItem('gllr_sbcfg',JSON.stringify({url:SUPABASE_URL,key:SUPABASE_KEY}));}catch(_){}
@@ -1144,6 +1145,15 @@ cuerpo.addEventListener("keydown",ev=>{
   if(ev.key==="Enter"){ev.preventDefault();ev.target.blur();}
   else if(ev.key==="Escape"){delete td.dataset.editing;redrawCell(td,getE(idDe(td)));}
 });
+/* HR/día lo calcula la carga de combustible. Editarlo a mano tiene sentido
+   en equipos sin despachos (desmovilizados o en tránsito); en los demás, la
+   próxima carga lo va a recalcular, así que se avisa. */
+function notaHrDia(e){
+  if(!e)return '';
+  const st=String(e.status||'').toUpperCase();
+  if(/DESMOVILIZ|TRANS/.test(st))return '';        // sin despachos: el valor manual es el bueno
+  return 'Nota: en un equipo movilizado, el HR/día se recalcula con la próxima carga de combustible.';
+}
 function finishEdit(td,inp){
   const type=tipoDe(td); let val=inp.value;
   if(type==='n'||type==='pct')val=(val===""?null:Number(val));
@@ -1193,7 +1203,13 @@ async function guardar(id,k,val,old_){
   }
   appFoot.style.color=""; appFoot.style.fontWeight="";
   appFoot.textContent=_r.local?"Guardado local · se enviará al recuperar señal":"Guardado ✓";
-  setTimeout(()=>{if(/Guardado/.test(appFoot.textContent))appFoot.textContent="Doble clic en una celda para editar · los cambios se guardan solos.";},1200);
+  const nota=(k==='hr_dia')?notaHrDia(getE(id)):'';
+  setTimeout(()=>{
+    if(!/Guardado/.test(appFoot.textContent))return;
+    if(nota){appFoot.textContent=nota;
+      setTimeout(()=>{if(appFoot.textContent===nota)appFoot.textContent="Doble clic en una celda para editar · los cambios se guardan solos.";},6000);}
+    else appFoot.textContent="Doble clic en una celda para editar · los cambios se guardan solos.";
+  },1200);
 }
 btnAdd.onclick=async()=>{
   const nuevo={equipo:"NUEVO EQUIPO",status:"MOVILIZADO",frecuencia:250};
@@ -1705,12 +1721,21 @@ function horAnalizar(regs){
     if(!buenas.length)continue;
     const ult=buenas[buenas.length-1];
     const act=+r.e.hrkm_actual||0, val=horVal(ult), fIso=ult.fecIso;
+    const fAct=r.e.fecha_lectura||'';
+    /* El horómetro del Maestro nunca retrocede: solo se reemplaza cuando el
+       archivo trae una lectura mayor, o la misma con fecha más reciente.
+       Un reporte de un periodo pasado ya no pisa el dato vigente.          */
+    const avanza = !act || val>act || (val===act && fIso>fAct);
     const ri=horRitmo(r.lecturas,r.tipo);
-    const item={...r,antes:act,despues:val,fechaIso:fIso,
+    const item={...r,antes:act,despues:val,fechaIso:fIso,antesF:fAct,avanza,
       hdAntes:(r.e.hr_dia==null||r.e.hr_dia==='')?null:+r.e.hr_dia,
       hdNuevo:ri?ri.valor:null, hdN:ri?ri.n:0,
-      nLect:buenas.length, motivo:r.sinContador?'sin Contador en el Maestro: se asumió '+r.tipo:''};
-    if(val===act&&r.e.fecha_lectura===fIso&&!item.hdNuevo)R.iguales.push(item);
+      nLect:buenas.length,
+      motivo: r.sinContador ? 'sin Contador en el Maestro: se asumió '+r.tipo
+            : !avanza ? `el Maestro ya tiene ${fmtNum(act)} del ${fmtDate(fAct)}: no se toca` : ''};
+    // sin avance y sin HR/día nuevo no hay nada que hacer con este equipo
+    if(!avanza && item.hdNuevo==null){R.iguales.push(item);continue;}
+    if(val===act&&fAct===fIso&&item.hdNuevo==null)R.iguales.push(item);
     else R.aplicar.push(item);
   }
   const ord=(a,b)=>String(a.e.cod_sap).localeCompare(String(b.e.cod_sap));
@@ -1719,11 +1744,11 @@ function horAnalizar(regs){
 }
 function horPanel(R,regs,nomArchivo){
   const fila=o=>`<tr>
-    <td><input type="checkbox" class="hchk" data-id="${o.e.id}" data-val="${o.despues}" data-fec="${o.fechaIso}" data-hd="${o.hdNuevo!=null?o.hdNuevo:''}" checked></td>
+    <td><input type="checkbox" class="hchk" data-id="${o.e.id}" data-val="${o.despues}" data-fec="${o.fechaIso}" data-hd="${o.hdNuevo!=null?o.hdNuevo:''}" data-hk="${o.avanza?1:0}" checked></td>
     <td class="mono">${esc(o.e.cod_sap)}</td><td>${esc(o.e.equipo||'')}</td>
     <td class="mono r">${o.antes?fmtNum(o.antes):'—'}</td>
-    <td class="mono r b">${fmtNum(o.despues)}</td>
-    <td class="c">${fmtDate(o.fechaIso)}</td>
+    <td class="mono r ${o.avanza?'b':'nc'}">${fmtNum(o.despues)}${o.avanza?'':' <small>↺</small>'}</td>
+    <td class="c ${o.avanza?'':'nc'}">${fmtDate(o.fechaIso)}</td>
     <td class="c">${o.tipo}</td>
     <td class="mono r">${o.hdAntes!=null?o.hdAntes:'—'}</td>
     <td class="mono r ${o.hdNuevo!=null?'b':''}">${o.hdNuevo!=null?o.hdNuevo:'—'}${o.hdN?`<small> (${o.hdN})</small>`:''}</td>
@@ -1741,7 +1766,7 @@ function horPanel(R,regs,nomArchivo){
       <span class="hb bad">${R.sinEquipo.length} no están en Equipos</span>
     </div>
     <div class="hbody">
-      <h4>Equipos <small>(HR/KM actual, F. lectura y HR/día · desmarca los que no quieras)</small></h4>
+      <h4>Equipos <small>(el HR/KM tachado no se toca: el Maestro ya tiene un dato igual o más reciente · el HR/día sí se recalcula)</small></h4>
       ${R.aplicar.length?`<table class="htb"><thead><tr><th></th><th>Cód. SAP</th><th>Equipo</th><th>HR/KM</th><th>Nuevo</th><th>F. lectura</th><th>Cont.</th><th>HR/día</th><th>Nuevo</th><th>Lect.</th><th>Encontrado por</th><th>Obs.</th></tr></thead><tbody>${R.aplicar.map(fila).join('')}</tbody></table>`:'<p class="hvac">— ninguno —</p>'}
       ${R.sinEquipo.length?`<h4 class="r">No están en Equipos <small>(sus despachos no se guardan)</small></h4>
         <p class="hvac">${R.sinEquipo.map(o=>esc(o.cod)).join(' · ')}</p>`:''}
@@ -1756,15 +1781,20 @@ function horPanel(R,regs,nomArchivo){
     for(const ch of document.querySelectorAll('#horWrap .hchk:checked')){
       const id=ch.dataset.id, val=Number(ch.dataset.val), fec=ch.dataset.fec;
       const hd=ch.dataset.hd===''?null:Number(ch.dataset.hd);
+      const avanza=ch.dataset.hk==='1';
       const e=getE(id); if(!e)continue;
       const antes={hrkm_actual:e.hrkm_actual,fecha_lectura:e.fecha_lectura,hr_dia:e.hr_dia};
-      const dat={hrkm_actual:val,fecha_lectura:fec};
-      if(hd!=null&&isFinite(hd))dat.hr_dia=hd;
+      const dat={};
+      if(avanza){dat.hrkm_actual=val; dat.fecha_lectura=fec;}   // solo si avanza
+      if(hd!=null&&isFinite(hd))dat.hr_dia=hd;                   // el ritmo sí se recalcula siempre
+      if(!Object.keys(dat).length)continue;
       const r=await offEscribir(sb,'maestro','update',{id_fila:id,datos:dat});
       if(r.error){err++;continue;}
       Object.assign(e,dat); delete e.__mant;
-      pushUndo({type:'edit',id,k:'hrkm_actual',old:antes.hrkm_actual});
-      pushUndo({type:'edit',id,k:'fecha_lectura',old:antes.fecha_lectura});
+      if(dat.hrkm_actual!=null){
+        pushUndo({type:'edit',id,k:'hrkm_actual',old:antes.hrkm_actual});
+        pushUndo({type:'edit',id,k:'fecha_lectura',old:antes.fecha_lectura});
+      }
       if(dat.hr_dia!=null)pushUndo({type:'edit',id,k:'hr_dia',old:antes.hr_dia});
       ok++;
     }
