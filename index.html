@@ -230,7 +230,8 @@
   table.cbt td.r{text-align:right}table.cbt td.c{text-align:center}
   table.cbt tr.bad{background:#fffbe6}
   table.cbt td.hl{background:#F4A100;color:#1a1200;font-weight:800}
-  table.cbt td.sug{color:#15803d;font-weight:700}
+  table.cbt td.sug{color:#15803d;font-weight:700;white-space:nowrap}
+  table.cbt .tip{background:#dcfce7;color:#15803d;border-radius:999px;padding:0 6px;font-size:9px;margin-left:4px}
   table.cbt input[type=number]{width:88px;border:1px solid var(--amber);border-radius:5px;padding:1px 4px;font-size:11.5px;text-align:right}
   .cbm{font-size:10.5px;color:#B45309;margin-top:3px}
   .hb.azul{background:#dbeafe;color:#1d4ed8}
@@ -340,8 +341,8 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
 /* ╔══ pega aquí tus DOS datos (los mismos de tu archivo actual) ══╗ */
-const SUPABASE_URL = "https://hklwvdhzltjsbfvlewbu.supabase.co";   // ← reemplaza
-const SUPABASE_KEY = "sb_publishable_NgDfyDHDI_KByR-qf35EpA_ZuKI5E0K";                 // ← reemplaza
+const SUPABASE_URL = "https://TU-PROYECTO.supabase.co";   // ← reemplaza
+const SUPABASE_KEY = "TU-PUBLISHABLE-KEY";                 // ← reemplaza
 /* ──────────────────────────────────────────────────────────────── */
 const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 try{localStorage.setItem('gllr_sbcfg',JSON.stringify({url:SUPABASE_URL,key:SUPABASE_KEY}));}catch(_){}
@@ -1560,56 +1561,109 @@ function horEmparejar(regs){
    El contador solo sube. Se marca una lectura cuando retrocede respecto a
    la anterior, cuando queda por encima de alguna posterior, o cuando el
    avance por día supera lo físicamente posible.                        */
+/* ── Candidatos por error de digitación ──
+   Un horómetro mal tecleado suele ser el valor correcto con UN dígito
+   cambiado, dos dígitos cruzados, o un dígito de más o de menos.
+   Se generan esas variantes y luego se elige la que encaja en la serie. */
+function horTipeo(v){
+  const s=String(Math.round(Math.abs(v))), out=new Set();
+  for(let i=0;i<s.length;i++)                       // un dígito distinto
+    for(let d=0;d<=9;d++) if(+s[i]!==d) out.add(+(s.slice(0,i)+d+s.slice(i+1)));
+  for(let i=0;i+1<s.length;i++)                     // dos dígitos cruzados
+    if(s[i]!==s[i+1]) out.add(+(s.slice(0,i)+s[i+1]+s[i]+s.slice(i+2)));
+  if(s.length>1) for(let i=0;i<s.length;i++)        // un dígito de más
+    out.add(+(s.slice(0,i)+s.slice(i+1)));
+  for(let i=0;i<=s.length;i++)                      // un dígito de menos
+    for(let d=0;d<=9;d++) out.add(+(s.slice(0,i)+d+s.slice(i)));
+  return [...out].filter(x=>isFinite(x)&&x>0);
+}
+/* Elige el valor probable: primero un error de tipeo que encaje en la serie,
+   y solo si ninguno encaja, el estimado por interpolación. */
+function horSugerir(malo, estimado, minOk, maxOk){
+  if(estimado==null)return null;
+  const cand=horTipeo(malo)
+    .filter(x=>(minOk==null||x>minOk)&&(maxOk==null||x<maxOk))
+    .sort((a,b)=>Math.abs(a-estimado)-Math.abs(b-estimado));
+  if(cand.length){
+    const v=cand[0];
+    // solo se acepta si queda razonablemente cerca de lo esperado
+    const margen=Math.max(Math.abs(estimado)*0.05, 40);
+    if(Math.abs(v-estimado)<=margen)
+      return {valor:v, motivo:`posible error de tipeo: ${fmtNum(Math.round(malo))} → ${fmtNum(v)}`};
+  }
+  return {valor:Math.round(estimado), motivo:'estimado por la tendencia del equipo'};
+}
+
 function horDetectar(u){
   const L=u.lecturas, tope=HOR_TOPE[u.tipo]||24;
-  L.forEach(l=>{l.mal='';l.sug=null;l.malGl='';});
+  L.forEach(l=>{l.mal='';l.sug=null;l.sugMotivo='';l.malGl='';});
   // el abastecimiento no puede superar la capacidad del tanque (Datos Técnicos)
   const tq=Number(String(u.e&&u.e.tanque_comb||'').replace(/[^0-9.,]/g,'').replace(',','.'));
   if(isFinite(tq)&&tq>0)L.forEach(l=>{
     if(l.gl!=null&&l.gl>tq)l.malGl=`${fmtN1(l.gl)} gl supera el tanque de ${fmtN1(tq)} gl`;});
+
   const V=L.filter(l=>l.val!=null);
-  // 1) picos aislados: un valor que sobresale de sus dos vecinos más allá de lo posible.
-  //    Se marcan primero para que no arrastren a la lectura siguiente.
-  for(let i=0;i<V.length;i++){
-    const a=V[i], p=V[i-1], s=V[i+1];
-    if(p&&s){
-      const ref=Math.max(p.val,s.val);
-      const dias=Math.max((s.ts-p.ts)/86400000,0.5);
-      if(a.val>ref&&(a.val-ref)>tope*dias)
-        a.mal=`sobresale ${fmtNum(Math.round(a.val-ref))} sobre las lecturas vecinas`;
-    }
-    // la última lectura no se juzga aquí: se revisa abajo contra la última sana
-  }
-  // 2) sobre las lecturas que quedaron sanas, se revisa retroceso y ritmo
-  // Se compara siempre contra la última lectura SANA: así una lectura mala
-  // no arrastra a la siguiente, que suele estar bien.
+  if(!V.length)return 0;
+
+  /* 1) COLUMNA VERTEBRAL
+     El horómetro solo sube, así que se busca la secuencia más larga de
+     lecturas que sí avanzan entre sí. Lo que queda fuera es lo inconsistente.
+     Con esto, una lectura inflada se señala a ella misma en lugar de hacer
+     ver como erróneas a todas las que vienen después. */
+  const n=V.length, largo=new Array(n).fill(1), prev=new Array(n).fill(-1);
+  for(let i=1;i<n;i++)for(let j=0;j<i;j++)
+    if(V[j].val<=V[i].val && largo[j]+1>largo[i]){largo[i]=largo[j]+1;prev[i]=j;}
+  let fin=0; for(let i=1;i<n;i++) if(largo[i]>largo[fin])fin=i;
+  const dentro=new Set();
+  for(let i=fin;i>=0;i=prev[i]){dentro.add(i); if(prev[i]<0)break;}
+  V.forEach((a,i)=>{
+    if(dentro.has(i))return;
+    const post=V.slice(i+1).find((_,k)=>dentro.has(i+1+k));
+    a.mal=(post&&a.val>post.val)
+      ? `${fmtNum(Math.round(a.val))} rompe la secuencia: es mayor que lecturas posteriores`
+      : 'retrocede respecto a la tendencia del equipo';
+  });
+
+  /* 2) RITMO
+     Sobre las lecturas consistentes se revisa cuánto avanzan por día,
+     contra el límite físico y contra el ritmo habitual del propio equipo. */
   const S=V.filter(l=>!l.mal);
+  const ritmos=[];
+  for(let i=1;i<S.length;i++){
+    const dd=(S[i].ts-S[i-1].ts)/86400000;
+    if(dd>0.2)ritmos.push((S[i].val-S[i-1].val)/dd);
+  }
+  const ord=ritmos.slice().sort((a,b)=>a-b);
+  const tipico=ord.length?ord[Math.floor(ord.length/2)]:0;
+  const decl=Number(u.e&&u.e.hr_dia)||0;                 // HR/día del Maestro
+  const ref=Math.max(tipico, decl*0.8, 0);
   let bueno=null;
   for(const a of S){
     if(!bueno){bueno=a;continue;}
-    const d=a.val-bueno.val, dias=Math.max((a.ts-bueno.ts)/86400000,0.5);
-    if(d<0)              a.mal='retrocede respecto a la lectura anterior';
-    else if(d>tope*dias) a.mal=`avanza ${fmtNum(Math.round(d))} en ${fmtN1(dias)} día(s)`;
+    const d=a.val-bueno.val, dias=Math.max((a.ts-bueno.ts)/86400000,0.5), r=d/dias;
+    if(r>tope)
+      a.mal=`avanza ${fmtNum(Math.round(d))} en ${fmtN1(dias)} día(s): imposible`;
+    else if(ref>0 && r>ref*2.5 && d>ref*2)
+      a.mal=`avanza ${fmtNum(Math.round(d))} en ${fmtN1(dias)} día(s) — ${fmtN1(r)}/día frente a ${fmtN1(ref)}/día habitual`;
     else bueno=a;
   }
-  // valor probable: se interpola entre la lectura sana anterior y la siguiente
+
+  /* 3) VALOR PROBABLE de cada lectura marcada */
   L.forEach((l,i)=>{
     if(!l.mal)return;
     const ant=L.slice(0,i).reverse().find(x=>x.val!=null&&!x.mal);
     const sig=L.slice(i+1).find(x=>x.val!=null&&!x.mal);
+    let est=null;
     if(ant&&sig){
       const f=(l.ts-ant.ts)/(sig.ts-ant.ts||1);
-      l.sug=Math.round(ant.val+(sig.val-ant.val)*f);
+      est=ant.val+(sig.val-ant.val)*f;
     }else if(ant){
-      const sanas=L.filter(x=>x.val!=null&&!x.mal);
-      let rit=0,n=0;
-      for(let k=1;k<sanas.length;k++){
-        const dd=(sanas[k].ts-sanas[k-1].ts)/86400000;
-        if(dd>0){rit+=(sanas[k].val-sanas[k-1].val)/dd;n++;}
-      }
-      const r=n?rit/n:0;
-      l.sug=Math.round(ant.val+r*Math.max((l.ts-ant.ts)/86400000,0));
-    }else if(sig){ l.sug=sig.val; }
+      est=ant.val+(ref||tipico||0)*Math.max((l.ts-ant.ts)/86400000,0);
+    }else if(sig){
+      est=sig.val-(ref||tipico||0)*Math.max((sig.ts-l.ts)/86400000,0);
+    }
+    const s=horSugerir(l.val,est,ant?ant.val:null,sig?sig.val:null);
+    if(s){l.sug=s.valor;l.sugMotivo=s.motivo;}
   });
   return L.filter(l=>l.mal).length;
 }
@@ -1652,13 +1706,14 @@ function horCorregir(regs,nomArchivo,seguir){
         <td>${fmtDate(l.fecIso)}</td><td class="c">${esc(l.hora||'')}</td><td class="c mono">${esc(l.vale||'')}</td>
         <td class="r mono ${l.mal?'hl':''}" title="${esc(l.mal||'')}">${l.val!=null?fmtNum(l.val):'—'}</td>
         <td class="r ${l.malGl?'hl':''}" title="${esc(l.malGl||'')}">${l.gl!=null?fmtN1(l.gl):'—'}</td>
-        <td class="r sug">${l.sug!=null?fmtNum(l.sug):''}</td>
+        <td class="r sug" title="${esc(l.sugMotivo||'')}">${l.sug!=null?fmtNum(l.sug):''}
+            ${/tipeo/.test(l.sugMotivo||'')?'<b class="tip">tipeo</b>':''}</td>
         <td>${l.mal?`<input class="cbi" type="number" data-k="${esc(l.k)}" value="${l.sug!=null?l.sug:''}" placeholder="${l.val!=null?l.val:''}">`:''}
              ${l.malGl?`<input class="cbg" type="number" step="0.1" data-k="${esc(l.k)}" value="${l.gl}" title="Galones a corregir">`:''}</td>
         <td class="c">${(l.mal||l.malGl)?`<input type="checkbox" class="cbd" data-k="${esc(l.k)}">`:''}</td>
       </tr>`).join('')}
       </tbody></table>
-      ${L.filter(l=>l.mal||l.malGl).map(l=>`<div class="cbm">${fmtDate(l.fecIso)}: ${esc([l.mal,l.malGl].filter(Boolean).join(' · '))}</div>`).join('')}
+      ${L.filter(l=>l.mal||l.malGl).map(l=>`<div class="cbm">${fmtDate(l.fecIso)}: ${esc([l.mal,l.malGl].filter(Boolean).join(' · '))}${l.sugMotivo?` — <i>${esc(l.sugMotivo)}</i>`:''}</div>`).join('')}
     </div>`;
   };
 
