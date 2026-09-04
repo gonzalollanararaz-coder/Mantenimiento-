@@ -1,0 +1,171 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Encabezados en pastel — vista previa</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{background:#FAFAF8;color:#16191D;font-family:"IBM Plex Sans",system-ui,sans-serif;font-size:14px}
+  .mono{font-family:"IBM Plex Mono",monospace;font-variant-numeric:tabular-nums}
+
+  .barra{position:sticky;top:0;z-index:40;background:#1B2027;color:#fff;padding:12px 20px;
+         display:flex;align-items:center;gap:16px;flex-wrap:wrap}
+  .barra h1{font-size:14px;font-weight:600}
+  .barra p{font-size:12px;color:#98A0A8;max-width:52ch;line-height:1.45}
+  .barra .sp{flex:1}
+  .tg{display:flex;background:#2A313A;border-radius:8px;padding:3px}
+  .tg button{background:none;border:none;color:#98A0A8;font:inherit;font-size:12.5px;
+             font-weight:600;padding:7px 15px;border-radius:6px;cursor:pointer}
+  .tg button.on{background:#FFCD11;color:#1A1200}
+
+  .zona{padding:22px}
+  .titulo{font-size:12px;color:#6E757C;margin-bottom:9px}
+
+  /* ═══ la tabla ═══ */
+  .tabla{background:#fff;border:1px solid #E4E6E9;border-radius:12px;overflow:auto}
+  table{border-collapse:separate;border-spacing:0;width:100%;font-size:11.5px;min-width:1180px}
+  thead th{position:sticky;white-space:nowrap}
+
+  /* fila de grupos: los cuadros de colores */
+  thead tr.bandas th{top:0;padding:5px 4px;background:#fff}
+  .banda{display:block;border-radius:7px;padding:6px 10px;text-align:center;
+         font-size:10.5px;font-weight:700;letter-spacing:.02em;position:relative;overflow:hidden;
+         line-height:1.1;cursor:pointer;user-select:none}
+  /* el reflejo: una franja clara en la mitad superior, como en el modelo */
+  .banda::after{content:"";position:absolute;inset:1px 1px 46% 1px;border-radius:6px 6px 10px 10px;
+                background:linear-gradient(180deg,rgba(255,255,255,.75),rgba(255,255,255,.15));
+                pointer-events:none}
+  .banda span{position:relative;z-index:1}
+
+  /* fila de columnas */
+  thead tr.cols th{top:36px;background:#F6F7F8;color:#6E757C;font-weight:600;font-size:10.5px;
+                   padding:6px 8px;text-align:left;border-bottom:1px solid #E4E6E9;
+                   border-right:1px solid #EDEEF0}
+  thead tr.cols th.num{text-align:right}
+
+  tbody td{padding:6px 8px;border-bottom:1px solid #F0F1F3;white-space:nowrap}
+  tbody tr:hover td{background:#FBFBFA}
+  td.num{text-align:right;font-variant-numeric:tabular-nums}
+  td.sap{font-family:"IBM Plex Mono",monospace;font-weight:500}
+  .pt{display:inline-block;width:6px;height:6px;border-radius:50%;margin-right:8px;vertical-align:1px}
+  .pt.mov{background:#2C7A3F}.pt.tra{background:#A56A00}.pt.des{background:#C2C7CC}
+  .sub{color:#8E959C}
+  .alerta.v{color:#B4232A;font-weight:600}
+  .alerta.p{color:#A56A00;font-weight:600}
+  .alerta.r{color:#8E959C}
+
+  /* ═══ VARIANTE 1 · brillante, como el modelo ═══ */
+  .g-ident{background:linear-gradient(180deg,#BFD4EE,#8FB3DE);color:#1B3357;
+           border:1px solid #7FA5D4;box-shadow:inset 0 1px 0 rgba(255,255,255,.9)}
+  .g-tec  {background:linear-gradient(180deg,#CBC3E8,#A69AD6);color:#332A5C;
+           border:1px solid #9A8DCE;box-shadow:inset 0 1px 0 rgba(255,255,255,.9)}
+  .g-mov  {background:linear-gradient(180deg,#BFE3D0,#8FCBAE);color:#1E4634;
+           border:1px solid #80BFA0;box-shadow:inset 0 1px 0 rgba(255,255,255,.9)}
+  .g-doc  {background:linear-gradient(180deg,#F6D9B0,#EBBC83);color:#5C3B12;
+           border:1px solid #DFAE73;box-shadow:inset 0 1px 0 rgba(255,255,255,.9)}
+  .g-act  {background:linear-gradient(180deg,#FBE7A8,#F2D274);color:#5A4410;
+           border:1px solid #E5C463;box-shadow:inset 0 1px 0 rgba(255,255,255,.9)}
+  .g-ult  {background:linear-gradient(180deg,#D8E3B8,#BCCD8B);color:#3B4718;
+           border:1px solid #ADC079;box-shadow:inset 0 1px 0 rgba(255,255,255,.9)}
+  .g-ctrl {background:linear-gradient(180deg,#F5C9C6,#E79E9A);color:#5E2320;
+           border:1px solid #DB8F8B;box-shadow:inset 0 1px 0 rgba(255,255,255,.9)}
+  .g-com  {background:linear-gradient(180deg,#D4DCE4,#B0BCC8);color:#2B3742;
+           border:1px solid #A2AFBC;box-shadow:inset 0 1px 0 rgba(255,255,255,.9)}
+
+  /* ═══ VARIANTE 2 · plano, sin reflejo ═══ */
+  body.plano .banda::after{display:none}
+  body.plano .banda{box-shadow:none;font-weight:600}
+  body.plano .g-ident{background:#DCE7F6;color:#1B3357;border-color:#C3D6EE}
+  body.plano .g-tec  {background:#E3DEF4;color:#332A5C;border-color:#D2CAEB}
+  body.plano .g-mov  {background:#DCF0E5;color:#1E4634;border-color:#C4E4D3}
+  body.plano .g-doc  {background:#FAEBD6;color:#5C3B12;border-color:#F1DBBC}
+  body.plano .g-act  {background:#FDF3D2;color:#5A4410;border-color:#F5E6AE}
+  body.plano .g-ult  {background:#EAF0DA;color:#3B4718;border-color:#DBE5C2}
+  body.plano .g-ctrl {background:#FBE4E2;color:#5E2320;border-color:#F5CFCC}
+  body.plano .g-com  {background:#E7ECF1;color:#2B3742;border-color:#D8E0E7}
+</style>
+</head>
+<body>
+
+<div class="barra">
+  <div>
+    <h1>Encabezados de grupo en pastel</h1>
+    <p>Los cuadros de colores marcan los bloques de columnas. Compara las dos terminaciones.</p>
+  </div>
+  <div class="sp"></div>
+  <div class="tg">
+    <button id="b1" class="on">Con brillo</button>
+    <button id="b2">Sin brillo</button>
+  </div>
+</div>
+
+<div class="zona">
+  <div class="titulo">Cada color agrupa un bloque de columnas. Clic en un cuadro para plegarlo o desplegarlo.</div>
+  <div class="tabla">
+    <table>
+      <thead>
+        <tr class="bandas">
+          <th colspan="4"><span class="banda g-ident"><span>IDENTIFICACIÓN</span></span></th>
+          <th colspan="2"><span class="banda g-tec"><span>DATOS TÉCNICOS</span></span></th>
+          <th colspan="2"><span class="banda g-mov"><span>MOVILIZACIÓN</span></span></th>
+          <th colspan="2"><span class="banda g-doc"><span>CONTROL DOCUMENTARIO</span></span></th>
+          <th colspan="3"><span class="banda g-act"><span>DATOS ACTUALES</span></span></th>
+          <th colspan="2"><span class="banda g-ult"><span>ÚLTIMO MNTTO</span></span></th>
+          <th colspan="3"><span class="banda g-ctrl"><span>CONTROL DE HORAS Y MNTTO</span></span></th>
+          <th colspan="1"><span class="banda g-com"><span>COMENTARIOS</span></span></th>
+        </tr>
+        <tr class="cols">
+          <th>Status</th><th>Proyecto</th><th>Cód. SAP</th><th>Equipo</th>
+          <th>Serie</th><th>Año</th>
+          <th>F. ingreso</th><th>Ubicación</th>
+          <th>SOAT</th><th>Rev. téc.</th>
+          <th class="num">HR/KM actual</th><th>F. lectura</th><th class="num">HR/día</th>
+          <th class="num">HR/KM últ.</th><th>Fecha</th>
+          <th class="num">Restante</th><th>Alerta</th><th>Próx. fecha</th>
+          <th>Comentarios</th>
+        </tr>
+      </thead>
+      <tbody id="cuerpo"></tbody>
+    </table>
+  </div>
+</div>
+
+<script>
+const F=[
+ ['mov','P-0171','ECF044','Cargador frontal','Caterpillar 966','SN-4471','2019','12/03/25','Taller central','22/06/27','14/01/27',2484,'01/09/26',8.8,2248,'01/08/26',-2,'v','03/09/26','Con CVA Plan Premium'],
+ ['mov','P-0171','ECF045','Cargador frontal','Komatsu WA 470-6R','SN-8812','2021','04/05/25','Frente 3','10/09/27','02/02/27',3470,'21/08/26',12.1,3307,'21/08/26',80,'r','10/09/26',''],
+ ['tra','P-0171','EEX036','Excavadora','Caterpillar 336DL','SN-1290','2018','19/07/25','En tránsito','03/11/26','19/03/27',12101,'12/08/26',1.8,11961,'03/09/25',109,'r','03/11/26',''],
+ ['mov','P-0171','EEX042','Excavadora','Komatsu PC390LC-8M0','SN-5540','2022','28/02/26','Frente 1','17/09/27','11/05/27',5085,'03/09/26',3.8,5015,'31/07/26',165,'r','17/09/26',''],
+ ['mov','P-0171','EEX043','Excavadora','Komatsu PC390LC-8M0','SN-5541','2022','28/02/26','Frente 1','02/09/27','11/05/27',6001,'02/09/26',8.0,5750,'04/07/26',-9,'v','02/09/26',''],
+ ['mov','P-0171','EPR016','Retroexcavadora','Caterpillar 420','SN-3320','2020','15/06/25','Taller central','24/10/27','30/08/27',2585,'31/08/26',3.1,2480,'23/07/26',156,'r','24/10/26',''],
+ ['mov','P-0171','ERA040','Rodillo vibratorio','Bomag BW220-D5','SN-7701','2021','09/09/25','Frente 2','24/09/27','12/12/26',1845,'02/09/26',7.1,1717,'11/08/26',148,'r','24/09/26',''],
+ ['tra','P-0171','ETO037','Tractor sobre orugas','Caterpillar D8T','SN-9034','2017','21/04/25','En tránsito','05/09/27','08/07/27',15234,'01/09/26',5.3,15027,'25/07/26',5,'p','05/09/26',''],
+ ['mov','P-0174','ETO043','Tractor sobre orugas','Komatsu D155AX-6','SN-6612','2019','30/01/26','Frente 4','27/08/27','25/03/27',3047,'03/09/26',6.3,2778,'26/07/26',-47,'v','27/08/26',''],
+ ['des','P-0174','ECC013','Camión cisterna','Volvo VM 6x4 R','SN-2245','2016','11/11/24','Almacén','27/08/27','06/06/27',3361,'14/08/26',10.7,3044,'13/07/26',-75,'v','27/08/26','Retirado de obra'],
+ ['mov','P-0174','ECT049','Camión doble cabina','Hino Dutro 616','SN-4408','2023','02/03/26','Frente 4','19/09/27','20/10/26',9243,'02/09/26',56.8,5568,'23/06/26',757,'r','19/09/26',''],
+ ['mov','P-0174','ECV146','Camión volquete','Scania G 540 B8x4HZ','SN-1177','2022','17/08/25','Frente 2','07/09/27','29/01/27',4476,'02/09/26',4.8,4281,'21/07/26',19,'p','07/09/26','']
+];
+const nEst={mov:'Movilizado',tra:'Tránsito mov.',des:'Desmovilizado'};
+const nAl={v:'Vencido',p:'Próximo',r:'En regla'};
+const f0=n=>Number(n).toLocaleString('es-PE',{maximumFractionDigits:1});
+document.getElementById('cuerpo').innerHTML=F.map(f=>{
+ const [st,pr,sap,eq,mm,se,an,fi,ub,so,rt,act,fl,hd,ult,fu,res,al,px,co]=f;
+ return `<tr>
+  <td><span class="pt ${st}"></span>${nEst[st]}</td><td>${pr}</td><td class="sap">${sap}</td>
+  <td>${eq} <span class="sub">${mm}</span></td>
+  <td class="mono sub">${se}</td><td class="num">${an}</td>
+  <td>${fi}</td><td>${ub}</td>
+  <td>${so}</td><td>${rt}</td>
+  <td class="num">${f0(act)}</td><td>${fl}</td><td class="num">${hd}</td>
+  <td class="num">${f0(ult)}</td><td>${fu}</td>
+  <td class="num">${res}</td><td class="alerta ${al}">${nAl[al]}</td><td>${px}</td>
+  <td class="sub">${co}</td></tr>`;}).join('');
+
+const b1=document.getElementById('b1'), b2=document.getElementById('b2');
+b1.onclick=()=>{document.body.classList.remove('plano');b1.classList.add('on');b2.classList.remove('on');};
+b2.onclick=()=>{document.body.classList.add('plano');b2.classList.add('on');b1.classList.remove('on');};
+</script>
+</body>
+</html>
