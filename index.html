@@ -282,10 +282,33 @@
 
   /* encabezados de la tabla: el azul marino sale, entra gris claro */
   body.tema2 table.mx{font-size:11.5px}
-  body.tema2 .mx thead tr.bands th{background:#EDEEF0 !important;color:#5A6169 !important;
-    font-weight:600;font-size:10px;letter-spacing:.03em;
-    border-right-width:1px !important;border-right-style:solid !important;border-right-color:#E0E2E5 !important;
-    border-bottom:1px solid #E0E2E5}
+  /* Cada bloque de columnas lleva su cuadro de color. Los tonos salen de
+     las variables de más abajo, que el panel 🎨 puede reescribir. */
+  body.tema2 .mx thead tr.bands th,
+  body.tema2 .mx thead tr.bands th.frz{background:#fff !important;color:inherit !important;
+    padding:3px 3px 4px !important;height:auto;border:none !important;
+    border-bottom:1px solid #E4E6E9 !important}
+  body.tema2 .mx thead .bnd{display:block;border-radius:6px;padding:4px 8px;text-align:center;
+    font-size:10px;font-weight:700;letter-spacing:.02em;line-height:1.15;
+    position:relative;overflow:hidden;
+    background:var(--gc,#E7ECF1);color:var(--gt,#2B3742);
+    border:1px solid var(--gb,#D8E0E7);box-shadow:inset 0 1px 0 rgba(255,255,255,.85)}
+  body.tema2 .mx thead .bnd::after{content:"";position:absolute;inset:1px 1px 46% 1px;
+    border-radius:5px 5px 9px 9px;pointer-events:none;
+    background:linear-gradient(180deg,rgba(255,255,255,.72),rgba(255,255,255,.12))}
+  body.tema2.sinbrillo .mx thead .bnd::after{display:none}
+  body.tema2.sinbrillo .mx thead .bnd{box-shadow:none;font-weight:600;background:var(--gc2,var(--gc))}
+  /* paleta por bloque */
+  body.tema2 [data-g="ident"] .bnd{--gc:linear-gradient(180deg,#BFD4EE,#8FB3DE);--gc2:#DCE7F6;--gt:#1B3357;--gb:#7FA5D4}
+  body.tema2 [data-g="tec"]   .bnd{--gc:linear-gradient(180deg,#CBC3E8,#A69AD6);--gc2:#E3DEF4;--gt:#332A5C;--gb:#9A8DCE}
+  body.tema2 [data-g="mov"]   .bnd{--gc:linear-gradient(180deg,#BFE3D0,#8FCBAE);--gc2:#DCF0E5;--gt:#1E4634;--gb:#80BFA0}
+  body.tema2 [data-g="des"]   .bnd{--gc:linear-gradient(180deg,#D4DCE4,#B0BCC8);--gc2:#E7ECF1;--gt:#2B3742;--gb:#A2AFBC}
+  body.tema2 [data-g="prov"]  .bnd{--gc:linear-gradient(180deg,#E8D7C3,#CFB392);--gc2:#F2E7DA;--gt:#4A3521;--gb:#C4A681}
+  body.tema2 [data-g="doc"]   .bnd{--gc:linear-gradient(180deg,#F6D9B0,#EBBC83);--gc2:#FAEBD6;--gt:#5C3B12;--gb:#DFAE73}
+  body.tema2 [data-g="act"]   .bnd{--gc:linear-gradient(180deg,#FBE7A8,#F2D274);--gc2:#FDF3D2;--gt:#5A4410;--gb:#E5C463}
+  body.tema2 [data-g="ult"]   .bnd{--gc:linear-gradient(180deg,#D8E3B8,#BCCD8B);--gc2:#EAF0DA;--gt:#3B4718;--gb:#ADC079}
+  body.tema2 [data-g="ctrl"]  .bnd{--gc:linear-gradient(180deg,#F5C9C6,#E79E9A);--gc2:#FBE4E2;--gt:#5E2320;--gb:#DB8F8B}
+  body.tema2 [data-g="com"]   .bnd{--gc:linear-gradient(180deg,#D4DCE4,#B0BCC8);--gc2:#E7ECF1;--gt:#2B3742;--gb:#A2AFBC}
   body.tema2 .mx thead tr.cols th{background:#F6F7F8 !important;color:#6E757C !important;
     font-weight:600;font-size:10.5px;
     border-right-width:1px !important;border-right-style:solid !important;border-right-color:#E9EAEC !important;
@@ -323,6 +346,25 @@
   body.tema2 .mx tbody tr.grp-top td{border-top:1.5px solid #D6D9DD}
   body.tema2 footer{color:var(--humo)}
   body.tema2 .mx td.cell:hover{background:#FFFBEC}
+
+  /* panel de colores */
+  #palWrap{position:fixed;inset:0;background:rgba(15,20,26,.5);z-index:9996;display:flex;
+           align-items:flex-start;justify-content:flex-end;padding:12px}
+  #palCard{background:#fff;border-radius:12px;width:min(420px,96vw);max-height:calc(100vh - 24px);
+           display:flex;flex-direction:column;box-shadow:0 20px 60px rgba(0,0,0,.35)}
+  #palCard .ph{display:flex;align-items:center;gap:10px;padding:12px 15px;border-bottom:1px solid var(--line)}
+  #palCard .ph h3{font-size:14px;color:#1f3864}
+  #palCard .pb{overflow:auto;padding:10px 15px 14px}
+  .pfila{display:flex;align-items:center;gap:10px;padding:7px 0;border-bottom:1px solid #f1f3f5}
+  .pfila:last-child{border-bottom:none}
+  .pfila .mu{flex:1;border-radius:6px;padding:4px 9px;font-size:10px;font-weight:700;text-align:center;
+             border:1px solid rgba(0,0,0,.12);box-shadow:inset 0 1px 0 rgba(255,255,255,.8)}
+  .pfila input[type=color]{width:34px;height:28px;border:1px solid var(--line);border-radius:6px;
+             padding:1px;background:#fff;cursor:pointer}
+  .pfila .rst{border:none;background:none;color:#c2c7cc;cursor:pointer;font-size:14px;padding:0 2px}
+  .pfila .rst:hover{color:var(--bad)}
+  .pnota{font-size:11px;color:var(--muted);line-height:1.5;margin-top:10px}
+  .pbrillo{display:flex;align-items:center;gap:8px;font-size:12.5px;padding:9px 0 4px;font-weight:600;color:#1f3864}
   footer{padding:10px 16px;color:var(--muted);font-size:12px;text-align:center}
 
   /* admin */
@@ -411,6 +453,7 @@
       <button class="act ghost ic" id="btnHoroSolo" title="Cargar solo horómetros y fechas (no afecta el reporte de combustible)">⏱</button>
       <button class="act ghost ic" id="btnFormatos" title="Descargar los formatos de ejemplo">📄</button>
       <button class="act ghost ic" id="btnTema" title="Cambiar el aspecto de la página">◐</button>
+      <button class="act ghost ic hide" id="btnPaleta" title="Ajustar los colores de los encabezados">🎨</button>
       <button class="act ghost ic" id="btnExcel" title="Descargar en Excel">⬇</button>
       <button class="act ghost ic" id="btnRefresh" title="Volver a cargar los datos">↻</button>
     </div>
@@ -432,8 +475,8 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
 /* ╔══ pega aquí tus DOS datos (los mismos de tu archivo actual) ══╗ */
-const SUPABASE_URL = "https://hklwvdhzltjsbfvlewbu.supabase.co";   // ← reemplaza
-const SUPABASE_KEY = "sb_publishable_NgDfyDHDI_KByR-qf35EpA_ZuKI5E0K";                 // ← reemplaza
+const SUPABASE_URL = "https://TU-PROYECTO.supabase.co";   // ← reemplaza
+const SUPABASE_KEY = "TU-PUBLISHABLE-KEY";                 // ← reemplaza
 /* ──────────────────────────────────────────────────────────────── */
 const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 try{localStorage.setItem('gllr_sbcfg',JSON.stringify({url:SUPABASE_URL,key:SUPABASE_KEY}));}catch(_){}
@@ -837,7 +880,7 @@ function buildHead(){
   const totW=FROZEN.reduce((a,f)=>a+fw(f),0), semHoy=isoWeek(hoy0());
   estilosFrozen();
   let b1='<tr class="bands">',b2='<tr class="cols">';
-  b1+=`<th class="frz" colspan="${FROZEN.length}" style="left:0;min-width:${totW}px;width:${totW}px;background:${ID_BAND}">IDENTIFICACIÓN</th>`;
+  b1+=`<th class="frz" data-g="ident" colspan="${FROZEN.length}" style="left:0;min-width:${totW}px;width:${totW}px;background:${ID_BAND}"><span class="bnd">IDENTIFICACIÓN</span></th>`;
   FROZEN.forEach((f,i)=>{
     if(f.collapsible&&famCollapsed){
       b2+=`<th class="frz fz${i}" data-famtoggle style="background:${FROZEN_HCOL};cursor:pointer" title="Expandir ID Familia"><div class="hlab">＋</div></th>`;
@@ -849,10 +892,10 @@ function buildHead(){
   });
   for(const g of GROUPS){
     if(collapsed[g.key]){
-      b1+=`<th class="bands" data-collapse="${g.key}" style="background:${g.color};min-width:26px" title="Expandir ${g.lab}">＋</th>`;
+      b1+=`<th class="bands" data-collapse="${g.key}" data-g="${g.key}" style="background:${g.color};min-width:26px" title="Expandir ${g.lab}"><span class="bnd">＋</span></th>`;
       b2+=`<th style="background:${g.hcol}">·</th>`;
     }else{
-      b1+=`<th class="bands" data-collapse="${g.key}" colspan="${g.cols.length}" style="background:${g.color}">${g.lab} －</th>`;
+      b1+=`<th class="bands" data-collapse="${g.key}" data-g="${g.key}" colspan="${g.cols.length}" style="background:${g.color}"><span class="bnd">${g.lab} －</span></th>`;
       for(const [k,lab,tipo] of g.cols){
         const filtrable = tipo!=='c' || FCALC.includes(k);
         let inp;
@@ -2180,6 +2223,91 @@ function bajarFormato(tipo){
   XLSX.writeFile(wb,nombre);
 }
 
+/* ── Colores de los encabezados ──
+   Cada bloque de columnas tiene su tono. Se pueden cambiar uno por uno y
+   quedan guardados en este navegador; el botón ↺ devuelve el original. */
+const PAL_BASE={
+  ident:'#8FB3DE', tec:'#A69AD6', mov:'#8FCBAE', des:'#B0BCC8', prov:'#CFB392',
+  doc:'#EBBC83',  act:'#F2D274', ult:'#BCCD8B', ctrl:'#E79E9A', com:'#B0BCC8'
+};
+const PAL_LAB={ident:'IDENTIFICACIÓN',tec:'DATOS TÉCNICOS',mov:'DATOS DE MOVILIZACIÓN',
+  des:'DATOS DESMOVILIZACIÓN',prov:'PROVEEDOR',doc:'CONTROL DOCUMENTARIO',
+  act:'DATOS ACTUALES',ult:'ÚLTIMO MNTTO',ctrl:'CONTROL DE HORAS Y MNTTO',com:'COMENTARIOS'};
+let PAL={}, SIN_BRILLO=false;
+try{PAL=JSON.parse(localStorage.getItem('gllr_paleta')||'{}');}catch(_){}
+try{SIN_BRILLO=localStorage.getItem('gllr_brillo')==='0';}catch(_){}
+
+const hex2rgb=h=>{h=h.replace('#','');return [0,2,4].map(i=>parseInt(h.slice(i,i+2),16));};
+const rgb2hex=a=>'#'+a.map(v=>Math.max(0,Math.min(255,Math.round(v))).toString(16).padStart(2,'0')).join('');
+const aclarar=(h,f)=>rgb2hex(hex2rgb(h).map(v=>v+(255-v)*f));
+const oscurecer=(h,f)=>rgb2hex(hex2rgb(h).map(v=>v*(1-f)));
+/* El texto se oscurece a partir del mismo tono, así siempre contrasta */
+function tonos(base){
+  return {claro:aclarar(base,.45), base, suave:aclarar(base,.68),
+          borde:oscurecer(base,.12), texto:oscurecer(base,.62)};
+}
+function aplicarPaleta(){
+  let css='';
+  for(const k of Object.keys(PAL_BASE)){
+    const t=tonos(PAL[k]||PAL_BASE[k]);
+    css+=`body.tema2 [data-g="${k}"] .bnd{--gc:linear-gradient(180deg,${t.claro},${t.base});`
+        +`--gc2:${t.suave};--gt:${t.texto};--gb:${t.borde}}`;
+  }
+  let el=document.getElementById('palCSS');
+  if(!el){el=document.createElement('style');el.id='palCSS';document.head.appendChild(el);}
+  el.textContent=css;
+  document.body.classList.toggle('sinbrillo',SIN_BRILLO);
+}
+aplicarPaleta();
+
+function palAbrir(){
+  const fila=k=>{
+    const col=PAL[k]||PAL_BASE[k], t=tonos(col);
+    return `<div class="pfila" data-k="${k}">
+      <span class="mu" style="background:${SIN_BRILLO?t.suave:`linear-gradient(180deg,${t.claro},${t.base})`};
+        color:${t.texto};border-color:${t.borde}">${esc(PAL_LAB[k])}</span>
+      <input type="color" value="${col}">
+      <button class="rst" title="Volver al color original">↺</button></div>`;
+  };
+  document.body.insertAdjacentHTML('beforeend',`<div id="palWrap"><div id="palCard">
+    <div class="ph"><div><h3>Colores de los encabezados</h3>
+      <div style="font-size:11px;color:var(--muted);margin-top:2px">Cambian solo en tu pantalla.</div></div>
+      <div class="spacer"></div>
+      <button class="act ghost" id="palTodo">Restaurar todo</button>
+      <button class="act" id="palCer">Cerrar</button></div>
+    <div class="pb">
+      <label class="pbrillo"><input type="checkbox" id="palBr" ${SIN_BRILLO?'':'checked'}> Acabado brillante</label>
+      ${Object.keys(PAL_BASE).map(fila).join('')}
+      <div class="pnota">El tono que eliges es el del borde inferior del cuadro; el degradado,
+        el borde y el color del texto se calculan a partir de él para que siempre se lea bien.</div>
+    </div></div></div>`);
+  const cerrar=()=>{const e=document.getElementById('palWrap');if(e)e.remove();};
+  document.getElementById('palCer').onclick=cerrar;
+  document.getElementById('palWrap').addEventListener('click',ev=>{if(ev.target.id==='palWrap')cerrar();});
+  document.getElementById('palBr').onchange=e=>{
+    SIN_BRILLO=!e.target.checked;
+    try{localStorage.setItem('gllr_brillo',SIN_BRILLO?'0':'1');}catch(_){}
+    aplicarPaleta(); cerrar(); palAbrir();
+  };
+  document.getElementById('palTodo').onclick=()=>{
+    PAL={}; try{localStorage.removeItem('gllr_paleta');}catch(_){}
+    aplicarPaleta(); cerrar(); palAbrir();
+  };
+  document.querySelectorAll('#palWrap .pfila').forEach(f=>{
+    const k=f.dataset.k, inp=f.querySelector('input[type=color]'), mu=f.querySelector('.mu');
+    const pinta=()=>{const t=tonos(PAL[k]||PAL_BASE[k]);
+      mu.style.background=SIN_BRILLO?t.suave:`linear-gradient(180deg,${t.claro},${t.base})`;
+      mu.style.color=t.texto; mu.style.borderColor=t.borde; inp.value=PAL[k]||PAL_BASE[k];};
+    inp.oninput=()=>{PAL[k]=inp.value;
+      try{localStorage.setItem('gllr_paleta',JSON.stringify(PAL));}catch(_){}
+      aplicarPaleta(); pinta();};
+    f.querySelector('.rst').onclick=()=>{delete PAL[k];
+      try{localStorage.setItem('gllr_paleta',JSON.stringify(PAL));}catch(_){}
+      aplicarPaleta(); pinta();};
+  });
+}
+btnPaleta.onclick=palAbrir;
+
 /* ── Aspecto de la página ──
    El tema es solo apariencia: se guarda la preferencia en este navegador
    y no afecta a los datos ni a lo que ven los demás usuarios. */
@@ -2187,6 +2315,7 @@ function bajarFormato(tipo){
   const K='gllr_tema';
   const poner=v=>{document.body.classList.toggle('tema2',v==='2');
     btnTema.classList.toggle('primary',v==='2');
+    btnPaleta.classList.toggle('hide',v!=='2');
     btnTema.title=v==='2'?'Volver al aspecto anterior':'Probar el aspecto nuevo';};
   let actual='1';
   try{actual=localStorage.getItem(K)||'1';}catch(_){}
