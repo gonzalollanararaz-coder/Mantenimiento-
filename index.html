@@ -5,6 +5,9 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Control de Mantenimiento — UDE</title>
 <link rel="manifest" href="manifest.json">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
 <meta name="theme-color" content="#1c232b">
 <style>
   :root{
@@ -244,6 +247,82 @@
   .fmop p{font-size:11.5px;color:var(--muted);margin:3px 0 4px;line-height:1.45}
   .fmop small{font-size:10px;color:#98a2ad;font-family:ui-monospace,monospace}
   .fmnota{font-size:11px;color:#B45309;background:#fffbe6;border-radius:8px;padding:8px 10px;line-height:1.5}
+
+  /* ═══════════════ TEMA CLARO (se activa con el botón ◐) ═══════════════
+     Capa de solo apariencia: no cambia ninguna lógica ni la estructura de
+     la tabla. Se apaga quitando la clase y todo vuelve al aspecto anterior. */
+  body.tema2{--linea:#E4E6E9;--humo:#6E757C;--tinta:#16191D;
+             background:#FAFAF8;color:#16191D;
+             font-family:"IBM Plex Sans",system-ui,sans-serif}
+  body.tema2 .mono,body.tema2 .mx td.n input,body.tema2 .mx td.calc,
+  body.tema2 .mx tbody td.idx{font-family:"IBM Plex Mono",ui-monospace,monospace}
+  body.tema2 .mx{font-variant-numeric:tabular-nums}
+
+  /* cabecera y pestañas */
+  body.tema2 header{background:#1B2027;border-bottom:2px solid var(--amber)}
+  body.tema2 header h1{font-weight:600;letter-spacing:-.01em}
+  body.tema2 header p{letter-spacing:.06em;color:#8E959C}
+  body.tema2 nav{background:#fff;border-bottom:1px solid var(--linea)}
+  body.tema2 nav button{font-size:13.5px;color:var(--humo);border-bottom-width:2px}
+  body.tema2 nav button.on{color:var(--tinta);font-weight:600;border-bottom-color:#1B2027}
+
+  /* barra de herramientas: menos peso, más aire */
+  body.tema2 .toolbar{background:#fff;border-bottom:1px solid var(--linea);height:46px}
+  body.tema2 .toolbar input,body.tema2 .toolbar select{border:1px solid var(--linea);
+    border-radius:9px;height:28px;font-size:12.5px;background:#fff}
+  body.tema2 .act{border:1px solid var(--linea);background:#fff;border-radius:9px;
+    height:28px;font-weight:500;font-size:12.5px;color:var(--tinta)}
+  body.tema2 .act:hover{border-color:#C9CDD2;filter:none}
+  body.tema2 .act.primary{background:var(--amber);border-color:var(--amber);
+    color:#1A1200;font-weight:600}
+  body.tema2 .act.ghost{background:#fff;color:var(--humo)}
+  body.tema2 .chip{border:1px solid var(--linea);background:#fff;color:var(--humo);
+    border-radius:999px;font-weight:500}
+  body.tema2 .chip.on{border-color:#1B2027;color:var(--tinta);background:#F4F5F6}
+
+  /* encabezados de la tabla: el azul marino sale, entra gris claro */
+  body.tema2 table.mx{font-size:11.5px}
+  body.tema2 .mx thead tr.bands th{background:#EDEEF0 !important;color:#5A6169 !important;
+    font-weight:600;font-size:10px;letter-spacing:.03em;
+    border-right-width:1px !important;border-right-style:solid !important;border-right-color:#E0E2E5 !important;
+    border-bottom:1px solid #E0E2E5}
+  body.tema2 .mx thead tr.cols th{background:#F6F7F8 !important;color:#6E757C !important;
+    font-weight:600;font-size:10.5px;
+    border-right-width:1px !important;border-right-style:solid !important;border-right-color:#E9EAEC !important;
+    border-bottom:1px solid var(--linea)}
+  body.tema2 .mx thead .colf{border:1px solid #DDE0E3;border-radius:5px;background:#fff}
+
+  /* la grilla se aligera: se van las verticales, quedan hairlines */
+  body.tema2 .mx th,body.tema2 .mx td{border-right-width:0 !important;border-right-style:none !important}
+  body.tema2 .mx tbody td{border-bottom:1px solid #F0F1F3}
+  body.tema2 .mx tbody tr:hover td{background:#FBFBFA}
+  body.tema2 .mx tbody tr:hover td.frz{background:#FBFBFA}
+  body.tema2 .mx tbody td.idx{background:#FBFBFB;color:#A8AEB4}
+  body.tema2 .mx td.calc{background:transparent;color:#5A6169}
+
+  /* estado: un punto en vez de pintar la celda entera */
+  body.tema2 td[class*="st-"]{background:transparent !important;font-weight:500;
+    color:var(--tinta) !important;position:relative;padding-left:16px !important}
+  body.tema2 td[class*="st-"]::before{content:"";position:absolute;left:5px;top:50%;
+    margin-top:-3px;width:6px;height:6px;border-radius:50%;background:#C2C7CC}
+  body.tema2 td.st-MOVILIZADO::before{background:#2C7A3F}
+  body.tema2 td.st-TRANS-MOV::before,body.tema2 td.st-TRANS-DESM::before,
+  body.tema2 td.st-TRANSITO::before,body.tema2 td.st-TRANSITO-MOV::before,
+  body.tema2 td.st-TRANSITO-DESMOV::before{background:#A56A00}
+  body.tema2 td.st-DESMOVILIZADO::before,body.tema2 td.st-DESMOVILIZ::before{background:#C2C7CC}
+  body.tema2 td[class*="sap-"]{color:var(--tinta) !important;font-weight:500}
+
+  /* semáforos: solo lo que exige acción lleva color */
+  body.tema2 .pill{font-weight:600;font-size:10px;padding:2px 8px}
+  body.tema2 .pill.ok{background:transparent;color:#6E757C}
+  body.tema2 .pill.warn{background:#FDF3E0;color:#A56A00}
+  body.tema2 .pill.bad{background:#FCECEC;color:#B4232A}
+  body.tema2 .pill.na{background:transparent;color:#A8AEB4}
+
+  /* separador entre proyectos, más sobrio */
+  body.tema2 .mx tbody tr.grp-top td{border-top:1.5px solid #D6D9DD}
+  body.tema2 footer{color:var(--humo)}
+  body.tema2 .mx td.cell:hover{background:#FFFBEC}
   footer{padding:10px 16px;color:var(--muted);font-size:12px;text-align:center}
 
   /* admin */
@@ -331,6 +410,7 @@
       <button class="act ghost ic" id="btnHoro" title="Cargar el reporte de consumo de combustible (actualiza horómetros y alimenta la pestaña Combustible)">⛽</button>
       <button class="act ghost ic" id="btnHoroSolo" title="Cargar solo horómetros y fechas (no afecta el reporte de combustible)">⏱</button>
       <button class="act ghost ic" id="btnFormatos" title="Descargar los formatos de ejemplo">📄</button>
+      <button class="act ghost ic" id="btnTema" title="Cambiar el aspecto de la página">◐</button>
       <button class="act ghost ic" id="btnExcel" title="Descargar en Excel">⬇</button>
       <button class="act ghost ic" id="btnRefresh" title="Volver a cargar los datos">↻</button>
     </div>
@@ -352,8 +432,8 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
 /* ╔══ pega aquí tus DOS datos (los mismos de tu archivo actual) ══╗ */
-const SUPABASE_URL = "https://hklwvdhzltjsbfvlewbu.supabase.co";   // ← reemplaza
-const SUPABASE_KEY = "sb_publishable_NgDfyDHDI_KByR-qf35EpA_ZuKI5E0K";                 // ← reemplaza
+const SUPABASE_URL = "https://TU-PROYECTO.supabase.co";   // ← reemplaza
+const SUPABASE_KEY = "TU-PUBLISHABLE-KEY";                 // ← reemplaza
 /* ──────────────────────────────────────────────────────────────── */
 const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 try{localStorage.setItem('gllr_sbcfg',JSON.stringify({url:SUPABASE_URL,key:SUPABASE_KEY}));}catch(_){}
@@ -2099,6 +2179,28 @@ function bajarFormato(tipo){
   const wb=XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb,ws,'Formato');
   XLSX.writeFile(wb,nombre);
 }
+
+/* ── Aspecto de la página ──
+   El tema es solo apariencia: se guarda la preferencia en este navegador
+   y no afecta a los datos ni a lo que ven los demás usuarios. */
+(function(){
+  const K='gllr_tema';
+  const poner=v=>{document.body.classList.toggle('tema2',v==='2');
+    btnTema.classList.toggle('primary',v==='2');
+    btnTema.title=v==='2'?'Volver al aspecto anterior':'Probar el aspecto nuevo';};
+  let actual='1';
+  try{actual=localStorage.getItem(K)||'1';}catch(_){}
+  poner(actual);
+  btnTema.onclick=()=>{
+    actual = actual==='2' ? '1' : '2';
+    try{localStorage.setItem(K,actual);}catch(_){}
+    poner(actual);
+    appFoot.textContent = actual==='2'
+      ? 'Aspecto nuevo activado. Vuelve a pulsar ◐ para regresar al anterior.'
+      : 'Aspecto anterior restablecido.';
+    setTimeout(()=>appFoot.textContent='Doble clic en una celda para editar · los cambios se guardan solos.',4000);
+  };
+})();
 
 /* ── modo offline: service worker + copia local + sincronizacion ── */
 if('serviceWorker' in navigator){
