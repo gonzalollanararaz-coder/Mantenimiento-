@@ -365,6 +365,81 @@
   .pfila .rst:hover{color:var(--bad)}
   .pnota{font-size:11px;color:var(--muted);line-height:1.5;margin-top:10px}
   .pbrillo{display:flex;align-items:center;gap:8px;font-size:12.5px;padding:9px 0 4px;font-weight:600;color:#1f3864}
+
+  /* ── Barras superiores del tema: dos franjas en vez de tres ── */
+  #topbar{display:contents}                       /* sin el tema, todo queda como estaba */
+  body.tema2 #topbar{display:flex;align-items:stretch;background:#1B2027;
+    border-bottom:2px solid var(--amber);padding:0 16px}
+  body.tema2 #topbar header{background:transparent;border:none;padding:0 18px 0 0;flex:0 0 auto}
+  body.tema2 #topbar header .userbox{display:none}       /* pasa al final de la franja */
+  body.tema2 #topbar nav{background:transparent;border:none;padding:0;display:flex;align-items:stretch}
+  body.tema2 #topbar nav button{color:#98A0A8;font-size:13.5px;padding:0 15px;
+    border-bottom:2px solid transparent;margin-bottom:-2px}
+  body.tema2 #topbar nav button:hover{color:#D6DBE0;background:transparent}
+  body.tema2 #topbar nav button.on{color:#fff;font-weight:600;border-bottom-color:var(--amber)}
+  body.tema2 #topbar .brand h1{font-size:14.5px;font-weight:600;letter-spacing:-.01em}
+  body.tema2 #topbar .brand p{font-size:10px;color:#8E959C;letter-spacing:.05em}
+  body.tema2 #topbar .sp2{flex:1}
+  /* la sesión pasa a un menú bajo el nombre */
+  body.tema2 #userTop{display:flex;align-items:center;gap:9px;padding-left:16px;position:relative;cursor:pointer}
+  body.tema2 #userTop .av{width:28px;height:28px;border-radius:50%;background:#2E3742;color:#D6DBE0;
+    display:grid;place-items:center;font-size:11.5px;font-weight:600}
+  body.tema2 #userTop .nb{font-size:12.5px;color:#D6DBE0;white-space:nowrap}
+  body.tema2 #userTop .cr{color:#6E757C;font-size:10px}
+  body.tema2 #userTop .off-chip{font-size:11px}
+  #userTop{display:none}
+
+  /* menú desplegable, compartido */
+  .dd{position:relative;display:inline-flex}
+  .dd-b i{font-style:normal;color:#98a2ad;font-size:9px;margin-left:3px}
+  .dd-m{position:absolute;top:32px;right:0;background:#fff;border:1px solid var(--linea,#E4E6E9);
+    border-radius:10px;box-shadow:0 12px 32px rgba(0,0,0,.16);min-width:250px;padding:6px;
+    display:none;z-index:70}
+  .dd-m.abierto{display:block}
+  .dd-c{padding:7px 10px 4px;font-size:10.5px;color:#8E959C}
+  .dd-m .act{display:flex !important;align-items:center;gap:10px;width:100%;text-align:left;
+    height:auto !important;padding:9px 10px !important;border:none !important;background:none !important;
+    border-radius:7px;font-size:13px !important;font-weight:400 !important;color:#16191D !important;
+    justify-content:flex-start}
+  .dd-m .act:hover{background:#F4F5F6 !important}
+  .dd-m .act[disabled]{opacity:.4}
+  .dd-m .act .lab{flex:1}
+  .dd-sep{height:1px;background:#EDEEF0;margin:5px 0}
+
+  /* ── Barra de trabajo ── */
+  body.tema2 .toolbar{height:auto;padding:9px 16px;gap:12px}
+  body.tema2 .toolbar #buscar{width:250px;padding:8px 12px;height:34px;border-radius:9px}
+  body.tema2 .tb-sep{background:#E9EAEC;height:22px}
+  body.tema2 .toolbar .act{height:34px}
+  body.tema2 .toolbar .act.ic{width:34px;padding:0}
+
+  /* estados: un solo bloque segmentado, en pastel del color actual */
+  body.tema2 .stbar{gap:0;border:1px solid #E4E6E9;border-radius:9px;overflow:hidden;height:34px}
+  body.tema2 .stb{border:none !important;border-right:1px solid #EDEEF0 !important;border-radius:0;
+    height:34px;padding:0 12px;font-weight:500;font-size:12.5px;color:#8E959C;background:#FBFBFB}
+  body.tema2 .stbar .stb:last-child{border-right:none !important}
+  body.tema2 .stb .n{font-weight:600;color:#B3B8BD;min-width:20px}
+  body.tema2 .stb::before{content:"";width:6px;height:6px;border-radius:50%;background:#D2D6DA;
+    display:inline-block;margin-right:7px;vertical-align:1px}
+  body.tema2 .stb.on{background:#fff;color:#3F464D}
+  body.tema2 .stb.on .n{color:#16191D}
+  body.tema2 .stb.on[data-st="MOVILIZADO"]{background:#EAF1FB;color:#2A4C86}
+  body.tema2 .stb.on[data-st="MOVILIZADO"]::before{background:#5B87C7}
+  body.tema2 .stb.on[data-st="TRANS. MOV."],
+  body.tema2 .stb.on[data-st="TRANS. DESM."]{background:#FBF0DC;color:#7A5411}
+  body.tema2 .stb.on[data-st="TRANS. MOV."]::before,
+  body.tema2 .stb.on[data-st="TRANS. DESM."]::before{background:#D2A24C}
+  body.tema2 .stb.on[data-st="DESMOVILIZ."]{background:#F2EDF0;color:#6B4B58}
+  body.tema2 .stb.on[data-st="DESMOVILIZ."]::before{background:#B08A9A}
+
+  /* avisos: color solo cuando hay algo pendiente */
+  body.tema2 .toolbar .chip{height:34px;border-radius:9px;padding:0 12px;font-size:12.5px;
+    line-height:32px;font-weight:500;background:#FBFBFB;border:1px solid #EDEEF0;color:#A8AEB4}
+  body.tema2 .chip .dot{display:none}
+  body.tema2 .chip b{color:inherit;font-weight:600}
+  body.tema2 .chip.hay-bad{background:#FCECEC;border-color:#F4D6D6;color:#8E2B2B}
+  body.tema2 .chip.hay-warn{background:#FDF3E0;border-color:#F2E1C4;color:#7C5210}
+  body.tema2 .chip.clic.on{box-shadow:inset 0 0 0 1.5px currentColor}
   footer{padding:10px 16px;color:var(--muted);font-size:12px;text-align:center}
 
   /* admin */
@@ -411,6 +486,7 @@
 
 <!-- APP -->
 <div id="vApp" class="hide">
+  <div id="topbar">
   <header>
     <div class="brand">
       <img id="logo" alt="" style="display:none">
@@ -426,6 +502,7 @@
     <button id="tabSos" data-tab="sos">SOS</button>
     <button id="tabUsers" data-tab="users" style="display:none">Usuarios</button>
   </nav>
+</div>
 
   <section id="paneEq">
     <div class="toolbar">
@@ -454,6 +531,10 @@
       <button class="act ghost ic" id="btnFormatos" title="Descargar los formatos de ejemplo">📄</button>
       <button class="act ghost ic" id="btnTema" title="Cambiar el aspecto de la página">◐</button>
       <button class="act ghost ic hide" id="btnPaleta" title="Ajustar los colores de los encabezados">🎨</button>
+      <span class="dd hide" id="ddCargar"><button class="act ghost dd-b">Cargar <i>▾</i></button>
+        <div class="dd-m" id="mCargar"><div class="dd-c">Desde un archivo Excel</div></div></span>
+      <span class="dd hide" id="ddVista"><button class="act ghost dd-b">Vista <i>▾</i></button>
+        <div class="dd-m" id="mVista"></div></span>
       <button class="act ghost ic" id="btnExcel" title="Descargar en Excel">⬇</button>
       <button class="act ghost ic" id="btnRefresh" title="Volver a cargar los datos">↻</button>
     </div>
@@ -475,8 +556,8 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
 /* ╔══ pega aquí tus DOS datos (los mismos de tu archivo actual) ══╗ */
-const SUPABASE_URL = "https://hklwvdhzltjsbfvlewbu.supabase.co";   // ← reemplaza
-const SUPABASE_KEY = "sb_publishable_NgDfyDHDI_KByR-qf35EpA_ZuKI5E0K";                 // ← reemplaza
+const SUPABASE_URL = "https://TU-PROYECTO.supabase.co";   // ← reemplaza
+const SUPABASE_KEY = "TU-PUBLISHABLE-KEY";                 // ← reemplaza
 /* ──────────────────────────────────────────────────────────────── */
 const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 try{localStorage.setItem('gllr_sbcfg',JSON.stringify({url:SUPABASE_URL,key:SUPABASE_KEY}));}catch(_){}
@@ -1107,6 +1188,7 @@ function resumen(){let b=0,w=0,dv=0,dw=0;
   datos.forEach(e=>{const c=mant(e);if(c.est==="bad")b++;else if(c.est==="warn")w++;
     const d=docsWorst(e); if(d==="bad")dv++; else if(d==="warn")dw++;});
   cBad.textContent=b;cWarn.textContent=w;cDoc.textContent=dv;cDocW.textContent=dw;
+  if(typeof pintarAvisos==='function')pintarAvisos();
   pintarStBar();}
 
 /* ---- colapsar/expandir grupos ---- */
@@ -2308,15 +2390,105 @@ function palAbrir(){
 }
 btnPaleta.onclick=palAbrir;
 
+
+/* ── Reorganización de las barras con el tema activo ──
+   Los botones no se recrean: se mudan al menú y vuelven al apagarlo, así
+   conservan sus atajos y todo lo que ya hacían. */
+const DD_CARGAR=[['btnHoro','Reporte de combustible'],['btnHoroSolo','Horómetros y fechas'],
+                 ['btnFormatos','Descargar formatos de ejemplo'],['btnExcel','Exportar la tabla a Excel']];
+const DD_VISTA =[['btnAgrupar','Plegar todos los bloques'],['btnDesagrupar','Desplegar todos'],
+                 ['btnTema','Cambiar el aspecto'],['btnPaleta','Colores de los encabezados'],
+                 ['btnRefresh','Actualizar datos'],['btnUndo','Deshacer el último cambio']];
+const _sitio=new Map();          // dónde estaba cada botón antes de mudarlo
+function mudarBotones(alMenu){
+  const poner=(lista,cajaId,corte)=>{
+    const caja=document.getElementById(cajaId);
+    lista.forEach(([id,lab],i)=>{
+      const b=document.getElementById(id); if(!b)return;
+      if(alMenu){
+        if(!_sitio.has(id))_sitio.set(id,{padre:b.parentNode,antes:b.nextSibling,html:b.innerHTML});
+        if(corte===i){const s=document.createElement('div');s.className='dd-sep';caja.appendChild(s);}
+        b.innerHTML=`<span class="ico">${_sitio.get(id).html}</span><span class="lab">${lab}</span>`;
+        b.classList.remove('ic');
+        caja.appendChild(b);
+      }else{
+        const s=_sitio.get(id); if(!s)return;
+        b.innerHTML=s.html; b.classList.add('ic');
+        s.padre.insertBefore(b, s.antes&&s.antes.parentNode===s.padre ? s.antes : null);
+      }
+    });
+  };
+  if(alMenu){ mCargar.querySelectorAll('.dd-sep').forEach(e=>e.remove());
+              mVista.querySelectorAll('.dd-sep').forEach(e=>e.remove()); }
+  poner(DD_CARGAR,'mCargar',2);
+  poner(DD_VISTA,'mVista',2);
+  ddCargar.classList.toggle('hide',!alMenu);
+  ddVista.classList.toggle('hide',!alMenu);
+  if(!alMenu)_sitio.clear();
+}
+/* la sesión se muda al final de la franja oscura */
+function mudarUsuario(alTop){
+  let box=document.getElementById('userTop');
+  if(alTop){
+    if(!box){
+      const sp=document.createElement('div'); sp.className='sp2';
+      box=document.createElement('div'); box.id='userTop';
+      const ini=(perfil&&perfil.nombre?perfil.nombre:'?').trim().split(/\s+/)
+        .slice(0,2).map(s=>s[0]||'').join('').toUpperCase();
+      box.innerHTML=`<div class="av">${esc(ini)}</div><div class="nb"></div><div class="cr">▾</div>
+        <div class="dd-m" id="mUser" style="top:42px">
+          <div class="dd-c" id="mUserNom"></div>
+          <button class="act" id="mUserOut"><span class="lab">Cerrar sesión</span></button></div>`;
+      topbar.appendChild(sp); topbar.appendChild(box);
+      box.onclick=ev=>{ev.stopPropagation();
+        const m=document.getElementById('mUser');
+        const ya=m.classList.contains('abierto');
+        document.querySelectorAll('.dd-m').forEach(x=>x.classList.remove('abierto'));
+        if(!ya)m.classList.add('abierto');};
+      document.getElementById('mUserOut').onclick=()=>btnOut.click();
+    }
+    const nom=(perfil&&perfil.nombre)||'';
+    box.querySelector('.nb').textContent=nom.split(/\s+/).slice(0,2).join(' ');
+    document.getElementById('mUserNom').textContent=who.textContent||nom;
+    box.insertBefore(offEstado,box.firstChild);
+    box.style.display='flex';
+  }else if(box){
+    document.querySelector('header .userbox').insertBefore(offEstado,who);
+    box.style.display='none';
+  }
+}
+/* los avisos solo llevan color cuando tienen algo */
+function pintarAvisos(){
+  [['chipBad','hay-bad'],['chipDoc','hay-bad'],['chipWarn','hay-warn'],['chipDocW','hay-warn']]
+    .forEach(([id,cl])=>{
+      const el=document.getElementById(id); if(!el)return;
+      const n=+(el.querySelector('b')||{}).textContent||0;
+      el.classList.toggle(cl,n>0);
+    });
+}
+/* abrir y cerrar los menús */
+[['ddCargar','mCargar'],['ddVista','mVista']].forEach(([d,m])=>{
+  const el=document.getElementById(d); if(!el)return;
+  el.querySelector('.dd-b').onclick=ev=>{
+    ev.stopPropagation();
+    const men=document.getElementById(m), ya=men.classList.contains('abierto');
+    document.querySelectorAll('.dd-m').forEach(x=>x.classList.remove('abierto'));
+    if(!ya)men.classList.add('abierto');
+  };
+});
+document.addEventListener('click',()=>document.querySelectorAll('.dd-m').forEach(m=>m.classList.remove('abierto')));
+
 /* ── Aspecto de la página ──
    El tema es solo apariencia: se guarda la preferencia en este navegador
    y no afecta a los datos ni a lo que ven los demás usuarios. */
 (function(){
   const K='gllr_tema';
-  const poner=v=>{document.body.classList.toggle('tema2',v==='2');
-    btnTema.classList.toggle('primary',v==='2');
-    btnPaleta.classList.toggle('hide',v!=='2');
-    btnTema.title=v==='2'?'Volver al aspecto anterior':'Probar el aspecto nuevo';};
+  const poner=v=>{const on=v==='2';
+    document.body.classList.toggle('tema2',on);
+    btnTema.classList.toggle('primary',on);
+    btnPaleta.classList.toggle('hide',!on);
+    mudarBotones(on); mudarUsuario(on); pintarAvisos();
+    btnTema.title=on?'Volver al aspecto anterior':'Probar el aspecto nuevo';};
   let actual='1';
   try{actual=localStorage.getItem(K)||'1';}catch(_){}
   poner(actual);
