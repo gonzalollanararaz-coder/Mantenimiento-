@@ -68,6 +68,7 @@
   .toolbar::-webkit-scrollbar-track{background:transparent}
   .toolbar::-webkit-scrollbar-thumb{background:#cbd2d9;border-radius:3px}
   .toolbar>*{flex:0 0 auto}
+  .avisos{display:flex;gap:7px;align-items:center}
   .toolbar .spacer{flex:1 1 auto;min-width:8px}
   .toolbar input[type=search],.toolbar select{padding:2px 8px;border:1px solid var(--line);border-radius:6px;font-size:11.5px;line-height:18px}
   .toolbar input[type=search]{width:190px;flex:0 0 190px}
@@ -499,7 +500,11 @@
   .mx thead .hcab .hi{font-size:8px;line-height:1;display:flex;gap:2px;align-items:center}
   .mx thead .hcab .emb{opacity:0;font-style:normal;font-size:8px}
   .mx thead .hcab:hover .emb{opacity:.75}
-  .mx thead .hcab.filtrado{background:var(--amber);color:#1a1200}
+  /* Filtrado: el mismo color del encabezado, un tono más intenso.
+     Se logra oscureciendo el propio fondo, sin introducir un color ajeno. */
+  .mx thead .hcab.filtrado{background:rgba(0,0,0,.28);box-shadow:inset 0 0 0 1px rgba(255,255,255,.35)}
+  body.tema2 .mx thead .hcab.filtrado{background:rgba(0,0,0,.14);
+    box-shadow:inset 0 0 0 1px rgba(0,0,0,.16)}
   .mx thead .hcab.filtrado .emb{opacity:1}
   .mx thead .hcab.ordenado .hi{opacity:1}
   /* menú */
@@ -514,6 +519,11 @@
   #colPop .cp-ord button:hover{background:#f4f5f6}
   #colPop input[type=search]{width:100%;border:1px solid #dfe3e7;border-radius:7px;padding:7px 9px;
     font:inherit;font-size:12.5px;margin-bottom:6px}
+
+  #colPop .cp-ex{display:flex;align-items:center;gap:6px;font-size:11.5px;color:#3F464D;
+    background:#f6f8fa;border-radius:7px;padding:7px 9px;margin-bottom:7px;line-height:1.35}
+  #colPop .cp-ex input{width:56px;border:1px solid var(--amber);border-radius:5px;
+    padding:3px 5px;font-size:12px;text-align:right}
   #colPop .cp-l{max-height:196px;overflow:auto;border-top:1px solid #f1f3f5;padding-top:5px}
   #colPop .cp-l label{display:flex;align-items:center;gap:8px;padding:5px 4px;font-size:12.5px;
     border-radius:6px;cursor:pointer}
@@ -599,12 +609,16 @@
       <i class="tb-sep"></i>
       <!-- zona 2: FILTRAR -->
       <span class="stbar" id="stBar" title="Enciende o apaga los status que quieres ver"></span>
-      <span class="chip clic" id="chipBad"  data-kpi="bad"  title="Mantenimiento vencido"><span class="dot bad"></span>Mntto vencido <b id="cBad">0</b></span>
-      <span class="chip clic" id="chipWarn" data-kpi="warn" title="Mantenimiento próximo"><span class="dot warn"></span>Mntto próx. <b id="cWarn">0</b></span>
-      <span class="chip clic" id="chipDoc"  data-kpi="doc"  title="Documentos vencidos"><span class="dot bad"></span>Doc. venc. <b id="cDoc">0</b></span>
-      <span class="chip clic" id="chipDocW" data-kpi="docw" title="Documentos por vencer"><span class="dot warn"></span>Doc. x venc. <b id="cDocW">0</b></span>
       <button class="act clear ic" id="btnClear" title="Borrar todos los filtros">✕</button>
 
+      <div class="spacer"></div>
+      <!-- zona 2b: AVISOS · centrados entre los filtros y las acciones -->
+      <span class="avisos">
+        <span class="chip clic" id="chipBad"  data-kpi="bad"  title="Mantenimiento vencido"><span class="dot bad"></span>Mntto vencido <b id="cBad">0</b></span>
+        <span class="chip clic" id="chipWarn" data-kpi="warn" title="Mantenimiento próximo"><span class="dot warn"></span>Mntto próx. <b id="cWarn">0</b></span>
+        <span class="chip clic" id="chipDoc"  data-kpi="doc"  title="Documentos vencidos"><span class="dot bad"></span>Doc. venc. <b id="cDoc">0</b></span>
+        <span class="chip clic" id="chipDocW" data-kpi="docw" title="Documentos por vencer"><span class="dot warn"></span>Doc. x venc. <b id="cDocW">0</b></span>
+      </span>
       <div class="spacer"></div>
       <!-- zona 3: ACTUAR -->
       <button class="act prog" id="btnProg">📅 Programar mntto</button>
@@ -643,8 +657,8 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
 /* ╔══ pega aquí tus DOS datos (los mismos de tu archivo actual) ══╗ */
-const SUPABASE_URL = "https://hklwvdhzltjsbfvlewbu.supabase.co";   // ← reemplaza
-const SUPABASE_KEY = "sb_publishable_NgDfyDHDI_KByR-qf35EpA_ZuKI5E0K";                 // ← reemplaza
+const SUPABASE_URL = "https://TU-PROYECTO.supabase.co";   // ← reemplaza
+const SUPABASE_KEY = "TU-PUBLISHABLE-KEY";                 // ← reemplaza
 /* ──────────────────────────────────────────────────────────────── */
 const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 try{localStorage.setItem('gllr_sbcfg',JSON.stringify({url:SUPABASE_URL,key:SUPABASE_KEY}));}catch(_){}
@@ -875,11 +889,12 @@ const FROZEN=[
   {k:'equipo',lab:'Equipo / Vehículo',w:150,type:'t'},
   {k:'marca',lab:'Marca',w:82,type:'t'},
   {k:'modelo',lab:'Modelo',w:88,type:'t'},
+  {k:'serie_placa',lab:'Serie/Placa',w:110,type:'t'},
 ];
 let famCollapsed=true;   // ID Familia arranca colapsada
 function fw(f){return (f.collapsible&&famCollapsed)?26:f.w;}
 const GROUPS=[
- {key:'tec',lab:'DATOS TÉCNICOS',color:'#0F243E',hcol:'#002060',cols:[['serie_placa','Serie/Placa','t'],['anio','Año','t'],['color','Color','t'],['potencia','Potencia','t'],['capacidad','Capacidad','t'],['peso_bruto','Peso (Ton)','t'],['tanque_comb','Tanque','t']]},
+ {key:'tec',lab:'DATOS TÉCNICOS',color:'#0F243E',hcol:'#002060',cols:[['anio','Año','t'],['color','Color','t'],['potencia','Potencia','t'],['capacidad','Capacidad','t'],['peso_bruto','Peso (Ton)','t'],['tanque_comb','Tanque','t']]},
  {key:'mov',lab:'DATOS DE MOVILIZACIÓN',color:'#006600',hcol:'#009900',cols:[['fecha_ingreso','F. ingreso','d'],['hrkm_ingreso','HR/KM ing.','n'],['nivel_comb_ing','Comb. ing.','pct'],['chk_ingreso','Chk ing.','okfalta'],['inf_ingreso','Inf. ing.','okfalta'],['ubic_ingreso','Ubic. SAP-CE ing.','okfalta']]},
  {key:'des',lab:'DATOS DESMOVILIZACIÓN',color:'#C00000',hcol:'#FF0000',cols:[['fecha_desmov','F. desmov.','d'],['hrkm_salida','HR/KM sal.','n'],['nivel_comb_sal','Comb. sal.','pct'],['chk_salida','Chk sal.','okfalta'],['inf_salida','Inf. sal.','okfalta'],['ubic_salida','Ubic. SAP-CE sal.','okfalta']]},
  {key:'prov',lab:'PROVEEDOR',color:'#0F243E',hcol:'#002060',cols:[['propietario','Propietario','t']]},
@@ -913,6 +928,9 @@ function esDesmov(s){return /^DESMOVILIZ/.test(stSlug(s));}
 /* los dos tránsitos se ordenan junto a los movilizados; se conservan los nombres antiguos */
 /* 1er nivel de orden: los tres estados visibles cuentan como uno solo
    (MOVILIZADO, TRANS. MOV. y TRANS. DESM.); DESMOVILIZ. va al final. */
+/* Los dos tránsitos comparten un solo botón en la barra de filtros:
+   la columna sigue distinguiendo el sentido, pero al filtrar van juntos. */
+const ST_TRANSITO=['TRANS. MOV.','TRANS. DESM.'];
 const ST_RANK={MOVILIZADO:1,
                'TRANS. MOV.':1,'TRÁNS. MOV.':1,'TRANSITO MOV.':1,TRANSITO:1,
                'TRANS. DESM.':1,'TRÁNS. DESM.':1,'TRANSITO DESMOV.':1,
@@ -1078,11 +1096,7 @@ function buildHead(){
       b1+=`<th class="bands" data-collapse="${g.key}" data-g="${g.key}" colspan="${g.cols.length}" style="background:${g.color}"><span class="bnd">${g.lab} －</span></th>`;
       for(const [k,lab,tipo] of g.cols){
         const filtrable = tipo!=='c' || FCALC.includes(k);
-        // la antigüedad de lectura sigue siendo un número que se teclea
-        const extra = (k==='fecha_lectura')
-          ? `<input class="colnum" type="number" min="0" max="365" id="inpStale" value="${staleDias}" title="Resalta las lecturas con más de estos días de antigüedad">`
-          : '';
-        b2+=`<th style="background:${g.hcol}">${cabCol(k,lab,filtrable)}${extra}</th>`;
+        b2+=`<th style="background:${g.hcol}">${cabCol(k,lab,filtrable)}</th>`;
       }
     }
   }
@@ -1285,14 +1299,27 @@ function pintarStBar(){
             : (g==='TRANS-MOV'||g==='TRANSITO-MOV'||g==='TRANSITO')?'TRANS. MOV.' : null;
     if(k)cuenta[k]=(cuenta[k]||0)+1;
   });
-  stBar.innerHTML=ESTADOS.map(s=>
-    `<button class="stb${stSel.has(s)?' on':''}" data-st="${s}" title="${stSel.has(s)?'Se está mostrando · clic para ocultar':'Oculto · clic para mostrar'}">`
-    +`${s} <span class="n">${cuenta[s]||0}</span></button>`).join('');
+  // los dos tránsitos se muestran como un solo botón
+  const BOTONES=[
+    {st:'MOVILIZADO',   lab:'Movilizado',   n:cuenta['MOVILIZADO']||0},
+    {st:ST_TRANSITO.join('|'), lab:'En tránsito',
+     n:(cuenta['TRANS. MOV.']||0)+(cuenta['TRANS. DESM.']||0),
+     tit:`${cuenta['TRANS. MOV.']||0} por movilizar · ${cuenta['TRANS. DESM.']||0} por desmovilizar`},
+    {st:'DESMOVILIZ.',  lab:'Desmovilizado',n:cuenta['DESMOVILIZ.']||0}
+  ];
+  stBar.innerHTML=BOTONES.map(b=>{
+    const partes=b.st.split('|');
+    const on=partes.some(s=>stSel.has(s));
+    return `<button class="stb${on?' on':''}" data-st="${esc(b.st)}"`
+      +` title="${esc(b.tit||'')}${b.tit?' · ':''}${on?'Se está mostrando · clic para ocultar':'Oculto · clic para mostrar'}">`
+      +`${b.lab} <span class="n">${b.n}</span></button>`;}).join('');
 }
 stBar.addEventListener('click',ev=>{
   const b=ev.target.closest('.stb'); if(!b)return;
-  const s=b.dataset.st;
-  if(stSel.has(s))stSel.delete(s); else stSel.add(s);
+  const partes=b.dataset.st.split('|');
+  const encendido=partes.some(s=>stSel.has(s));
+  partes.forEach(s=>{ if(encendido)stSel.delete(s); else stSel.add(s); });
+  const s=partes[0];
   pintarStBar(); applyFilters();
   appFoot.textContent = stSel.size===0
     ? 'Ningún status encendido: se muestran todos los equipos'
@@ -2687,6 +2714,7 @@ function abrirColMenu(el){
     caja.innerHTML=`<div class="cp-h" id="cpTit"></div>
       <div class="cp-b">
         <div class="cp-ord"><button data-o="asc">↑ Ascendente</button><button data-o="desc">↓ Descendente</button></div>
+        <div id="cpExtra" class="hide"></div>
         <input type="search" id="cpQ" placeholder="Buscar…" autocomplete="off">
         <div class="cp-l" id="cpL"></div>
       </div>
@@ -2707,6 +2735,22 @@ function abrirColMenu(el){
   }
   const lab=el.querySelector('.ht');
   document.getElementById('cpTit').textContent=(lab?lab.textContent:k).replace('－','').trim();
+  // la antigüedad de lectura es un ajuste propio de esta columna, no un filtro
+  const zona=document.getElementById('cpExtra');
+  if(k==='fecha_lectura'){
+    zona.innerHTML=`<label class="cp-ex">Resaltar lecturas con más de
+      <input type="number" min="0" max="365" id="cpStale" value="${staleDias}"> días</label>`;
+    zona.classList.remove('hide');
+    document.getElementById('cpStale').onchange=e=>{
+      const v=Math.max(0,Math.min(365,+e.target.value||0));
+      staleDias=v; e.target.value=v;
+      try{localStorage.setItem('gllr_staleDias',v);}catch(_){}
+      // solo se repinta la marca de esa columna, sin rehacer la tabla
+      cuerpo.querySelectorAll('td[data-k="fecha_lectura"]').forEach(td=>{
+        const eq=getE(idDe(td)); if(!eq)return;
+        td.classList.toggle('stale',staleLectura(eq.fecha_lectura));});
+    };
+  }else{ zona.innerHTML=''; zona.classList.add('hide'); }
   document.getElementById('cpQ').value='';
   hcolLista();
   const r=el.getBoundingClientRect(), an=262;
