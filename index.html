@@ -435,36 +435,58 @@
   /* Filtros de status: botones separados. En todos, la letra y el borde
      son el mismo color del fondo pero en un tono más oscuro. */
   body.tema2 .stbar{gap:7px;height:34px;border:none;overflow:visible}
-  body.tema2 .stb{border:1px solid #E0E3E6 !important;border-radius:9px;height:34px;
-    padding:0 13px;font-weight:500;font-size:12.5px;color:#9AA0A6;background:#FBFBFB;
-    display:inline-flex;align-items:center;white-space:nowrap}
-  body.tema2 .stb .n{font-weight:600;color:inherit;min-width:20px;margin-left:6px}
+  body.tema2 .stb{border:1px solid #E0E3E6 !important;border-radius:9px;height:32px;
+    width:auto !important;min-width:0;padding:0 11px;font-weight:500;font-size:11.5px;
+    letter-spacing:0;color:#9AA0A6;background:#FBFBFB;text-transform:lowercase;
+    display:inline-flex;align-items:center;white-space:nowrap;overflow:visible}
+  body.tema2 .stb::first-letter{text-transform:uppercase}
+  body.tema2 .stb .n{font-weight:700;color:inherit;min-width:0 !important;margin-left:7px;
+    font-variant-numeric:tabular-nums;text-transform:none}
   body.tema2 .stb::before{content:"";width:6px;height:6px;border-radius:50%;background:#CBD0D5;
     display:inline-block;margin-right:8px;flex:0 0 auto}
   body.tema2 .stb:hover{border-color:#C3C8CD !important}
-  body.tema2 .stb.on[data-st="MOVILIZADO"]{background:#EAF1FB;color:#274877;border-color:#A9C4E6 !important}
-  body.tema2 .stb.on[data-st="MOVILIZADO"]::before{background:#4E7CBE}
+  /* Encendidos: degradado suave y el mismo tono, más vivo, en letra y borde */
+  body.tema2 .stb.on[data-st="MOVILIZADO"]{background:linear-gradient(180deg,#E4EEFC,#C9DCF6);
+    color:#1B4A8C;border-color:#7FA9DD !important}
+  body.tema2 .stb.on[data-st="MOVILIZADO"]::before{background:#2F6FC2}
   body.tema2 .stb.on[data-st="TRANS. MOV."],
-  body.tema2 .stb.on[data-st="TRANS. DESM."]{background:#FBF0DC;color:#77500E;border-color:#E3C48D !important}
+  body.tema2 .stb.on[data-st="TRANS. DESM."]{background:linear-gradient(180deg,#FCEFD5,#F7DFAE);
+    color:#8A5A06;border-color:#DDAF5C !important}
   body.tema2 .stb.on[data-st="TRANS. MOV."]::before,
-  body.tema2 .stb.on[data-st="TRANS. DESM."]::before{background:#C79A45}
-  body.tema2 .stb.on[data-st="DESMOVILIZ."]{background:#F2EDF0;color:#654553;border-color:#D9C6CE !important}
-  body.tema2 .stb.on[data-st="DESMOVILIZ."]::before{background:#A8808F}
+  body.tema2 .stb.on[data-st="TRANS. DESM."]::before{background:#C1861D}
+  body.tema2 .stb.on[data-st="DESMOVILIZ."]{background:linear-gradient(180deg,#F6ECF1,#EBDAE3);
+    color:#7A4257;border-color:#CBA5B6 !important}
+  body.tema2 .stb.on[data-st="DESMOVILIZ."]::before{background:#A65E7C}
 
   /* avisos: color solo cuando hay algo pendiente */
   body.tema2 .toolbar .chip{height:34px;border-radius:9px;padding:0 13px;font-size:12.5px;
     line-height:32px;font-weight:500;background:#FBFBFB;border:1px solid #E0E3E6;color:#9AA0A6}
   body.tema2 .chip .dot{width:6px;height:6px;background:#CBD0D5}
   body.tema2 .chip b{color:inherit;font-weight:600;margin-left:2px}
-  body.tema2 .chip.hay-bad{background:#FBEAEA;border-color:#E9BFBF;color:#8A2B2B}
-  body.tema2 .chip.hay-bad .dot{background:#C25151}
-  body.tema2 .chip.hay-warn{background:#FBF0DC;border-color:#E3C48D;color:#77500E}
-  body.tema2 .chip.hay-warn .dot{background:#C79A45}
+  body.tema2 .chip.hay-bad{background:linear-gradient(180deg,#FBE6E6,#F5CFCF);
+    border-color:#DFA0A0;color:#8E2020}
+  body.tema2 .chip.hay-bad .dot{background:#B93A3A}
+  body.tema2 .chip.hay-warn{background:linear-gradient(180deg,#FCEFD5,#F7DFAE);
+    border-color:#DDAF5C;color:#8A5A06}
+  body.tema2 .chip.hay-warn .dot{background:#C1861D}
   body.tema2 .chip.clic.on{box-shadow:inset 0 0 0 1.5px currentColor}
   /* los botones de acción, mismo criterio */
-  body.tema2 .act.prog{background:#EAF1FB;border-color:#A9C4E6;color:#274877}
-  body.tema2 .act.primary{background:#FDF0B8;border-color:#E3C44E;color:#6B5310}
-  body.tema2 .act.clear{background:#FBEAEA;border-color:#E9BFBF;color:#8A2B2B}
+  body.tema2 .act.prog{background:linear-gradient(180deg,#E4EEFC,#C9DCF6);
+    border-color:#7FA9DD;color:#1B4A8C;font-weight:600}
+  body.tema2 .act.primary{background:linear-gradient(180deg,#FFE98A,#FFD84A);
+    border-color:#DCB61C;color:#5C4708;font-weight:600}
+  body.tema2 .act.clear{background:linear-gradient(180deg,#FBE6E6,#F5CFCF);
+    border-color:#DFA0A0;color:#8E2020}
+  body.tema2 .toolbar .act:not(.ghost):hover{filter:brightness(.97)}
+
+  /* iconos de trazo */
+  body.tema2 .toolbar .act.ic svg{width:17px;height:17px;display:block}
+  body.tema2 .toolbar .act.ic{display:inline-flex;align-items:center;justify-content:center;
+    color:#5F676E;background:#fff;border-color:#E0E3E6}
+  body.tema2 .toolbar .act.ic:hover{color:#16191D;border-color:#C3C8CD;background:#F7F8F9}
+  body.tema2 .toolbar .act.ic[disabled]{color:#C3C8CD;background:#FBFBFB}
+  body.tema2 .dd-m .act svg{width:17px;height:17px}
+  body.tema2 .dd-b{font-weight:500;background:#fff;border-color:#E0E3E6;color:#3F464D}
   footer{padding:10px 16px;color:var(--muted);font-size:12px;text-align:center}
 
   /* admin */
@@ -581,8 +603,8 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
 /* ╔══ pega aquí tus DOS datos (los mismos de tu archivo actual) ══╗ */
-const SUPABASE_URL = "https://hklwvdhzltjsbfvlewbu.supabase.co";   // ← reemplaza
-const SUPABASE_KEY = "sb_publishable_NgDfyDHDI_KByR-qf35EpA_ZuKI5E0K";                 // ← reemplaza
+const SUPABASE_URL = "https://TU-PROYECTO.supabase.co";   // ← reemplaza
+const SUPABASE_KEY = "TU-PUBLISHABLE-KEY";                 // ← reemplaza
 /* ──────────────────────────────────────────────────────────────── */
 const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 try{localStorage.setItem('gllr_sbcfg',JSON.stringify({url:SUPABASE_URL,key:SUPABASE_KEY}));}catch(_){}
@@ -1219,7 +1241,10 @@ function resumen(){let b=0,w=0,dv=0,dw=0;
 /* ---- colapsar/expandir grupos ---- */
 thead.addEventListener("click",ev=>{
   if(ev.target.closest('[data-famtoggle]')){famCollapsed=!famCollapsed;render();return;}
-  const k=ev.target.dataset.collapse;if(!k)return;collapsed[k]=!collapsed[k];render();
+  // el título va dentro de un <span>, así que se busca el contenedor con el dato
+  const el=ev.target.closest?ev.target.closest('[data-collapse]'):null;
+  const k=el?el.dataset.collapse:ev.target.dataset.collapse;
+  if(!k)return;collapsed[k]=!collapsed[k];render();
 });
 thead.addEventListener("input",ev=>{
   if(ev.target.id==="inpStale"){
@@ -1235,7 +1260,9 @@ thead.addEventListener("input",ev=>{
   const fc=ev.target.dataset.fcol;if(!fc)return;colFilters[fc]=ev.target.value;applyFiltersD();});
 cuerpo.addEventListener("click",async ev=>{
   if(ev.target.closest('[data-famtoggle]')){famCollapsed=!famCollapsed;render();return;}
-  const k=ev.target.dataset.collapse; if(k){collapsed[k]=false;render();return;}
+  const _el=ev.target.closest?ev.target.closest('[data-collapse]'):null;
+  const k=_el?_el.dataset.collapse:ev.target.dataset.collapse;
+  if(k){collapsed[k]=false;render();return;}
   const del=ev.target.dataset.del;
   if(del){
     const e=getE(del);
@@ -2421,9 +2448,26 @@ btnPaleta.onclick=palAbrir;
    conservan sus atajos y todo lo que ya hacían. */
 const DD_CARGAR=[['btnHoro','Reporte de combustible'],['btnHoroSolo','Horómetros y fechas'],
                  ['btnFormatos','Descargar formatos de ejemplo'],['btnExcel','Exportar la tabla a Excel']];
-const DD_VISTA =[['btnAgrupar','Plegar todos los bloques'],['btnDesagrupar','Desplegar todos'],
-                 ['btnTema','Cambiar el aspecto'],['btnPaleta','Colores de los encabezados'],
-                 ['btnRefresh','Actualizar datos'],['btnUndo','Deshacer el último cambio']];
+/* Deshacer, plegar, desplegar y actualizar se quedan a la vista: se usan
+   a diario. En el menú solo queda lo que se toca de vez en cuando. */
+const DD_VISTA =[['btnTema','Cambiar el aspecto'],['btnPaleta','Colores de los encabezados']];
+/* Iconos de trazo, en lugar de los símbolos de teclado */
+const SVG={
+  btnUndo:'<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M7 8H12.5a4 4 0 0 1 0 8H8"/><path d="M10 5 7 8l3 3"/></svg>',
+  btnRefresh:'<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M16.5 8A6.6 6.6 0 0 0 4.6 6.6"/><path d="M3.5 12A6.6 6.6 0 0 0 15.4 13.4"/><path d="M4.2 3.4v3.2h3.2M15.8 16.6v-3.2h-3.2"/></svg>',
+  btnAgrupar:'<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4v12M16 4v12"/><path d="M7.5 10h5"/><path d="M9.8 7.7 7.5 10l2.3 2.3M10.2 7.7 12.5 10l-2.3 2.3"/></svg>',
+  btnDesagrupar:'<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4v12M16 4v12"/><path d="M6.6 10h6.8"/><path d="M8.9 7.7 6.6 10l2.3 2.3M11.1 7.7 13.4 10l-2.3 2.3"/></svg>'
+};
+/* Se aplican solo con el tema activo, y se devuelven al apagarlo */
+const _iconoAntes=new Map();
+function iconosModernos(on){
+  for(const [id,svg] of Object.entries(SVG)){
+    const b=document.getElementById(id); if(!b)continue;
+    if(on){ if(!_iconoAntes.has(id))_iconoAntes.set(id,b.innerHTML); b.innerHTML=svg; }
+    else if(_iconoAntes.has(id)) b.innerHTML=_iconoAntes.get(id);
+  }
+  if(!on)_iconoAntes.clear();
+}
 const _sitio=new Map();          // dónde estaba cada botón antes de mudarlo
 function mudarBotones(alMenu){
   const poner=(lista,cajaId,corte)=>{
@@ -2526,7 +2570,7 @@ document.addEventListener('click',()=>document.querySelectorAll('.dd-m').forEach
     document.body.classList.toggle('tema2',on);
     btnTema.classList.toggle('primary',on);
     btnPaleta.classList.toggle('hide',!on);
-    mudarBotones(on); mudarUsuario(on); pintarAvisos();
+    mudarBotones(on); mudarUsuario(on); pintarAvisos(); iconosModernos(on);
     btnTema.title=on?'Volver al aspecto anterior':'Probar el aspecto nuevo';};
   let actual='1';
   try{actual=localStorage.getItem(K)||'1';}catch(_){}
