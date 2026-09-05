@@ -491,6 +491,42 @@
   body.tema2 .toolbar .act.ic[disabled]{color:#C3C8CD;background:#FBFBFB}
   body.tema2 .dd-m .act svg{width:17px;height:17px}
   body.tema2 .dd-b{font-weight:500;background:#fff;border-color:#E0E3E6;color:#3F464D}
+
+  /* título de columna como control de filtro y orden */
+  .mx thead .hcab{display:flex;align-items:center;gap:4px;cursor:pointer;padding:1px 2px;border-radius:4px}
+  .mx thead .hcab:hover{background:rgba(255,255,255,.16)}
+  .mx thead .hcab .ht{flex:1;overflow:hidden;text-overflow:ellipsis}
+  .mx thead .hcab .hi{font-size:8px;line-height:1;display:flex;gap:2px;align-items:center}
+  .mx thead .hcab .emb{opacity:0;font-style:normal;font-size:8px}
+  .mx thead .hcab:hover .emb{opacity:.75}
+  .mx thead .hcab.filtrado{background:var(--amber);color:#1a1200}
+  .mx thead .hcab.filtrado .emb{opacity:1}
+  .mx thead .hcab.ordenado .hi{opacity:1}
+  /* menú */
+  #colPop{position:fixed;background:#fff;border:1px solid #dfe3e7;border-radius:10px;
+    box-shadow:0 14px 38px rgba(0,0,0,.2);width:262px;z-index:9990;display:none;overflow:hidden}
+  #colPop.abierto{display:block}
+  #colPop .cp-h{padding:9px 11px;border-bottom:1px solid #f1f3f5;font-size:11.5px;color:#1f3864;font-weight:700}
+  #colPop .cp-b{padding:8px 9px}
+  #colPop .cp-ord{display:flex;gap:5px;margin-bottom:7px}
+  #colPop .cp-ord button{flex:1;border:1px solid #dfe3e7;background:#fff;border-radius:7px;padding:6px;
+    font:inherit;font-size:11.5px;cursor:pointer;color:#3F464D}
+  #colPop .cp-ord button:hover{background:#f4f5f6}
+  #colPop input[type=search]{width:100%;border:1px solid #dfe3e7;border-radius:7px;padding:7px 9px;
+    font:inherit;font-size:12.5px;margin-bottom:6px}
+  #colPop .cp-l{max-height:196px;overflow:auto;border-top:1px solid #f1f3f5;padding-top:5px}
+  #colPop .cp-l label{display:flex;align-items:center;gap:8px;padding:5px 4px;font-size:12.5px;
+    border-radius:6px;cursor:pointer}
+  #colPop .cp-l label:hover{background:#f7f8f9}
+  #colPop .cp-l label span:nth-child(2){flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  #colPop .cp-todos{border-bottom:1px solid #f1f3f5;margin-bottom:3px;font-weight:600;color:#1f3864}
+  #colPop .cp-n{color:#98a2ad;font-size:11px;font-variant-numeric:tabular-nums}
+  #colPop .cp-vacio{padding:12px;color:#98a2ad;font-size:12px;text-align:center}
+  #colPop .cp-f{display:flex;gap:6px;padding:8px 9px;border-top:1px solid #f1f3f5}
+  #colPop .cp-f button{flex:1;border:1px solid #dfe3e7;background:#fff;border-radius:7px;padding:7px;
+    font:inherit;font-size:12px;font-weight:600;cursor:pointer}
+  #colPop .cp-f .ok{background:var(--amber);border-color:var(--amber);color:#1a1200}
+  .mx thead .colnum{width:100%;border:1px solid #cfd6dd;border-radius:4px;padding:1px 4px;font-size:10px;height:17px;margin-top:2px}
   footer{padding:10px 16px;color:var(--muted);font-size:12px;text-align:center}
 
   /* admin */
@@ -607,8 +643,8 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
 /* ╔══ pega aquí tus DOS datos (los mismos de tu archivo actual) ══╗ */
-const SUPABASE_URL = "https://hklwvdhzltjsbfvlewbu.supabase.co";   // ← reemplaza
-const SUPABASE_KEY = "sb_publishable_NgDfyDHDI_KByR-qf35EpA_ZuKI5E0K";                 // ← reemplaza
+const SUPABASE_URL = "https://TU-PROYECTO.supabase.co";   // ← reemplaza
+const SUPABASE_KEY = "TU-PUBLISHABLE-KEY";                 // ← reemplaza
 /* ──────────────────────────────────────────────────────────────── */
 const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 try{localStorage.setItem('gllr_sbcfg',JSON.stringify({url:SUPABASE_URL,key:SUPABASE_KEY}));}catch(_){}
@@ -882,6 +918,7 @@ const ST_RANK={MOVILIZADO:1,
                'TRANS. DESM.':1,'TRÁNS. DESM.':1,'TRANSITO DESMOV.':1,
                'DESMOVILIZ.':2,DESMOVILIZADO:2};
 const collapsed={tec:true,mov:true,des:true,prov:true,doc:true}, colFilters={};
+let colOrden=null;      // {k, dir} · orden por columna desde su título
 let selId=null, selIds=new Set(), undoStack=[];
 
 /* ===== arranque / sesión ===== */
@@ -997,7 +1034,19 @@ function frozenLeft(i){let x=0;for(let j=0;j<i;j++)x+=fw(FROZEN[j]);return x;}
 function esc(s){return String(s??"").replace(/&/g,"&amp;").replace(/"/g,"&quot;").replace(/</g,"&lt;")}
 
 function render(){buildHead();buildBody();applyFilters();}
-function filterInput(k,ph){return `<input class="colf" data-fcol="${k}" placeholder="${ph||'🔍'}" value="${esc(colFilters[k]||'')}">`;}
+/* El título de cada columna es ahora el control: al pulsarlo se abre un
+   menú con orden, buscador y la lista de valores que existen de verdad. */
+function filterInput(k,ph){return '';}
+function cabCol(k,lab,filtrable){
+  if(!filtrable)return `<div class="hlab">${lab}</div>`;
+  const f=colFilters[k];
+  const act=f&&((f.vals&&f.vals.size)||(f.txt&&f.txt.trim()));
+  const ord=colOrden&&colOrden.k===k;
+  return `<div class="hlab hcab${act?' filtrado':''}${ord?' ordenado':''}" data-hcol="${esc(k)}" title="Filtrar u ordenar por ${esc(lab)}">
+    <span class="ht">${lab}</span>
+    <span class="hi">${ord?(colOrden.dir==='asc'?'▲':'▼'):''}${act?'<b class="emb">▼</b>':'<i class="emb">▼</i>'}</span>
+  </div>`;
+}
 /* Una sola hoja de estilo con la posición de cada columna congelada.
    Así las celdas llevan solo una clase corta en vez de estilos escritos uno por uno. */
 function estilosFrozen(){
@@ -1017,9 +1066,8 @@ function buildHead(){
     if(f.collapsible&&famCollapsed){
       b2+=`<th class="frz fz${i}" data-famtoggle style="background:${FROZEN_HCOL};cursor:pointer" title="Expandir ID Familia"><div class="hlab">＋</div></th>`;
     }else{
-      const inp = f.type==='idx' ? '' : filterInput(f.k);
       const lab = f.collapsible ? `${f.lab} <span data-famtoggle style="cursor:pointer">－</span>` : f.lab;
-      b2+=`<th class="frz fz${i}" style="background:${FROZEN_HCOL}"><div class="hlab">${lab}</div>${inp}</th>`;
+      b2+=`<th class="frz fz${i}" style="background:${FROZEN_HCOL}">${cabCol(f.k,lab,f.type!=='idx')}</th>`;
     }
   });
   for(const g of GROUPS){
@@ -1030,13 +1078,11 @@ function buildHead(){
       b1+=`<th class="bands" data-collapse="${g.key}" data-g="${g.key}" colspan="${g.cols.length}" style="background:${g.color}"><span class="bnd">${g.lab} －</span></th>`;
       for(const [k,lab,tipo] of g.cols){
         const filtrable = tipo!=='c' || FCALC.includes(k);
-        let inp;
-        if(k==='fecha_lectura')
-          inp=`<input class="colnum" type="number" min="0" max="365" id="inpStale" value="${staleDias}" title="Resalta las lecturas con más de estos días de antigüedad">`;
-        else if(k==='_sem')
-          inp = filterInput(k, String(semHoy));
-        else inp = filtrable ? filterInput(k,'') : '';
-        b2+=`<th style="background:${g.hcol}"><div class="hlab">${lab}</div>${inp}</th>`;
+        // la antigüedad de lectura sigue siendo un número que se teclea
+        const extra = (k==='fecha_lectura')
+          ? `<input class="colnum" type="number" min="0" max="365" id="inpStale" value="${staleDias}" title="Resalta las lecturas con más de estos días de antigüedad">`
+          : '';
+        b2+=`<th style="background:${g.hcol}">${cabCol(k,lab,filtrable)}${extra}</th>`;
       }
     }
   }
@@ -1058,6 +1104,15 @@ function cellCls(e,k,type,isFrz){
 }
 /* Orden de la tabla. Se aplica solo cada vez que entra, sale o cambia una fila. */
 function ordenTabla(a,b){
+  // si eliges una columna desde su título, ese orden manda sobre el de la flota
+  if(colOrden){
+    const k=colOrden.k;
+    const va=valorCol(a,k), vb=valorCol(b,k);
+    const na=Number(String(va).replace(/[^0-9.-]/g,'')), nb=Number(String(vb).replace(/[^0-9.-]/g,''));
+    const numerico = String(va).trim()!=='' && String(vb).trim()!=='' && isFinite(na) && isFinite(nb);
+    let r = numerico ? na-nb : String(va).localeCompare(String(vb),'es',{numeric:true});
+    if(r)return colOrden.dir==='asc'?r:-r;
+  }
   const ra=ST_RANK[a.status]||9, rb=ST_RANK[b.status]||9; if(ra!==rb)return ra-rb;
   const p=String(a.cod_proyec||'').localeCompare(String(b.cod_proyec||'')); if(p)return p;
   const f=famNum(a)-famNum(b); if(f)return f;
@@ -1152,7 +1207,12 @@ function celda(e,k,tipo,c){
 /* ---- filtrar SIN reconstruir la tabla (ocultar/mostrar filas) ---- */
 function applyFilters(){
   const q=buscar.value.toLowerCase().trim();
-  const cf=[]; for(const k in colFilters){const v=(colFilters[k]||"").trim().toLowerCase();if(v)cf.push([k,v]);}
+  const cf=[];
+  for(const k in colFilters){
+    const f=colFilters[k]; if(!f)continue;
+    if(f.vals&&f.vals.size)cf.push([k,null,f.vals]);
+    else if(f.txt&&f.txt.trim())cf.push([k,f.txt.trim().toLowerCase(),null]);
+  }
   let n=0;
   for(const m of ROWX){
     const e=m.e; let ok=true;
@@ -1166,9 +1226,14 @@ function applyFilters(){
       else if(kpiFiltro==='doc'&&docsWorst(e)!=='bad')ok=false;
       else if(kpiFiltro==='docw'&&docsWorst(e)!=='warn')ok=false;
     }
-    if(ok)for(const [k,v] of cf){
-      const val = k==='_alerta'?m._alerta : k==='_sem'?m._sem : k==='_alertamntto'?m._alertamntto : String(e[k]??"").toLowerCase();
-      if(!val.includes(v)){ok=false;break;}
+    if(ok)for(const [k,v,vals] of cf){
+      const crudo = k==='_alerta'?m._alerta : k==='_sem'?m._sem : k==='_alertamntto'?m._alertamntto : String(e[k]??"");
+      if(vals){
+        const t=String(crudo).trim();
+        if(!(vals.has(t)||vals.has(t.toLowerCase())||vals.has(t.toUpperCase())
+             ||(t===''&&vals.has('(vacío)')))){ok=false;break;}
+      }
+      else if(!String(crudo).toLowerCase().includes(v)){ok=false;break;}
     }
     const disp=ok?"":"none";
     if(m.tr.style.display!==disp)m.tr.style.display=disp;
@@ -1261,7 +1326,7 @@ thead.addEventListener("input",ev=>{
     },120);
     return;
   }
-  const fc=ev.target.dataset.fcol;if(!fc)return;colFilters[fc]=ev.target.value;applyFiltersD();});
+  const fc=ev.target.dataset.fcol;if(!fc)return;colFilters[fc]={txt:ev.target.value};applyFiltersD();});
 cuerpo.addEventListener("click",async ev=>{
   if(ev.target.closest('[data-famtoggle]')){famCollapsed=!famCollapsed;render();return;}
   const _el=ev.target.closest?ev.target.closest('[data-collapse]'):null;
@@ -1353,7 +1418,7 @@ btnDesagrupar.onclick=()=>{GROUPS.forEach(g=>collapsed[g.key]=false);render();};
 /* Borrar todos los filtros */
 btnClear.onclick=()=>{buscar.value="";kpiFiltro="";pintarChips();
   stSel.clear(); ESTADOS.filter(s=>!esDesmov(s)).forEach(s=>stSel.add(s));   // vuelve al arranque
-  selIds.clear();selId=null;pintarMarcas();pintarSel();for(const k in colFilters)delete colFilters[k];
+  selIds.clear();selId=null;pintarMarcas();pintarSel();for(const k in colFilters)delete colFilters[k];colOrden=null;
   render();appFoot.textContent="Doble clic en una celda para editar · los cambios se guardan solos.";};
 /* Exportar a Excel */
 btnExcel.onclick=()=>{
@@ -2589,6 +2654,93 @@ document.addEventListener('click',()=>document.querySelectorAll('.dd-m').forEach
     setTimeout(()=>appFoot.textContent='Doble clic en una celda para editar · los cambios se guardan solos.',4000);
   };
 })();
+
+/* ═══════════════ MENÚ DE FILTRO EN EL TÍTULO ═══════════════
+   Abre con el título de la columna: ordenar, buscar, y la lista de los
+   valores que existen de verdad en esa columna con su cuenta. */
+function valorCol(e,k){
+  // las tres columnas calculadas no viven en el equipo: se derivan al vuelo
+  if(k==='_alerta')      return (ETI[mant(e).est]||'');
+  if(k==='_sem')         return String(mant(e).sem||'');
+  if(k==='_alertamntto') return (alertaMntto(e)||'');
+  return String(e[k]??'');
+}
+let hcolAct=null, hcolSel=new Set();
+function hcolValores(k){
+  const cnt=new Map();
+  for(const e of datos){
+    let v=valorCol(e,k).trim();
+    if(k==='_alerta'||k==='_alertamntto')v=v.toLowerCase();
+    const key=v===''?'(vacío)':v;
+    cnt.set(key,(cnt.get(key)||0)+1);
+  }
+  return cnt;
+}
+function abrirColMenu(el){
+  const k=el.dataset.hcol; if(!k)return;
+  hcolAct=k;
+  const f=colFilters[k];
+  hcolSel=new Set(f&&f.vals?f.vals:[]);
+  let caja=document.getElementById('colPop');
+  if(!caja){
+    caja=document.createElement('div'); caja.id='colPop';
+    caja.innerHTML=`<div class="cp-h" id="cpTit"></div>
+      <div class="cp-b">
+        <div class="cp-ord"><button data-o="asc">↑ Ascendente</button><button data-o="desc">↓ Descendente</button></div>
+        <input type="search" id="cpQ" placeholder="Buscar…" autocomplete="off">
+        <div class="cp-l" id="cpL"></div>
+      </div>
+      <div class="cp-f"><button id="cpNo">Quitar filtro</button><button class="ok" id="cpOk">Aplicar</button></div>`;
+    document.body.appendChild(caja);
+    caja.onclick=ev=>ev.stopPropagation();
+    caja.querySelectorAll('.cp-ord button').forEach(b=>b.onclick=()=>{
+      colOrden={k:hcolAct,dir:b.dataset.o}; cerrarColMenu(); render();});
+    document.getElementById('cpQ').oninput=hcolLista;
+    document.getElementById('cpOk').onclick=()=>{
+      if(hcolSel.size)colFilters[hcolAct]={vals:new Set(hcolSel)};
+      else delete colFilters[hcolAct];
+      cerrarColMenu(); buildHead(); applyFilters();};
+    document.getElementById('cpNo').onclick=()=>{
+      delete colFilters[hcolAct];
+      if(colOrden&&colOrden.k===hcolAct)colOrden=null;
+      cerrarColMenu(); render();};
+  }
+  const lab=el.querySelector('.ht');
+  document.getElementById('cpTit').textContent=(lab?lab.textContent:k).replace('－','').trim();
+  document.getElementById('cpQ').value='';
+  hcolLista();
+  const r=el.getBoundingClientRect(), an=262;
+  caja.style.left=Math.max(8,Math.min(r.left,innerWidth-an-8))+'px';
+  caja.style.top=Math.min(r.bottom+4,innerHeight-380)+'px';
+  caja.classList.add('abierto');
+  document.getElementById('cpQ').focus();
+}
+function hcolLista(){
+  const q=nrmTxt(document.getElementById('cpQ').value);
+  const cnt=hcolValores(hcolAct);
+  const vals=[...cnt.keys()].filter(v=>!q||nrmTxt(v).includes(q))
+    .sort((a,b)=>String(a).localeCompare(String(b),'es',{numeric:true}));
+  const L=document.getElementById('cpL');
+  L.innerHTML=vals.length
+    ? `<label class="cp-todos"><input type="checkbox" id="cpAll" ${vals.every(v=>hcolSel.has(v))?'checked':''}>
+        <span>Seleccionar todo</span><span class="cp-n">${vals.length}</span></label>`
+      + vals.map(v=>`<label><input type="checkbox" value="${esc(v)}" ${hcolSel.has(v)?'checked':''}>
+        <span>${esc(v)}</span><span class="cp-n">${cnt.get(v)}</span></label>`).join('')
+    : '<div class="cp-vacio">Sin coincidencias.</div>';
+  const all=document.getElementById('cpAll');
+  if(all)all.onchange=()=>{ vals.forEach(v=>all.checked?hcolSel.add(v):hcolSel.delete(v)); hcolLista(); };
+  L.querySelectorAll('input[value]').forEach(i=>i.onchange=()=>{
+    i.checked?hcolSel.add(i.value):hcolSel.delete(i.value);});
+}
+function cerrarColMenu(){const c=document.getElementById('colPop');if(c)c.classList.remove('abierto');}
+const nrmTxt=s=>String(s??'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toUpperCase();
+thead.addEventListener('click',ev=>{
+  if(ev.target.closest('[data-famtoggle]')||ev.target.closest('[data-collapse]'))return;
+  const el=ev.target.closest('[data-hcol]'); if(!el)return;
+  ev.stopPropagation(); abrirColMenu(el);
+});
+document.addEventListener('click',cerrarColMenu);
+document.addEventListener('keydown',ev=>{if(ev.key==='Escape')cerrarColMenu();});
 
 /* ── modo offline: service worker + copia local + sincronizacion ── */
 if('serviceWorker' in navigator){
