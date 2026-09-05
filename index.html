@@ -369,14 +369,30 @@
   /* ── Barras superiores del tema: dos franjas en vez de tres ── */
   #topbar{display:contents}                       /* sin el tema, todo queda como estaba */
   body.tema2 #topbar{display:flex;align-items:stretch;background:#1B2027;
-    border-bottom:2px solid var(--amber);padding:0 16px}
+    border-bottom:2px solid var(--amber);padding:0 16px;padding-top:6px}
   body.tema2 #topbar header{background:transparent;border:none;padding:0 18px 0 0;flex:0 0 auto}
   body.tema2 #topbar header .userbox{display:none}       /* pasa al final de la franja */
   body.tema2 #topbar nav{background:transparent;border:none;padding:0;display:flex;align-items:stretch}
-  body.tema2 #topbar nav button{color:#98A0A8;font-size:13.5px;padding:0 15px;
-    border-bottom:2px solid transparent;margin-bottom:-2px}
-  body.tema2 #topbar nav button:hover{color:#D6DBE0;background:transparent}
-  body.tema2 #topbar nav button.on{color:#fff;font-weight:600;border-bottom-color:var(--amber)}
+  /* Pestañas al estilo del navegador: la activa se despega del fondo oscuro
+     y se une con la barra blanca de abajo. */
+  body.tema2 #topbar nav{align-items:flex-end;gap:3px;padding-bottom:0}
+  body.tema2 #topbar nav button{color:#9BA3AB;font-size:13px;font-weight:500;padding:0 17px;
+    height:34px;align-self:flex-end;border:none;
+    border-top-left-radius:9px;border-top-right-radius:9px;
+    border-bottom-left-radius:0;border-bottom-right-radius:0;
+    background:#232A33;margin-bottom:-2px;position:relative;transition:background .12s}
+  body.tema2 #topbar nav button:hover{color:#E2E6EA;background:#2B333D}
+  body.tema2 #topbar nav button.on{background:#fff;color:#16191D;font-weight:600;height:38px;
+    box-shadow:0 -1px 0 rgba(0,0,0,.06)}
+  body.tema2 #topbar nav button.on::before,
+  body.tema2 #topbar nav button.on::after{content:"";position:absolute;bottom:0;width:9px;height:9px;
+    background:#fff;pointer-events:none}
+  body.tema2 #topbar nav button.on::before{left:-9px;
+    -webkit-mask:radial-gradient(circle at 0 0,transparent 9px,#000 9.5px);
+    mask:radial-gradient(circle at 0 0,transparent 9px,#000 9.5px)}
+  body.tema2 #topbar nav button.on::after{right:-9px;
+    -webkit-mask:radial-gradient(circle at 100% 0,transparent 9px,#000 9.5px);
+    mask:radial-gradient(circle at 100% 0,transparent 9px,#000 9.5px)}
   body.tema2 #topbar .brand h1{font-size:14.5px;font-weight:600;letter-spacing:-.01em}
   body.tema2 #topbar .brand p{font-size:10px;color:#8E959C;letter-spacing:.05em}
   body.tema2 #topbar .sp2{flex:1}
@@ -394,7 +410,7 @@
   .dd-b i{font-style:normal;color:#98a2ad;font-size:9px;margin-left:3px}
   .dd-m{position:absolute;top:32px;right:0;background:#fff;border:1px solid var(--linea,#E4E6E9);
     border-radius:10px;box-shadow:0 12px 32px rgba(0,0,0,.16);min-width:250px;padding:6px;
-    display:none;z-index:70}
+    display:none;z-index:9990}
   .dd-m.abierto{display:block}
   .dd-c{padding:7px 10px 4px;font-size:10.5px;color:#8E959C}
   .dd-m .act{display:flex !important;align-items:center;gap:10px;width:100%;text-align:left;
@@ -407,39 +423,48 @@
   .dd-sep{height:1px;background:#EDEEF0;margin:5px 0}
 
   /* ── Barra de trabajo ── */
-  body.tema2 .toolbar{height:auto;padding:9px 16px;gap:12px}
+  body.tema2 .toolbar{height:auto;padding:9px 16px;gap:12px;position:relative;z-index:60}
+  body.tema2 .dd{position:static}
+  body.tema2 .dd-m{position:fixed;top:auto;right:auto}
   body.tema2 .toolbar #buscar{width:250px;padding:8px 12px;height:34px;border-radius:9px}
   body.tema2 .tb-sep{background:#E9EAEC;height:22px}
   body.tema2 .toolbar .act{height:34px}
   body.tema2 .toolbar .act.ic{width:34px;padding:0}
 
   /* estados: un solo bloque segmentado, en pastel del color actual */
-  body.tema2 .stbar{gap:0;border:1px solid #E4E6E9;border-radius:9px;overflow:hidden;height:34px}
-  body.tema2 .stb{border:none !important;border-right:1px solid #EDEEF0 !important;border-radius:0;
-    height:34px;padding:0 12px;font-weight:500;font-size:12.5px;color:#8E959C;background:#FBFBFB}
-  body.tema2 .stbar .stb:last-child{border-right:none !important}
-  body.tema2 .stb .n{font-weight:600;color:#B3B8BD;min-width:20px}
-  body.tema2 .stb::before{content:"";width:6px;height:6px;border-radius:50%;background:#D2D6DA;
-    display:inline-block;margin-right:7px;vertical-align:1px}
-  body.tema2 .stb.on{background:#fff;color:#3F464D}
-  body.tema2 .stb.on .n{color:#16191D}
-  body.tema2 .stb.on[data-st="MOVILIZADO"]{background:#EAF1FB;color:#2A4C86}
-  body.tema2 .stb.on[data-st="MOVILIZADO"]::before{background:#5B87C7}
+  /* Filtros de status: botones separados. En todos, la letra y el borde
+     son el mismo color del fondo pero en un tono más oscuro. */
+  body.tema2 .stbar{gap:7px;height:34px;border:none;overflow:visible}
+  body.tema2 .stb{border:1px solid #E0E3E6 !important;border-radius:9px;height:34px;
+    padding:0 13px;font-weight:500;font-size:12.5px;color:#9AA0A6;background:#FBFBFB;
+    display:inline-flex;align-items:center;white-space:nowrap}
+  body.tema2 .stb .n{font-weight:600;color:inherit;min-width:20px;margin-left:6px}
+  body.tema2 .stb::before{content:"";width:6px;height:6px;border-radius:50%;background:#CBD0D5;
+    display:inline-block;margin-right:8px;flex:0 0 auto}
+  body.tema2 .stb:hover{border-color:#C3C8CD !important}
+  body.tema2 .stb.on[data-st="MOVILIZADO"]{background:#EAF1FB;color:#274877;border-color:#A9C4E6 !important}
+  body.tema2 .stb.on[data-st="MOVILIZADO"]::before{background:#4E7CBE}
   body.tema2 .stb.on[data-st="TRANS. MOV."],
-  body.tema2 .stb.on[data-st="TRANS. DESM."]{background:#FBF0DC;color:#7A5411}
+  body.tema2 .stb.on[data-st="TRANS. DESM."]{background:#FBF0DC;color:#77500E;border-color:#E3C48D !important}
   body.tema2 .stb.on[data-st="TRANS. MOV."]::before,
-  body.tema2 .stb.on[data-st="TRANS. DESM."]::before{background:#D2A24C}
-  body.tema2 .stb.on[data-st="DESMOVILIZ."]{background:#F2EDF0;color:#6B4B58}
-  body.tema2 .stb.on[data-st="DESMOVILIZ."]::before{background:#B08A9A}
+  body.tema2 .stb.on[data-st="TRANS. DESM."]::before{background:#C79A45}
+  body.tema2 .stb.on[data-st="DESMOVILIZ."]{background:#F2EDF0;color:#654553;border-color:#D9C6CE !important}
+  body.tema2 .stb.on[data-st="DESMOVILIZ."]::before{background:#A8808F}
 
   /* avisos: color solo cuando hay algo pendiente */
-  body.tema2 .toolbar .chip{height:34px;border-radius:9px;padding:0 12px;font-size:12.5px;
-    line-height:32px;font-weight:500;background:#FBFBFB;border:1px solid #EDEEF0;color:#A8AEB4}
-  body.tema2 .chip .dot{display:none}
-  body.tema2 .chip b{color:inherit;font-weight:600}
-  body.tema2 .chip.hay-bad{background:#FCECEC;border-color:#F4D6D6;color:#8E2B2B}
-  body.tema2 .chip.hay-warn{background:#FDF3E0;border-color:#F2E1C4;color:#7C5210}
+  body.tema2 .toolbar .chip{height:34px;border-radius:9px;padding:0 13px;font-size:12.5px;
+    line-height:32px;font-weight:500;background:#FBFBFB;border:1px solid #E0E3E6;color:#9AA0A6}
+  body.tema2 .chip .dot{width:6px;height:6px;background:#CBD0D5}
+  body.tema2 .chip b{color:inherit;font-weight:600;margin-left:2px}
+  body.tema2 .chip.hay-bad{background:#FBEAEA;border-color:#E9BFBF;color:#8A2B2B}
+  body.tema2 .chip.hay-bad .dot{background:#C25151}
+  body.tema2 .chip.hay-warn{background:#FBF0DC;border-color:#E3C48D;color:#77500E}
+  body.tema2 .chip.hay-warn .dot{background:#C79A45}
   body.tema2 .chip.clic.on{box-shadow:inset 0 0 0 1.5px currentColor}
+  /* los botones de acción, mismo criterio */
+  body.tema2 .act.prog{background:#EAF1FB;border-color:#A9C4E6;color:#274877}
+  body.tema2 .act.primary{background:#FDF0B8;border-color:#E3C44E;color:#6B5310}
+  body.tema2 .act.clear{background:#FBEAEA;border-color:#E9BFBF;color:#8A2B2B}
   footer{padding:10px 16px;color:var(--muted);font-size:12px;text-align:center}
 
   /* admin */
@@ -512,8 +537,8 @@
       <i class="tb-sep"></i>
       <!-- zona 2: FILTRAR -->
       <span class="stbar" id="stBar" title="Enciende o apaga los status que quieres ver"></span>
-      <span class="chip clic" id="chipBad"  data-kpi="bad"  title="Mantenimiento vencido"><span class="dot bad"></span>Vencido <b id="cBad">0</b></span>
-      <span class="chip clic" id="chipWarn" data-kpi="warn" title="Mantenimiento próximo"><span class="dot warn"></span>Próximo <b id="cWarn">0</b></span>
+      <span class="chip clic" id="chipBad"  data-kpi="bad"  title="Mantenimiento vencido"><span class="dot bad"></span>Mntto vencido <b id="cBad">0</b></span>
+      <span class="chip clic" id="chipWarn" data-kpi="warn" title="Mantenimiento próximo"><span class="dot warn"></span>Mntto próx. <b id="cWarn">0</b></span>
       <span class="chip clic" id="chipDoc"  data-kpi="doc"  title="Documentos vencidos"><span class="dot bad"></span>Doc. venc. <b id="cDoc">0</b></span>
       <span class="chip clic" id="chipDocW" data-kpi="docw" title="Documentos por vencer"><span class="dot warn"></span>Doc. x venc. <b id="cDocW">0</b></span>
       <button class="act clear ic" id="btnClear" title="Borrar todos los filtros">✕</button>
@@ -556,8 +581,8 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
 /* ╔══ pega aquí tus DOS datos (los mismos de tu archivo actual) ══╗ */
-const SUPABASE_URL = "https://hklwvdhzltjsbfvlewbu.supabase.co";   // ← reemplaza
-const SUPABASE_KEY = "sb_publishable_NgDfyDHDI_KByR-qf35EpA_ZuKI5E0K";                 // ← reemplaza
+const SUPABASE_URL = "https://TU-PROYECTO.supabase.co";   // ← reemplaza
+const SUPABASE_KEY = "TU-PUBLISHABLE-KEY";                 // ← reemplaza
 /* ──────────────────────────────────────────────────────────────── */
 const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 try{localStorage.setItem('gllr_sbcfg',JSON.stringify({url:SUPABASE_URL,key:SUPABASE_KEY}));}catch(_){}
@@ -2444,7 +2469,12 @@ function mudarUsuario(alTop){
         const m=document.getElementById('mUser');
         const ya=m.classList.contains('abierto');
         document.querySelectorAll('.dd-m').forEach(x=>x.classList.remove('abierto'));
-        if(!ya)m.classList.add('abierto');};
+        if(ya)return;
+        m.classList.add('abierto');
+        const r=box.getBoundingClientRect(), an=m.offsetWidth||250;
+        m.style.top=(r.bottom+6)+'px';
+        m.style.left=Math.max(8,Math.min(r.right-an,innerWidth-an-8))+'px';
+        m.style.right='auto';};
       document.getElementById('mUserOut').onclick=()=>btnOut.click();
     }
     const nom=(perfil&&perfil.nombre)||'';
@@ -2473,7 +2503,16 @@ function pintarAvisos(){
     ev.stopPropagation();
     const men=document.getElementById(m), ya=men.classList.contains('abierto');
     document.querySelectorAll('.dd-m').forEach(x=>x.classList.remove('abierto'));
-    if(!ya)men.classList.add('abierto');
+    if(ya)return;
+    men.classList.add('abierto');
+    /* el menú va suelto sobre la página para que no quede debajo del
+       encabezado de la tabla; aquí se coloca bajo su botón */
+    if(document.body.classList.contains('tema2')){
+      const r=ev.currentTarget.getBoundingClientRect(), an=men.offsetWidth||250;
+      men.style.top=(r.bottom+6)+'px';
+      men.style.left=Math.max(8,Math.min(r.right-an,innerWidth-an-8))+'px';
+      men.style.right='auto';
+    }
   };
 });
 document.addEventListener('click',()=>document.querySelectorAll('.dd-m').forEach(m=>m.classList.remove('abierto')));
