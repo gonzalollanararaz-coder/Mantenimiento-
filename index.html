@@ -114,7 +114,8 @@
   .pill.bad{background:var(--bad-bg);color:var(--bad)}.pill.na{background:var(--gray-bg);color:var(--gray)}
   td.st-MOVILIZADO{background:#dbeafe !important;color:#1d4ed8;font-weight:700}
   td.st-DESMOVILIZADO,td.st-DESMOVILIZ{background:#fce7f3 !important;color:#be123c;font-weight:700}
-  td.st-TRANS-MOV,td.st-TRANS-DESM,td.st-TRANSITO,td.st-TRANSITO-MOV,td.st-TRANSITO-DESMOV{background:#FEF3C7 !important;color:#B45309;font-weight:700}
+  td.st-POR-MOVIL,td.st-POR-DESMOV,
+  td.st-TRANS-MOV,td.st-TRANS-DESM,td.st-TRANSITO,td.st-TRANSITO-MOV,td.st-TRANSITO-DESMOV{background:var(--warn-bg) !important;color:var(--warn);font-weight:700}
   td.sap-TRANS-MOV,td.sap-TRANS-DESM,td.sap-TRANSITO,td.sap-TRANSITO-MOV,td.sap-TRANSITO-DESMOV{color:#B45309;font-weight:700}
   td.sap-MOVILIZADO{color:#1d4ed8;font-weight:700}
   td.sap-DESMOVILIZADO,td.sap-DESMOVILIZ{color:#be123c;font-weight:700}
@@ -130,11 +131,13 @@
   .mx tbody tr:hover td.idx .delrow{opacity:1}
   .mx tbody tr.rowsel td{background:#d3e9f8 !important}
   .mx tbody tr.rowsel td.cellsel{background:#7cb9e0 !important;font-weight:700;box-shadow:inset 0 0 0 2px #2b7cb0}
-  td.exp-bad{background:#FEE2E2 !important;color:#B91C1C;font-weight:700}
-  td.exp-warn{background:#FEF3C7 !important;color:#B45309;font-weight:700}
-  td.stale{background:#ffedd5 !important;color:#9a3412;font-weight:700}
-  td.of-ok{color:#1d4ed8;font-weight:700}
-  td.of-falta{color:#b91c1c;font-weight:700}
+  /* Todos los resaltados de la tabla usan los mismos tonos que la
+     columna Alerta, para que un rojo signifique siempre lo mismo. */
+  td.exp-bad{background:var(--bad-bg) !important;color:var(--bad);font-weight:700}
+  td.exp-warn{background:var(--warn-bg) !important;color:var(--warn);font-weight:700}
+  td.stale{background:var(--warn-bg) !important;color:var(--warn);font-weight:700}
+  td.of-ok{color:var(--ok);font-weight:700}
+  td.of-falta{color:var(--bad);font-weight:700}
   .na-btn{display:inline-block;margin-left:3px;padding:1px 5px;font-size:10px;font-weight:700;color:#475569;background:#e2e8f0;border-radius:4px;cursor:pointer}
   .na-btn:hover{background:#cbd5e1}
   .mx tbody tr.rowsel td.frz,.mx tbody tr:hover.rowsel td{background:#d3e9f8 !important}
@@ -178,9 +181,9 @@
   .stb .n{font-weight:800;opacity:.85;display:inline-block;min-width:24px;text-align:right}
   .stb:hover{border-color:#98a2ad}
   .stb.on{border-color:currentColor}
-  .stb.on[data-st="MOVILIZADO"]{background:#e8f0fe;color:#1d4ed8}
-  .stb.on[data-st="TRANS. MOV."],.stb.on[data-st="TRANS. DESM."]{background:#FEF3C7;color:#B45309}
-  .stb.on[data-st="DESMOVILIZ."]{background:#fce7f3;color:#be123c}
+  .stb.on[data-slug="MOVILIZADO"]{background:#e8f0fe;color:#1d4ed8}
+  .stb.on[data-slug="TRANSITO"]{background:var(--warn-bg);color:var(--warn)}
+  .stb.on[data-slug="DESMOVILIZ"]{background:#fce7f3;color:#be123c}
 
   /* separador entre zonas de la barra */
   .tb-sep{width:1px;height:22px;background:var(--line);display:inline-block;flex:0 0 1px;margin:0 2px}
@@ -334,6 +337,7 @@
   body.tema2 td[class*="st-"]::before{content:"";position:absolute;left:5px;top:50%;
     margin-top:-3px;width:6px;height:6px;border-radius:50%;background:#C2C7CC}
   body.tema2 td.st-MOVILIZADO::before{background:#2C7A3F}
+  body.tema2 td.st-POR-MOVIL::before,body.tema2 td.st-POR-DESMOV::before,
   body.tema2 td.st-TRANS-MOV::before,body.tema2 td.st-TRANS-DESM::before,
   body.tema2 td.st-TRANSITO::before,body.tema2 td.st-TRANSITO-MOV::before,
   body.tema2 td.st-TRANSITO-DESMOV::before{background:#A56A00}
@@ -372,9 +376,20 @@
   .pbrillo{display:flex;align-items:center;gap:8px;font-size:12.5px;padding:9px 0 4px;font-weight:600;color:#1f3864}
 
   /* ── Barras superiores del tema: dos franjas en vez de tres ── */
-  #topbar{display:contents}                       /* sin el tema, todo queda como estaba */
-  body.tema2 #topbar{display:flex;align-items:stretch;background:#1B2027;
-    border-bottom:2px solid var(--amber);padding:0 16px;padding-top:6px}
+  /* Las pestañas viven en la franja de la marca, centradas entre el título
+     y el indicador de guardado. La activa va en amarillo Caterpillar. */
+  #topbar{display:flex;align-items:stretch;background:var(--steel);
+          border-bottom:3px solid var(--amber);padding:6px 16px 0}
+  #topbar header{background:transparent;border:none;padding:0 16px 6px 0;flex:0 0 auto;align-items:center}
+  #topbar nav{background:transparent;border:none;padding:0;display:flex;align-items:flex-end;
+              gap:3px;flex:1;justify-content:center}
+  #topbar nav button{color:#B9C0C7;font-size:13px;font-weight:500;padding:0 16px;height:32px;
+    background:#2A323B;border:none;border-radius:9px 9px 0 0;margin-bottom:-3px;
+    border-bottom:3px solid transparent}
+  #topbar nav button:hover{background:#333C46;color:#EDF0F3}
+  #topbar nav button.on{background:var(--amber);color:#1A1200;font-weight:700;height:36px}
+  #topbar header .userbox{margin-left:auto}
+  body.tema2 #topbar{background:#1B2027;border-bottom:2px solid var(--amber)}
   body.tema2 #topbar header{background:transparent;border:none;padding:0 18px 0 0;flex:0 0 auto}
   body.tema2 #topbar header .userbox{display:none}       /* pasa al final de la franja */
   body.tema2 #topbar nav{background:transparent;border:none;padding:0;display:flex;align-items:stretch}
@@ -451,17 +466,15 @@
     display:inline-block;margin-right:8px;flex:0 0 auto}
   body.tema2 .stb:hover{border-color:#C3C8CD !important}
   /* Encendidos: degradado suave y el mismo tono, más vivo, en letra y borde */
-  body.tema2 .stb.on[data-st="MOVILIZADO"]{background:linear-gradient(180deg,#E4EEFC,#C9DCF6);
+  body.tema2 .stb.on[data-slug="MOVILIZADO"]{background:linear-gradient(180deg,#E4EEFC,#C9DCF6);
     color:#1B4A8C;border-color:#7FA9DD !important}
-  body.tema2 .stb.on[data-st="MOVILIZADO"]::before{background:#2F6FC2}
-  body.tema2 .stb.on[data-st="TRANS. MOV."],
-  body.tema2 .stb.on[data-st="TRANS. DESM."]{background:linear-gradient(180deg,#FCEFD5,#F7DFAE);
+  body.tema2 .stb.on[data-slug="MOVILIZADO"]::before{background:#2F6FC2}
+  body.tema2 .stb.on[data-slug="TRANSITO"]{background:linear-gradient(180deg,#FCEFD5,#F7DFAE);
     color:#8A5A06;border-color:#DDAF5C !important}
-  body.tema2 .stb.on[data-st="TRANS. MOV."]::before,
-  body.tema2 .stb.on[data-st="TRANS. DESM."]::before{background:#C1861D}
-  body.tema2 .stb.on[data-st="DESMOVILIZ."]{background:linear-gradient(180deg,#F6ECF1,#EBDAE3);
+  body.tema2 .stb.on[data-slug="TRANSITO"]::before{background:#C1861D}
+  body.tema2 .stb.on[data-slug="DESMOVILIZ"]{background:linear-gradient(180deg,#F6ECF1,#EBDAE3);
     color:#7A4257;border-color:#CBA5B6 !important}
-  body.tema2 .stb.on[data-st="DESMOVILIZ."]::before{background:#A65E7C}
+  body.tema2 .stb.on[data-slug="DESMOVILIZ"]::before{background:#A65E7C}
 
   /* avisos: color solo cuando hay algo pendiente */
   body.tema2 .toolbar .chip{height:34px;border-radius:9px;padding:0 13px;font-size:12.5px;
@@ -537,6 +550,27 @@
     font:inherit;font-size:12px;font-weight:600;cursor:pointer}
   #colPop .cp-f .ok{background:var(--amber);border-color:var(--amber);color:#1a1200}
   .mx thead .colnum{width:100%;border:1px solid #cfd6dd;border-radius:4px;padding:1px 4px;font-size:10px;height:17px;margin-top:2px}
+
+  /* ── Líneas divisorias de bloque ──
+     La primera columna de cada bloque lleva una línea vertical de su color,
+     más fina que las horizontales, desde la primera fila hasta la última. */
+  .mx td.ini-bloque{border-left:1px solid var(--lin,#cfd6dd)}
+  .mx th.ini-bloque{border-left:1px solid rgba(255,255,255,.55)}
+  .mx td.ini-tec {--lin:#0F243E}
+  .mx td.ini-mov {--lin:#006600}
+  .mx td.ini-des {--lin:#C00000}
+  .mx td.ini-prov{--lin:#0F243E}
+  .mx td.ini-doc {--lin:#595959}
+  .mx td.ini-act {--lin:#0F243E}
+  .mx td.ini-ult {--lin:#595959}
+  .mx td.ini-ctrl{--lin:#C00000}
+  .mx td.ini-com {--lin:#334155}
+  /* con el tema, los mismos colores en su versión pastel intensa */
+  body.tema2 .mx td.ini-tec,body.tema2 .mx td.ini-prov,body.tema2 .mx td.ini-act{--lin:#77A5D7}
+  body.tema2 .mx td.ini-mov{--lin:#81C9A1}
+  body.tema2 .mx td.ini-des,body.tema2 .mx td.ini-ctrl{--lin:#DC827C}
+  body.tema2 .mx td.ini-doc{--lin:#EFC24F}
+  body.tema2 .mx td.ini-ult,body.tema2 .mx td.ini-com{--lin:#9FA6AE}
   footer{padding:10px 16px;color:var(--muted);font-size:12px;text-align:center}
 
   /* admin */
@@ -625,8 +659,8 @@
       <button class="act primary" id="btnAdd">＋ Equipo</button>
       <i class="tb-sep"></i>
       <button class="act ghost ic" id="btnUndo" disabled title="Deshacer el último cambio (Ctrl+Z)">↶</button>
-      <button class="act ghost ic" id="btnAgrupar" title="Contraer todos los grupos de columnas">⊟</button>
-      <button class="act ghost ic" id="btnDesagrupar" title="Expandir todos los grupos de columnas">⊞</button>
+      <button class="act ghost ic" id="btnAgrupar" title="Contraer todos los grupos de columnas">→|←</button>
+      <button class="act ghost ic" id="btnDesagrupar" title="Expandir todos los grupos de columnas">←|→</button>
       <button class="act ghost ic" id="btnHoro" title="Cargar el reporte de consumo de combustible (actualiza horómetros y alimenta la pestaña Combustible)">⛽</button>
       <button class="act ghost ic" id="btnHoroSolo" title="Cargar solo horómetros y fechas (no afecta el reporte de combustible)">⏱</button>
       <button class="act ghost ic" id="btnFormatos" title="Descargar los formatos de ejemplo">📄</button>
@@ -657,8 +691,8 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
 /* ╔══ pega aquí tus DOS datos (los mismos de tu archivo actual) ══╗ */
-const SUPABASE_URL = "https://hklwvdhzltjsbfvlewbu.supabase.co";   // ← reemplaza
-const SUPABASE_KEY = "sb_publishable_NgDfyDHDI_KByR-qf35EpA_ZuKI5E0K";                 // ← reemplaza
+const SUPABASE_URL = "https://TU-PROYECTO.supabase.co";   // ← reemplaza
+const SUPABASE_KEY = "TU-PUBLISHABLE-KEY";                 // ← reemplaza
 /* ──────────────────────────────────────────────────────────────── */
 const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 try{localStorage.setItem('gllr_sbcfg',JSON.stringify({url:SUPABASE_URL,key:SUPABASE_KEY}));}catch(_){}
@@ -922,7 +956,10 @@ function puedePagina(k){
 }
 function stSlug(s){return String(s||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'')
   .toUpperCase().replace(/[^A-Z0-9]+/g,'-').replace(/^-+|-+$/g,'');}
-const ESTADOS=["MOVILIZADO","TRANS. MOV.","TRANS. DESM.","DESMOVILIZ."];
+/* Nombres de los estados. "Por movil." y "Por desmov." reemplazan a los
+   antiguos TRANS. MOV. y TRANS. DESM.: dicen que el equipo está declarado
+   para entrar o salir de la obra, y caben en 11 caracteres. */
+const ESTADOS=["Movilizado","Por movil.","Por desmov.","Desmoviliz."];
 /* ¿está fuera de obra? "TRANS. DESM." NO cuenta: sigue en obra, solo en tránsito de salida */
 function esDesmov(s){return /^DESMOVILIZ/.test(stSlug(s));}
 /* los dos tránsitos se ordenan junto a los movilizados; se conservan los nombres antiguos */
@@ -930,11 +967,14 @@ function esDesmov(s){return /^DESMOVILIZ/.test(stSlug(s));}
    (MOVILIZADO, TRANS. MOV. y TRANS. DESM.); DESMOVILIZ. va al final. */
 /* Los dos tránsitos comparten un solo botón en la barra de filtros:
    la columna sigue distinguiendo el sentido, pero al filtrar van juntos. */
-const ST_TRANSITO=['TRANS. MOV.','TRANS. DESM.'];
-const ST_RANK={MOVILIZADO:1,
+const ST_TRANSITO=['Por movil.','Por desmov.'];
+/* El rango acepta los nombres nuevos y los antiguos, por si queda algún
+   equipo sin migrar. Los tres primeros ocupan el mismo nivel de orden. */
+const ST_RANK={MOVILIZADO:1,'Movilizado':1,
+               'Por movil.':1,'Por desmov.':1,
                'TRANS. MOV.':1,'TRÁNS. MOV.':1,'TRANSITO MOV.':1,TRANSITO:1,
                'TRANS. DESM.':1,'TRÁNS. DESM.':1,'TRANSITO DESMOV.':1,
-               'DESMOVILIZ.':2,DESMOVILIZADO:2};
+               'DESMOVILIZ.':2,DESMOVILIZADO:2,'Desmoviliz.':2};
 const collapsed={tec:true,mov:true,des:true,prov:true,doc:true}, colFilters={};
 let colOrden=null;      // {k, dir} · orden por columna desde su título
 let selId=null, selIds=new Set(), undoStack=[];
@@ -1094,16 +1134,18 @@ function buildHead(){
       b2+=`<th style="background:${g.hcol}">·</th>`;
     }else{
       b1+=`<th class="bands" data-collapse="${g.key}" data-g="${g.key}" colspan="${g.cols.length}" style="background:${g.color}"><span class="bnd">${g.lab} －</span></th>`;
-      for(const [k,lab,tipo] of g.cols){
+      g.cols.forEach(([k,lab,tipo],ci)=>{
         const filtrable = tipo!=='c' || FCALC.includes(k);
-        b2+=`<th style="background:${g.hcol}">${cabCol(k,lab,filtrable)}</th>`;
-      }
+        b2+=`<th class="${ci===0?'ini-bloque':''}" style="background:${g.hcol}">${cabCol(k,lab,filtrable)}</th>`;
+      });
     }
   }
   thead.innerHTML=b1+'</tr>'+b2+'</tr>';
 }
 function famNum(e){const m=String(e.familia||'').match(/\d+/);return m?+m[0]:99;}
 const TIPOS_CTR={n:1,pct:1,d:1,de:1,cont:1};
+/* Primera columna de cada bloque: lleva la línea divisoria de su color */
+const COL_INI=(()=>{const m={};GROUPS.forEach(g=>{if(g.cols[0])m[g.cols[0][0]]=g.key;});return m;})();
 function cellCls(e,k,type,isFrz){
   let cls=isFrz?'frz cell':'cell';
   if(TIPOS_CTR[type])cls+=' ctr';
@@ -1114,6 +1156,7 @@ function cellCls(e,k,type,isFrz){
   if(k==='fecha_lectura'&&staleLectura(e[k]))cls+=' stale';
   if(k==='hrkm_ult_mntto'||k==='fecha_ult_mntto'||k==='frecuencia')cls+=' ult';
   if(k==='contador'&&e.contador)cls+=' cont-'+e.contador;
+  if(COL_INI[k])cls+=' ini-bloque ini-'+COL_INI[k];
   return cls;
 }
 /* Orden de la tabla. Se aplica solo cada vez que entra, sale o cambia una fila. */
@@ -1293,24 +1336,24 @@ function stEnLista(s){                                      // ¿a qué botón p
 function pintarStBar(){
   const cuenta={}; datos.forEach(e=>{
     const g=stSlug(e.status);
-    const k = g==='MOVILIZADO'?'MOVILIZADO'
-            : /^DESMOVILIZ/.test(g)?'DESMOVILIZ.'
-            : (g==='TRANS-DESM'||g==='TRANSITO-DESMOV')?'TRANS. DESM.'
-            : (g==='TRANS-MOV'||g==='TRANSITO-MOV'||g==='TRANSITO')?'TRANS. MOV.' : null;
+    const k = /^MOVILIZ/.test(g)?'Movilizado'
+            : /^DESMOVILIZ/.test(g)?'Desmoviliz.'
+            : (g==='POR-DESMOV'||g==='TRANS-DESM'||g==='TRANSITO-DESMOV')?'Por desmov.'
+            : (g==='POR-MOVIL'||g==='TRANS-MOV'||g==='TRANSITO-MOV'||g==='TRANSITO')?'Por movil.' : null;
     if(k)cuenta[k]=(cuenta[k]||0)+1;
   });
   // los dos tránsitos se muestran como un solo botón
   const BOTONES=[
-    {st:'MOVILIZADO',   lab:'Movilizado',   n:cuenta['MOVILIZADO']||0},
-    {st:ST_TRANSITO.join('|'), lab:'En tránsito',
-     n:(cuenta['TRANS. MOV.']||0)+(cuenta['TRANS. DESM.']||0),
-     tit:`${cuenta['TRANS. MOV.']||0} por movilizar · ${cuenta['TRANS. DESM.']||0} por desmovilizar`},
-    {st:'DESMOVILIZ.',  lab:'Desmovilizado',n:cuenta['DESMOVILIZ.']||0}
+    {st:'Movilizado', lab:'Movilizado', n:cuenta['Movilizado']||0, slug:'MOVILIZADO'},
+    {st:ST_TRANSITO.join('|'), lab:'En tránsito', slug:'TRANSITO',
+     n:(cuenta['Por movil.']||0)+(cuenta['Por desmov.']||0),
+     tit:`${cuenta['Por movil.']||0} por movilizar · ${cuenta['Por desmov.']||0} por desmovilizar`},
+    {st:'Desmoviliz.', lab:'Desmovilizado', n:cuenta['Desmoviliz.']||0, slug:'DESMOVILIZ'}
   ];
   stBar.innerHTML=BOTONES.map(b=>{
     const partes=b.st.split('|');
     const on=partes.some(s=>stSel.has(s));
-    return `<button class="stb${on?' on':''}" data-st="${esc(b.st)}"`
+    return `<button class="stb${on?' on':''}" data-st="${esc(b.st)}" data-slug="${b.slug}"`
       +` title="${esc(b.tit||'')}${b.tit?' · ':''}${on?'Se está mostrando · clic para ocultar':'Oculto · clic para mostrar'}">`
       +`${b.lab} <span class="n">${b.n}</span></button>`;}).join('');
 }
@@ -2551,8 +2594,9 @@ const DD_VISTA =[['btnTema','Cambiar el aspecto'],['btnPaleta','Colores de los e
 const SVG={
   btnUndo:'<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M7 8H12.5a4 4 0 0 1 0 8H8"/><path d="M10 5 7 8l3 3"/></svg>',
   btnRefresh:'<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M16.5 8A6.6 6.6 0 0 0 4.6 6.6"/><path d="M3.5 12A6.6 6.6 0 0 0 15.4 13.4"/><path d="M4.2 3.4v3.2h3.2M15.8 16.6v-3.2h-3.2"/></svg>',
-  btnAgrupar:'<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4v12M16 4v12"/><path d="M7.5 10h5"/><path d="M9.8 7.7 7.5 10l2.3 2.3M10.2 7.7 12.5 10l-2.3 2.3"/></svg>',
-  btnDesagrupar:'<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4v12M16 4v12"/><path d="M6.6 10h6.8"/><path d="M8.9 7.7 6.6 10l2.3 2.3M11.1 7.7 13.4 10l-2.3 2.3"/></svg>'
+  /* contraer: las flechas apuntan hacia adentro · expandir: hacia afuera */
+  btnAgrupar:'<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M3.5 4v12M16.5 4v12"/><path d="M6 10h3.2M10.8 10H14"/><path d="M7.6 7.8 9.2 10l-1.6 2.2M12.4 7.8 10.8 10l1.6 2.2"/></svg>',
+  btnDesagrupar:'<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M3.5 4v12M16.5 4v12"/><path d="M5.6 10h3.4M11 10h3.4"/><path d="M7.2 7.8 5.6 10l1.6 2.2M12.8 7.8 14.4 10l-1.6 2.2"/></svg>'
 };
 /* Se aplican solo con el tema activo, y se devuelven al apagarlo */
 const _iconoAntes=new Map();
