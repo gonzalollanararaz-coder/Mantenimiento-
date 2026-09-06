@@ -115,8 +115,9 @@
   .pill.bad{background:var(--bad-bg);color:var(--bad)}.pill.na{background:var(--gray-bg);color:var(--gray)}
   /* ── Columna Status ──
      Sin fondo: el texto va en el color del estado, con un punto delante.
-     Así el único bloque de color de la fila vuelve a ser la alerta. */
-  td[class*="st-"]{background:transparent !important;font-weight:700;
+     Sin negrita (opción E): el punto ya marca el estado, así el texto
+     pesa menos y no compite con la columna Alerta. */
+  td[class*="st-"]{background:transparent !important;font-weight:400;
     display:flex;align-items:center;gap:7px}
   td[class*="st-"]::before{content:"";width:9px;height:9px;border-radius:50%;
     flex:0 0 auto;background:currentColor}
