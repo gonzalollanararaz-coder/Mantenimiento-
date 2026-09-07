@@ -97,7 +97,7 @@
   .mx thead .colf{width:100%;border:1px solid #cfd6dd;border-radius:4px;padding:1px 4px;font-size:10px;height:17px;background:#fff;color:#1a1d21;outline:none}
   .mx thead .colf:focus{border-color:var(--amber);box-shadow:0 0 0 2px rgba(255,205,17,.45)}
   .mx tbody td{padding:0;height:22px}
-  .mx tbody tr{content-visibility:auto;contain-intrinsic-size:auto 22px}
+  .mx tbody tr{}
   .mx tbody td.idx{padding:0 4px;text-align:center;color:var(--muted);font-family:"SF Mono",monospace;background:#f8fafc;font-size:10px}
   .mx td input,.mx td select{width:100%;border:none;background:transparent;font:inherit;color:var(--ink);padding:1px 5px;outline:none;min-width:60px}
   .mx td.n input{text-align:right;font-family:"SF Mono",ui-monospace,monospace}
@@ -686,7 +686,7 @@
       <button class="act ghost ic" id="btnExcel" title="Descargar en Excel">⬇</button>
       <button class="act ghost ic" id="btnRefresh" title="Volver a cargar los datos">↻</button>
     </div>
-    <div class="wrap"><table class="mx"><thead id="thead"></thead><tbody id="cuerpo"></tbody></table></div>
+    <div class="wrap"><table class="mx"><colgroup id="colFrz"></colgroup><thead id="thead"></thead><tbody id="cuerpo"></tbody></table></div>
   </section>
 
   <section id="paneUsers" class="hide">
@@ -1127,6 +1127,10 @@ function estilosFrozen(){
   let el=document.getElementById('cssFrozen');
   if(!el){el=document.createElement('style');el.id='cssFrozen';document.head.appendChild(el);}
   if(el.textContent!==css)el.textContent=css;
+  // <colgroup>: ancho fijo real de columna, el navegador no lo recalcula por
+  // contenido ni por qué filas estén a la vista (a diferencia del width en td).
+  const cg=document.getElementById('colFrz');
+  if(cg)cg.innerHTML=FROZEN.map(f=>`<col style="width:${fw(f)}px">`).join('');
 }
 function buildHead(){
   const totW=FROZEN.reduce((a,f)=>a+fw(f),0), semHoy=isoWeek(hoy0());
