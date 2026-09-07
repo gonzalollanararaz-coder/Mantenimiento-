@@ -196,12 +196,13 @@
   .stb.on{border-color:currentColor}
   .stb.on[data-slug="MOVILIZADO"]{background:#e8f0fe;color:#1d4ed8}
   .stb.on[data-slug="TRANSITO"]{background:var(--warn-bg);color:var(--warn)}
-  .stb.on[data-slug="DESMOVILIZ"]{background:#fce7f3;color:#be123c}
+  .stb.on[data-slug="DESMOVILIZ"]{background:var(--bad-bg);color:var(--bad)}
 
   /* separador entre zonas de la barra */
   .tb-sep{width:1px;height:22px;background:var(--line);display:inline-block;flex:0 0 1px;margin:0 2px}
   /* botones solo con icono */
   .toolbar .act.ic{width:26px;padding:0;font-size:13px;display:inline-flex;align-items:center;justify-content:center}
+  .toolbar .act.ic svg{width:15px;height:15px;display:block}
 
   /* panel de carga de horómetros */
   #horWrap{position:fixed;inset:0;background:rgba(15,20,26,.55);z-index:9997;display:flex;align-items:flex-start;justify-content:center;padding:18px;overflow:auto}
@@ -397,7 +398,7 @@
   #topbar nav{background:transparent;border:none;padding:0;display:flex;align-items:flex-end;
               gap:3px;flex:1;justify-content:center}
   #topbar nav button{color:#B9C0C7;font-size:13px;font-weight:500;padding:0 16px;height:32px;
-    background:#2A323B;border:none;border-radius:9px 9px 0 0;margin-bottom:-3px;
+    background:#2A323B;border:none;border-radius:9px 9px 0 0;margin-bottom:-2px;
     border-bottom:3px solid transparent}
   #topbar nav button:hover{background:#333C46;color:#EDF0F3}
   #topbar nav button.on{background:var(--amber);color:#1A1200;font-weight:700;height:36px}
@@ -485,9 +486,9 @@
   body.tema2 .stb.on[data-slug="TRANSITO"]{background:linear-gradient(180deg,#FCEFD5,#F7DFAE);
     color:#8A5A06;border-color:#DDAF5C !important}
   body.tema2 .stb.on[data-slug="TRANSITO"]::before{background:#C1861D}
-  body.tema2 .stb.on[data-slug="DESMOVILIZ"]{background:linear-gradient(180deg,#F6ECF1,#EBDAE3);
-    color:#7A4257;border-color:#CBA5B6 !important}
-  body.tema2 .stb.on[data-slug="DESMOVILIZ"]::before{background:#A65E7C}
+  body.tema2 .stb.on[data-slug="DESMOVILIZ"]{background:linear-gradient(180deg,#FBE6E6,#F5CFCF);
+    color:#8E2020;border-color:#DFA0A0 !important}
+  body.tema2 .stb.on[data-slug="DESMOVILIZ"]::before{background:#B93A3A}
 
   /* avisos: color solo cuando hay algo pendiente */
   body.tema2 .toolbar .chip{height:34px;border-radius:9px;padding:0 13px;font-size:12.5px;
@@ -672,8 +673,8 @@
       <button class="act primary" id="btnAdd">＋ Equipo</button>
       <i class="tb-sep"></i>
       <button class="act ghost ic" id="btnUndo" disabled title="Deshacer el último cambio (Ctrl+Z)">↶</button>
-      <button class="act ghost ic" id="btnAgrupar" title="Contraer todos los grupos de columnas">→|←</button>
-      <button class="act ghost ic" id="btnDesagrupar" title="Expandir todos los grupos de columnas">←|→</button>
+      <button class="act ghost ic" id="btnAgrupar" title="Contraer todos los grupos de columnas"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M3.5 4v12M16.5 4v12"/><path d="M6 10h3.2M10.8 10H14"/><path d="M7.6 7.8 9.2 10l-1.6 2.2M12.4 7.8 10.8 10l1.6 2.2"/></svg></button>
+      <button class="act ghost ic" id="btnDesagrupar" title="Expandir todos los grupos de columnas"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M3.5 4v12M16.5 4v12"/><path d="M5.6 10h3.4M11 10h3.4"/><path d="M7.2 7.8 5.6 10l1.6 2.2M12.8 7.8 14.4 10l-1.6 2.2"/></svg></button>
       <button class="act ghost ic" id="btnHoro" title="Cargar el reporte de consumo de combustible (actualiza horómetros y alimenta la pestaña Combustible)">⛽</button>
       <button class="act ghost ic" id="btnHoroSolo" title="Cargar solo horómetros y fechas (no afecta el reporte de combustible)">⏱</button>
       <button class="act ghost ic" id="btnFormatos" title="Descargar los formatos de ejemplo">📄</button>
