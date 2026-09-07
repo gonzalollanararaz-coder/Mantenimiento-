@@ -288,49 +288,55 @@
   body.tema2 nav button{font-size:13.5px;color:var(--humo);border-bottom-width:2px}
   body.tema2 nav button.on{color:var(--tinta);font-weight:600;border-bottom-color:#1B2027}
 
-  /* barra de herramientas: menos peso, más aire */
-  body.tema2 .toolbar{background:#fff;border-bottom:1px solid var(--linea);height:46px}
-  body.tema2 .toolbar input,body.tema2 .toolbar select{border:1px solid var(--linea);
+  /* ── Filas 1 y 2 fusionadas de forma permanente con la vista 2 ──
+     Pestañas y barra de herramientas ya no dependen del botón ◐: el
+     ◐ solo alterna el resto (colores de fila, encabezados de columna,
+     tipografía). Por eso estas reglas ya no llevan el prefijo body.tema2. */
+  .toolbar{background:#fff;border-bottom:1px solid var(--linea, #E4E6E9);height:46px}
+  .toolbar input,.toolbar select{border:1px solid var(--linea, #E4E6E9);
     border-radius:9px;height:28px;font-size:12.5px;background:#fff}
-  body.tema2 .act{border:1px solid var(--linea);background:#fff;border-radius:9px;
-    height:28px;font-weight:500;font-size:12.5px;color:var(--tinta)}
-  body.tema2 .act:hover{border-color:#C9CDD2;filter:none}
-  body.tema2 .act.primary{background:var(--amber);border-color:var(--amber);
+  .act{border:1px solid var(--linea, #E4E6E9);background:#fff;border-radius:9px;
+    height:28px;font-weight:500;font-size:12.5px;color:var(--tinta, #16191D)}
+  .act:hover{border-color:#C9CDD2;filter:none}
+  .act.primary{background:var(--amber);border-color:var(--amber);
     color:#1A1200;font-weight:600}
-  body.tema2 .act.ghost{background:#fff;color:var(--humo)}
-  body.tema2 .chip{border:1px solid var(--linea);background:#fff;color:var(--humo);
+  .act.ghost{background:#fff;color:var(--humo, #6E757C)}
+  .chip{border:1px solid var(--linea, #E4E6E9);background:#fff;color:var(--humo, #6E757C);
     border-radius:999px;font-weight:500}
-  body.tema2 .chip.on{border-color:#1B2027;color:var(--tinta);background:#F4F5F6}
+  .chip.on{border-color:#1B2027;color:var(--tinta, #16191D);background:#F4F5F6}
 
-  /* encabezados de la tabla: el azul marino sale, entra gris claro */
-  body.tema2 table.mx{font-size:11.5px}
-  /* Cada bloque de columnas lleva su cuadro de color. Los tonos salen de
-     las variables de más abajo, que el panel 🎨 puede reescribir. */
-  body.tema2 .mx thead tr.bands th,
-  body.tema2 .mx thead tr.bands th.frz{background:#fff !important;color:inherit !important;
+  /* ── Fila 3: encabezados agrupados, fusionada igual ──
+     El azul marino de fondo sale, entra el bloque de color pastel por
+     grupo (independiente del ◐). Los tonos salen de las variables de
+     más abajo, que el panel 🎨 puede reescribir siempre. */
+  .mx thead tr.bands th,
+  .mx thead tr.bands th.frz{background:#fff !important;color:inherit !important;
     padding:3px 3px 4px !important;height:auto;border:none !important;
     border-bottom:1px solid #E4E6E9 !important}
-  body.tema2 .mx thead .bnd{display:block;border-radius:6px;padding:4px 8px;text-align:center;
+  .mx thead .bnd{display:block;border-radius:6px;padding:4px 8px;text-align:center;
     font-size:10px;font-weight:700;letter-spacing:.02em;line-height:1.15;
     position:relative;overflow:hidden;
     background:var(--gc,#E7ECF1);color:var(--gt,#2B3742);
     border:1px solid var(--gb,#D8E0E7);box-shadow:inset 0 1px 0 rgba(255,255,255,.85)}
-  body.tema2 .mx thead .bnd::after{content:"";position:absolute;inset:1px 1px 46% 1px;
+  .mx thead .bnd::after{content:"";position:absolute;inset:1px 1px 46% 1px;
     border-radius:5px 5px 9px 9px;pointer-events:none;
     background:linear-gradient(180deg,rgba(255,255,255,.72),rgba(255,255,255,.12))}
-  body.tema2.sinbrillo .mx thead .bnd::after{display:none}
-  body.tema2.sinbrillo .mx thead .bnd{box-shadow:none;font-weight:600;background:var(--gc2,var(--gc))}
+  body.sinbrillo .mx thead .bnd::after{display:none}
+  body.sinbrillo .mx thead .bnd{box-shadow:none;font-weight:600;background:var(--gc2,var(--gc))}
   /* paleta por bloque */
-  body.tema2 [data-g="ident"] .bnd{--gc:linear-gradient(180deg,#BFD4EE,#8FB3DE);--gc2:#DCE7F6;--gt:#1B3357;--gb:#7FA5D4}
-  body.tema2 [data-g="tec"]   .bnd{--gc:linear-gradient(180deg,#CBC3E8,#A69AD6);--gc2:#E3DEF4;--gt:#332A5C;--gb:#9A8DCE}
-  body.tema2 [data-g="mov"]   .bnd{--gc:linear-gradient(180deg,#BFE3D0,#8FCBAE);--gc2:#DCF0E5;--gt:#1E4634;--gb:#80BFA0}
-  body.tema2 [data-g="des"]   .bnd{--gc:linear-gradient(180deg,#D4DCE4,#B0BCC8);--gc2:#E7ECF1;--gt:#2B3742;--gb:#A2AFBC}
-  body.tema2 [data-g="prov"]  .bnd{--gc:linear-gradient(180deg,#E8D7C3,#CFB392);--gc2:#F2E7DA;--gt:#4A3521;--gb:#C4A681}
-  body.tema2 [data-g="doc"]   .bnd{--gc:linear-gradient(180deg,#F6D9B0,#EBBC83);--gc2:#FAEBD6;--gt:#5C3B12;--gb:#DFAE73}
-  body.tema2 [data-g="act"]   .bnd{--gc:linear-gradient(180deg,#FBE7A8,#F2D274);--gc2:#FDF3D2;--gt:#5A4410;--gb:#E5C463}
-  body.tema2 [data-g="ult"]   .bnd{--gc:linear-gradient(180deg,#D8E3B8,#BCCD8B);--gc2:#EAF0DA;--gt:#3B4718;--gb:#ADC079}
-  body.tema2 [data-g="ctrl"]  .bnd{--gc:linear-gradient(180deg,#F5C9C6,#E79E9A);--gc2:#FBE4E2;--gt:#5E2320;--gb:#DB8F8B}
-  body.tema2 [data-g="com"]   .bnd{--gc:linear-gradient(180deg,#D4DCE4,#B0BCC8);--gc2:#E7ECF1;--gt:#2B3742;--gb:#A2AFBC}
+  [data-g="ident"] .bnd{--gc:linear-gradient(180deg,#BFD4EE,#8FB3DE);--gc2:#DCE7F6;--gt:#1B3357;--gb:#7FA5D4}
+  [data-g="tec"]   .bnd{--gc:linear-gradient(180deg,#CBC3E8,#A69AD6);--gc2:#E3DEF4;--gt:#332A5C;--gb:#9A8DCE}
+  [data-g="mov"]   .bnd{--gc:linear-gradient(180deg,#BFE3D0,#8FCBAE);--gc2:#DCF0E5;--gt:#1E4634;--gb:#80BFA0}
+  [data-g="des"]   .bnd{--gc:linear-gradient(180deg,#D4DCE4,#B0BCC8);--gc2:#E7ECF1;--gt:#2B3742;--gb:#A2AFBC}
+  [data-g="prov"]  .bnd{--gc:linear-gradient(180deg,#E8D7C3,#CFB392);--gc2:#F2E7DA;--gt:#4A3521;--gb:#C4A681}
+  [data-g="doc"]   .bnd{--gc:linear-gradient(180deg,#F6D9B0,#EBBC83);--gc2:#FAEBD6;--gt:#5C3B12;--gb:#DFAE73}
+  [data-g="act"]   .bnd{--gc:linear-gradient(180deg,#FBE7A8,#F2D274);--gc2:#FDF3D2;--gt:#5A4410;--gb:#E5C463}
+  [data-g="ult"]   .bnd{--gc:linear-gradient(180deg,#D8E3B8,#BCCD8B);--gc2:#EAF0DA;--gt:#3B4718;--gb:#ADC079}
+  [data-g="ctrl"]  .bnd{--gc:linear-gradient(180deg,#F5C9C6,#E79E9A);--gc2:#FBE4E2;--gt:#5E2320;--gb:#DB8F8B}
+  [data-g="com"]   .bnd{--gc:linear-gradient(180deg,#D4DCE4,#B0BCC8);--gc2:#E7ECF1;--gt:#2B3742;--gb:#A2AFBC}
+
+  /* encabezados de la tabla: el azul marino sale, entra gris claro */
+  body.tema2 table.mx{font-size:11.5px}
   body.tema2 .mx thead tr.cols th{background:#F6F7F8 !important;color:#6E757C !important;
     font-weight:600;font-size:10.5px;
     border-right-width:1px !important;border-right-style:solid !important;border-right-color:#E9EAEC !important;
@@ -403,40 +409,41 @@
   #topbar nav button:hover{background:#333C46;color:#EDF0F3}
   #topbar nav button.on{background:var(--amber);color:#1A1200;font-weight:700;height:36px}
   #topbar header .userbox{margin-left:auto}
-  body.tema2 #topbar{background:#1B2027;border-bottom:2px solid var(--amber)}
-  body.tema2 #topbar header{background:transparent;border:none;padding:0 18px 0 0;flex:0 0 auto}
-  body.tema2 #topbar header .userbox{display:none}       /* pasa al final de la franja */
-  body.tema2 #topbar nav{background:transparent;border:none;padding:0;display:flex;align-items:stretch}
+  /* ── Fila 1 fusionada: topbar + pestañas permanentes con la vista 2 ── */
+  #topbar{background:#1B2027;border-bottom:2px solid var(--amber)}
+  #topbar header{background:transparent;border:none;padding:0 18px 0 0;flex:0 0 auto}
+  #topbar header .userbox{display:none}       /* pasa al final de la franja */
+  #topbar nav{background:transparent;border:none;padding:0;display:flex;align-items:stretch}
   /* Pestañas al estilo del navegador: la activa se despega del fondo oscuro
      y se une con la barra blanca de abajo. */
-  body.tema2 #topbar nav{align-items:flex-end;gap:3px;padding-bottom:0}
-  body.tema2 #topbar nav button{color:#9BA3AB;font-size:13px;font-weight:500;padding:0 17px;
+  #topbar nav{align-items:flex-end;gap:3px;padding-bottom:0}
+  #topbar nav button{color:#9BA3AB;font-size:13px;font-weight:500;padding:0 17px;
     height:34px;align-self:flex-end;border:none;
     border-top-left-radius:9px;border-top-right-radius:9px;
     border-bottom-left-radius:0;border-bottom-right-radius:0;
     background:#232A33;margin-bottom:-2px;position:relative;transition:background .12s}
-  body.tema2 #topbar nav button:hover{color:#E2E6EA;background:#2B333D}
-  body.tema2 #topbar nav button.on{background:#fff;color:#16191D;font-weight:600;height:38px;
+  #topbar nav button:hover{color:#E2E6EA;background:#2B333D}
+  #topbar nav button.on{background:#fff;color:#16191D;font-weight:600;height:38px;
     box-shadow:0 -1px 0 rgba(0,0,0,.06)}
-  body.tema2 #topbar nav button.on::before,
-  body.tema2 #topbar nav button.on::after{content:"";position:absolute;bottom:0;width:9px;height:9px;
+  #topbar nav button.on::before,
+  #topbar nav button.on::after{content:"";position:absolute;bottom:0;width:9px;height:9px;
     background:#fff;pointer-events:none}
-  body.tema2 #topbar nav button.on::before{left:-9px;
+  #topbar nav button.on::before{left:-9px;
     -webkit-mask:radial-gradient(circle at 0 0,transparent 9px,#000 9.5px);
     mask:radial-gradient(circle at 0 0,transparent 9px,#000 9.5px)}
-  body.tema2 #topbar nav button.on::after{right:-9px;
+  #topbar nav button.on::after{right:-9px;
     -webkit-mask:radial-gradient(circle at 100% 0,transparent 9px,#000 9.5px);
     mask:radial-gradient(circle at 100% 0,transparent 9px,#000 9.5px)}
-  body.tema2 #topbar .brand h1{font-size:14.5px;font-weight:600;letter-spacing:-.01em}
-  body.tema2 #topbar .brand p{font-size:10px;color:#8E959C;letter-spacing:.05em}
-  body.tema2 #topbar .sp2{flex:1}
+  #topbar .brand h1{font-size:14.5px;font-weight:600;letter-spacing:-.01em}
+  #topbar .brand p{font-size:10px;color:#8E959C;letter-spacing:.05em}
+  #topbar .sp2{flex:1}
   /* la sesión pasa a un menú bajo el nombre */
-  body.tema2 #userTop{display:flex;align-items:center;gap:9px;padding-left:16px;position:relative;cursor:pointer}
-  body.tema2 #userTop .av{width:28px;height:28px;border-radius:50%;background:#2E3742;color:#D6DBE0;
+  #userTop{display:flex;align-items:center;gap:9px;padding-left:16px;position:relative;cursor:pointer}
+  #userTop .av{width:28px;height:28px;border-radius:50%;background:#2E3742;color:#D6DBE0;
     display:grid;place-items:center;font-size:11.5px;font-weight:600}
-  body.tema2 #userTop .nb{font-size:12.5px;color:#D6DBE0;white-space:nowrap}
-  body.tema2 #userTop .cr{color:#6E757C;font-size:10px}
-  body.tema2 #userTop .off-chip{font-size:11px}
+  #userTop .nb{font-size:12.5px;color:#D6DBE0;white-space:nowrap}
+  #userTop .cr{color:#6E757C;font-size:10px}
+  #userTop .off-chip{font-size:11px}
   #userTop{display:none}
 
   /* menú desplegable, compartido */
@@ -456,69 +463,69 @@
   .dd-m .act .lab{flex:1}
   .dd-sep{height:1px;background:#EDEEF0;margin:5px 0}
 
-  /* ── Barra de trabajo ── */
-  body.tema2 .toolbar{height:auto;padding:9px 16px;gap:12px;position:relative;z-index:60}
-  body.tema2 .dd{position:static}
-  body.tema2 .dd-m{position:fixed;top:auto;right:auto}
-  body.tema2 .toolbar #buscar{width:250px;padding:8px 12px;height:34px;border-radius:9px}
-  body.tema2 .tb-sep{background:#E9EAEC;height:22px}
-  body.tema2 .toolbar .act{height:34px}
-  body.tema2 .toolbar .act.ic{width:34px;padding:0}
+  /* ── Barra de trabajo (fila 2), permanente ── */
+  .toolbar{height:auto;padding:9px 16px;gap:12px;position:relative;z-index:60}
+  .dd{position:static}
+  .dd-m{position:fixed;top:auto;right:auto}
+  .toolbar #buscar{width:250px;padding:8px 12px;height:34px;border-radius:9px}
+  .tb-sep{background:#E9EAEC;height:22px}
+  .toolbar .act{height:34px}
+  .toolbar .act.ic{width:34px;padding:0}
 
   /* estados: un solo bloque segmentado, en pastel del color actual */
   /* Filtros de status: botones separados. En todos, la letra y el borde
      son el mismo color del fondo pero en un tono más oscuro. */
-  body.tema2 .stbar{gap:7px;height:34px;border:none;overflow:visible}
-  body.tema2 .stb{border:1px solid #E0E3E6 !important;border-radius:9px;height:32px;
+  .stbar{gap:7px;height:34px;border:none;overflow:visible}
+  .stb{border:1px solid #E0E3E6 !important;border-radius:9px;height:32px;
     width:auto !important;min-width:0;padding:0 11px;font-weight:500;font-size:11.5px;
     letter-spacing:0;color:#9AA0A6;background:#FBFBFB;text-transform:lowercase;
     display:inline-flex;align-items:center;white-space:nowrap;overflow:visible}
-  body.tema2 .stb::first-letter{text-transform:uppercase}
-  body.tema2 .stb .n{font-weight:700;color:inherit;min-width:0 !important;margin-left:7px;
+  .stb::first-letter{text-transform:uppercase}
+  .stb .n{font-weight:700;color:inherit;min-width:0 !important;margin-left:7px;
     font-variant-numeric:tabular-nums;text-transform:none}
-  body.tema2 .stb::before{content:"";width:6px;height:6px;border-radius:50%;background:#CBD0D5;
+  .stb::before{content:"";width:6px;height:6px;border-radius:50%;background:#CBD0D5;
     display:inline-block;margin-right:8px;flex:0 0 auto}
-  body.tema2 .stb:hover{border-color:#C3C8CD !important}
+  .stb:hover{border-color:#C3C8CD !important}
   /* Encendidos: degradado suave y el mismo tono, más vivo, en letra y borde */
-  body.tema2 .stb.on[data-slug="MOVILIZADO"]{background:linear-gradient(180deg,#E4EEFC,#C9DCF6);
+  .stb.on[data-slug="MOVILIZADO"]{background:linear-gradient(180deg,#E4EEFC,#C9DCF6);
     color:#1B4A8C;border-color:#7FA9DD !important}
-  body.tema2 .stb.on[data-slug="MOVILIZADO"]::before{background:#2F6FC2}
-  body.tema2 .stb.on[data-slug="TRANSITO"]{background:linear-gradient(180deg,#FCEFD5,#F7DFAE);
+  .stb.on[data-slug="MOVILIZADO"]::before{background:#2F6FC2}
+  .stb.on[data-slug="TRANSITO"]{background:linear-gradient(180deg,#FCEFD5,#F7DFAE);
     color:#8A5A06;border-color:#DDAF5C !important}
-  body.tema2 .stb.on[data-slug="TRANSITO"]::before{background:#C1861D}
-  body.tema2 .stb.on[data-slug="DESMOVILIZ"]{background:linear-gradient(180deg,#FBE6E6,#F5CFCF);
+  .stb.on[data-slug="TRANSITO"]::before{background:#C1861D}
+  .stb.on[data-slug="DESMOVILIZ"]{background:linear-gradient(180deg,#FBE6E6,#F5CFCF);
     color:#8E2020;border-color:#DFA0A0 !important}
-  body.tema2 .stb.on[data-slug="DESMOVILIZ"]::before{background:#B93A3A}
+  .stb.on[data-slug="DESMOVILIZ"]::before{background:#B93A3A}
 
   /* avisos: color solo cuando hay algo pendiente */
-  body.tema2 .toolbar .chip{height:34px;border-radius:9px;padding:0 13px;font-size:12.5px;
+  .toolbar .chip{height:34px;border-radius:9px;padding:0 13px;font-size:12.5px;
     line-height:32px;font-weight:500;background:#FBFBFB;border:1px solid #E0E3E6;color:#9AA0A6}
-  body.tema2 .chip .dot{width:6px;height:6px;background:#CBD0D5}
-  body.tema2 .chip b{color:inherit;font-weight:600;margin-left:2px}
-  body.tema2 .chip.hay-bad{background:linear-gradient(180deg,#FBE6E6,#F5CFCF);
+  .chip .dot{width:6px;height:6px;background:#CBD0D5}
+  .chip b{color:inherit;font-weight:600;margin-left:2px}
+  .chip.hay-bad{background:linear-gradient(180deg,#FBE6E6,#F5CFCF);
     border-color:#DFA0A0;color:#8E2020}
-  body.tema2 .chip.hay-bad .dot{background:#B93A3A}
-  body.tema2 .chip.hay-warn{background:linear-gradient(180deg,#FCEFD5,#F7DFAE);
+  .chip.hay-bad .dot{background:#B93A3A}
+  .chip.hay-warn{background:linear-gradient(180deg,#FCEFD5,#F7DFAE);
     border-color:#DDAF5C;color:#8A5A06}
-  body.tema2 .chip.hay-warn .dot{background:#C1861D}
-  body.tema2 .chip.clic.on{box-shadow:inset 0 0 0 1.5px currentColor}
+  .chip.hay-warn .dot{background:#C1861D}
+  .chip.clic.on{box-shadow:inset 0 0 0 1.5px currentColor}
   /* los botones de acción, mismo criterio */
-  body.tema2 .act.prog{background:linear-gradient(180deg,#E4EEFC,#C9DCF6);
+  .act.prog{background:linear-gradient(180deg,#E4EEFC,#C9DCF6);
     border-color:#7FA9DD;color:#1B4A8C;font-weight:600}
-  body.tema2 .act.primary{background:linear-gradient(180deg,#FFE98A,#FFD84A);
+  .act.primary{background:linear-gradient(180deg,#FFE98A,#FFD84A);
     border-color:#DCB61C;color:#5C4708;font-weight:600}
-  body.tema2 .act.clear{background:linear-gradient(180deg,#FBE6E6,#F5CFCF);
+  .act.clear{background:linear-gradient(180deg,#FBE6E6,#F5CFCF);
     border-color:#DFA0A0;color:#8E2020}
-  body.tema2 .toolbar .act:not(.ghost):hover{filter:brightness(.97)}
+  .toolbar .act:not(.ghost):hover{filter:brightness(.97)}
 
   /* iconos de trazo */
-  body.tema2 .toolbar .act.ic svg{width:17px;height:17px;display:block}
-  body.tema2 .toolbar .act.ic{display:inline-flex;align-items:center;justify-content:center;
+  .toolbar .act.ic svg{width:17px;height:17px;display:block}
+  .toolbar .act.ic{display:inline-flex;align-items:center;justify-content:center;
     color:#5F676E;background:#fff;border-color:#E0E3E6}
-  body.tema2 .toolbar .act.ic:hover{color:#16191D;border-color:#C3C8CD;background:#F7F8F9}
-  body.tema2 .toolbar .act.ic[disabled]{color:#C3C8CD;background:#FBFBFB}
-  body.tema2 .dd-m .act svg{width:17px;height:17px}
-  body.tema2 .dd-b{font-weight:500;background:#fff;border-color:#E0E3E6;color:#3F464D}
+  .toolbar .act.ic:hover{color:#16191D;border-color:#C3C8CD;background:#F7F8F9}
+  .toolbar .act.ic[disabled]{color:#C3C8CD;background:#FBFBFB}
+  .dd-m .act svg{width:17px;height:17px}
+  .dd-b{font-weight:500;background:#fff;border-color:#E0E3E6;color:#3F464D}
 
   /* título de columna como control de filtro y orden */
   .mx thead .hcab{display:flex;align-items:center;gap:4px;cursor:pointer;padding:1px 2px;border-radius:4px}
@@ -673,13 +680,13 @@
       <button class="act primary" id="btnAdd">＋ Equipo</button>
       <i class="tb-sep"></i>
       <button class="act ghost ic" id="btnUndo" disabled title="Deshacer el último cambio (Ctrl+Z)">↶</button>
-      <button class="act ghost ic" id="btnAgrupar" title="Contraer todos los grupos de columnas"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M3.5 4v12M16.5 4v12"/><path d="M6 10h3.2M10.8 10H14"/><path d="M7.6 7.8 9.2 10l-1.6 2.2M12.4 7.8 10.8 10l1.6 2.2"/></svg></button>
-      <button class="act ghost ic" id="btnDesagrupar" title="Expandir todos los grupos de columnas"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M3.5 4v12M16.5 4v12"/><path d="M5.6 10h3.4M11 10h3.4"/><path d="M7.2 7.8 5.6 10l1.6 2.2M12.8 7.8 14.4 10l-1.6 2.2"/></svg></button>
+      <button class="act ghost ic" id="btnAgrupar" title="Contraer todos los grupos de columnas"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M3.5 3.5v13M16.5 3.5v13"/><path d="M5.8 10h3M11.2 10h3"/><path d="M7.6 7.6 9.6 10l-2 2.4M12.4 7.6 10.4 10l2 2.4"/></svg></button>
+      <button class="act ghost ic" id="btnDesagrupar" title="Expandir todos los grupos de columnas"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M3.5 3.5v13M16.5 3.5v13"/><path d="M5.2 10h3.4M11.4 10h3.4"/><path d="M7.6 7.6 5.2 10l2.4 2.4M12.4 7.6 14.8 10l-2.4 2.4"/></svg></button>
       <button class="act ghost ic" id="btnHoro" title="Cargar el reporte de consumo de combustible (actualiza horómetros y alimenta la pestaña Combustible)">⛽</button>
       <button class="act ghost ic" id="btnHoroSolo" title="Cargar solo horómetros y fechas (no afecta el reporte de combustible)">⏱</button>
       <button class="act ghost ic" id="btnFormatos" title="Descargar los formatos de ejemplo">📄</button>
       <button class="act ghost ic" id="btnTema" title="Cambiar el aspecto de la página">◐</button>
-      <button class="act ghost ic hide" id="btnPaleta" title="Ajustar los colores de los encabezados">🎨</button>
+      <button class="act ghost ic" id="btnPaleta" title="Ajustar los colores de los encabezados">🎨</button>
       <span class="dd hide" id="ddCargar"><button class="act ghost dd-b">Cargar <i>▾</i></button>
         <div class="dd-m" id="mCargar"><div class="dd-c">Desde un archivo Excel</div></div></span>
       <span class="dd hide" id="ddVista"><button class="act ghost dd-b">Vista <i>▾</i></button>
@@ -1020,6 +1027,7 @@ function aplicarPermisos(){
 async function entrarApp(){
   stopGate();mostrar("app");aplicarPermisos();
   who.textContent=(perfil.nombre||perfil.email)+(perfil.rol==="admin"?" · Admin":"");
+  mudarUsuario(true);
   if(perfil.rol==="admin")tabUsers.style.display="inline-block";
   await cargar();startPoll();
 }
@@ -2541,7 +2549,7 @@ function aplicarPaleta(){
   let css='';
   for(const k of Object.keys(PAL_BASE)){
     const t=tonos(PAL[k]||PAL_BASE[k]);
-    css+=`body.tema2 [data-g="${k}"] .bnd{--gc:linear-gradient(180deg,${t.claro},${t.base});`
+    css+=`[data-g="${k}"] .bnd{--gc:linear-gradient(180deg,${t.claro},${t.base});`
         +`--gc2:${t.suave};--gt:${t.texto};--gb:${t.borde}}`;
   }
   let el=document.getElementById('palCSS');
@@ -2613,8 +2621,8 @@ const SVG={
   btnUndo:'<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M7 8H12.5a4 4 0 0 1 0 8H8"/><path d="M10 5 7 8l3 3"/></svg>',
   btnRefresh:'<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M16.5 8A6.6 6.6 0 0 0 4.6 6.6"/><path d="M3.5 12A6.6 6.6 0 0 0 15.4 13.4"/><path d="M4.2 3.4v3.2h3.2M15.8 16.6v-3.2h-3.2"/></svg>',
   /* contraer: las flechas apuntan hacia adentro · expandir: hacia afuera */
-  btnAgrupar:'<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M3.5 4v12M16.5 4v12"/><path d="M6 10h3.2M10.8 10H14"/><path d="M7.6 7.8 9.2 10l-1.6 2.2M12.4 7.8 10.8 10l1.6 2.2"/></svg>',
-  btnDesagrupar:'<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M3.5 4v12M16.5 4v12"/><path d="M5.6 10h3.4M11 10h3.4"/><path d="M7.2 7.8 5.6 10l1.6 2.2M12.8 7.8 14.4 10l-1.6 2.2"/></svg>'
+  btnAgrupar:'<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M3.5 3.5v13M16.5 3.5v13"/><path d="M5.8 10h3M11.2 10h3"/><path d="M7.6 7.6 9.6 10l-2 2.4M12.4 7.6 10.4 10l2 2.4"/></svg>',
+  btnDesagrupar:'<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M3.5 3.5v13M16.5 3.5v13"/><path d="M5.2 10h3.4M11.4 10h3.4"/><path d="M7.6 7.6 5.2 10l2.4 2.4M12.4 7.6 14.8 10l-2.4 2.4"/></svg>'
 };
 /* Se aplican solo con el tema activo, y se devuelven al apagarlo */
 const _iconoAntes=new Map();
@@ -2708,27 +2716,27 @@ function pintarAvisos(){
     if(ya)return;
     men.classList.add('abierto');
     /* el menú va suelto sobre la página para que no quede debajo del
-       encabezado de la tabla; aquí se coloca bajo su botón */
-    if(document.body.classList.contains('tema2')){
-      const r=ev.currentTarget.getBoundingClientRect(), an=men.offsetWidth||250;
-      men.style.top=(r.bottom+6)+'px';
-      men.style.left=Math.max(8,Math.min(r.right-an,innerWidth-an-8))+'px';
-      men.style.right='auto';
-    }
+       encabezado de la tabla; se coloca bajo su botón (fila 2, siempre) */
+    const r=ev.currentTarget.getBoundingClientRect(), an=men.offsetWidth||250;
+    men.style.top=(r.bottom+6)+'px';
+    men.style.left=Math.max(8,Math.min(r.right-an,innerWidth-an-8))+'px';
+    men.style.right='auto';
   };
 });
 document.addEventListener('click',()=>document.querySelectorAll('.dd-m').forEach(m=>m.classList.remove('abierto')));
 
 /* ── Aspecto de la página ──
-   El tema es solo apariencia: se guarda la preferencia en este navegador
-   y no afecta a los datos ni a lo que ven los demás usuarios. */
+   Las filas 1 (pestañas), 2 (barra de herramientas) y 3 (encabezados
+   agrupados) ya usan siempre el aspecto de la vista 2, sin depender del
+   botón ◐. El ◐ ahora solo alterna el resto: colores de fila, columnas
+   individuales y tipografía general. */
+mudarBotones(true); iconosModernos(true); mudarUsuario(true);
 (function(){
   const K='gllr_tema';
   const poner=v=>{const on=v==='2';
     document.body.classList.toggle('tema2',on);
     btnTema.classList.toggle('primary',on);
-    btnPaleta.classList.toggle('hide',!on);
-    mudarBotones(on); mudarUsuario(on); pintarAvisos(); iconosModernos(on);
+    pintarAvisos();
     btnTema.title=on?'Volver al aspecto anterior':'Probar el aspecto nuevo';};
   let actual='1';
   try{actual=localStorage.getItem(K)||'1';}catch(_){}
