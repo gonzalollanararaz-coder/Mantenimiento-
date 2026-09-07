@@ -114,13 +114,14 @@
   .pill.ok{background:var(--ok-bg);color:var(--ok)}.pill.warn{background:var(--warn-bg);color:var(--warn)}
   .pill.bad{background:var(--bad-bg);color:var(--bad)}.pill.na{background:var(--gray-bg);color:var(--gray)}
   /* ── Columna Status ──
-     Sin fondo: el texto va en el color del estado, con un punto delante.
-     Sin negrita (opción E): el punto ya marca el estado, así el texto
-     pesa menos y no compite con la columna Alerta. */
+     Sin fondo: el texto va en el color del estado, con un anillo delante
+     (opción G). El centro del anillo queda transparente, así se ve el
+     fondo real de la fila (blanco, o gris al pasar el mouse) en vez de
+     un color fijo que pudiera desentonar. */
   td[class*="st-"]{background:transparent !important;font-weight:400;
     display:flex;align-items:center;gap:7px}
-  td[class*="st-"]::before{content:"";width:9px;height:9px;border-radius:50%;
-    flex:0 0 auto;background:currentColor}
+  td[class*="st-"]::before{content:"";width:8px;height:8px;border-radius:50%;
+    flex:0 0 auto;background:transparent;border:2px solid currentColor;box-sizing:border-box}
   td.st-MOVILIZADO{color:var(--blue)}
   td.st-POR-MOVIL,td.st-POR-DESMOV,
   td.st-TRANS-MOV,td.st-TRANS-DESM,td.st-TRANSITO,td.st-TRANSITO-MOV,td.st-TRANSITO-DESMOV{color:var(--warn)}
@@ -343,10 +344,10 @@
   body.tema2 .mx tbody td.idx{background:#FBFBFB;color:#A8AEB4}
   body.tema2 .mx td.calc{background:transparent;color:#5A6169}
 
-  /* estado: un punto en vez de pintar la celda entera */
-  /* El punto toma el color del texto, así el estado se lee igual con o sin tema.
+  /* estado: un anillo en vez de un punto relleno o de pintar la celda entera */
+  /* El anillo toma el color del texto, así el estado se lee igual con o sin tema.
      Los desmovilizados conservan el rojo, no el gris. */
-  body.tema2 td[class*="st-"]::before{background:currentColor}
+  body.tema2 td[class*="st-"]::before{background:transparent}
   /* El Cód. SAP conserva el color de su estado también con el tema activo */
   body.tema2 td[class*="sap-"]{font-weight:600}
   body.tema2 td.sap-MOVILIZADO{color:var(--blue)}
