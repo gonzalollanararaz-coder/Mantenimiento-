@@ -9,9 +9,6 @@
 <link rel="icon" type="image/png" sizes="16x16" href="icono-16.png">
 <link rel="apple-touch-icon" href="icono-180.png">
 <link rel="manifest" href="manifest.json">
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
 <meta name="theme-color" content="#1c232b">
 <style>
   :root{
@@ -114,12 +111,13 @@
   .pill.ok{background:var(--ok-bg);color:var(--ok)}.pill.warn{background:var(--warn-bg);color:var(--warn)}
   .pill.bad{background:var(--bad-bg);color:var(--bad)}.pill.na{background:var(--gray-bg);color:var(--gray)}
   /* ── Columna Status ──
-     Sin fondo: el texto va en el color del estado, con un anillo delante
-     (opción G). El centro del anillo queda transparente, así se ve el
-     fondo real de la fila (blanco, o gris al pasar el mouse) en vez de
-     un color fijo que pudiera desentonar. */
-  td[class*="st-"]{background:transparent !important;font-weight:400;
+     El anillo (opción G) lleva el color del estado y el centro queda
+     hueco; pero el FONDO de la celda no puede ser transparent porque es
+     una columna congelada — necesita un fondo opaco propio para tapar
+     las columnas no congeladas que pasan detrás al hacer scroll. */
+  td[class*="st-"]{background:#fff !important;font-weight:400;
     display:flex;align-items:center;gap:7px}
+  .mx tbody tr:hover td[class*="st-"]{background:#f9fafb !important}
   td[class*="st-"]::before{content:"";width:8px;height:8px;border-radius:50%;
     flex:0 0 auto;background:transparent;border:2px solid currentColor;box-sizing:border-box}
   td.st-MOVILIZADO{color:var(--blue)}
@@ -272,12 +270,12 @@
 
   /* ═══════════════ TEMA CLARO (se activa con el botón ◐) ═══════════════
      Capa de solo apariencia: no cambia ninguna lógica ni la estructura de
-     la tabla. Se apaga quitando la clase y todo vuelve al aspecto anterior. */
+     la tabla. Se apaga quitando la clase y todo vuelve al aspecto anterior.
+     La fuente ya no cambia con el tema: toda la página usa siempre la
+     fuente del sistema (más rápida, cero descargas), igual que las demás
+     pestañas (PM-S, Combustible, SOS, Partes). */
   body.tema2{--linea:#E4E6E9;--humo:#6E757C;--tinta:#16191D;
-             background:#FAFAF8;color:#16191D;
-             font-family:"IBM Plex Sans",system-ui,sans-serif}
-  body.tema2 .mono,body.tema2 .mx td.n input,body.tema2 .mx td.calc,
-  body.tema2 .mx tbody td.idx{font-family:"IBM Plex Mono",ui-monospace,monospace}
+             background:#FAFAF8;color:#16191D}
   body.tema2 .mx{font-variant-numeric:tabular-nums}
 
   /* cabecera y pestañas */
@@ -348,6 +346,7 @@
   body.tema2 .mx tbody td{border-bottom:1px solid #F0F1F3}
   body.tema2 .mx tbody tr:hover td{background:#FBFBFA}
   body.tema2 .mx tbody tr:hover td.frz{background:#FBFBFA}
+  body.tema2 .mx tbody tr:hover td[class*="st-"]{background:#FBFBFA !important}
   body.tema2 .mx tbody td.idx{background:#FBFBFB;color:#A8AEB4}
   body.tema2 .mx td.calc{background:transparent;color:#5A6169}
 
