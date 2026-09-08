@@ -304,41 +304,57 @@
   .chip.on{border-color:#1B2027;color:var(--tinta, #16191D);background:#F4F5F6}
 
   /* ── Fila 3: encabezados agrupados, fusionada igual ──
-     El azul marino de fondo sale, entra el bloque de color pastel por
-     grupo (independiente del ◐). Los tonos salen de las variables de
-     más abajo, que el panel 🎨 puede reescribir siempre. */
+     Bandas en color sólido (sin degradado ni brillo), letra blanca en
+     mayúscula y negrita. Los tonos salen de las variables de más abajo,
+     que el panel 🎨 puede reescribir siempre. */
   .mx thead tr.bands th,
   .mx thead tr.bands th.frz{background:#fff !important;color:inherit !important;
     padding:3px 3px 4px !important;height:auto;border:none !important;
     border-bottom:1px solid #E4E6E9 !important}
   .mx thead .bnd{display:block;border-radius:6px;padding:4px 8px;text-align:center;
     font-size:10px;font-weight:700;letter-spacing:.02em;line-height:1.15;
-    position:relative;overflow:hidden;
-    background:var(--gc,#E7ECF1);color:var(--gt,#2B3742);
-    border:1px solid var(--gb,#D8E0E7);box-shadow:inset 0 1px 0 rgba(255,255,255,.85)}
-  .mx thead .bnd::after{content:"";position:absolute;inset:1px 1px 46% 1px;
-    border-radius:5px 5px 9px 9px;pointer-events:none;
-    background:linear-gradient(180deg,rgba(255,255,255,.72),rgba(255,255,255,.12))}
-  body.sinbrillo .mx thead .bnd::after{display:none}
-  body.sinbrillo .mx thead .bnd{box-shadow:none;font-weight:600;background:var(--gc2,var(--gc))}
-  /* paleta por bloque */
-  [data-g="ident"] .bnd{--gc:linear-gradient(180deg,#BFD4EE,#8FB3DE);--gc2:#DCE7F6;--gt:#1B3357;--gb:#7FA5D4}
-  [data-g="tec"]   .bnd{--gc:linear-gradient(180deg,#CBC3E8,#A69AD6);--gc2:#E3DEF4;--gt:#332A5C;--gb:#9A8DCE}
-  [data-g="mov"]   .bnd{--gc:linear-gradient(180deg,#BFE3D0,#8FCBAE);--gc2:#DCF0E5;--gt:#1E4634;--gb:#80BFA0}
-  [data-g="des"]   .bnd{--gc:linear-gradient(180deg,#D4DCE4,#B0BCC8);--gc2:#E7ECF1;--gt:#2B3742;--gb:#A2AFBC}
-  [data-g="prov"]  .bnd{--gc:linear-gradient(180deg,#E8D7C3,#CFB392);--gc2:#F2E7DA;--gt:#4A3521;--gb:#C4A681}
-  [data-g="doc"]   .bnd{--gc:linear-gradient(180deg,#F6D9B0,#EBBC83);--gc2:#FAEBD6;--gt:#5C3B12;--gb:#DFAE73}
-  [data-g="act"]   .bnd{--gc:linear-gradient(180deg,#FBE7A8,#F2D274);--gc2:#FDF3D2;--gt:#5A4410;--gb:#E5C463}
-  [data-g="ult"]   .bnd{--gc:linear-gradient(180deg,#D8E3B8,#BCCD8B);--gc2:#EAF0DA;--gt:#3B4718;--gb:#ADC079}
-  [data-g="ctrl"]  .bnd{--gc:linear-gradient(180deg,#F5C9C6,#E79E9A);--gc2:#FBE4E2;--gt:#5E2320;--gb:#DB8F8B}
-  [data-g="com"]   .bnd{--gc:linear-gradient(180deg,#D4DCE4,#B0BCC8);--gc2:#E7ECF1;--gt:#2B3742;--gb:#A2AFBC}
+    text-transform:uppercase;
+    background:var(--gc,#607080);color:#fff;
+    border:1px solid var(--gb,#4A5A6A)}
+  /* paleta por bloque — bandas (--gc) en color sólido con letra blanca,
+     columnas individuales (--cc) en pastel suave con letra negra. */
+  /* azul: identificación, datos técnicos, proveedor, datos actuales */
+  [data-g="ident"] .bnd{--gc:#2E5FA0;--gb:#204570}
+  [data-g="ident"]{--cc:#DCE8F8}
+  [data-g="tec"]   .bnd{--gc:#35407A;--gb:#252D57}
+  [data-g="tec"]{--cc:#DEE4F5}
+  [data-g="prov"]  .bnd{--gc:#1D7EA6;--gb:#155C7A}
+  [data-g="prov"]{--cc:#D9F0FA}
+  [data-g="act"]   .bnd{--gc:#4A6C8C;--gb:#354F65}
+  [data-g="act"]{--cc:#E2E9F1}
+  /* verde: datos de movilización */
+  [data-g="mov"]   .bnd{--gc:#3E7A2E;--gb:#2B5A20}
+  [data-g="mov"]{--cc:#E4F3D9}
+  /* rojo: datos de desmovilización, control de horas y mantenimiento */
+  [data-g="des"]   .bnd{--gc:#B23B39;--gb:#8A2B29}
+  [data-g="des"]{--cc:#FBE3E2}
+  [data-g="ctrl"]  .bnd{--gc:#A14A35;--gb:#7A3627}
+  [data-g="ctrl"]{--cc:#F8DEDD}
+  /* amarillo: control documentario */
+  [data-g="doc"]   .bnd{--gc:#92720B;--gb:#6E5608}
+  [data-g="doc"]{--cc:#FBF0D3}
+  /* plomo: último mntto, comentarios */
+  [data-g="ult"]   .bnd{--gc:#6B6B6B;--gb:#525252}
+  [data-g="ult"]{--cc:#ECECEC}
+  [data-g="com"]   .bnd{--gc:#52606D;--gb:#3D4750}
+  [data-g="com"]{--cc:#E7E9EC}
 
-  /* encabezados de la tabla: el azul marino sale, entra gris claro */
-  body.tema2 .mx thead tr.cols th{background:#F6F7F8 !important;color:#6E757C !important;
-    font-weight:600;font-size:10.5px;
+  /* columnas individuales: pastel suave de su familia, letra negra,
+     bordes blancos; ya no dependen del ◐ */
+  .mx thead tr.cols th{background:var(--cc,#F6F7F8) !important;color:#1A1D21 !important;
+    border-right-color:#fff !important;border-bottom-color:#fff !important}
+
+
+  /* encabezados de columna individuales: peso y bordes, siempre */
+  .mx thead tr.cols th{font-weight:600;font-size:10.5px;
     border-right-width:1px !important;border-right-style:solid !important;border-right-color:#E9EAEC !important;
-    border-bottom:1px solid var(--linea)}
-  body.tema2 .mx thead .colf{border:1px solid #DDE0E3;border-radius:5px;background:#fff}
+    border-bottom:1px solid var(--linea,#E4E6E9)}
+  .mx thead .colf{border:1px solid #DDE0E3;border-radius:5px;background:#fff}
 
   /* la grilla se aligera: se van las verticales, quedan hairlines */
   body.tema2 .mx th,body.tema2 .mx td{border-right-width:0 !important;border-right-style:none !important}
@@ -1143,24 +1159,24 @@ function buildHead(){
   const totW=FROZEN.reduce((a,f)=>a+fw(f),0), semHoy=isoWeek(hoy0());
   estilosFrozen();
   let b1='<tr class="bands">',b2='<tr class="cols">';
-  b1+=`<th class="frz" data-g="ident" colspan="${FROZEN.length}" style="left:0;min-width:${totW}px;width:${totW}px;background:${ID_BAND}"><span class="bnd">IDENTIFICACIÓN</span></th>`;
+  b1+=`<th class="frz" data-g="ident" colspan="${FROZEN.length}" style="left:0;min-width:${totW}px;width:${totW}px"><span class="bnd">IDENTIFICACIÓN</span></th>`;
   FROZEN.forEach((f,i)=>{
     if(f.collapsible&&famCollapsed){
-      b2+=`<th class="frz fz${i}" data-famtoggle style="background:${FROZEN_HCOL};cursor:pointer" title="Expandir ID Familia"><div class="hlab">＋</div></th>`;
+      b2+=`<th class="frz fz${i}" data-g="ident" data-famtoggle style="cursor:pointer" title="Expandir ID Familia"><div class="hlab">＋</div></th>`;
     }else{
       const lab = f.collapsible ? `${f.lab} <span data-famtoggle style="cursor:pointer">－</span>` : f.lab;
-      b2+=`<th class="frz fz${i}" style="background:${FROZEN_HCOL}">${cabCol(f.k,lab,f.type!=='idx')}</th>`;
+      b2+=`<th class="frz fz${i}" data-g="ident">${cabCol(f.k,lab,f.type!=='idx')}</th>`;
     }
   });
   for(const g of GROUPS){
     if(collapsed[g.key]){
-      b1+=`<th class="bands" data-collapse="${g.key}" data-g="${g.key}" style="background:${g.color};min-width:26px" title="Expandir ${g.lab}"><span class="bnd">＋</span></th>`;
-      b2+=`<th style="background:${g.hcol}">·</th>`;
+      b1+=`<th class="bands" data-collapse="${g.key}" data-g="${g.key}" style="min-width:26px" title="Expandir ${g.lab}"><span class="bnd">＋</span></th>`;
+      b2+=`<th data-g="${g.key}">·</th>`;
     }else{
-      b1+=`<th class="bands" data-collapse="${g.key}" data-g="${g.key}" colspan="${g.cols.length}" style="background:${g.color}"><span class="bnd">${g.lab} －</span></th>`;
+      b1+=`<th class="bands" data-collapse="${g.key}" data-g="${g.key}" colspan="${g.cols.length}"><span class="bnd">${g.lab} －</span></th>`;
       g.cols.forEach(([k,lab,tipo],ci)=>{
         const filtrable = tipo!=='c' || FCALC.includes(k);
-        b2+=`<th class="${ci===0?'ini-bloque':''}" style="background:${g.hcol}">${cabCol(k,lab,filtrable)}</th>`;
+        b2+=`<th class="${ci===0?'ini-bloque':''}" data-g="${g.key}">${cabCol(k,lab,filtrable)}</th>`;
       });
     }
   }
