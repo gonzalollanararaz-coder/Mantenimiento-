@@ -268,28 +268,7 @@
   .fmop small{font-size:10px;color:#98a2ad;font-family:ui-monospace,monospace}
   .fmnota{font-size:11px;color:#B45309;background:#fffbe6;border-radius:8px;padding:8px 10px;line-height:1.5}
 
-  /* ═══════════════ TEMA CLARO (se activa con el botón ◐) ═══════════════
-     Capa de solo apariencia: no cambia ninguna lógica ni la estructura de
-     la tabla. Se apaga quitando la clase y todo vuelve al aspecto anterior.
-     La fuente ya no cambia con el tema: toda la página usa siempre la
-     fuente del sistema (más rápida, cero descargas), igual que las demás
-     pestañas (PM-S, Combustible, SOS, Partes). */
-  body.tema2{--linea:#E4E6E9;--humo:#6E757C;--tinta:#16191D;
-             background:#FAFAF8;color:#16191D}
-  body.tema2 .mx{font-variant-numeric:tabular-nums}
-
-  /* cabecera y pestañas */
-  body.tema2 header{background:#1B2027;border-bottom:2px solid var(--amber)}
-  body.tema2 header h1{font-weight:600;letter-spacing:-.01em}
-  body.tema2 header p{letter-spacing:.06em;color:#8E959C}
-  body.tema2 nav{background:#fff;border-bottom:1px solid var(--linea)}
-  body.tema2 nav button{font-size:13.5px;color:var(--humo);border-bottom-width:2px}
-  body.tema2 nav button.on{color:var(--tinta);font-weight:600;border-bottom-color:#1B2027}
-
-  /* ── Filas 1 y 2 fusionadas de forma permanente con la vista 2 ──
-     Pestañas y barra de herramientas ya no dependen del botón ◐: el
-     ◐ solo alterna el resto (colores de fila, encabezados de columna,
-     tipografía). Por eso estas reglas ya no llevan el prefijo body.tema2. */
+  /* ── Filas 1 y 2: pestañas y barra de herramientas ── */
   .toolbar{background:#fff;border-bottom:1px solid var(--linea, #E4E6E9);height:46px}
   .toolbar input,.toolbar select{border:1px solid var(--linea, #E4E6E9);
     border-radius:9px;height:28px;font-size:12.5px;background:#fff}
@@ -365,40 +344,6 @@
     border-bottom:1px solid var(--linea,#E4E6E9)}
   .mx thead .colf{border:1px solid #DDE0E3;border-radius:5px;background:#fff}
 
-  /* la grilla se aligera: se van las verticales, quedan hairlines */
-  body.tema2 .mx th,body.tema2 .mx td{border-right-width:0 !important;border-right-style:none !important}
-  body.tema2 .mx tbody td{border-bottom:1px solid #F0F1F3}
-  body.tema2 .mx tbody tr:hover td{background:#FBFBFA}
-  body.tema2 .mx tbody tr:hover td.frz{background:#FBFBFA}
-  body.tema2 .mx tbody tr:hover td[class*="st-"]{background:#FBFBFA !important}
-  body.tema2 .mx tbody td.idx{background:#FBFBFB;color:#A8AEB4}
-  body.tema2 .mx td.calc{background:transparent;color:#5A6169}
-
-  /* estado: un anillo en vez de un punto relleno o de pintar la celda entera */
-  /* El anillo toma el color del texto, así el estado se lee igual con o sin tema.
-     Los desmovilizados conservan el rojo, no el gris. */
-  body.tema2 td[class*="st-"]::before{background:transparent}
-  /* El Cód. SAP conserva el color de su estado también con el tema activo */
-  body.tema2 td[class*="sap-"]{font-weight:600}
-  body.tema2 td.sap-MOVILIZADO{color:var(--blue)}
-  body.tema2 td.sap-POR-MOVIL,body.tema2 td.sap-POR-DESMOV,
-  body.tema2 td.sap-TRANS-MOV,body.tema2 td.sap-TRANS-DESM,
-  body.tema2 td.sap-TRANSITO,body.tema2 td.sap-TRANSITO-MOV,
-  body.tema2 td.sap-TRANSITO-DESMOV{color:var(--warn)}
-  body.tema2 td.sap-DESMOVILIZADO,body.tema2 td.sap-DESMOVILIZ{color:var(--bad)}
-
-  /* semáforos: solo lo que exige acción lleva color */
-  body.tema2 .pill{font-weight:600;font-size:10px;padding:2px 8px}
-  body.tema2 .pill.ok{background:transparent;color:#6E757C}
-  body.tema2 .pill.warn{background:#FDF3E0;color:#A56A00}
-  body.tema2 .pill.bad{background:#FCECEC;color:#B4232A}
-  body.tema2 .pill.na{background:transparent;color:#A8AEB4}
-
-  /* separador entre proyectos, más sobrio */
-  body.tema2 .mx tbody tr.grp-top td{border-top:1.5px solid #D6D9DD}
-  body.tema2 footer{color:var(--humo)}
-  body.tema2 .mx td.cell:hover{background:#FFFBEC}
-
   /* panel de colores */
   #palWrap{position:fixed;inset:0;background:rgba(15,20,26,.5);z-index:9996;display:flex;
            align-items:flex-start;justify-content:flex-end;padding:12px}
@@ -416,7 +361,6 @@
   .pfila .rst{border:none;background:none;color:#c2c7cc;cursor:pointer;font-size:14px;padding:0 2px}
   .pfila .rst:hover{color:var(--bad)}
   .pnota{font-size:11px;color:var(--muted);line-height:1.5;margin-top:10px}
-  .pbrillo{display:flex;align-items:center;gap:8px;font-size:12.5px;padding:9px 0 4px;font-weight:600;color:#1f3864}
 
   /* ── Barras superiores del tema: dos franjas en vez de tres ── */
   /* Las pestañas viven en la franja de la marca, centradas entre el título
@@ -560,8 +504,6 @@
   /* Filtrado: el mismo color del encabezado, un tono más intenso.
      Se logra oscureciendo el propio fondo, sin introducir un color ajeno. */
   .mx thead .hcab.filtrado{background:rgba(0,0,0,.28);box-shadow:inset 0 0 0 1px rgba(255,255,255,.35)}
-  body.tema2 .mx thead .hcab.filtrado{background:rgba(0,0,0,.14);
-    box-shadow:inset 0 0 0 1px rgba(0,0,0,.16)}
   .mx thead .hcab.filtrado .emb{opacity:1}
   .mx thead .hcab.ordenado .hi{opacity:1}
   /* menú */
@@ -609,12 +551,6 @@
   .mx td.ini-ult {--lin:#595959}
   .mx td.ini-ctrl{--lin:#C00000}
   .mx td.ini-com {--lin:#334155}
-  /* con el tema, los mismos colores en su versión pastel intensa */
-  body.tema2 .mx td.ini-tec,body.tema2 .mx td.ini-prov,body.tema2 .mx td.ini-act{--lin:#77A5D7}
-  body.tema2 .mx td.ini-mov{--lin:#81C9A1}
-  body.tema2 .mx td.ini-des,body.tema2 .mx td.ini-ctrl{--lin:#DC827C}
-  body.tema2 .mx td.ini-doc{--lin:#EFC24F}
-  body.tema2 .mx td.ini-ult,body.tema2 .mx td.ini-com{--lin:#9FA6AE}
   footer{padding:10px 16px;color:var(--muted);font-size:12px;text-align:center}
 
   /* admin */
@@ -703,16 +639,15 @@
       <button class="act primary" id="btnAdd">＋ Equipo</button>
       <i class="tb-sep"></i>
       <button class="act ghost ic" id="btnUndo" disabled title="Deshacer el último cambio (Ctrl+Z)">↶</button>
-      <button class="act ghost ic" id="btnAgrupar" title="Contraer todos los grupos de columnas"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M3.5 3.5v13M16.5 3.5v13"/><path d="M5.8 10h3M11.2 10h3"/><path d="M7.6 7.6 9.6 10l-2 2.4M12.4 7.6 10.4 10l2 2.4"/></svg></button>
-      <button class="act ghost ic" id="btnDesagrupar" title="Expandir todos los grupos de columnas"><svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M3.5 3.5v13M16.5 3.5v13"/><path d="M5.2 10h3.4M11.4 10h3.4"/><path d="M7.6 7.6 5.2 10l2.4 2.4M12.4 7.6 14.8 10l-2.4 2.4"/></svg></button>
+      <button class="act ghost ic" id="btnAgrupar" title="Contraer todos los grupos de columnas"><svg viewBox="0 0 26 20" fill="currentColor"><rect x="11.5" y="2" width="3" height="16" rx="1"/><path d="M1,8 L8,8 L8,4 L11.5,10 L8,16 L8,12 L1,12 Z"/><path d="M25,8 L18,8 L18,4 L14.5,10 L18,16 L18,12 L25,12 Z"/></svg></button>
+      <button class="act ghost ic" id="btnDesagrupar" title="Expandir todos los grupos de columnas"><svg viewBox="0 0 26 20" fill="currentColor"><rect x="1" y="2" width="3" height="16" rx="1"/><rect x="22" y="2" width="3" height="16" rx="1"/><path d="M12.5,8 L7,8 L7,4 L3.5,10 L7,16 L7,12 L12.5,12 Z"/><path d="M13.5,8 L19,8 L19,4 L22.5,10 L19,16 L19,12 L13.5,12 Z"/></svg></button>
       <button class="act ghost ic" id="btnHoro" title="Cargar el reporte de consumo de combustible (actualiza horómetros y alimenta la pestaña Combustible)">⛽</button>
       <button class="act ghost ic" id="btnHoroSolo" title="Cargar solo horómetros y fechas (no afecta el reporte de combustible)">⏱</button>
       <button class="act ghost ic" id="btnFormatos" title="Descargar los formatos de ejemplo">📄</button>
-      <button class="act ghost ic" id="btnTema" title="Cambiar el aspecto de la página">◐</button>
       <button class="act ghost ic" id="btnPaleta" title="Ajustar los colores de los encabezados">🎨</button>
       <span class="dd hide" id="ddCargar"><button class="act ghost dd-b">Cargar <i>▾</i></button>
         <div class="dd-m" id="mCargar"><div class="dd-c">Desde un archivo Excel</div></div></span>
-      <span class="dd hide" id="ddVista"><button class="act ghost dd-b">Vista <i>▾</i></button>
+      <span class="dd hide" id="ddVista"><button class="act ghost dd-b">Colores <i>▾</i></button>
         <div class="dd-m" id="mVista"></div></span>
       <button class="act ghost ic" id="btnExcel" title="Descargar en Excel">⬇</button>
       <button class="act ghost ic" id="btnRefresh" title="Volver a cargar los datos">↻</button>
@@ -2555,9 +2490,8 @@ const PAL_BASE={
 const PAL_LAB={ident:'IDENTIFICACIÓN',tec:'DATOS TÉCNICOS',mov:'DATOS DE MOVILIZACIÓN',
   des:'DATOS DESMOVILIZACIÓN',prov:'PROVEEDOR',doc:'CONTROL DOCUMENTARIO',
   act:'DATOS ACTUALES',ult:'ÚLTIMO MNTTO',ctrl:'CONTROL DE HORAS Y MNTTO',com:'COMENTARIOS'};
-let PAL={}, SIN_BRILLO=false;
+let PAL={};
 try{PAL=JSON.parse(localStorage.getItem('gllr_paleta')||'{}');}catch(_){}
-try{SIN_BRILLO=localStorage.getItem('gllr_brillo')==='0';}catch(_){}
 
 const hex2rgb=h=>{h=h.replace('#','');return [0,2,4].map(i=>parseInt(h.slice(i,i+2),16));};
 const rgb2hex=a=>'#'+a.map(v=>Math.max(0,Math.min(255,Math.round(v))).toString(16).padStart(2,'0')).join('');
@@ -2578,7 +2512,6 @@ function aplicarPaleta(){
   let el=document.getElementById('palCSS');
   if(!el){el=document.createElement('style');el.id='palCSS';document.head.appendChild(el);}
   el.textContent=css;
-  document.body.classList.toggle('sinbrillo',SIN_BRILLO);
 }
 aplicarPaleta();
 
@@ -2586,7 +2519,7 @@ function palAbrir(){
   const fila=k=>{
     const col=PAL[k]||PAL_BASE[k], t=tonos(col);
     return `<div class="pfila" data-k="${k}">
-      <span class="mu" style="background:${SIN_BRILLO?t.suave:`linear-gradient(180deg,${t.claro},${t.base})`};
+      <span class="mu" style="background:linear-gradient(180deg,${t.claro},${t.base});
         color:${t.texto};border-color:${t.borde}">${esc(PAL_LAB[k])}</span>
       <input type="color" value="${col}">
       <button class="rst" title="Volver al color original">↺</button></div>`;
@@ -2598,7 +2531,6 @@ function palAbrir(){
       <button class="act ghost" id="palTodo">Restaurar todo</button>
       <button class="act" id="palCer">Cerrar</button></div>
     <div class="pb">
-      <label class="pbrillo"><input type="checkbox" id="palBr" ${SIN_BRILLO?'':'checked'}> Acabado brillante</label>
       ${Object.keys(PAL_BASE).map(fila).join('')}
       <div class="pnota">El tono que eliges es el del borde inferior del cuadro; el degradado,
         el borde y el color del texto se calculan a partir de él para que siempre se lea bien.</div>
@@ -2606,11 +2538,6 @@ function palAbrir(){
   const cerrar=()=>{const e=document.getElementById('palWrap');if(e)e.remove();};
   document.getElementById('palCer').onclick=cerrar;
   document.getElementById('palWrap').addEventListener('click',ev=>{if(ev.target.id==='palWrap')cerrar();});
-  document.getElementById('palBr').onchange=e=>{
-    SIN_BRILLO=!e.target.checked;
-    try{localStorage.setItem('gllr_brillo',SIN_BRILLO?'0':'1');}catch(_){}
-    aplicarPaleta(); cerrar(); palAbrir();
-  };
   document.getElementById('palTodo').onclick=()=>{
     PAL={}; try{localStorage.removeItem('gllr_paleta');}catch(_){}
     aplicarPaleta(); cerrar(); palAbrir();
@@ -2618,7 +2545,7 @@ function palAbrir(){
   document.querySelectorAll('#palWrap .pfila').forEach(f=>{
     const k=f.dataset.k, inp=f.querySelector('input[type=color]'), mu=f.querySelector('.mu');
     const pinta=()=>{const t=tonos(PAL[k]||PAL_BASE[k]);
-      mu.style.background=SIN_BRILLO?t.suave:`linear-gradient(180deg,${t.claro},${t.base})`;
+      mu.style.background=`linear-gradient(180deg,${t.claro},${t.base})`;
       mu.style.color=t.texto; mu.style.borderColor=t.borde; inp.value=PAL[k]||PAL_BASE[k];};
     inp.oninput=()=>{PAL[k]=inp.value;
       try{localStorage.setItem('gllr_paleta',JSON.stringify(PAL));}catch(_){}
@@ -2638,14 +2565,14 @@ const DD_CARGAR=[['btnHoro','Reporte de combustible'],['btnHoroSolo','Horómetro
                  ['btnFormatos','Descargar formatos de ejemplo'],['btnExcel','Exportar la tabla a Excel']];
 /* Deshacer, plegar, desplegar y actualizar se quedan a la vista: se usan
    a diario. En el menú solo queda lo que se toca de vez en cuando. */
-const DD_VISTA =[['btnTema','Cambiar el aspecto'],['btnPaleta','Colores de los encabezados']];
+const DD_VISTA =[['btnPaleta','Colores de los encabezados']];
 /* Iconos de trazo, en lugar de los símbolos de teclado */
 const SVG={
   btnUndo:'<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M7 8H12.5a4 4 0 0 1 0 8H8"/><path d="M10 5 7 8l3 3"/></svg>',
   btnRefresh:'<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M16.5 8A6.6 6.6 0 0 0 4.6 6.6"/><path d="M3.5 12A6.6 6.6 0 0 0 15.4 13.4"/><path d="M4.2 3.4v3.2h3.2M15.8 16.6v-3.2h-3.2"/></svg>',
   /* contraer: las flechas apuntan hacia adentro · expandir: hacia afuera */
-  btnAgrupar:'<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M3.5 3.5v13M16.5 3.5v13"/><path d="M5.8 10h3M11.2 10h3"/><path d="M7.6 7.6 9.6 10l-2 2.4M12.4 7.6 10.4 10l2 2.4"/></svg>',
-  btnDesagrupar:'<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M3.5 3.5v13M16.5 3.5v13"/><path d="M5.2 10h3.4M11.4 10h3.4"/><path d="M7.6 7.6 5.2 10l2.4 2.4M12.4 7.6 14.8 10l-2.4 2.4"/></svg>'
+  btnAgrupar:'<svg viewBox="0 0 26 20" fill="currentColor"><rect x="11.5" y="2" width="3" height="16" rx="1"/><path d="M1,8 L8,8 L8,4 L11.5,10 L8,16 L8,12 L1,12 Z"/><path d="M25,8 L18,8 L18,4 L14.5,10 L18,16 L18,12 L25,12 Z"/></svg>',
+  btnDesagrupar:'<svg viewBox="0 0 26 20" fill="currentColor"><rect x="1" y="2" width="3" height="16" rx="1"/><rect x="22" y="2" width="3" height="16" rx="1"/><path d="M12.5,8 L7,8 L7,4 L3.5,10 L7,16 L7,12 L12.5,12 Z"/><path d="M13.5,8 L19,8 L19,4 L22.5,10 L19,16 L19,12 L13.5,12 Z"/></svg>'
 };
 /* Se aplican solo con el tema activo, y se devuelven al apagarlo */
 const _iconoAntes=new Map();
@@ -2749,31 +2676,10 @@ function pintarAvisos(){
 document.addEventListener('click',()=>document.querySelectorAll('.dd-m').forEach(m=>m.classList.remove('abierto')));
 
 /* ── Aspecto de la página ──
-   Las filas 1 (pestañas), 2 (barra de herramientas) y 3 (encabezados
-   agrupados) ya usan siempre el aspecto de la vista 2, sin depender del
-   botón ◐. El ◐ ahora solo alterna el resto: colores de fila, columnas
-   individuales y tipografía general. */
+   Ya no hay dos vistas: pestañas, barra de herramientas, encabezados
+   agrupados y el resto de la tabla usan siempre el mismo aspecto. */
 mudarBotones(true); iconosModernos(true); mudarUsuario(true);
-(function(){
-  const K='gllr_tema';
-  const poner=v=>{const on=v==='2';
-    document.body.classList.toggle('tema2',on);
-    btnTema.classList.toggle('primary',on);
-    pintarAvisos();
-    btnTema.title=on?'Volver al aspecto anterior':'Probar el aspecto nuevo';};
-  let actual='1';
-  try{actual=localStorage.getItem(K)||'1';}catch(_){}
-  poner(actual);
-  btnTema.onclick=()=>{
-    actual = actual==='2' ? '1' : '2';
-    try{localStorage.setItem(K,actual);}catch(_){}
-    poner(actual);
-    appFoot.textContent = actual==='2'
-      ? 'Aspecto nuevo activado. Vuelve a pulsar ◐ para regresar al anterior.'
-      : 'Aspecto anterior restablecido.';
-    setTimeout(()=>appFoot.textContent='Doble clic en una celda para editar · los cambios se guardan solos.',4000);
-  };
-})();
+pintarAvisos();
 
 /* ═══════════════ MENÚ DE FILTRO EN EL TÍTULO ═══════════════
    Abre con el título de la columna: ordenar, buscar, y la lista de los
