@@ -304,50 +304,59 @@
   .chip.on{border-color:#1B2027;color:var(--tinta, #16191D);background:#F4F5F6}
 
   /* ── Fila 3: encabezados agrupados, fusionada igual ──
-     Bandas en color sólido (sin degradado ni brillo), letra blanca en
-     mayúscula y negrita. Los tonos salen de las variables de más abajo,
-     que el panel 🎨 puede reescribir siempre. */
+     Opción "2 · Pastel con borde": fondo suavizado del color de la
+     familia, borde 1.5px del color puro, letra en mayúscula y negrita.
+     En azul/rojo/plomo la letra es blanca; en verde/amarillo (colores
+     naturalmente muy claros) la letra usa un tono oscuro de su propia
+     familia porque el blanco no se lee ahí. Los tonos salen de las
+     variables de más abajo, que el panel 🎨 puede reescribir siempre. */
   .mx thead tr.bands th,
   .mx thead tr.bands th.frz{background:#fff !important;color:inherit !important;
     padding:3px 3px 4px !important;height:auto;border:none !important;
     border-bottom:1px solid #E4E6E9 !important}
   .mx thead .bnd{display:block;border-radius:6px;padding:4px 8px;text-align:center;
-    font-size:10px;font-weight:700;letter-spacing:.02em;line-height:1.15;
+    font-size:11px;font-weight:700;letter-spacing:.02em;line-height:1.2;
     text-transform:uppercase;
-    background:var(--gc,#607080);color:#fff;
-    border:1px solid var(--gb,#4A5A6A)}
-  /* paleta por bloque — bandas (--gc) en color sólido con letra blanca,
-     columnas individuales (--cc) en pastel suave con letra negra. */
-  /* azul: identificación, datos técnicos, proveedor, datos actuales */
-  [data-g="ident"] .bnd{--gc:#2E5FA0;--gb:#204570}
-  [data-g="ident"]{--cc:#DCE8F8}
-  [data-g="tec"]   .bnd{--gc:#35407A;--gb:#252D57}
-  [data-g="tec"]{--cc:#DEE4F5}
-  [data-g="prov"]  .bnd{--gc:#1D7EA6;--gb:#155C7A}
-  [data-g="prov"]{--cc:#D9F0FA}
-  [data-g="act"]   .bnd{--gc:#4A6C8C;--gb:#354F65}
-  [data-g="act"]{--cc:#E2E9F1}
-  /* verde: datos de movilización */
-  [data-g="mov"]   .bnd{--gc:#3E7A2E;--gb:#2B5A20}
-  [data-g="mov"]{--cc:#E4F3D9}
-  /* rojo: datos de desmovilización, control de horas y mantenimiento */
-  [data-g="des"]   .bnd{--gc:#B23B39;--gb:#8A2B29}
-  [data-g="des"]{--cc:#FBE3E2}
-  [data-g="ctrl"]  .bnd{--gc:#A14A35;--gb:#7A3627}
-  [data-g="ctrl"]{--cc:#F8DEDD}
-  /* amarillo: control documentario */
-  [data-g="doc"]   .bnd{--gc:#92720B;--gb:#6E5608}
-  [data-g="doc"]{--cc:#FBF0D3}
-  /* plomo: último mntto, comentarios */
-  [data-g="ult"]   .bnd{--gc:#6B6B6B;--gb:#525252}
-  [data-g="ult"]{--cc:#ECECEC}
-  [data-g="com"]   .bnd{--gc:#52606D;--gb:#3D4750}
-  [data-g="com"]{--cc:#E7E9EC}
+    background:var(--gc,#607080);color:var(--gtx,#fff);
+    border:1.5px solid var(--gb,#4A5A6A)}
+  /* paleta por bloque — bandas (--gc) en pastel suavizado con borde
+     (--gb) del color puro; columnas individuales (--cc) en un pastel
+     más suave todavía, con el texto (--gtx) igual al de la banda. */
+  /* azul (de #0961CE): identificación, datos técnicos, proveedor, datos actuales */
+  [data-g="ident"] .bnd{--gc:#2271D3;--gb:#0961CE;--gtx:#fff}
+  [data-g="ident"]{--cc:#D6E5F8}
+  [data-g="tec"]   .bnd{--gc:#2271D3;--gb:#0961CE;--gtx:#fff}
+  [data-g="tec"]{--cc:#D6E5F8}
+  [data-g="prov"]  .bnd{--gc:#2271D3;--gb:#0961CE;--gtx:#fff}
+  [data-g="prov"]{--cc:#D6E5F8}
+  [data-g="act"]   .bnd{--gc:#2271D3;--gb:#0961CE;--gtx:#fff}
+  [data-g="act"]{--cc:#D6E5F8}
+  /* rojo (de #FF0000): datos de movilización, control de horas y mntto */
+  [data-g="mov"]   .bnd{--gc:#FF1A1A;--gb:#FF0000;--gtx:#fff}
+  [data-g="mov"]{--cc:#FFDADA}
+  [data-g="ctrl"]  .bnd{--gc:#FF1A1A;--gb:#FF0000;--gtx:#fff}
+  [data-g="ctrl"]{--cc:#FFDADA}
+  /* verde (de #0CBB18): datos de desmovilización — letra oscura */
+  [data-g="des"]   .bnd{--gc:#68D570;--gb:#0CBB18;--gtx:#054709}
+  [data-g="des"]{--cc:#DBF5DD;--ctx:#054709}
+  /* amarillo (de #D1D402): control documentario — letra oscura */
+  [data-g="doc"]   .bnd{--gc:#E2E462;--gb:#D1D402;--gtx:#4F5101}
+  [data-g="doc"]{--cc:#F5F6D8;--ctx:#4F5101}
+  /* plomo (de #525151): último mntto, comentarios */
+  [data-g="ult"]   .bnd{--gc:#636262;--gb:#525151;--gtx:#fff}
+  [data-g="ult"]{--cc:#E4E3E3}
+  [data-g="com"]   .bnd{--gc:#636262;--gb:#525151;--gtx:#fff}
+  [data-g="com"]{--cc:#E4E3E3}
 
-  /* columnas individuales: pastel suave de su familia, letra negra,
-     bordes blancos; ya no dependen del ◐ */
-  .mx thead tr.cols th{background:var(--cc,#F6F7F8) !important;color:#1A1D21 !important;
+  /* columnas individuales: pastel más suave de su familia, letra del
+     mismo color que la banda, bordes blancos; ya no dependen del ◐ */
+  .mx thead tr.cols th{background:var(--cc,#F6F7F8) !important;
+    color:var(--ctx,#0961CE) !important;
     border-right-color:#fff !important;border-bottom-color:#fff !important}
+  [data-g="ident"],[data-g="tec"],[data-g="prov"],[data-g="act"]{--ctx:#0961CE}
+  [data-g="mov"],[data-g="ctrl"]{--ctx:#FF0000}
+  [data-g="ult"],[data-g="com"]{--ctx:#525151}
+
 
 
   /* encabezados de columna individuales: peso y bordes, siempre */
