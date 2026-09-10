@@ -972,7 +972,7 @@ function pmsColLista(){
 function pmsCerrarColMenu(){const c=document.getElementById('pmsColPop');if(c)c.classList.remove('abierto');}
 const nrmTxtP=s=>String(s??'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toUpperCase();
 pmsThead.addEventListener('click',ev=>{
-  const cab=ev.target.closest('[data-pmscol]'); if(cab)pmsAbrirColMenu(cab);
+  const cab=ev.target.closest('[data-pmscol]'); if(cab){ev.stopPropagation();pmsAbrirColMenu(cab);}
 });
 document.addEventListener('click',ev=>{ if(!ev.target.closest('#pmsColPop'))pmsCerrarColMenu(); });
 
