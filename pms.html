@@ -145,6 +145,42 @@
   /* encabezados en azul Komatsu, estilo "glossy" sin brillo (degradado claro-arriba/oscuro-abajo) */
   .ghead{background:linear-gradient(180deg,#7B87C0 0%,#4254A5 48%,#334281 100%) !important;
     border:1px solid #293466 !important;text-shadow:0 1px 1px rgba(0,0,0,.3)}
+  /* mismo tratamiento, verde: columnas de EJECUCIÓN */
+  .ghead-green{background:linear-gradient(180deg,#55BF5D 0%,#0CA318 48%,#097F13 100%) !important;
+    border:1px solid #07650F !important;color:#fff !important;text-shadow:0 1px 1px rgba(0,0,0,.3)}
+  /* mismo tratamiento, amarillo Caterpillar: columnas de CONTROL */
+  .ghead-yellow{background:linear-gradient(180deg,#FFDC58 0%,#FFCD11 48%,#C7A00D 100%) !important;
+    border:1px solid #9E7F0B !important;color:#3B2E00 !important;text-shadow:none}
+  /* título de columna clicable con menú tipo Excel, igual que en Equipos */
+  .pms thead .hcab{display:flex;align-items:center;gap:4px;cursor:pointer;padding:1px 2px;border-radius:4px}
+  .pms thead .hcab:hover{background:rgba(255,255,255,.16)}
+  .pms thead .hcab .ht{flex:1;overflow:hidden;text-overflow:ellipsis}
+  .pms thead .hcab .hi{font-size:8px;line-height:1;display:flex;gap:2px;align-items:center}
+  .pms thead .hcab .emb{opacity:0;font-style:normal;font-size:8px}
+  .pms thead .hcab:hover .emb{opacity:.75}
+  .pms thead .hcab.filtrado{background:rgba(0,0,0,.28);box-shadow:inset 0 0 0 1px rgba(255,255,255,.35)}
+  .pms thead .hcab.filtrado .emb{opacity:1}
+  #pmsColPop{position:fixed;background:#fff;border:1px solid #dfe3e7;border-radius:10px;
+    box-shadow:0 14px 38px rgba(0,0,0,.2);width:262px;z-index:9990;display:none;overflow:hidden}
+  #pmsColPop.abierto{display:block}
+  #pmsColPop .cp-h{padding:9px 11px;border-bottom:1px solid #f1f3f5;font-size:11.5px;color:#1f3864;font-weight:700}
+  #pmsColPop .cp-b{padding:8px 9px}
+  #pmsColPop input[type=search]{width:100%;border:1px solid #dfe3e7;border-radius:7px;padding:7px 9px;
+    font:inherit;font-size:12.5px;margin-bottom:6px}
+  #pmsColPop .cp-l{max-height:196px;overflow:auto;border-top:1px solid #f1f3f5;padding-top:5px}
+  #pmsColPop .cp-l label{display:flex;align-items:center;gap:8px;padding:5px 4px;font-size:12.5px;
+    border-radius:6px;cursor:pointer}
+  #pmsColPop .cp-l label:hover{background:#f7f8f9}
+  #pmsColPop .cp-l label span:nth-child(2){flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  #pmsColPop .cp-todos{border-bottom:1px solid #f1f3f5;margin-bottom:3px;font-weight:600;color:#1f3864}
+  #pmsColPop .cp-n{color:#98a2ad;font-size:11px;font-variant-numeric:tabular-nums}
+  #pmsColPop .cp-vacio{padding:12px;color:#98a2ad;font-size:12px;text-align:center}
+  #pmsColPop .cp-f{display:flex;gap:6px;padding:8px 9px;border-top:1px solid #f1f3f5}
+  #pmsColPop .cp-f button{flex:1;border:1px solid #dfe3e7;background:#fff;border-radius:7px;padding:7px;
+    font:inherit;font-size:12px;font-weight:600;cursor:pointer}
+  #pmsColPop .cp-f .ok{background:var(--amber);border-color:var(--amber);color:#1a1200}
+  /* HR/KM Prog. y Fecha Prog.: resaltadas en celeste claro */
+  .pms td[data-pmsk="hrkm_prog"],.pms td[data-pmsk="fecha_prog"]{background:#E3F6FB !important}
   .pms thead .hlab{padding:1px 0 2px;line-height:1.05}
   .pms thead .colf{width:100%;min-width:44px;border:1px solid #cfd6dd;border-radius:4px;padding:1px 3px;font-size:10px;height:16px;background:#fff;color:#1a1d21;outline:none}
   .pms thead .colf:focus{border-color:var(--amber);box-shadow:0 0 0 2px rgba(255,205,17,.35)}
@@ -524,7 +560,7 @@ function getE(id){return DIDX.get(String(id))||datos.find(x=>String(x.id)===Stri
 const MAESTRO_CAMPOS="id,status,cod_proyec,familia,cod_sap,equipo,marca,modelo,serie_placa,hrkm_actual,fecha_lectura,hr_dia,hrkm_ult_mntto,fecha_ult_mntto,frecuencia";
 
 /* ═══════════════════ PM-S : programa semanal + historico acumulado ═══════════════════ */
-let pmsData=[], pmsSel=null, pmsSelCell=null, pmsVerEjec=false, pmsColF={}, pmsCargado=false;
+let pmsData=[], pmsSel=null, pmsSelCell=null, pmsVerEjec=false, pmsColFilters={}, pmsCargado=false;
 const PMS_DIA=['L','M','M','J','V','S','D'];
 /* ¿está fuera de obra? "TRANS. DESM." NO cuenta: sigue en obra, en tránsito de salida */
 function esDesmov(s){return /^DESMOVILIZ/.test(String(s||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toUpperCase());}
@@ -690,14 +726,21 @@ function pmsHead(){
      +`<select id="pmsSelSem" style="border:none;border-radius:4px;font-size:10px;padding:1px 2px;font-weight:700;color:#293466;background:#fff">${opts.join('')}</select>`
      +`<input id="pmsAnioIn" type="number" value="${yr}" style="width:46px;border:none;border-radius:4px;font-size:10px;padding:1px 2px;text-align:center;margin-left:3px;color:#293466">`
      +`<span style="margin-left:6px;font-size:10px;font-weight:700;color:#fff">${mesLab}</span></th>`
-   +`<th colspan="3" class="ghead" style="font-weight:700;font-size:10px">EJECUCIÓN</th>`
-   +`<th colspan="3" class="ghead" style="font-weight:700;font-size:10px">CONTROL</th></tr>`;
+   +`<th colspan="3" class="ghead-green" style="font-weight:700;font-size:10px">EJECUCIÓN</th>`
+   +`<th colspan="3" class="ghead-yellow" style="font-weight:700;font-size:10px">CONTROL</th></tr>`;
 
-  // ── fila 3: nombres de columna (los dias llevan letra y numero en la misma celda) ──
-  const cols=[['#',42],['Proyecto',66],['Cód. SAP<br>JJC',68],['Equipo / Vehículo',180],['Marca',96],['Modelo',120],['Serie/Placa',96],
-              ['Tiempo<br>Req.*',58],['TIPO DE<br>PM*',58],['HR/KM<br>Prog.*',68],['Fecha<br>Prog.*',66]];
+  // ── fila 2b: bandas IDENTIFICACIÓN / PROGRAMACIÓN, igual que en Equipos ──
+  h+=`<tr class="pms-bands2">`
+   +`<th colspan="7" class="ghead"><div class="hlab" style="font-size:10px;font-weight:700">IDENTIFICACIÓN</div></th>`
+   +`<th colspan="4" class="ghead"><div class="hlab" style="font-size:10px;font-weight:700">PROGRAMACIÓN</div></th>`
+   +`<th colspan="13" style="background:#fff;border:none"></th></tr>`;
+
+  // ── fila 3: nombres de columna, clicables (abren el menú de filtro/orden) ──
+  const cols=[['#','_n',42,false],['Proyecto','proyec',66,true],['Cód. SAP<br>JJC','sap',68,true],
+              ['Equipo / Vehículo','equipo',180,true],['Marca','marca',96,true],['Modelo','modelo',120,true],['Serie/Placa','placa',96,true],
+              ['Tiempo<br>Req.*','_n',58,false],['TIPO DE<br>PM*','tipo',58,true],['HR/KM<br>Prog.*','_n',68,false],['Fecha<br>Prog.*','_n',66,false]];
   h+='<tr class="pms-cols">';
-  cols.forEach(([l,w])=>h+=`<th class="ghead" style="min-width:${w}px"><div class="hlab">${l}</div></th>`);
+  cols.forEach(([l,k,w,filt])=>h+=`<th class="ghead" style="min-width:${w}px">${pmsCabCol(k,l,filt)}</th>`);
   dias.forEach((d,i)=>{
     const iso=d.toISOString().slice(0,10), esH=iso===hoyISO, esD=i===6;
     const cls=esH?'':(esD?'':'ghead'), extra=esH?'background:#FFCD11;color:#1a1200':(esD?'background:#C00000;color:#fff':'');
@@ -705,16 +748,10 @@ function pmsHead(){
       +`<div style="font-size:9px;opacity:.9;line-height:1.1">${PMS_DIA[i]}</div>`
       +`<div style="font-size:11px;font-weight:${esH?800:600};line-height:1.1">${String(d.getUTCDate()).padStart(2,'0')}</div></th>`;
   });
-  [['OM*',96],['HR / KM*',72],['FECHA<br>EJECUCION*',78],['ESTADO*',92],['%<br>DESFASE',62],['SEMANA',54]]
-    .forEach(([l,w])=>h+=`<th class="ghead" style="min-width:${w}px"><div class="hlab">${l}</div></th>`);
+  [['OM*','om',96,true,'ghead-green'],['HR / KM*','hrkm',72,true,'ghead-green'],['FECHA<br>EJECUCION*','fejec',78,true,'ghead-green'],
+   ['ESTADO*','est',92,true,'ghead-yellow'],['%<br>DESFASE','_n',62,false,'ghead-yellow'],['SEMANA','sem',54,true,'ghead-yellow']]
+    .forEach(([l,k,w,filt,cl])=>h+=`<th class="${cl}" style="min-width:${w}px">${pmsCabCol(k,l,filt)}</th>`);
   h+='</tr>';
-
-  // ── fila 4: filtros por columna ──
-  const f=(k,ph)=>`<th style="background:#e8eaf0;padding:1px 2px"><input class="colf" data-pmsf="${k}" placeholder="${ph||''}" value="${esc(pmsColF[k]||'')}"></th>`;
-  const vac=n=>'<th style="background:#e8eaf0"></th>'.repeat(n);
-  h+='<tr class="pms-filt">'+f('_n','#')+f('proyec','Proyecto')+f('sap','SAP')+f('equipo','Equipo')+f('marca','Marca')+f('modelo','Modelo')+f('placa','Serie')
-    +vac(1)+f('tipo','PM')+vac(2)+vac(7)
-    +f('om','OM')+f('hrkm','HR/KM')+f('fejec','Fecha')+f('est','Estado')+vac(1)+f('sem','Sem.')+'</tr>';
 
   pmsThead.innerHTML=h;
   const ss=document.getElementById('pmsSelSem'); if(ss)ss.onchange=()=>{pmsSemana.value=ss.value;pmsRender();};
@@ -775,11 +812,25 @@ function pmsRefrescarFila(id){
   if(j>=0)pmsFilas[j]=f;
   return true;
 }
+/* valor de una columna filtrable, para una fila ya procesada por pmsFila() */
+function pmsValKey(f,k){
+  const r=f.r;
+  return k==='om'?String(r.om||'') : k==='hrkm'?String(r.hrkm_ejec??'')
+       : k==='fejec'?fmtDate(r.fecha_ejec) : k==='est'?f.est : k==='sem'?String(f.sem)
+       : k==='tipo'?String(f.tipo||'') : String(f[k]??'');
+}
+function pmsFiltroKey(){
+  return Object.keys(pmsColFilters).map(k=>k+':'+[...pmsColFilters[k]].sort().join(',')).join('|');
+}
+function pmsEstadoFiltraEjec(){
+  const s=pmsColFilters['est'];
+  return s && [...s].some(v=>String(v).toUpperCase().includes('EJEC'));
+}
 let _pmsHeadKey='';
 function pmsRender(){
   pmsReindexSap(); PMS_HP=pmsHPMap();
   const wk=+pmsSemana.value||isoWeek(hoy0()), yr=+pmsAnio.value||hoy0().getFullYear();
-  const hk=wk+'_'+yr+'_'+JSON.stringify(pmsColF);
+  const hk=wk+'_'+yr+'_'+pmsFiltroKey();
   if(hk!==_pmsHeadKey){_pmsHeadKey=hk;pmsHead();}
   const filas=pmsData.map(pmsFila).sort((a,b)=>
       String(a.r.fecha_ejec||'9999-99-99').localeCompare(String(b.r.fecha_ejec||'9999-99-99'))
@@ -790,8 +841,7 @@ function pmsRender(){
   const dias=[];for(let i=0;i<7;i++){const d=new Date(lun);d.setUTCDate(lun.getUTCDate()+i);dias.push(d);}
   // Con el filtro por defecto (ejecutados ocultos) no se crea el DOM de esas filas:
   // en un histórico de ~380 registros eso deja la tabla en unas pocas decenas de <tr>.
-  const estF=(pmsColF['est']||'').toLowerCase();
-  const ocultarEjec = !pmsVerEjec && !estF.includes('ejec');
+  const ocultarEjec = !pmsVerEjec && !pmsEstadoFiltraEjec();
   const visibles = ocultarEjec ? filas.filter(f=>!esHecho(f.est)) : filas;
   let h='';
   visibles.forEach(f=>{ h+=pmsRowHTML(f, bal.has(f.r.id)?bal.get(f.r.id):-1); });
@@ -809,22 +859,20 @@ function pmsIndexar(){
 function pmsAplicar(){
   const q=(pmsBuscarSem.value||'').trim();
   const g=(pmsBuscarGen.value||'').trim().toLowerCase();
-  const cf=[];for(const k in pmsColF){const v=(pmsColF[k]||'').trim().toLowerCase();if(v)cf.push([k,v]);}
-  const estF=(pmsColF['est']||'').toLowerCase();
+  const cf=Object.keys(pmsColFilters).filter(k=>pmsColFilters[k]&&pmsColFilters[k].size);
   let n=0,ver=0;
   for(const m of PMSX){
     const f=m.f,r=f.r; let ok=true;
-    if(esHecho(f.est) && !pmsVerEjec && !estF.includes('ejec')) ok=false;
+    if(esHecho(f.est) && !pmsVerEjec && !pmsEstadoFiltraEjec()) ok=false;
     if(ok&&q&&String(f.sem)!==q) ok=false;
     if(ok&&g){
       const junta=[f.proyec,f.sap,f.equipo,f.marca,f.modelo,f.placa].join(' ').toLowerCase();
       if(!junta.includes(g)) ok=false;
     }
-    if(ok)for(const [k,v] of cf){
-      const val = k==='_n'?'' : k==='om'?String(r.om||'') : k==='hrkm'?String(r.hrkm_ejec??'')
-                : k==='fejec'?fmtDate(r.fecha_ejec) : k==='est'?f.est : k==='sem'?String(f.sem)
-                : k==='tipo'?String(f.tipo||'') : String(f[k]??'');
-      if(!val.toLowerCase().includes(v)){ok=false;break;}
+    if(ok)for(const k of cf){
+      const val=pmsValKey(f,k).trim();
+      const key=val===''?'(vacío)':val;
+      if(!pmsColFilters[k].has(key)){ok=false;break;}
     }
     const d=ok?'':'none';
     if(m.tr.style.display!==d)m.tr.style.display=d;
@@ -836,19 +884,89 @@ function pmsAplicar(){
 }
 let pmsFiltT; function pmsAplicarD(){clearTimeout(pmsFiltT);pmsFiltT=setTimeout(pmsAplicar,80);}
 
+/* ---- filtro de columna, menú tipo Excel (igual que en Equipos) ---- */
+function pmsCabCol(k,lab,filtrable){
+  if(!filtrable)return `<div class="hlab">${lab}</div>`;
+  const f=pmsColFilters[k];
+  const act=f&&f.size;
+  return `<div class="hlab hcab${act?' filtrado':''}" data-pmscol="${esc(k)}" title="Filtrar por ${esc(lab.replace(/<br>/g,' '))}">
+    <span class="ht">${lab}</span>
+    <span class="hi">${act?'<b class="emb">▼</b>':'<i class="emb">▼</i>'}</span>
+  </div>`;
+}
+function pmsColValores(k){
+  const cnt=new Map();
+  for(const f of pmsFilas){
+    const v=pmsValKey(f,k).trim();
+    const key=v===''?'(vacío)':v;
+    cnt.set(key,(cnt.get(key)||0)+1);
+  }
+  return cnt;
+}
+let pmsColAct=null, pmsColSel=new Set();
+function pmsAbrirColMenu(el){
+  const k=el.dataset.pmscol; if(!k)return;
+  pmsColAct=k;
+  pmsColSel=new Set(pmsColFilters[k]?pmsColFilters[k]:[]);
+  let caja=document.getElementById('pmsColPop');
+  if(!caja){
+    caja=document.createElement('div'); caja.id='pmsColPop';
+    caja.innerHTML=`<div class="cp-h" id="pmsCpTit"></div>
+      <div class="cp-b">
+        <input type="search" id="pmsCpQ" placeholder="Buscar…" autocomplete="off">
+        <div class="cp-l" id="pmsCpL"></div>
+      </div>
+      <div class="cp-f"><button id="pmsCpNo">Quitar filtro</button><button class="ok" id="pmsCpOk">Aplicar</button></div>`;
+    document.body.appendChild(caja);
+    caja.onclick=ev=>ev.stopPropagation();
+    document.getElementById('pmsCpQ').oninput=pmsColLista;
+    document.getElementById('pmsCpOk').onclick=()=>{
+      if(pmsColSel.size)pmsColFilters[pmsColAct]=new Set(pmsColSel);
+      else delete pmsColFilters[pmsColAct];
+      pmsCerrarColMenu(); pmsRender();};
+    document.getElementById('pmsCpNo').onclick=()=>{
+      delete pmsColFilters[pmsColAct];
+      pmsCerrarColMenu(); pmsRender();};
+  }
+  const lab=el.querySelector('.ht');
+  document.getElementById('pmsCpTit').textContent=lab?lab.textContent:k;
+  document.getElementById('pmsCpQ').value='';
+  pmsColLista();
+  const r=el.getBoundingClientRect(), an=262;
+  caja.style.left=Math.max(8,Math.min(r.left,innerWidth-an-8))+'px';
+  caja.style.top=Math.min(r.bottom+4,innerHeight-380)+'px';
+  caja.classList.add('abierto');
+  document.getElementById('pmsCpQ').focus();
+}
+function pmsColLista(){
+  const q=nrmTxtP(document.getElementById('pmsCpQ').value);
+  const cnt=pmsColValores(pmsColAct);
+  const vals=[...cnt.keys()].filter(v=>!q||nrmTxtP(v).includes(q))
+    .sort((a,b)=>String(a).localeCompare(String(b),'es',{numeric:true}));
+  const L=document.getElementById('pmsCpL');
+  L.innerHTML=vals.length
+    ? `<label class="cp-todos"><input type="checkbox" id="pmsCpAll" ${vals.every(v=>pmsColSel.has(v))?'checked':''}>
+        <span>Seleccionar todo</span><span class="cp-n">${vals.length}</span></label>`
+      + vals.map(v=>`<label><input type="checkbox" value="${esc(v)}" ${pmsColSel.has(v)?'checked':''}>
+        <span>${esc(v)}</span><span class="cp-n">${cnt.get(v)}</span></label>`).join('')
+    : '<div class="cp-vacio">Sin coincidencias.</div>';
+  const all=document.getElementById('pmsCpAll');
+  if(all)all.onchange=()=>{ vals.forEach(v=>all.checked?pmsColSel.add(v):pmsColSel.delete(v)); pmsColLista(); };
+  L.querySelectorAll('input[value]').forEach(i=>i.onchange=()=>{
+    i.checked?pmsColSel.add(i.value):pmsColSel.delete(i.value);});
+}
+function pmsCerrarColMenu(){const c=document.getElementById('pmsColPop');if(c)c.classList.remove('abierto');}
+const nrmTxtP=s=>String(s??'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toUpperCase();
+pmsThead.addEventListener('click',ev=>{
+  const cab=ev.target.closest('[data-pmscol]'); if(cab)pmsAbrirColMenu(cab);
+});
+document.addEventListener('click',ev=>{ if(!ev.target.closest('#pmsColPop'))pmsCerrarColMenu(); });
+
 /* ---- interaccion ---- */
-pmsThead.addEventListener('input',ev=>{
-  const k=ev.target.dataset.pmsf;if(!k)return;
-  const antes=(pmsColF['est']||'').toLowerCase().includes('ejec');
-  pmsColF[k]=ev.target.value;
-  const ahora=(pmsColF['est']||'').toLowerCase().includes('ejec');
-  if(k==='est'&&antes!==ahora&&!pmsVerEjec){const foco=ev.target.dataset.pmsf;pmsRender();
-    const nuevo=pmsThead.querySelector(`[data-pmsf="${foco}"]`);if(nuevo){nuevo.focus();nuevo.setSelectionRange(nuevo.value.length,nuevo.value.length);}return;}
-  pmsAplicarD();});
 pmsBuscarSem.oninput=pmsAplicarD;
 pmsBuscarGen.oninput=pmsAplicarD;
 pmsBtnVerEjec.onclick=()=>{pmsVerEjec=!pmsVerEjec;pmsBtnVerEjec.textContent=pmsVerEjec?'Ocultar realizados':'Mostrar realizados';pmsBtnVerEjec.classList.toggle('primary',pmsVerEjec);pmsRender();};
-pmsBtnClear.onclick=()=>{pmsColF={};pmsBuscarSem.value='';pmsBuscarGen.value='';pmsVerEjec=false;pmsBtnVerEjec.textContent='Mostrar realizados';pmsBtnVerEjec.classList.remove('primary');pmsRender();};
+pmsBtnClear.onclick=()=>{pmsColFilters={};pmsBuscarSem.value='';pmsBuscarGen.value='';pmsVerEjec=false;pmsBtnVerEjec.textContent='Mostrar realizados';pmsBtnVerEjec.classList.remove('primary');pmsRender();};
 pmsBtnHoy.onclick=()=>{const H=hoy0();pmsSemana.value=isoWeek(H);pmsAnio.value=H.getFullYear();pmsRender();};
 
 pmsBody.addEventListener('click',async ev=>{
