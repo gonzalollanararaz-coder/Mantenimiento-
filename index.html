@@ -85,7 +85,8 @@
   /* Tabla estilo Excel */
   .wrap{padding:0;overflow:auto;overflow-x:auto;max-height:calc(100vh - 164px)}
   table.mx{border-collapse:separate;border-spacing:0;font-size:11.5px;background:#fff;min-width:1200px}
-  .mx th,.mx td{border-bottom:1px solid #e6e8eb;border-right:1px solid #eef0f2;white-space:nowrap}
+  .mx th,.mx td{border-bottom:1px solid #e6e8eb;border-right:1px solid #eef0f2;white-space:nowrap;
+    overflow:hidden;text-overflow:ellipsis}
   .mx thead th{position:sticky;color:#fff;font-size:11px;font-weight:400;letter-spacing:0;padding:2px 4px;text-align:center;z-index:5;overflow:hidden;border:none;border-right:1px solid #fff;border-bottom:1px solid #fff;
     transform:translateZ(0);backface-visibility:hidden;will-change:transform}
   .mx thead tr.bands th{top:0;height:auto;cursor:pointer;user-select:none;font-weight:600}
@@ -305,13 +306,13 @@
   [data-g="ident"] .bnd,[data-g="tec"] .bnd,[data-g="prov"] .bnd,[data-g="act"] .bnd{
     --gtop:#7B87C0;--gc:#4254A5;--gbot:#334281;--gb:#293466;--gtx:#fff}
   [data-g="ident"],[data-g="tec"],[data-g="prov"],[data-g="act"]{--cc:#E5E7F2;--ctx:#4254A5}
-  /* rojo: datos de movilización, control de horas y mntto */
-  [data-g="mov"] .bnd,[data-g="ctrl"] .bnd{
+  /* verde: datos de movilización */
+  [data-g="mov"] .bnd{--gtop:#55BF5D;--gc:#0CA318;--gbot:#097F13;--gb:#07650F;--gtx:#fff}
+  [data-g="mov"]{--cc:#DDF2DF;--ctx:#0CA318}
+  /* rojo: datos de desmovilización, control de horas y mntto */
+  [data-g="des"] .bnd,[data-g="ctrl"] .bnd{
     --gtop:#E05A5F;--gc:#D3141A;--gbot:#A51014;--gb:#830C10;--gtx:#fff}
-  [data-g="mov"],[data-g="ctrl"]{--cc:#F9DEDF;--ctx:#D3141A}
-  /* verde: datos de desmovilización */
-  [data-g="des"] .bnd{--gtop:#55BF5D;--gc:#0CA318;--gbot:#097F13;--gb:#07650F;--gtx:#fff}
-  [data-g="des"]{--cc:#DDF2DF;--ctx:#0CA318}
+  [data-g="des"],[data-g="ctrl"]{--cc:#F9DEDF;--ctx:#D3141A}
   /* amarillo Caterpillar: control documentario — letra oscura */
   [data-g="doc"] .bnd{--gtop:#FFDC58;--gc:#FFCD11;--gbot:#C7A00D;--gb:#9E7F0B;--gtx:#3B2E00}
   [data-g="doc"] .bnd{text-shadow:none}
@@ -336,44 +337,22 @@
   .mx thead .colf{border:1px solid #DDE0E3;border-radius:5px;background:#fff}
 
   /* ── Barras superiores del tema: dos franjas en vez de tres ── */
-  /* Las pestañas viven en la franja de la marca, centradas entre el título
-     y el indicador de guardado. La activa va en amarillo Caterpillar. */
-  #topbar{display:flex;align-items:stretch;background:var(--steel);
-          border-bottom:3px solid var(--amber);padding:6px 16px 0}
-  #topbar header{background:transparent;border:none;padding:0 16px 6px 0;flex:0 0 auto;align-items:center}
-  #topbar nav{background:transparent;border:none;padding:0;display:flex;align-items:flex-end;
-              gap:3px;flex:1;justify-content:center}
-  #topbar nav button{color:#B9C0C7;font-size:13px;font-weight:500;padding:0 16px;height:32px;
-    background:#2A323B;border:none;border-radius:9px 9px 0 0;margin-bottom:-2px;
-    border-bottom:3px solid transparent}
-  #topbar nav button:hover{background:#333C46;color:#EDF0F3}
-  #topbar nav button.on{background:var(--amber);color:#1A1200;font-weight:700;height:36px}
+  /* Las pestañas viven agrupadas en una cápsula oscura ("píldora flotante"),
+     separada de la marca — la activa se resalta en amarillo Caterpillar
+     sólido. Mismo criterio para todas las pestañas de la app (actuales
+     y las que se agreguen). */
+  #topbar{display:flex;align-items:center;background:var(--steel);
+          padding:8px 16px}
+  #topbar header{background:transparent;border:none;padding:0;flex:0 0 auto;align-items:center}
+  #topbar nav{align-items:center;background:#12161B;border-radius:10px;padding:3px;gap:2px;
+    flex:0 0 auto;margin-left:14px}
+  #topbar nav button{color:#8E959C;font-size:12.5px;font-weight:600;padding:7px 14px;height:auto;
+    background:transparent;border:none;border-radius:7px;transition:background .12s,color .12s}
+  #topbar nav button:hover{color:#fff;background:#1D232B}
+  #topbar nav button.on{background:#FFCD11;color:#1A1200}
   #topbar header .userbox{margin-left:auto}
-  /* ── Fila 1 fusionada: topbar + pestañas permanentes con la vista 2 ── */
-  #topbar{background:#1B2027;border-bottom:2px solid var(--amber)}
-  #topbar header{background:transparent;border:none;padding:0 18px 0 0;flex:0 0 auto}
+  /* ── Fila 1: topbar + pestañas, permanentes ── */
   #topbar header .userbox{display:none}       /* pasa al final de la franja */
-  #topbar nav{background:transparent;border:none;padding:0;display:flex;align-items:stretch}
-  /* Pestañas al estilo del navegador: la activa se despega del fondo oscuro
-     y se une con la barra blanca de abajo. */
-  #topbar nav{align-items:flex-end;gap:3px;padding-bottom:0}
-  #topbar nav button{color:#9BA3AB;font-size:13px;font-weight:500;padding:0 17px;
-    height:34px;align-self:flex-end;border:none;
-    border-top-left-radius:9px;border-top-right-radius:9px;
-    border-bottom-left-radius:0;border-bottom-right-radius:0;
-    background:#232A33;margin-bottom:-2px;position:relative;transition:background .12s}
-  #topbar nav button:hover{color:#E2E6EA;background:#2B333D}
-  #topbar nav button.on{background:#fff;color:#16191D;font-weight:600;height:38px;
-    box-shadow:0 -1px 0 rgba(0,0,0,.06)}
-  #topbar nav button.on::before,
-  #topbar nav button.on::after{content:"";position:absolute;bottom:0;width:9px;height:9px;
-    background:#fff;pointer-events:none}
-  #topbar nav button.on::before{left:-9px;
-    -webkit-mask:radial-gradient(circle at 0 0,transparent 9px,#000 9.5px);
-    mask:radial-gradient(circle at 0 0,transparent 9px,#000 9.5px)}
-  #topbar nav button.on::after{right:-9px;
-    -webkit-mask:radial-gradient(circle at 100% 0,transparent 9px,#000 9.5px);
-    mask:radial-gradient(circle at 100% 0,transparent 9px,#000 9.5px)}
   #topbar .brand h1{font-size:14.5px;font-weight:600;letter-spacing:-.01em}
   #topbar .brand p{font-size:10px;color:#8E959C;letter-spacing:.05em}
   #topbar .sp2{flex:1}
@@ -1060,7 +1039,7 @@ function cabCol(k,lab,filtrable){
 function estilosFrozen(){
   let css='';
   FROZEN.forEach((f,i)=>{const w=fw(f);
-    css+=`.mx .fz${i}{left:${frozenLeft(i)}px;min-width:${w}px;width:${w}px}`;});
+    css+=`.mx .fz${i}{left:${frozenLeft(i)}px;min-width:${w}px;width:${w}px;max-width:${w}px}`;});
   let el=document.getElementById('cssFrozen');
   if(!el){el=document.createElement('style');el.id='cssFrozen';document.head.appendChild(el);}
   if(el.textContent!==css)el.textContent=css;
