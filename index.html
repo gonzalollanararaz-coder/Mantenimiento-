@@ -88,8 +88,8 @@
   .mx th,.mx td{border-bottom:1px solid #e6e8eb;border-right:1px solid #eef0f2;white-space:nowrap}
   .mx thead th{position:sticky;color:#fff;font-size:11px;font-weight:400;letter-spacing:0;padding:2px 4px;text-align:center;z-index:5;overflow:hidden;border:none;border-right:1px solid #fff;border-bottom:1px solid #fff;
     transform:translateZ(0);backface-visibility:hidden;will-change:transform}
-  .mx thead tr.bands th{top:0;height:22px;cursor:pointer;user-select:none;font-weight:600}
-  .mx thead tr.cols th{top:22px;font-weight:400;text-transform:none;vertical-align:top}
+  .mx thead tr.bands th{top:0;height:auto;cursor:pointer;user-select:none;font-weight:600}
+  .mx thead tr.cols th{top:var(--bandsH,30px);font-weight:400;text-transform:none;vertical-align:top}
   .mx thead .hlab{padding:2px 0 3px;line-height:1.05}
   .mx thead .colf{width:100%;border:1px solid #cfd6dd;border-radius:4px;padding:1px 4px;font-size:10px;height:17px;background:#fff;color:#1a1d21;outline:none}
   .mx thead .colf:focus{border-color:var(--amber);box-shadow:0 0 0 2px rgba(255,205,17,.45)}
@@ -282,59 +282,50 @@
     border-radius:999px;font-weight:500}
   .chip.on{border-color:#1B2027;color:var(--tinta, #16191D);background:#F4F5F6}
 
-  /* ── Fila 3: encabezados agrupados, fusionada igual ──
-     Opción "2 · Pastel con borde": fondo suavizado del color de la
-     familia, borde 1.5px del color puro, letra en mayúscula y negrita.
-     En azul/rojo/plomo la letra es blanca; en verde/amarillo (colores
-     naturalmente muy claros) la letra usa un tono oscuro de su propia
-     familia porque el blanco no se lee ahí. Los tonos salen de las
-     variables de más abajo, que el panel 🎨 puede reescribir siempre. */
+  /* ── Fila 3: encabezados agrupados ──
+     Estilo "glossy 3D": degradado claro-arriba/oscuro-abajo (volumen,
+     sin reflejo/brillo), borde oscuro del mismo color, letra blanca en
+     mayúscula y negrita — salvo el amarillo, que lleva letra oscura
+     porque el blanco no se lee ahí. Azul con base en el azul Komatsu
+     (#283D99); amarillo, el mismo Caterpillar (#FFCD11) que ya usa el
+     resto de la app. Columnas individuales: pastel suave de la misma
+     familia, letra del color de la banda. */
   .mx thead tr.bands th,
   .mx thead tr.bands th.frz{background:#fff !important;color:inherit !important;
     padding:3px 3px 4px !important;height:auto;border:none !important;
     border-bottom:1px solid #E4E6E9 !important}
-  .mx thead .bnd{display:block;border-radius:6px;padding:4px 8px;text-align:center;
+  .mx thead .bnd{display:block;border-radius:7px;padding:4px 8px;text-align:center;
     font-size:11px;font-weight:700;letter-spacing:.02em;line-height:1.2;
-    text-transform:uppercase;
-    background:var(--gc,#607080);color:var(--gtx,#fff);
-    border:1.5px solid var(--gb,#4A5A6A)}
-  /* paleta por bloque — bandas (--gc) en pastel suavizado con borde
-     (--gb) del color puro; columnas individuales (--cc) en un pastel
-     más suave todavía, con el texto (--gtx) igual al de la banda. */
-  /* azul (de #0961CE): identificación, datos técnicos, proveedor, datos actuales */
-  [data-g="ident"] .bnd{--gc:#2271D3;--gb:#0961CE;--gtx:#fff}
-  [data-g="ident"]{--cc:#D6E5F8}
-  [data-g="tec"]   .bnd{--gc:#2271D3;--gb:#0961CE;--gtx:#fff}
-  [data-g="tec"]{--cc:#D6E5F8}
-  [data-g="prov"]  .bnd{--gc:#2271D3;--gb:#0961CE;--gtx:#fff}
-  [data-g="prov"]{--cc:#D6E5F8}
-  [data-g="act"]   .bnd{--gc:#2271D3;--gb:#0961CE;--gtx:#fff}
-  [data-g="act"]{--cc:#D6E5F8}
-  /* rojo (de #FF0000): datos de movilización, control de horas y mntto */
-  [data-g="mov"]   .bnd{--gc:#FF1A1A;--gb:#FF0000;--gtx:#fff}
-  [data-g="mov"]{--cc:#FFDADA}
-  [data-g="ctrl"]  .bnd{--gc:#FF1A1A;--gb:#FF0000;--gtx:#fff}
-  [data-g="ctrl"]{--cc:#FFDADA}
-  /* verde (de #0CBB18): datos de desmovilización — letra oscura */
-  [data-g="des"]   .bnd{--gc:#68D570;--gb:#0CBB18;--gtx:#054709}
-  [data-g="des"]{--cc:#DBF5DD;--ctx:#054709}
-  /* amarillo (de #D1D402): control documentario — letra oscura */
-  [data-g="doc"]   .bnd{--gc:#E2E462;--gb:#D1D402;--gtx:#4F5101}
-  [data-g="doc"]{--cc:#F5F6D8;--ctx:#4F5101}
-  /* plomo (de #525151): último mntto, comentarios */
-  [data-g="ult"]   .bnd{--gc:#636262;--gb:#525151;--gtx:#fff}
-  [data-g="ult"]{--cc:#E4E3E3}
-  [data-g="com"]   .bnd{--gc:#636262;--gb:#525151;--gtx:#fff}
-  [data-g="com"]{--cc:#E4E3E3}
+    text-transform:uppercase;color:var(--gtx,#fff);
+    background:linear-gradient(180deg,var(--gtop,#8090B0) 0%,var(--gc,#607080) 48%,var(--gbot,#4A5A6A) 100%);
+    border:1px solid var(--gb,#3A4656);
+    box-shadow:0 1.5px 2px rgba(0,0,0,.25);
+    text-shadow:0 1px 1px rgba(0,0,0,.3)}
+  /* azul (base Komatsu #283D99, aclarado): identificación, datos técnicos, proveedor, datos actuales */
+  [data-g="ident"] .bnd,[data-g="tec"] .bnd,[data-g="prov"] .bnd,[data-g="act"] .bnd{
+    --gtop:#7B87C0;--gc:#4254A5;--gbot:#334281;--gb:#293466;--gtx:#fff}
+  [data-g="ident"],[data-g="tec"],[data-g="prov"],[data-g="act"]{--cc:#E5E7F2;--ctx:#4254A5}
+  /* rojo: datos de movilización, control de horas y mntto */
+  [data-g="mov"] .bnd,[data-g="ctrl"] .bnd{
+    --gtop:#E05A5F;--gc:#D3141A;--gbot:#A51014;--gb:#830C10;--gtx:#fff}
+  [data-g="mov"],[data-g="ctrl"]{--cc:#F9DEDF;--ctx:#D3141A}
+  /* verde: datos de desmovilización */
+  [data-g="des"] .bnd{--gtop:#55BF5D;--gc:#0CA318;--gbot:#097F13;--gb:#07650F;--gtx:#fff}
+  [data-g="des"]{--cc:#DDF2DF;--ctx:#0CA318}
+  /* amarillo Caterpillar: control documentario — letra oscura */
+  [data-g="doc"] .bnd{--gtop:#FFDC58;--gc:#FFCD11;--gbot:#C7A00D;--gb:#9E7F0B;--gtx:#3B2E00}
+  [data-g="doc"] .bnd{text-shadow:none}
+  [data-g="doc"]{--cc:#FFF8DE;--ctx:#9E7F0B}
+  /* plomo (más claro): último mntto, comentarios */
+  [data-g="ult"] .bnd,[data-g="com"] .bnd{
+    --gtop:#ADADAD;--gc:#8A8A8A;--gbot:#6C6C6C;--gb:#565656;--gtx:#fff}
+  [data-g="ult"],[data-g="com"]{--cc:#EFEFEF;--ctx:#8A8A8A}
 
-  /* columnas individuales: pastel más suave de su familia, letra del
-     mismo color que la banda, bordes blancos; ya no dependen del ◐ */
+  /* columnas individuales: pastel suave de su familia, letra del
+     mismo color que la banda, bordes blancos */
   .mx thead tr.cols th{background:var(--cc,#F6F7F8) !important;
-    color:var(--ctx,#0961CE) !important;
+    color:var(--ctx,#4254A5) !important;
     border-right-color:#fff !important;border-bottom-color:#fff !important}
-  [data-g="ident"],[data-g="tec"],[data-g="prov"],[data-g="act"]{--ctx:#0961CE}
-  [data-g="mov"],[data-g="ctrl"]{--ctx:#FF0000}
-  [data-g="ult"],[data-g="com"]{--ctx:#525151}
 
 
 
@@ -343,24 +334,6 @@
     border-right-width:1px !important;border-right-style:solid !important;border-right-color:#E9EAEC !important;
     border-bottom:1px solid var(--linea,#E4E6E9)}
   .mx thead .colf{border:1px solid #DDE0E3;border-radius:5px;background:#fff}
-
-  /* panel de colores */
-  #palWrap{position:fixed;inset:0;background:rgba(15,20,26,.5);z-index:9996;display:flex;
-           align-items:flex-start;justify-content:flex-end;padding:12px}
-  #palCard{background:#fff;border-radius:12px;width:min(420px,96vw);max-height:calc(100vh - 24px);
-           display:flex;flex-direction:column;box-shadow:0 20px 60px rgba(0,0,0,.35)}
-  #palCard .ph{display:flex;align-items:center;gap:10px;padding:12px 15px;border-bottom:1px solid var(--line)}
-  #palCard .ph h3{font-size:14px;color:#1f3864}
-  #palCard .pb{overflow:auto;padding:10px 15px 14px}
-  .pfila{display:flex;align-items:center;gap:10px;padding:7px 0;border-bottom:1px solid #f1f3f5}
-  .pfila:last-child{border-bottom:none}
-  .pfila .mu{flex:1;border-radius:6px;padding:4px 9px;font-size:10px;font-weight:700;text-align:center;
-             border:1px solid rgba(0,0,0,.12);box-shadow:inset 0 1px 0 rgba(255,255,255,.8)}
-  .pfila input[type=color]{width:34px;height:28px;border:1px solid var(--line);border-radius:6px;
-             padding:1px;background:#fff;cursor:pointer}
-  .pfila .rst{border:none;background:none;color:#c2c7cc;cursor:pointer;font-size:14px;padding:0 2px}
-  .pfila .rst:hover{color:var(--bad)}
-  .pnota{font-size:11px;color:var(--muted);line-height:1.5;margin-top:10px}
 
   /* ── Barras superiores del tema: dos franjas en vez de tres ── */
   /* Las pestañas viven en la franja de la marca, centradas entre el título
@@ -644,11 +617,8 @@
       <button class="act ghost ic" id="btnHoro" title="Cargar el reporte de consumo de combustible (actualiza horómetros y alimenta la pestaña Combustible)">⛽</button>
       <button class="act ghost ic" id="btnHoroSolo" title="Cargar solo horómetros y fechas (no afecta el reporte de combustible)">⏱</button>
       <button class="act ghost ic" id="btnFormatos" title="Descargar los formatos de ejemplo">📄</button>
-      <button class="act ghost ic" id="btnPaleta" title="Ajustar los colores de los encabezados">🎨</button>
       <span class="dd hide" id="ddCargar"><button class="act ghost dd-b">Cargar <i>▾</i></button>
         <div class="dd-m" id="mCargar"><div class="dd-c">Desde un archivo Excel</div></div></span>
-      <span class="dd hide" id="ddVista"><button class="act ghost dd-b">Colores <i>▾</i></button>
-        <div class="dd-m" id="mVista"></div></span>
       <button class="act ghost ic" id="btnExcel" title="Descargar en Excel">⬇</button>
       <button class="act ghost ic" id="btnRefresh" title="Volver a cargar los datos">↻</button>
     </div>
@@ -1125,6 +1095,14 @@ function buildHead(){
     }
   }
   thead.innerHTML=b1+'</tr>'+b2+'</tr>';
+  // La fila de columnas se pega justo debajo de la de bandas: el alto de
+  // ésta cambia con el diseño (padding, borde), así que se mide de verdad
+  // en vez de asumir un número fijo — si no, la fila de columnas queda
+  // montada encima de la de bandas al hacer scroll.
+  requestAnimationFrame(()=>{
+    const filaBandas=thead.querySelector('tr.bands');
+    if(filaBandas)document.documentElement.style.setProperty('--bandsH', filaBandas.offsetHeight+'px');
+  });
 }
 function famNum(e){const m=String(e.familia||'').match(/\d+/);return m?+m[0]:99;}
 const TIPOS_CTR={n:1,pct:1,d:1,de:1,cont:1};
@@ -2480,92 +2458,11 @@ function bajarFormato(tipo){
   XLSX.writeFile(wb,nombre);
 }
 
-/* ── Colores de los encabezados ──
-   Cada bloque de columnas tiene su tono. Se pueden cambiar uno por uno y
-   quedan guardados en este navegador; el botón ↺ devuelve el original. */
-const PAL_BASE={
-  ident:'#8FB3DE', tec:'#A69AD6', mov:'#8FCBAE', des:'#B0BCC8', prov:'#CFB392',
-  doc:'#EBBC83',  act:'#F2D274', ult:'#BCCD8B', ctrl:'#E79E9A', com:'#B0BCC8'
-};
-const PAL_LAB={ident:'IDENTIFICACIÓN',tec:'DATOS TÉCNICOS',mov:'DATOS DE MOVILIZACIÓN',
-  des:'DATOS DESMOVILIZACIÓN',prov:'PROVEEDOR',doc:'CONTROL DOCUMENTARIO',
-  act:'DATOS ACTUALES',ult:'ÚLTIMO MNTTO',ctrl:'CONTROL DE HORAS Y MNTTO',com:'COMENTARIOS'};
-let PAL={};
-try{PAL=JSON.parse(localStorage.getItem('gllr_paleta')||'{}');}catch(_){}
-
-const hex2rgb=h=>{h=h.replace('#','');return [0,2,4].map(i=>parseInt(h.slice(i,i+2),16));};
-const rgb2hex=a=>'#'+a.map(v=>Math.max(0,Math.min(255,Math.round(v))).toString(16).padStart(2,'0')).join('');
-const aclarar=(h,f)=>rgb2hex(hex2rgb(h).map(v=>v+(255-v)*f));
-const oscurecer=(h,f)=>rgb2hex(hex2rgb(h).map(v=>v*(1-f)));
-/* El texto se oscurece a partir del mismo tono, así siempre contrasta */
-function tonos(base){
-  return {claro:aclarar(base,.45), base, suave:aclarar(base,.68),
-          borde:oscurecer(base,.12), texto:oscurecer(base,.62)};
-}
-function aplicarPaleta(){
-  let css='';
-  for(const k of Object.keys(PAL_BASE)){
-    const t=tonos(PAL[k]||PAL_BASE[k]);
-    css+=`[data-g="${k}"] .bnd{--gc:linear-gradient(180deg,${t.claro},${t.base});`
-        +`--gc2:${t.suave};--gt:${t.texto};--gb:${t.borde}}`;
-  }
-  let el=document.getElementById('palCSS');
-  if(!el){el=document.createElement('style');el.id='palCSS';document.head.appendChild(el);}
-  el.textContent=css;
-}
-aplicarPaleta();
-
-function palAbrir(){
-  const fila=k=>{
-    const col=PAL[k]||PAL_BASE[k], t=tonos(col);
-    return `<div class="pfila" data-k="${k}">
-      <span class="mu" style="background:linear-gradient(180deg,${t.claro},${t.base});
-        color:${t.texto};border-color:${t.borde}">${esc(PAL_LAB[k])}</span>
-      <input type="color" value="${col}">
-      <button class="rst" title="Volver al color original">↺</button></div>`;
-  };
-  document.body.insertAdjacentHTML('beforeend',`<div id="palWrap"><div id="palCard">
-    <div class="ph"><div><h3>Colores de los encabezados</h3>
-      <div style="font-size:11px;color:var(--muted);margin-top:2px">Cambian solo en tu pantalla.</div></div>
-      <div class="spacer"></div>
-      <button class="act ghost" id="palTodo">Restaurar todo</button>
-      <button class="act" id="palCer">Cerrar</button></div>
-    <div class="pb">
-      ${Object.keys(PAL_BASE).map(fila).join('')}
-      <div class="pnota">El tono que eliges es el del borde inferior del cuadro; el degradado,
-        el borde y el color del texto se calculan a partir de él para que siempre se lea bien.</div>
-    </div></div></div>`);
-  const cerrar=()=>{const e=document.getElementById('palWrap');if(e)e.remove();};
-  document.getElementById('palCer').onclick=cerrar;
-  document.getElementById('palWrap').addEventListener('click',ev=>{if(ev.target.id==='palWrap')cerrar();});
-  document.getElementById('palTodo').onclick=()=>{
-    PAL={}; try{localStorage.removeItem('gllr_paleta');}catch(_){}
-    aplicarPaleta(); cerrar(); palAbrir();
-  };
-  document.querySelectorAll('#palWrap .pfila').forEach(f=>{
-    const k=f.dataset.k, inp=f.querySelector('input[type=color]'), mu=f.querySelector('.mu');
-    const pinta=()=>{const t=tonos(PAL[k]||PAL_BASE[k]);
-      mu.style.background=`linear-gradient(180deg,${t.claro},${t.base})`;
-      mu.style.color=t.texto; mu.style.borderColor=t.borde; inp.value=PAL[k]||PAL_BASE[k];};
-    inp.oninput=()=>{PAL[k]=inp.value;
-      try{localStorage.setItem('gllr_paleta',JSON.stringify(PAL));}catch(_){}
-      aplicarPaleta(); pinta();};
-    f.querySelector('.rst').onclick=()=>{delete PAL[k];
-      try{localStorage.setItem('gllr_paleta',JSON.stringify(PAL));}catch(_){}
-      aplicarPaleta(); pinta();};
-  });
-}
-btnPaleta.onclick=palAbrir;
-
-
 /* ── Reorganización de las barras con el tema activo ──
    Los botones no se recrean: se mudan al menú y vuelven al apagarlo, así
    conservan sus atajos y todo lo que ya hacían. */
 const DD_CARGAR=[['btnHoro','Reporte de combustible'],['btnHoroSolo','Horómetros y fechas'],
                  ['btnFormatos','Descargar formatos de ejemplo'],['btnExcel','Exportar la tabla a Excel']];
-/* Deshacer, plegar, desplegar y actualizar se quedan a la vista: se usan
-   a diario. En el menú solo queda lo que se toca de vez en cuando. */
-const DD_VISTA =[['btnPaleta','Colores de los encabezados']];
 /* Iconos de trazo, en lugar de los símbolos de teclado */
 const SVG={
   btnUndo:'<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M7 8H12.5a4 4 0 0 1 0 8H8"/><path d="M10 5 7 8l3 3"/></svg>',
@@ -2603,12 +2500,9 @@ function mudarBotones(alMenu){
       }
     });
   };
-  if(alMenu){ mCargar.querySelectorAll('.dd-sep').forEach(e=>e.remove());
-              mVista.querySelectorAll('.dd-sep').forEach(e=>e.remove()); }
+  if(alMenu){ mCargar.querySelectorAll('.dd-sep').forEach(e=>e.remove()); }
   poner(DD_CARGAR,'mCargar',2);
-  poner(DD_VISTA,'mVista',2);
   ddCargar.classList.toggle('hide',!alMenu);
-  ddVista.classList.toggle('hide',!alMenu);
   if(!alMenu)_sitio.clear();
 }
 /* la sesión se muda al final de la franja oscura */
@@ -2657,7 +2551,7 @@ function pintarAvisos(){
     });
 }
 /* abrir y cerrar los menús */
-[['ddCargar','mCargar'],['ddVista','mVista']].forEach(([d,m])=>{
+[['ddCargar','mCargar']].forEach(([d,m])=>{
   const el=document.getElementById(d); if(!el)return;
   el.querySelector('.dd-b').onclick=ev=>{
     ev.stopPropagation();
