@@ -15,7 +15,7 @@
 <style>
   :root{
     --steel:#1c232b;--steel-2:#2a333d;--bg:#eef0f2;--card:#fff;--line:#d3d8dd;--ink:#1a1d21;
-    --muted:#6b747d;--amber:#f2a900;--ok:#15803d;--ok-bg:#dcfce7;--warn:#b45309;--warn-bg:#fef3c7;
+    --muted:#6b747d;--amber:#FFCD11;--ok:#15803d;--ok-bg:#dcfce7;--warn:#b45309;--warn-bg:#fef3c7;
     --bad:#b91c1c;--bad-bg:#fee2e2;--gray:#6b7280;--gray-bg:#f1f3f5;--blue:#1d4ed8;
   }
   *{box-sizing:border-box;margin:0;padding:0}
@@ -122,13 +122,17 @@
   #pmsBody{user-select:none}
   footer{padding:7px 16px;color:var(--muted);font-size:12px;text-align:center;flex-shrink:0}
   /* ===== PM-S ===== */
-  #pmsWrap{padding:0;overflow:auto;flex:1;min-height:0;contain:paint}
-  table.pms{border-collapse:separate;border-spacing:0;font-size:11px;background:#fff;width:auto;min-width:100%}
-  .pms th,.pms td{border-bottom:1px solid #e6e8eb;border-right:1px solid #eef0f2;white-space:nowrap}
+  #pmsWrap{padding:0;overflow:auto;flex:1;min-height:0}
+  table.pms{border-collapse:separate;border-spacing:0;font-size:11.5px;background:#fff;width:auto;min-width:100%}
+  .pms th,.pms td{border-bottom:1px solid #e6e8eb;border-right:1px solid #eef0f2;white-space:nowrap;
+    overflow:hidden;text-overflow:ellipsis}
   .pms thead th{color:#fff;font-size:10px;font-weight:400;padding:2px 4px;text-align:center;z-index:5;border:none;border-right:1px solid #fff;border-bottom:1px solid #fff}
+  /* encabezados en azul Komatsu, estilo "glossy" sin brillo (degradado claro-arriba/oscuro-abajo) */
+  .ghead{background:linear-gradient(180deg,#7B87C0 0%,#4254A5 48%,#334281 100%) !important;
+    border:1px solid #293466 !important;text-shadow:0 1px 1px rgba(0,0,0,.3)}
   .pms thead .hlab{padding:1px 0 2px;line-height:1.05}
   .pms thead .colf{width:100%;min-width:44px;border:1px solid #cfd6dd;border-radius:4px;padding:1px 3px;font-size:10px;height:16px;background:#fff;color:#1a1d21;outline:none}
-  .pms thead .colf:focus{border-color:var(--amber);box-shadow:0 0 0 2px rgba(242,169,0,.2)}
+  .pms thead .colf:focus{border-color:var(--amber);box-shadow:0 0 0 2px rgba(255,205,17,.35)}
   .pms tbody td{padding:1px 5px;height:22px}
   .pms tbody tr{content-visibility:auto;contain-intrinsic-size:auto 22px}
   .pms tbody tr:hover td{background:#f9fafb}
@@ -653,7 +657,6 @@ function pmsHead(){
   const wk=+pmsSemana.value||isoWeek(hoy0()), yr=+pmsAnio.value||hoy0().getFullYear();
   const lun=isoWeekMonday(yr,wk), dom=isoWeekSunday(yr,wk), hoyISO=hoy0().toISOString().slice(0,10);
   const dias=[];for(let i=0;i<7;i++){const d=new Date(lun);d.setUTCDate(lun.getUTCDate()+i);dias.push(d);}
-  const B='#002060', V='#006600', G='#595959';
   const opts=[];for(let w=1;w<=53;w++)opts.push(`<option value="${w}" ${w===wk?'selected':''}>Semana - ${w}</option>`);
   // rotulo del mes: si la semana cruza de mes o de anio, se muestran ambos
   const m1=PMS_MES[lun.getUTCMonth()], m2=PMS_MES[dom.getUTCMonth()];
@@ -665,27 +668,27 @@ function pmsHead(){
   // ── fila 2: titulo + selector de semana + bandas EJECUCION / CONTROL ──
   h+=`<tr class="pms-r2">`
    +`<th colspan="11" style="background:#f2f2f2;color:#002060;font-size:12px;font-weight:800;text-align:left;padding:2px 8px">PROGRAMA DE MANTENIMIENTO PREVENTIVO SEMANAL — EQUIPOS</th>`
-   +`<th colspan="7" style="background:${B};padding:1px 3px;white-space:nowrap">`
-     +`<select id="pmsSelSem" style="border:none;border-radius:4px;font-size:10px;padding:1px 2px;font-weight:700;color:#002060">${opts.join('')}</select>`
-     +`<input id="pmsAnioIn" type="number" value="${yr}" style="width:46px;border:none;border-radius:4px;font-size:10px;padding:1px 2px;text-align:center;margin-left:3px">`
-     +`<span style="margin-left:6px;font-size:10px;font-weight:700;color:#cfe0f5">${mesLab}</span></th>`
-   +`<th colspan="3" style="background:#1c232b;font-weight:700;font-size:10px">EJECUCIÓN</th>`
-   +`<th colspan="3" style="background:${G};font-weight:700;font-size:10px">CONTROL</th></tr>`;
+   +`<th colspan="7" class="ghead" style="padding:1px 3px;white-space:nowrap">`
+     +`<select id="pmsSelSem" style="border:none;border-radius:4px;font-size:10px;padding:1px 2px;font-weight:700;color:#293466;background:#fff">${opts.join('')}</select>`
+     +`<input id="pmsAnioIn" type="number" value="${yr}" style="width:46px;border:none;border-radius:4px;font-size:10px;padding:1px 2px;text-align:center;margin-left:3px;color:#293466">`
+     +`<span style="margin-left:6px;font-size:10px;font-weight:700;color:#fff">${mesLab}</span></th>`
+   +`<th colspan="3" class="ghead" style="font-weight:700;font-size:10px">EJECUCIÓN</th>`
+   +`<th colspan="3" class="ghead" style="font-weight:700;font-size:10px">CONTROL</th></tr>`;
 
   // ── fila 3: nombres de columna (los dias llevan letra y numero en la misma celda) ──
   const cols=[['#',42],['Proyecto',66],['Cód. SAP<br>JJC',68],['Equipo / Vehículo',180],['Marca',96],['Modelo',120],['Serie/Placa',96],
               ['Tiempo<br>Req.*',58],['TIPO DE<br>PM*',58],['HR/KM<br>Prog.*',68],['Fecha<br>Prog.*',66]];
   h+='<tr class="pms-cols">';
-  cols.forEach(([l,w])=>h+=`<th style="background:${B};min-width:${w}px"><div class="hlab">${l}</div></th>`);
+  cols.forEach(([l,w])=>h+=`<th class="ghead" style="min-width:${w}px"><div class="hlab">${l}</div></th>`);
   dias.forEach((d,i)=>{
     const iso=d.toISOString().slice(0,10), esH=iso===hoyISO, esD=i===6;
-    const bg=esH?'#F2A900':(esD?'#C00000':B), col=esH?'#1a1200':'#fff';
-    h+=`<th style="background:${bg};color:${col};min-width:24px;width:24px;padding:1px 0">`
+    const cls=esH?'':(esD?'':'ghead'), extra=esH?'background:#FFCD11;color:#1a1200':(esD?'background:#C00000;color:#fff':'');
+    h+=`<th class="${cls}" style="${extra};min-width:24px;width:24px;padding:1px 0">`
       +`<div style="font-size:9px;opacity:.9;line-height:1.1">${PMS_DIA[i]}</div>`
       +`<div style="font-size:11px;font-weight:${esH?800:600};line-height:1.1">${String(d.getUTCDate()).padStart(2,'0')}</div></th>`;
   });
-  [['OM*',V,96],['HR / KM*',V,72],['FECHA<br>EJECUCION*',V,78],['ESTADO*',G,92],['%<br>DESFASE',G,62],['SEMANA',G,54]]
-    .forEach(([l,bg,w])=>h+=`<th style="background:${bg};min-width:${w}px"><div class="hlab">${l}</div></th>`);
+  [['OM*',96],['HR / KM*',72],['FECHA<br>EJECUCION*',78],['ESTADO*',92],['%<br>DESFASE',62],['SEMANA',54]]
+    .forEach(([l,w])=>h+=`<th class="ghead" style="min-width:${w}px"><div class="hlab">${l}</div></th>`);
   h+='</tr>';
 
   // ── fila 4: filtros por columna ──

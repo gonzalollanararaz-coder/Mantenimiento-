@@ -301,6 +301,9 @@
     border:1px solid var(--gb,#3A4656);
     box-shadow:0 1.5px 2px rgba(0,0,0,.25);
     text-shadow:0 1px 1px rgba(0,0,0,.3)}
+  /* mismo azul Komatsu glossy para encabezados de tabla planos (p.ej. Usuarios) */
+  .ghead-u{background:linear-gradient(180deg,#7B87C0 0%,#4254A5 60%,#334281 100%) !important;
+    color:#fff !important;padding:11px;text-align:left;text-shadow:0 1px 1px rgba(0,0,0,.3)}
   /* azul (base Komatsu #283D99, aclarado): identificación, datos técnicos, proveedor, datos actuales */
   [data-g="ident"] .bnd,[data-g="tec"] .bnd,[data-g="prov"] .bnd,[data-g="act"] .bnd{
     --gtop:#7B87C0;--gc:#4254A5;--gbot:#334281;--gb:#293466;--gtx:#fff}
@@ -605,8 +608,8 @@
 
   <section id="paneUsers" class="hide">
     <div class="padwrap">
-      <table style="width:100%;border-collapse:collapse;background:#fff;border-radius:10px;overflow:hidden">
-        <thead><tr><th style="background:#2a333d;color:#fff;padding:11px;text-align:left">Nombre</th><th style="background:#2a333d;color:#fff;padding:11px;text-align:left">Correo</th><th style="background:#2a333d;color:#fff;padding:11px;text-align:left">Rol</th><th style="background:#2a333d;color:#fff;padding:11px;text-align:left">Estado</th><th style="background:#2a333d;color:#fff;padding:11px;text-align:left">Obras (proyectos)</th><th style="background:#2a333d;color:#fff;padding:11px;text-align:left">Pestañas</th><th style="background:#2a333d;color:#fff;padding:11px;text-align:left">Acciones</th></tr></thead>
+      <table style="width:100%;border-collapse:collapse;background:#fff;border-radius:10px;overflow:hidden;font-size:11.5px">
+        <thead><tr><th class="ghead-u">Nombre</th><th class="ghead-u">Correo</th><th class="ghead-u">Rol</th><th class="ghead-u">Estado</th><th class="ghead-u">Obras (proyectos)</th><th class="ghead-u">Pestañas</th><th class="ghead-u">Acciones</th></tr></thead>
         <tbody id="cuerpoUsers"></tbody>
       </table>
     </div>
