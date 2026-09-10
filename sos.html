@@ -19,17 +19,24 @@
   .hide{display:none !important}
   .mono{font-family:"SF Mono",ui-monospace,monospace}
   .spacer{flex:1}
-  header{background:var(--steel);color:#fff;padding:8px 16px;display:flex;gap:12px;align-items:center;flex-shrink:0}
-  header h1{font-size:14px;font-weight:700}
-  header p{font-size:10px;color:#9aa4ad;text-transform:uppercase;letter-spacing:1.5px}
-  header .who{font-size:12px;color:#cdd4da;margin-left:auto}
-  /* pestañas en píldora flotante, mismo formato y posición que en Equipos */
-  nav{align-items:center;background:#12161B;border-radius:10px;padding:3px;gap:2px;
-    display:flex;flex-shrink:0;margin:0 12px}
-  nav button{background:transparent;border:none;padding:7px 14px;cursor:pointer;font:inherit;
+  header{background:var(--steel);color:#fff;padding:8px 16px;display:flex;align-items:center;flex-shrink:0}
+  header .brand-min h1{font-size:14px;font-weight:700}
+  header .brand-min p{font-size:10px;color:#9aa4ad;text-transform:uppercase;letter-spacing:1.5px}
+  header .who{font-size:12px;color:#cdd4da}
+  header .sp2{flex:1}
+  /* nivel 1 — pestañas entre páginas, píldora flotante */
+  header nav{align-items:center;background:#12161B;border-radius:10px;padding:3px;gap:2px;
+    display:flex;flex-shrink:0;margin-left:14px}
+  header nav button{background:transparent;border:none;padding:7px 14px;cursor:pointer;font:inherit;
     font-size:12.5px;font-weight:600;color:#8E959C;border-radius:7px;transition:background .12s,color .12s}
-  nav button:hover{color:#fff;background:#1D232B}
-  nav button.on{background:var(--amber);color:#1A1200}
+  header nav button:hover{color:#fff;background:#1D232B}
+  header nav button.on{background:var(--amber);color:#1A1200}
+  /* nivel 2 — sub-pestañas propias de SOS, más discretas, debajo del nivel 1 */
+  #subnav{background:#fff;border-bottom:1px solid var(--line);padding:0 16px;display:flex;gap:4px;flex-shrink:0}
+  #subnav button{background:none;border:none;padding:10px 14px;cursor:pointer;font:inherit;
+    font-size:12.5px;font-weight:600;color:var(--muted);border-bottom:2.5px solid transparent}
+  #subnav button:hover{color:var(--ink)}
+  #subnav button.on{color:var(--ink);border-bottom-color:var(--amber)}
   .toolbar{display:flex;flex-wrap:nowrap;gap:12px;align-items:center;padding:9px 16px;background:#fff;border-bottom:1px solid var(--line);flex-shrink:0;height:auto;overflow-x:auto}
   .toolbar>*{flex:0 0 auto}
   .toolbar input,.toolbar select{border:1px solid var(--line);border-radius:9px;height:34px;padding:0 12px;font-size:12.5px}
@@ -105,21 +112,23 @@
 </head>
 <body>
 <header>
-  <div><h1>SOS &mdash; Muestreo de Aceites</h1><p>Unidad de Equipos &middot; UDE</p></div>
-  <nav>
-    <button id="tab_plan" class="on">Planilla de env&iacute;o</button>
-    <button id="tab_res">Resultados</button>
-    <button id="tab_ale">Seguimiento de alertas</button>
-  </nav>
+  <div class="brand-min"><h1>SOS &mdash; Muestreo de Aceites</h1><p>Unidad de Equipos &middot; UDE</p></div>
+  <nav id="navPrin"></nav>
+  <div class="sp2"></div>
   <span class="who" id="who"></span>
 </header>
+<div id="subnav">
+  <button id="tab_plan" class="on">Planilla de env&iacute;o</button>
+  <button id="tab_res">Resultados</button>
+  <button id="tab_ale">Seguimiento de alertas</button>
+</div>
 <div class="toolbar">
+  <input type="search" id="fBusca" placeholder="Equipo, frasco, n&deg; muestra&hellip;" style="width:250px">
   <input type="date" id="fDesde"><input type="date" id="fHasta">
   <select id="fObra"><option value="">Todas las obras</option></select>
   <select id="fEstado"><option value="">Todos los estados</option><option value="CRITICO">Cr&iacute;tico</option><option value="PRECAUCION">Precauci&oacute;n</option><option value="NORMAL">Normal</option></select>
   <select id="fSistema"><option value="">Todos los sistemas</option></select>
   <select id="fFuente"><option value="">Los 3 laboratorios</option><option>FESA</option><option>LUBTEC</option><option>MARCO PERUANA</option></select>
-  <input type="search" id="fBusca" placeholder="Equipo, frasco, n&deg; muestra&hellip;" style="width:200px">
   <span class="chip" id="chN">&mdash;</span>
   <div class="spacer"></div>
   <button class="act primary" id="btnNuevo">+ Muestra</button>
@@ -952,12 +961,41 @@ async function cargarTodo(){
   pintar();
 }
 
+/* ── Navegación entre pestañas (misma barra que en Equipos) ── */
+const NAV_PAGINAS=[
+  {k:'eq',  lab:'Equipos',    arch:'index.html',      win:'gllr_index'},
+  {k:'pms', lab:'PM-S',       arch:'pms.html',        win:'gllr_pms'},
+  {k:'comb',lab:'Combustible',arch:'combustible.html',win:'gllr_comb'},
+  {k:'sos', lab:'SOS',        arch:'sos.html',        win:'gllr_sos'},
+];
+function navPuede(k){
+  if(!perfil)return false;
+  if(k==='eq')return true;
+  if(perfil.rol==='admin')return true;
+  return Array.isArray(perfil.paginas)&&perfil.paginas.includes(k);
+}
+function pintarNav(actual){
+  const nav=document.getElementById('navPrin'); if(!nav)return;
+  let h=NAV_PAGINAS.filter(p=>navPuede(p.k)).map(p=>
+    `<button class="${p.k===actual?'on':''}" data-nav="${p.k}">${p.lab}</button>`).join('');
+  if(perfil&&perfil.rol==='admin')h+=`<button data-nav="users">Usuarios</button>`;
+  nav.innerHTML=h;
+  nav.querySelectorAll('button').forEach(b=>b.onclick=()=>{
+    const k=b.dataset.nav; if(k===actual)return;
+    if(k==='users'){ try{const w=window.open('index.html','gllr_index');w&&w.focus();}catch(_){} return; }
+    const p=NAV_PAGINAS.find(x=>x.k===k); if(!p)return;
+    try{const w=window.open(p.arch,p.win); w&&w.focus();}
+    catch(_){alert('El navegador bloqueó la ventana emergente.\n\nPermite las ventanas emergentes de este sitio.');}
+  });
+}
+
 (async()=>{
   const {data:{session}}=await sb.auth.getSession();
   if(!session){document.body.innerHTML='<div style="padding:60px;text-align:center"><h2 style="font-size:18px">Sesi\u00f3n no iniciada</h2><p style="color:#6b747d">Ingresa en la p\u00e1gina principal.</p></div>';return;}
   const {data:p}=await sb.from('profiles').select('id,nombre,rol,estado,paginas').eq('id',session.user.id).single();
   perfil=p||{};
   who.textContent=(perfil.nombre||session.user.email)+' · '+(perfil.rol||'');
+  pintarNav('sos');
   if(perfil.estado!=='aprobado'||(perfil.rol!=='admin'&&!(Array.isArray(perfil.paginas)&&perfil.paginas.includes('sos')))){
     document.body.innerHTML='<div style="padding:60px;text-align:center;font-family:sans-serif">'
      +'<h2 style="font-size:18px;margin-bottom:10px">Sin acceso a SOS</h2>'

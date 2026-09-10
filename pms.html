@@ -22,9 +22,18 @@
   body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;background:var(--bg);color:var(--ink);font-size:14px;display:flex;flex-direction:column;height:100vh;overflow:hidden}
   .hide{display:none !important}
   .mono{font-family:"SF Mono",ui-monospace,monospace}
-  header{background:var(--steel);color:#fff;padding:8px 16px;display:flex;gap:12px;align-items:center;justify-content:space-between;flex-shrink:0}
-  header h1{font-size:14px;font-weight:700}header p{font-size:10px;color:#9aa4ad;text-transform:uppercase;letter-spacing:1.5px}
-  header .who{font-size:12px;color:#cdd4da}
+  #topbar{background:var(--steel);color:#fff;padding:8px 16px;display:flex;gap:0;align-items:center;flex-shrink:0}
+  #topbar .brand-min h1{font-size:14px;font-weight:700}
+  #topbar .brand-min p{font-size:10px;color:#9aa4ad;text-transform:uppercase;letter-spacing:1.5px}
+  #topbar nav{align-items:center;background:#12161B;border-radius:10px;padding:3px;gap:2px;
+    display:flex;flex-shrink:0;margin-left:14px}
+  #topbar nav button{color:#8E959C;font-size:12.5px;font-weight:600;padding:7px 14px;
+    background:transparent;border:none;border-radius:7px;cursor:pointer;
+    transition:background .12s,color .12s;font-family:inherit}
+  #topbar nav button:hover{color:#fff;background:#1D232B}
+  #topbar nav button.on{background:var(--amber);color:#1A1200}
+  #topbar .who{font-size:12px;color:#cdd4da}
+  #topbar .sp2{flex:1}
   .toolbar{display:flex;flex-wrap:nowrap;gap:12px;align-items:center;padding:9px 16px;background:#fff;
     border-bottom:1px solid var(--line);flex-shrink:0;overflow-x:auto;overflow-y:hidden;
     height:auto;box-sizing:border-box;
@@ -34,6 +43,7 @@
   .toolbar::-webkit-scrollbar-track{background:transparent}
   .toolbar::-webkit-scrollbar-thumb{background:#cbd2d9;border-radius:3px}
   .toolbar input{border:1px solid var(--line);border-radius:9px;height:34px;padding:0 12px;font-size:12.5px;box-sizing:border-box}
+  #pmsBuscarGen{width:250px;flex:0 0 250px}
   .act{border:1px solid var(--line);background:#fff;border-radius:9px;height:34px;padding:0 13px;
     font-weight:500;font-size:12.5px;color:var(--ink);cursor:pointer;display:inline-flex;
     align-items:center;gap:6px;white-space:nowrap}
@@ -175,11 +185,14 @@
 </style>
 </head>
 <body>
-<header>
-  <div><h1>PM-S — Programa de Mantenimiento Preventivo Semanal</h1><p>Unidad de Equipos · UDE</p></div>
+<header id="topbar">
+  <div class="brand-min"><h1>PM-S — Programa de Mantenimiento Preventivo Semanal</h1><p>Unidad de Equipos · UDE</p></div>
+  <nav id="navPrin"></nav>
+  <div class="sp2"></div>
   <div style="display:flex;gap:10px;align-items:center"><span id="offEstado" class="off-chip"></span><span class="who" id="who"></span></div>
 </header>
 <div class="toolbar">
+  <input type="search" id="pmsBuscarGen" placeholder="Buscar proyecto, SAP, equipo…">
   <button class="act primary" id="pmsBtnAdd">&#65291; MNTTO</button>
   <button class="act" id="pmsBtnHoy">Semana actual</button>
   <input type="number" id="pmsBuscarSem" min="1" max="53" placeholder="Buscar semana" style="width:120px">
@@ -795,6 +808,7 @@ function pmsIndexar(){
 }
 function pmsAplicar(){
   const q=(pmsBuscarSem.value||'').trim();
+  const g=(pmsBuscarGen.value||'').trim().toLowerCase();
   const cf=[];for(const k in pmsColF){const v=(pmsColF[k]||'').trim().toLowerCase();if(v)cf.push([k,v]);}
   const estF=(pmsColF['est']||'').toLowerCase();
   let n=0,ver=0;
@@ -802,6 +816,10 @@ function pmsAplicar(){
     const f=m.f,r=f.r; let ok=true;
     if(esHecho(f.est) && !pmsVerEjec && !estF.includes('ejec')) ok=false;
     if(ok&&q&&String(f.sem)!==q) ok=false;
+    if(ok&&g){
+      const junta=[f.proyec,f.sap,f.equipo,f.marca,f.modelo,f.placa].join(' ').toLowerCase();
+      if(!junta.includes(g)) ok=false;
+    }
     if(ok)for(const [k,v] of cf){
       const val = k==='_n'?'' : k==='om'?String(r.om||'') : k==='hrkm'?String(r.hrkm_ejec??'')
                 : k==='fejec'?fmtDate(r.fecha_ejec) : k==='est'?f.est : k==='sem'?String(f.sem)
@@ -828,8 +846,9 @@ pmsThead.addEventListener('input',ev=>{
     const nuevo=pmsThead.querySelector(`[data-pmsf="${foco}"]`);if(nuevo){nuevo.focus();nuevo.setSelectionRange(nuevo.value.length,nuevo.value.length);}return;}
   pmsAplicarD();});
 pmsBuscarSem.oninput=pmsAplicarD;
+pmsBuscarGen.oninput=pmsAplicarD;
 pmsBtnVerEjec.onclick=()=>{pmsVerEjec=!pmsVerEjec;pmsBtnVerEjec.textContent=pmsVerEjec?'Ocultar realizados':'Mostrar realizados';pmsBtnVerEjec.classList.toggle('primary',pmsVerEjec);pmsRender();};
-pmsBtnClear.onclick=()=>{pmsColF={};pmsBuscarSem.value='';pmsVerEjec=false;pmsBtnVerEjec.textContent='Mostrar realizados';pmsBtnVerEjec.classList.remove('primary');pmsRender();};
+pmsBtnClear.onclick=()=>{pmsColF={};pmsBuscarSem.value='';pmsBuscarGen.value='';pmsVerEjec=false;pmsBtnVerEjec.textContent='Mostrar realizados';pmsBtnVerEjec.classList.remove('primary');pmsRender();};
 pmsBtnHoy.onclick=()=>{const H=hoy0();pmsSemana.value=isoWeek(H);pmsAnio.value=H.getFullYear();pmsRender();};
 
 pmsBody.addEventListener('click',async ev=>{
@@ -1429,12 +1448,41 @@ window.addEventListener('focus',()=>{
   pmsCargar();
 });
 
+/* ── Navegación entre pestañas (misma barra que en Equipos) ── */
+const NAV_PAGINAS=[
+  {k:'eq',  lab:'Equipos',    arch:'index.html',      win:'gllr_index'},
+  {k:'pms', lab:'PM-S',       arch:'pms.html',        win:'gllr_pms'},
+  {k:'comb',lab:'Combustible',arch:'combustible.html',win:'gllr_comb'},
+  {k:'sos', lab:'SOS',        arch:'sos.html',        win:'gllr_sos'},
+];
+function navPuede(k){
+  if(!perfil)return false;
+  if(k==='eq')return true;
+  if(perfil.rol==='admin')return true;
+  return Array.isArray(perfil.paginas)&&perfil.paginas.includes(k);
+}
+function pintarNav(actual){
+  const nav=document.getElementById('navPrin'); if(!nav)return;
+  let h=NAV_PAGINAS.filter(p=>navPuede(p.k)).map(p=>
+    `<button class="${p.k===actual?'on':''}" data-nav="${p.k}">${p.lab}</button>`).join('');
+  if(perfil&&perfil.rol==='admin')h+=`<button data-nav="users">Usuarios</button>`;
+  nav.innerHTML=h;
+  nav.querySelectorAll('button').forEach(b=>b.onclick=()=>{
+    const k=b.dataset.nav; if(k===actual)return;
+    if(k==='users'){ try{const w=window.open('index.html','gllr_index');w&&w.focus();}catch(_){} return; }
+    const p=NAV_PAGINAS.find(x=>x.k===k); if(!p)return;
+    try{const w=window.open(p.arch,p.win); w&&w.focus();}
+    catch(_){alert('El navegador bloqueó la ventana emergente.\n\nPermite las ventanas emergentes de este sitio.');}
+  });
+}
+
 /* ── arranque ── */
 (async()=>{
   const {data:{session}}=await sb.auth.getSession();
   if(!session){document.body.innerHTML='<div style="padding:60px;text-align:center"><h2 style="font-size:18px">Sesi&oacute;n no iniciada</h2><p style="color:#6b747d">Ingresa en la p&aacute;gina principal y vuelve a pulsar PM-S.</p></div>';return;}
   const {data:p}=await sb.from('profiles').select('id,nombre,rol,estado,proyectos,paginas').eq('id',session.user.id).single();
   perfil=p||{}; who.textContent=(perfil.nombre||session.user.email)+' · '+(perfil.rol||'');
+  pintarNav('pms');
   if(perfil.estado!=='aprobado'){document.body.innerHTML='<div style="padding:60px;text-align:center"><h2 style="font-size:18px">Acceso pendiente</h2><p style="color:#6b747d">Tu cuenta a&uacute;n no est&aacute; aprobada.</p></div>';return;}
   if(perfil.rol!=='admin'&&!(Array.isArray(perfil.paginas)&&perfil.paginas.includes('pms'))){
     document.body.innerHTML='<div style="padding:60px;text-align:center;font-family:sans-serif">'
