@@ -1597,11 +1597,9 @@ function pintarNav(actual){
   const nav=document.getElementById('navPrin'); if(!nav)return;
   let h=NAV_PAGINAS.filter(p=>navPuede(p.k)).map(p=>
     `<button class="${p.k===actual?'on':''}" data-nav="${p.k}">${p.lab}</button>`).join('');
-  if(perfil&&perfil.rol==='admin')h+=`<button data-nav="users">Usuarios</button>`;
   nav.innerHTML=h;
   nav.querySelectorAll('button').forEach(b=>b.onclick=()=>{
     const k=b.dataset.nav; if(k===actual)return;
-    if(k==='users'){ try{const w=window.open('index.html','gllr_index');w&&w.focus();}catch(_){} return; }
     const p=NAV_PAGINAS.find(x=>x.k===k); if(!p)return;
     try{const w=window.open(p.arch,p.win); w&&w.focus();}
     catch(_){alert('El navegador bloqueó la ventana emergente.\n\nPermite las ventanas emergentes de este sitio.');}

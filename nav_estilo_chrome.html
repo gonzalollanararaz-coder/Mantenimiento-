@@ -1,0 +1,99 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Navegación estilo Chrome — propuestas</title>
+<style>
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{background:#FAFAF8;color:#16191D;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;font-size:13px;padding:20px}
+  h1{font-size:15px;margin-bottom:4px}
+  p.sub{font-size:12px;color:#6E757C;margin-bottom:14px;max-width:82ch;line-height:1.5}
+  .tabs{display:flex;gap:6px;margin-bottom:10px;flex-wrap:wrap}
+  .tabs button{background:#fff;border:1px solid #DDE0E3;border-radius:8px;padding:8px 14px;
+    font:inherit;font-size:12.5px;font-weight:600;color:#3F464D;cursor:pointer}
+  .tabs button.on{background:#16191D;color:#fff;border-color:#16191D}
+  .desc{background:#fff;border:1px solid #E4E6E9;border-radius:10px;padding:10px 14px;margin-bottom:14px}
+  .desc b{font-size:12.5px}
+  .desc p{font-size:12px;color:#6E757C;margin-top:3px;line-height:1.5}
+
+  .demo{border-radius:0 0 10px 10px;overflow:hidden;box-shadow:0 1px 3px rgba(0,0,0,.15)}
+  #topbar{display:flex;align-items:center;background:#1c232b;padding:8px 16px}
+  #topbar .brand{display:flex;align-items:center;gap:8px;color:#fff}
+  #topbar .brand .ico{width:26px;height:26px;border-radius:50%;background:#FFCD11;display:grid;place-items:center;font-size:13px}
+  #topbar .brand b{font-size:13.5px}
+  #topbar nav{display:flex;margin-left:14px}
+  #topbar nav button{font:inherit;cursor:pointer;border:none;position:relative}
+
+  /* ═══ M1 · Como está hoy (píldora flotante) ═══ */
+  body.m1 #topbar nav{align-items:center;background:#12161B;border-radius:10px;padding:3px;gap:2px}
+  body.m1 #topbar nav button{color:#8E959C;font-size:12.5px;font-weight:600;padding:7px 14px;
+    background:transparent;border-radius:7px;transition:background .12s,color .12s}
+  body.m1 #topbar nav button.on{background:#FFCD11;color:#1A1200}
+  body.m1 #topbar nav button:hover:not(.on){color:#fff;background:#1D232B}
+
+  /* ═══ M2 · Pestañas reales de navegador (trapecio, "levantada") ═══ */
+  body.m2 #topbar{align-items:flex-end;padding-bottom:0}
+  body.m2 #topbar nav{align-items:flex-end;gap:2px}
+  body.m2 #topbar nav button{color:#9BA3AB;font-size:12.5px;font-weight:500;padding:8px 18px;height:36px;
+    background:#232A33;border-top-left-radius:10px;border-top-right-radius:10px;
+    clip-path:polygon(10% 0,90% 0,100% 100%,0 100%)}
+  body.m2 #topbar nav button.on{background:#fff;color:#16191D;font-weight:700;height:40px;
+    clip-path:polygon(6% 0,94% 0,100% 100%,0 100%);z-index:2}
+  body.m2 #topbar nav button:hover:not(.on){background:#2B333D;color:#E2E6EA}
+
+  /* ═══ M3 · Pestañas de navegador simplificadas (rectas, separador fino) ═══ */
+  body.m3 #topbar nav{gap:0}
+  body.m3 #topbar nav button{color:#9BA3AB;font-size:12.5px;font-weight:500;padding:9px 18px;
+    background:transparent;border-right:1px solid #333B45}
+  body.m3 #topbar nav button:first-child{border-top-left-radius:8px;border-bottom-left-radius:8px}
+  body.m3 #topbar nav button:last-child{border-right:none;border-top-right-radius:8px;border-bottom-right-radius:8px}
+  body.m3 #topbar nav button.on{background:#fff;color:#16191D;font-weight:700}
+  body.m3 #topbar nav button:hover:not(.on){background:#2B333D;color:#fff}
+  body.m3 #topbar nav{background:#12161B;border-radius:8px;overflow:hidden}
+
+  .contenido{background:#fff;padding:14px 16px;font-size:12px;color:#8E959C}
+</style>
+</head>
+<body class="m1">
+<h1>Navegación entre pestañas, estilo Chrome — 3 propuestas</h1>
+<p class="sub">Ninguna aplicada todavía. Las tres ya funcionan igual por dentro (clic → enfoca la ventana ya abierta o la abre si no existe, sin recargar) — lo único que cambia es la forma.</p>
+
+<div class="tabs">
+  <button data-v="m1" class="on">1 · Como está hoy</button>
+  <button data-v="m2">2 · Pestaña de navegador (trapecio)</button>
+  <button data-v="m3">3 · Pestañas rectas conectadas</button>
+</div>
+<div class="desc"><b id="dT"></b><p id="dP"></p></div>
+
+<div class="demo">
+  <div id="topbar">
+    <div class="brand"><span class="ico">🐘</span><b>Maestro de Equipos — Flota</b></div>
+    <nav>
+      <button class="on">Equipos</button>
+      <button>PM-S</button>
+      <button>Combustible</button>
+      <button>SOS</button>
+      <button>Usuarios</button>
+    </nav>
+  </div>
+  <div class="contenido">contenido de la pestaña activa…</div>
+</div>
+
+<script>
+const D={
+ m1:['1 · Como está hoy','Cápsula oscura flotante, la activa en amarillo sólido. Ya la tienes en las 5 páginas — la más "app", menos "navegador".'],
+ m2:['2 · Pestaña de navegador real (trapecio, se "levanta")','Cada pestaña tiene forma de trapecio, como las de Chrome — la activa se separa del fondo oscuro y se une visualmente con el contenido blanco de abajo (más alta, esquinas redondeadas). Es la que más se parece literalmente a "navegar como en Chrome".'],
+ m3:['3 · Pestañas rectas conectadas, sin separación','Un bloque oscuro contiguo (sin espacios entre botones), cada pestaña separada por una línea fina — y la activa en blanco sólido. Más sobria que la 2, pero mantiene la idea de "una fila de pestañas", no de cápsula suelta.'],
+};
+function ver(v){
+  document.body.className=v;
+  document.querySelectorAll('.tabs button').forEach(b=>b.classList.toggle('on',b.dataset.v===v));
+  document.getElementById('dT').textContent=D[v][0];
+  document.getElementById('dP').textContent=D[v][1];
+}
+document.querySelectorAll('.tabs button').forEach(b=>b.onclick=()=>ver(b.dataset.v));
+ver('m1');
+</script>
+</body>
+</html>
