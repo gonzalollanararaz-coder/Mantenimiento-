@@ -1648,9 +1648,13 @@ function navPreguntar(nombreCanal,ms){
   });
 }
 async function navAbrirOEnfocar(archivo,nombreCanal){
+  // referencia directa propia (Equipos ya abrió esta ventana antes) — la
+  // más confiable: no depende de que la otra pestaña se enfoque sola.
+  const ref=VENT[nombreCanal];
+  if(ref&&!ref.closed){try{ref.focus();return;}catch(_){}}
   if(await navPreguntar(nombreCanal))return; // ya estaba abierta y se acaba de enfocar sola
   const w=window.open(archivo,nombreCanal);
-  if(w){try{w.focus();}catch(_){} if(nombreCanal==='gllr_pms')pmsWin=w;}
+  if(w){try{w.focus();}catch(_){} VENT[nombreCanal]=w; if(nombreCanal==='gllr_pms')pmsWin=w;}
   else alert('El navegador bloqueó la ventana emergente.\n\nPermite las ventanas emergentes de este sitio.');
 }
 // esta misma pestaña (Equipos) contesta y se enfoca sola si alguien pregunta por 'gllr_index'

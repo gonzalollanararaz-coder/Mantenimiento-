@@ -310,10 +310,29 @@ function navPreguntar(nombreCanal,ms){
     setTimeout(()=>{ if(!listo){ch.removeEventListener('message',oye);ch.close();res(false);} },ms||260);
   });
 }
+// referencias propias de las ventanas que ESTA página abrió directamente
+const VENT={};
 async function navAbrirOEnfocar(archivo,nombreCanal){
+  // 1) ¿la abrí yo mismo antes? — la más confiable, es mía.
+  const propia=VENT[nombreCanal];
+  if(propia&&!propia.closed){try{propia.focus();return;}catch(_){}}
+  // 2) ¿la tiene quien me abrió a mí? (así se llega a las hermanas sin
+  //    depender de que la otra pestaña se enfoque sola en segundo plano).
+  try{
+    if(window.opener&&!window.opener.closed){
+      if(nombreCanal==='gllr_index'){window.opener.focus();return;}
+      const ref=window.opener.VENT&&window.opener.VENT[nombreCanal];
+      if(ref&&!ref.closed){ref.focus();return;}
+    }
+  }catch(_){}
+  // 3) nadie tiene referencia directa: preguntar por su canal antes de abrir
   if(await navPreguntar(nombreCanal))return; // ya estaba abierta y se acaba de enfocar sola
   const w=window.open(archivo,nombreCanal);
-  if(w){try{w.focus();}catch(_){}}
+  if(w){
+    try{w.focus();}catch(_){}
+    VENT[nombreCanal]=w;
+    try{if(window.opener&&window.opener.VENT)window.opener.VENT[nombreCanal]=w;}catch(_){}
+  }
   else alert('El navegador bloqueó la ventana emergente.\n\nPermite las ventanas emergentes de este sitio.');
 }
 function pintarNav(actual){
