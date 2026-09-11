@@ -23,8 +23,9 @@
   .hide{display:none !important}
   .mono{font-family:"SF Mono",ui-monospace,monospace}
   #topbar{background:var(--steel);color:#fff;padding:8px 16px;display:flex;gap:0;align-items:center;flex-shrink:0}
-  #topbar .brand-min h1{font-size:14px;font-weight:700}
-  #topbar .brand-min p{font-size:10px;color:#9aa4ad;text-transform:uppercase;letter-spacing:1.5px}
+  .brand-min{width:270px;flex:0 0 270px;overflow:hidden}
+  .brand-min h1{font-size:14px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .brand-min p{font-size:10px;color:#9aa4ad;text-transform:uppercase;letter-spacing:1.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
   #topbar nav{align-items:center;background:#12161B;border-radius:10px;padding:3px;gap:2px;
     display:flex;flex-shrink:0;margin-left:14px}
   #topbar nav button{color:#8E959C;font-size:12.5px;font-weight:600;padding:7px 14px;
@@ -1186,7 +1187,7 @@ if('BroadcastChannel' in window){
   const ch=new BroadcastChannel('gllr_pms');
   ch.onmessage=async ev=>{
     const m=ev.data||{};
-    if(m.tipo==='ping'){ch.postMessage({tipo:'pong'});return;}
+    if(m.tipo==='ping'){ch.postMessage({tipo:'pong'});try{window.focus();}catch(_){}return;}
     if(m.tipo==='add'&&Array.isArray(m.ids)&&m.ids.length){
       if(!pmsCargado)await pmsCargar();
       await pmsAgregarVarios(m.ids);
@@ -1593,6 +1594,28 @@ function navPuede(k){
   if(perfil.rol==='admin')return true;
   return Array.isArray(perfil.paginas)&&perfil.paginas.includes(k);
 }
+/* ── Cambiar de pestaña sin recargar ──
+   Antes de abrir una ventana se pregunta por su canal si ya está viva; si
+   contesta, se le pide que se enfoque sola — nunca se llama a window.open()
+   sobre una que ya existe, así jamás se recarga. Solo se abre una ventana
+   nueva si nadie contesta a tiempo. */
+function navPreguntar(nombreCanal,ms){
+  if(!('BroadcastChannel' in window))return Promise.resolve(false);
+  return new Promise(res=>{
+    const ch=new BroadcastChannel(nombreCanal);
+    let listo=false;
+    const oye=ev=>{ if(ev.data&&ev.data.tipo==='pong'){listo=true;ch.removeEventListener('message',oye);ch.close();res(true);} };
+    ch.addEventListener('message',oye);
+    ch.postMessage({tipo:'ping'});
+    setTimeout(()=>{ if(!listo){ch.removeEventListener('message',oye);ch.close();res(false);} },ms||260);
+  });
+}
+async function navAbrirOEnfocar(archivo,nombreCanal){
+  if(await navPreguntar(nombreCanal))return; // ya estaba abierta y se acaba de enfocar sola
+  const w=window.open(archivo,nombreCanal);
+  if(w){try{w.focus();}catch(_){}}
+  else alert('El navegador bloqueó la ventana emergente.\n\nPermite las ventanas emergentes de este sitio.');
+}
 function pintarNav(actual){
   const nav=document.getElementById('navPrin'); if(!nav)return;
   let h=NAV_PAGINAS.filter(p=>navPuede(p.k)).map(p=>
@@ -1601,8 +1624,7 @@ function pintarNav(actual){
   nav.querySelectorAll('button').forEach(b=>b.onclick=()=>{
     const k=b.dataset.nav; if(k===actual)return;
     const p=NAV_PAGINAS.find(x=>x.k===k); if(!p)return;
-    try{const w=window.open(p.arch,p.win); w&&w.focus();}
-    catch(_){alert('El navegador bloqueó la ventana emergente.\n\nPermite las ventanas emergentes de este sitio.');}
+    navAbrirOEnfocar(p.arch,p.win);
   });
 }
 

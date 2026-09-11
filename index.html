@@ -355,8 +355,9 @@
   #topbar header .userbox{margin-left:auto}
   /* ── Fila 1: topbar + pestañas, permanentes ── */
   #topbar header .userbox{display:none}       /* pasa al final de la franja */
-  #topbar .brand h1{font-size:14.5px;font-weight:600;letter-spacing:-.01em}
-  #topbar .brand p{font-size:10px;color:#8E959C;letter-spacing:.05em}
+  #topbar .brand{width:270px;flex:0 0 270px;overflow:hidden}
+  #topbar .brand h1{font-size:14.5px;font-weight:600;letter-spacing:-.01em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  #topbar .brand p{font-size:10px;color:#8E959C;letter-spacing:.05em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
   #topbar .sp2{flex:1}
   /* la sesión pasa a un menú bajo el nombre */
   #userTop{display:flex;align-items:center;gap:9px;padding-left:16px;position:relative;cursor:pointer}
@@ -1630,6 +1631,35 @@ function abrirVentana(archivo,nombre,qs){
 }
 function abrirPMS(qs){ pmsWin=abrirVentana('pms.html','gllr_pms',qs); return pmsWin; }
 
+/* ── Cambiar de pestaña sin recargar ──
+   Antes de abrir una ventana se pregunta por su canal si ya está viva; si
+   contesta, se le pide que se enfoque sola — nunca se llama a window.open()
+   sobre una que ya existe, así jamás se recarga. Solo se abre una ventana
+   nueva si nadie contesta a tiempo. Mismo criterio en las 5 páginas. */
+function navPreguntar(nombreCanal,ms){
+  if(!('BroadcastChannel' in window))return Promise.resolve(false);
+  return new Promise(res=>{
+    const ch=new BroadcastChannel(nombreCanal);
+    let listo=false;
+    const oye=ev=>{ if(ev.data&&ev.data.tipo==='pong'){listo=true;ch.removeEventListener('message',oye);ch.close();res(true);} };
+    ch.addEventListener('message',oye);
+    ch.postMessage({tipo:'ping'});
+    setTimeout(()=>{ if(!listo){ch.removeEventListener('message',oye);ch.close();res(false);} },ms||260);
+  });
+}
+async function navAbrirOEnfocar(archivo,nombreCanal){
+  if(await navPreguntar(nombreCanal))return; // ya estaba abierta y se acaba de enfocar sola
+  const w=window.open(archivo,nombreCanal);
+  if(w){try{w.focus();}catch(_){} if(nombreCanal==='gllr_pms')pmsWin=w;}
+  else alert('El navegador bloqueó la ventana emergente.\n\nPermite las ventanas emergentes de este sitio.');
+}
+// esta misma pestaña (Equipos) contesta y se enfoca sola si alguien pregunta por 'gllr_index'
+(function(){
+  if(!('BroadcastChannel' in window))return;
+  const ch=new BroadcastChannel('gllr_index');
+  ch.onmessage=ev=>{ if(ev.data&&ev.data.tipo==='ping'){ ch.postMessage({tipo:'pong'}); try{window.focus();}catch(_){} } };
+})();
+
 /* ¿hay alguna pestaña PM-S viva? espera un instante su respuesta */
 function pmsViva(ms=350){
   if(pmsWin&&!pmsWin.closed)return Promise.resolve(true);
@@ -1670,7 +1700,7 @@ document.querySelectorAll("nav button").forEach(b=>b.onclick=()=>{
   const pag=PAGINAS.find(p=>p.k===t);
   if(pag){
     if(!puedePagina(t)){alert('No tienes acceso a la pestaña '+pag.lab+'.\n\nPídeselo a un administrador.');return;}
-    if(t==="pms")abrirPMS(); else abrirVentana(pag.arch,'gllr_'+t);
+    navAbrirOEnfocar(pag.arch,'gllr_'+t);
     return;
   }
   document.querySelectorAll("nav button").forEach(x=>x.classList.remove("on"));b.classList.add("on");
