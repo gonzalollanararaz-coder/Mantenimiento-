@@ -1639,19 +1639,20 @@ function abrirPMS(qs){ pmsWin=abrirVentana('pms.html','gllr_pms',qs); return pms
 
 /* ── Equipos es el "centro" de la navegación ──
    Equipos es la única que guarda las referencias reales de todas las
-   ventanas (VENT). Las demás páginas no abren ventanas entre ellas por su
-   cuenta: le piden a Equipos que lo haga, usando la relación abridor↔hija
-   (window.opener) que ya existe cuando Equipos las abrió. Así, sin importar
-   cuántos saltos des, siempre se resuelve con una referencia real y directa
-   — nunca se le pide a otra pestaña en segundo plano que se enfoque sola
-   (eso lo bloquean los navegadores casi siempre). */
+   ventanas (VENT). Las demás páginas le preguntan a Equipos si una ventana
+   ya existe (así se enfoca con una referencia real y directa, sin pedirle
+   a otra pestaña en segundo plano que se enfoque sola). Abrir una ventana
+   NUEVA lo sigue haciendo cada página por su cuenta —si ese paso se le
+   delega a otra ventana, algunos navegadores lo bloquean por no verlo
+   como resultado directo del clic— y luego se lo avisa a Equipos. */
 window.ES_HUB=true;
-window.pedirNav=function(nombreCanal,archivo){
+window.enfocarSiExiste=function(nombreCanal){
   const ref=VENT[nombreCanal];
   if(ref&&!ref.closed){ try{ref.focus();}catch(_){} return true; }
-  const w=window.open(archivo,nombreCanal);
-  if(w){ try{w.focus();}catch(_){} VENT[nombreCanal]=w; if(nombreCanal==='gllr_pms')pmsWin=w; return true; }
   return false;
+};
+window.registrarVentana=function(nombreCanal,w){
+  VENT[nombreCanal]=w; if(nombreCanal==='gllr_pms')pmsWin=w;
 };
 
 /* ── Cambiar de pestaña sin recargar ──

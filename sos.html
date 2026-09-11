@@ -991,21 +991,31 @@ function navPreguntar(nombreCanal,ms){
     setTimeout(()=>{ if(!listo){ch.removeEventListener('message',oye);ch.close();res(false);} },ms||260);
   });
 }
-// referencias propias, solo por si esta página llega a abrir algo directo
+// referencias propias, para las ventanas que esta página termina abriendo
 const VENT={};
 async function navAbrirOEnfocar(archivo,nombreCanal){
   // 1) ¿la abrí yo mismo antes? — la más confiable, es mía.
   const propia=VENT[nombreCanal];
   if(propia&&!propia.closed){try{propia.focus();return;}catch(_){}}
   // 2) Equipos es el centro: si me abrió a mí (window.opener), tiene las
-  //    referencias reales de TODAS las ventanas — le pido a ella que abra
-  //    o enfoque, en vez de intentarlo yo (evita depender de que otra
-  //    pestaña en segundo plano se enfoque sola, que casi siempre falla).
-  try{
-    if(window.opener&&!window.opener.closed&&window.opener.ES_HUB&&typeof window.opener.pedirNav==='function'){
-      if(window.opener.pedirNav(nombreCanal,archivo))return;
-    }
-  }catch(_){}
+  //    referencias reales de todas las ventanas — le pregunto si esa ya
+  //    existe y, si es así, que la enfoque ella (referencia directa, no
+  //    depende de que otra pestaña en segundo plano se enfoque sola).
+  let esHub=false;
+  try{ esHub = window.opener && !window.opener.closed && window.opener.ES_HUB; }catch(_){}
+  if(esHub){
+    // volver a Equipos: es mi propio "padre", se enfoca directo
+    if(nombreCanal==='gllr_index'){ try{window.opener.focus();return;}catch(_){} }
+    try{ if(window.opener.enfocarSiExiste(nombreCanal))return; }catch(_){}
+    // no existe todavía: la abro YO (aquí el clic es real y reciente, así
+    // el navegador no la bloquea) y le aviso a Equipos para la próxima vez
+    const w=window.open(archivo,nombreCanal);
+    if(w){
+      try{w.focus();}catch(_){} VENT[nombreCanal]=w;
+      try{window.opener.registrarVentana(nombreCanal,w);}catch(_){}
+    }else alert('El navegador bloqueó la ventana emergente.\n\nPermite las ventanas emergentes de este sitio.');
+    return;
+  }
   // 3) no hay Equipos disponible como intermediario: preguntar por su
   //    canal directamente antes de abrir
   if(await navPreguntar(nombreCanal))return; // ya estaba abierta y se acaba de enfocar sola
