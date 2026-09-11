@@ -94,7 +94,13 @@
   .mx thead .colf{width:100%;border:1px solid #cfd6dd;border-radius:4px;padding:1px 4px;font-size:10px;height:17px;background:#fff;color:#1a1d21;outline:none}
   .mx thead .colf:focus{border-color:var(--amber);box-shadow:0 0 0 2px rgba(255,205,17,.45)}
   .mx tbody td{padding:0;height:22px}
-  .mx tbody tr{}
+  /* content-visibility: el navegador se salta el trabajo de dibujar las
+     filas que están fuera de pantalla (existen en el HTML, pero no se
+     calculan ni se pintan hasta que el scroll llega a ellas). No cambia
+     nada de cómo funcionan la selección, la edición o los filtros — solo
+     hace que la tabla aguante miles de filas sin ponerse lenta. El
+     alto de 22px de reserva debe coincidir con el alto real de una fila. */
+  .mx tbody tr{content-visibility:auto;contain-intrinsic-size:auto 22px}
   .mx tbody td.idx{padding:0 4px;text-align:center;color:var(--muted);font-family:"SF Mono",monospace;background:#f8fafc;font-size:10px}
   .mx td input,.mx td select{width:100%;border:none;background:transparent;font:inherit;color:var(--ink);padding:1px 5px;outline:none;min-width:60px}
   .mx td.n input{text-align:right;font-family:"SF Mono",ui-monospace,monospace}
