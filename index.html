@@ -520,6 +520,8 @@
   .mini{border:none;border-radius:6px;padding:6px 11px;font-size:12px;font-weight:600;cursor:pointer;margin-right:6px}
   .mini.ap{background:var(--ok-bg);color:var(--ok)}.mini.bl{background:var(--bad-bg);color:var(--bad)}.mini.adm{background:#e0e7ff;color:#3730a3}
   .padwrap{padding:16px 18px;overflow-x:auto}
+  .paneFrame{height:calc(100vh - 64px)}
+  .paneFrame iframe{width:100%;height:100%;border:none;display:block}
 
 /* === STICKY LAYOUT === */
 #vApp { display:flex; flex-direction:column; height:100vh; overflow:hidden; }
@@ -621,6 +623,14 @@
       </table>
     </div>
   </section>
+
+  <!-- PM-S, Combustible y SOS viven aquí adentro, en un iframe cada una:
+       misma pestaña del navegador, mismo criterio que Equipos/Usuarios.
+       Se cargan solo la primera vez que se visitan; después, cambiar
+       entre ellas es solo mostrar/ocultar, nunca una recarga nueva. */
+  <section id="paneFrame_pms" class="paneFrame hide"></section>
+  <section id="paneFrame_comb" class="paneFrame hide"></section>
+  <section id="paneFrame_sos" class="paneFrame hide"></section>
   <footer id="appFoot">Los cambios se guardan en la base de datos.</footer>
 </div>
 
@@ -1713,27 +1723,44 @@ async function programarSeleccion(){
   const buenos=ids.filter(id=>{const e=getE(id);return e&&!esDesmov(e.status)&&(+e.hr_dia||0);});
   if(!buenos.length){alert('Ninguno de los equipos marcados se puede programar.');return;}
 
-  const qs='?add='+encodeURIComponent(buenos.join(','));
-  if(await pmsViva()){
-    PMSCH&&PMSCH.postMessage({tipo:'add',ids:buenos});
-    if(pmsWin&&!pmsWin.closed){try{pmsWin.focus();}catch(_){}}
-    appFoot.textContent=`${buenos.length} equipo(s) enviados a la pestaña PM-S ya abierta.`;
-    setTimeout(()=>appFoot.textContent='Doble clic en una celda para editar · los cambios se guardan solos.',2600);
-  }else{
-    abrirPMS(qs);
-  }
+  const yaEstaba=!!_iframes.pms;
+  asegurarIframe('pms');   // crea el iframe la primera vez; si ya existe, no la toca
+  mostrarPanel('pms');     // salta a esa pestaña al instante, sin recargar nada
+  const enviar=()=>PMSCH&&PMSCH.postMessage({tipo:'add',ids:buenos});
+  if(yaEstaba)enviar();
+  else _iframes.pms.addEventListener('load',()=>setTimeout(enviar,150),{once:true});
+  appFoot.textContent=`${buenos.length} equipo(s) enviados a PM-S.`;
+  setTimeout(()=>appFoot.textContent='Doble clic en una celda para editar · los cambios se guardan solos.',2600);
+}
+/* PM-S, Combustible y SOS viven en un iframe cada una, dentro de esta
+   misma página — igual que Equipos/Usuarios ya lo hacían. Se cargan la
+   primera vez que se visitan; después, cambiar de pestaña es solo
+   mostrar/ocultar (nunca hay una segunda carga ni una ventana aparte). */
+const IFRAME_PAGINAS={pms:'pms.html',comb:'combustible.html',sos:'sos.html'};
+const _iframes={};
+function asegurarIframe(k){
+  if(_iframes[k])return;
+  const pane=document.getElementById('paneFrame_'+k); if(!pane)return;
+  const ifr=document.createElement('iframe');
+  ifr.src=IFRAME_PAGINAS[k];
+  pane.appendChild(ifr);
+  _iframes[k]=ifr;
+}
+function mostrarPanel(t){
+  document.querySelectorAll("nav button").forEach(x=>x.classList.toggle("on",x.dataset.tab===t));
+  paneEq.classList.toggle("hide",t!=="eq");
+  paneUsers.classList.toggle("hide",t!=="users");
+  Object.keys(IFRAME_PAGINAS).forEach(k=>{
+    const pane=document.getElementById('paneFrame_'+k); if(pane)pane.classList.toggle('hide',t!==k);
+  });
+  if(t==="users")cargarUsuarios();
+  if(IFRAME_PAGINAS[t])asegurarIframe(t);
 }
 document.querySelectorAll("nav button").forEach(b=>b.onclick=()=>{
   const t=b.dataset.tab;
   const pag=PAGINAS.find(p=>p.k===t);
-  if(pag){
-    if(!puedePagina(t)){alert('No tienes acceso a la pestaña '+pag.lab+'.\n\nPídeselo a un administrador.');return;}
-    navAbrirOEnfocar(pag.arch,'gllr_'+t);
-    return;
-  }
-  document.querySelectorAll("nav button").forEach(x=>x.classList.remove("on"));b.classList.add("on");
-  paneEq.classList.toggle("hide",t!=="eq");paneUsers.classList.toggle("hide",t!=="users");
-  if(t==="users")cargarUsuarios();
+  if(pag&&!puedePagina(t)){alert('No tienes acceso a la pestaña '+pag.lab+'.\n\nPídeselo a un administrador.');return;}
+  mostrarPanel(t);
 });
 
 /* admin */

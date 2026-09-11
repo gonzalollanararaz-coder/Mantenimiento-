@@ -112,12 +112,13 @@
 </style>
 </head>
 <body>
-<header>
+<header id="topbar">
   <div class="brand-min"><h1>SOS &mdash; Muestreo de Aceites</h1><p>Unidad de Equipos &middot; UDE</p></div>
   <nav id="navPrin"></nav>
   <div class="sp2"></div>
   <span class="who" id="who"></span>
 </header>
+<script>if(window.self!==window.top){document.getElementById('topbar').style.display='none';}</script>
 <div id="subnav">
   <button id="tab_plan" class="on">Planilla de env&iacute;o</button>
   <button id="tab_res">Resultados</button>
