@@ -109,6 +109,8 @@
   .eqnew{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px;padding-top:8px;border-top:1px dashed var(--line)}
   .eqnew input,.eqnew select{padding:6px 8px;border:1px solid var(--line);border-radius:7px;font-size:12px;flex:1;min-width:120px}
   .form input,.form select{padding:8px;border:1px solid var(--line);border-radius:8px;font-size:13px;font-weight:400;color:var(--ink)}
+  .barra-mini{background:#eef0f2;border-radius:6px;overflow:hidden;height:8px}
+  .barra-mini i{display:block;height:100%;background:#B45309}
 </style>
 </head>
 <body>
@@ -123,6 +125,8 @@
   <button id="tab_plan" class="on">Planilla de env&iacute;o</button>
   <button id="tab_res">Resultados</button>
   <button id="tab_ale">Seguimiento de alertas</button>
+  <button id="tab_stock">Stock de frascos</button>
+  <button id="tab_pm">Plan de muestreo</button>
 </div>
 <div class="toolbar">
   <input type="search" id="fBusca" placeholder="Equipo, frasco, n&deg; muestra&hellip;" style="width:250px">
@@ -134,6 +138,8 @@
   <span class="chip" id="chN">&mdash;</span>
   <div class="spacer"></div>
   <button class="act primary" id="btnNuevo">+ Muestra</button>
+  <button class="act primary hide" id="btnLote">+ Frascos</button>
+  <button class="act primary hide" id="btnPM">+ Sistema</button>
   <button class="act" id="btnSubir" title="Planilla de envío o resultados de laboratorio: se reconoce solo">&#11014; Subir archivo</button>
   <button class="act" id="btnXls">&#8681; Excel</button>
   <button class="act" id="btnEq">&#9878; Equivalencias</button>
@@ -144,6 +150,8 @@
   <div id="boxPlan"></div>
   <div id="boxRes" class="hide"></div>
   <div id="boxAle" class="hide"></div>
+  <div id="boxStock" class="hide"></div>
+  <div id="boxPM" class="hide"></div>
 </div>
 <footer id="pie">Cargando&hellip;</footer>
 <script>
@@ -377,23 +385,38 @@ function enlazarPlanilla(r){
 /* ═══════════════ VISTAS ═══════════════ */
 function verVista(v){
   vista=v;
-  ['plan','res','ale'].forEach(k=>{
+  ['plan','res','ale','stock','pm'].forEach(k=>{
     document.getElementById('tab_'+k).classList.toggle('on',k===v);
   });
   boxPlan.classList.toggle('hide',v!=='plan');
   boxRes.classList.toggle('hide',v!=='res');
   boxAle.classList.toggle('hide',v!=='ale');
+  boxStock.classList.toggle('hide',v!=='stock');
+  boxPM.classList.toggle('hide',v!=='pm');
   btnSubir.textContent='⬆ Subir archivo';
-  btnSubir.classList.toggle('hide',v==='ale');
+  btnSubir.classList.toggle('hide',v==='ale'||v==='stock'||v==='pm');
   btnNuevo.classList.toggle('hide',v!=='plan');
+  btnXls.classList.toggle('hide',v==='pm');
+  btnEq.classList.toggle('hide',v==='stock'||v==='pm');
+  const admin=perfil&&perfil.rol==='admin';
+  btnLote.classList.toggle('hide',v!=='stock');
+  btnPM.classList.toggle('hide',v!=='pm'||!admin);
+  fDesde.classList.toggle('hide',v==='stock'||v==='pm');
+  fHasta.classList.toggle('hide',v==='stock'||v==='pm');
+  fEstado.classList.toggle('hide',v==='stock'||v==='pm');
+  fSistema.classList.toggle('hide',v==='stock'||v==='pm');
+  fFuente.classList.toggle('hide',v!=='res');
+  fObra.classList.toggle('hide',v==='pm');
   pintar();
 }
-['plan','res','ale'].forEach(k=>document.getElementById('tab_'+k).onclick=()=>verVista(k));
+['plan','res','ale','stock','pm'].forEach(k=>document.getElementById('tab_'+k).onclick=()=>verVista(k));
 
 function pintar(){
   if(vista==='plan')pintarPlan();
   else if(vista==='res')pintarRes();
-  else pintarAle();
+  else if(vista==='ale')pintarAle();
+  else if(vista==='stock')pintarStock();
+  else pintarPM();
 }
 
 /* ───────── PLANILLA ───────── */
@@ -590,6 +613,166 @@ async function guardarAlerta(rid,ctrl){
   }catch(e){ alert('No se pudo guardar: '+e.message); pintarAle(); }
 }
 
+/* ───────── STOCK DE FRASCOS ───────── */
+function pintarStock(){
+  const usados=new Set(PLAN.map(p=>nrm(p.frasco||'')).filter(Boolean));
+  const q=nrm(fBusca.value), o=fObra.value;
+  const L=STOCK.filter(s=>{
+    if(o&&String(s.cod_proyec||'')!==o)return false;
+    if(q&&!nrm(`${s.codigo} ${s.cod_proyec||''}`).includes(q))return false;
+    return true;
+  }).map(s=>({...s,usado:usados.has(nrm(s.codigo))}));
+  chN.textContent=L.length+' frasco(s)';
+  const disp=L.filter(s=>!s.usado).length, usa=L.filter(s=>s.usado).length;
+  cards.innerHTML=card('Disponibles',disp,'sin usar todavía','ok')
+    +card('Usados',usa,'ya aparecen en Planilla','warn')
+    +card('Total',L.length,o?('en '+o):'en todas las obras');
+  const porObra=new Map();
+  STOCK.forEach(s=>{
+    const k=s.cod_proyec||'(sin obra)';
+    if(!porObra.has(k))porObra.set(k,{disp:0,usa:0});
+    const u=usados.has(nrm(s.codigo));
+    porObra.get(k)[u?'usa':'disp']++;
+  });
+  const resumen=[...porObra.entries()].sort((a,b)=>a[0].localeCompare(b[0]))
+    .map(([obra,c])=>`<tr><td class="mono">${esc(obra)}</td><td class="r">${c.disp}</td><td class="r">${c.usa}</td>
+      <td><div class="barra-mini"><i style="width:${c.disp+c.usa?Math.round(c.usa/(c.disp+c.usa)*100):0}%"></i></div></td></tr>`).join('');
+  boxStock.innerHTML=`<div class="hint" style="margin-bottom:10px">Resumen por obra</div>
+    <table class="t" style="max-width:520px;margin-bottom:16px"><thead><tr>
+    <th>Obra</th><th class="r">Disponibles</th><th class="r">Usados</th><th style="width:120px">% usado</th></tr></thead>
+    <tbody>${resumen||'<tr><td colspan="4" class="dim">Sin frascos registrados.</td></tr>'}</tbody></table>
+    ${!L.length?'<div class="vacio">Sin frascos con estos filtros.</div>':`
+    <table class="t"><thead><tr><th>Código</th><th>Obra</th><th class="c">Estado</th><th class="c">Fecha ingreso</th><th></th></tr></thead>
+    <tbody>${L.map(s=>`<tr>
+      <td class="mono">${esc(s.codigo)}</td><td class="mono">${esc(s.cod_proyec||'')}</td>
+      <td class="c"><span class="pill ${s.usado?'e-PRECAUCION':'e-NORMAL'}">${s.usado?'USADO':'DISPONIBLE'}</span></td>
+      <td class="c">${fmtDate(s.fecha_ingreso)}</td>
+      <td class="c"><button class="mini" data-del="${s.id}" title="Quitar del stock">✕</button></td>
+    </tr>`).join('')}</tbody></table>`}`;
+  boxStock.querySelectorAll('[data-del]').forEach(b=>b.onclick=()=>borrarStock(b.dataset.del));
+}
+async function borrarStock(id){
+  if(!confirm('¿Quitar este código del stock? Si ya fue usado en una muestra, igual se puede volver a registrar después.'))return;
+  const {error}=await sb.from('sos_stock').delete().eq('id',id);
+  if(error)return alert('No se pudo quitar: '+error.message);
+  STOCK=STOCK.filter(s=>String(s.id)!==String(id)); pintarStock();
+}
+function formLote(){
+  const obras=[...new Set(datos.map(d=>d.cod_proyec).filter(Boolean))].sort();
+  document.body.insertAdjacentHTML('beforeend',`<div class="modal" id="mlote"><div class="mc">
+    <div class="mh"><h3>Agregar frascos al stock</h3><div class="spacer"></div>
+      <button class="act" onclick="document.getElementById('mlote').remove()">Cerrar</button></div>
+    <div class="mb"><div class="form">
+      <label>Obra<select id="lo_obra">${obras.map(o=>`<option>${esc(o)}</option>`).join('')}</select></label>
+      <label>Prefijo del código<input id="lo_prefijo" placeholder="ej: HUA175"></label>
+      <label>Desde el número<input id="lo_desde" type="number" min="1" value="1"></label>
+      <label>Hasta el número<input id="lo_hasta" type="number" min="1" value="50"></label>
+      <label class="full">Se crean códigos correlativos: PREFIJO-000001, PREFIJO-000002… No se repiten códigos que ya existan.</label>
+    </div>
+    <button class="act primary" id="lo_crear" style="margin-top:10px">Crear frascos</button>
+    </div></div></div>`);
+  document.getElementById('mlote').addEventListener('click',ev=>{if(ev.target.id==='mlote')ev.target.remove();});
+  document.getElementById('lo_crear').onclick=async()=>{
+    const obra=document.getElementById('lo_obra').value;
+    const pre=document.getElementById('lo_prefijo').value.trim().toUpperCase();
+    const d=+document.getElementById('lo_desde').value, h=+document.getElementById('lo_hasta').value;
+    if(!pre)return alert('Escribe un prefijo de código.');
+    if(!(d>0&&h>=d))return alert('Revisa el rango de números.');
+    if(h-d>500)return alert('Máximo 500 frascos por lote — divídelo en tandas más chicas.');
+    const existentes=new Set(STOCK.map(s=>s.codigo));
+    const nuevos=[];
+    for(let n=d;n<=h;n++){
+      const cod=`${pre}-${String(n).padStart(6,'0')}`;
+      if(!existentes.has(cod))nuevos.push({cod_proyec:obra,codigo:cod});
+    }
+    if(!nuevos.length)return alert('Todos esos códigos ya existían en el stock.');
+    const {data,error}=await sb.from('sos_stock').insert(nuevos).select();
+    if(error)return alert('No se pudo guardar: '+error.message);
+    STOCK.push(...(data||[]));
+    document.getElementById('mlote').remove();
+    pintarStock();
+    alert(`${(data||[]).length} frasco(s) agregado(s) al stock.`);
+  };
+}
+
+/* ───────── PLAN DE MUESTREO ───────── */
+function pintarPM(){
+  const admin=perfil&&perfil.rol==='admin';
+  const q=nrm(fBusca.value);
+  const L=PM.filter(p=>!q||nrm(`${p.tipo_equipo} ${p.sistema}`).includes(q))
+    .sort((a,b)=>String(a.tipo_equipo).localeCompare(String(b.tipo_equipo))||String(a.sistema).localeCompare(String(b.sistema)));
+  chN.textContent=L.length+' combinación(es)';
+  cards.innerHTML=card('Tipos de equipo',new Set(PM.map(p=>p.tipo_equipo)).size,'con plan de muestreo')
+    +card('Sistemas configurados',PM.length,'tipo + sistema')
+    +card('Meta de cumplimiento',Math.round((PARAM.meta_cumplimiento||0)*100)+'%','del mes','ok')
+    +card('Umbral crítico',Math.round((PARAM.umbral_critico||0)*100)+'%','por debajo de esto','bad');
+  const params=admin?`<div class="hint" style="margin-bottom:10px">Parámetros de precisión (editables)</div>
+    <div style="display:flex;gap:10px;margin-bottom:18px;flex-wrap:wrap">
+      ${paramCampo('meta_cumplimiento','Meta de cumplimiento (%)',Math.round((PARAM.meta_cumplimiento||0)*100))}
+      ${paramCampo('umbral_critico','Umbral crítico (%)',Math.round((PARAM.umbral_critico||0)*100))}
+      ${paramCampo('tolerancia_horometro_pct','Tolerancia horómetro (± %)',Math.round((PARAM.tolerancia_horometro_pct||0)*100))}
+      ${paramCampo('tolerancia_fecha_dias','Tolerancia de fecha (± días)',PARAM.tolerancia_fecha_dias||0)}
+    </div>`:'';
+  boxPM.innerHTML=params+(!L.length?'<div class="vacio">Sin combinaciones registradas.</div>':`
+    <table class="t"><thead><tr><th>Tipo de equipo</th><th>Sistema</th><th class="r">Frecuencia (HR/KM)</th>${admin?'<th></th>':''}</tr></thead>
+    <tbody>${L.map(p=>`<tr>
+      <td>${esc(p.tipo_equipo)}</td><td>${esc(p.sistema)}</td><td class="r mono">${esc(p.frecuencia)}</td>
+      ${admin?`<td class="c"><button class="mini" data-ed="${p.id}">✎</button> <button class="mini" data-del="${p.id}">✕</button></td>`:''}
+    </tr>`).join('')}</tbody></table>`);
+  if(admin){
+    boxPM.querySelectorAll('[data-pp]').forEach(el=>el.onchange=()=>guardarParametro(el.dataset.pp,el.value));
+    boxPM.querySelectorAll('[data-ed]').forEach(b=>b.onclick=()=>formPM(b.dataset.ed));
+    boxPM.querySelectorAll('[data-del]').forEach(b=>b.onclick=()=>borrarPM(b.dataset.del));
+  }
+}
+function paramCampo(campo,etiqueta,valor){
+  return `<div class="c" style="min-width:170px"><div class="l">${etiqueta}</div>
+    <input class="ed" data-pp="${campo}" type="number" value="${valor}" style="margin-top:4px;font-size:16px;font-weight:800;color:#1F3864"></div>`;
+}
+async function guardarParametro(campo,valor){
+  let v=+valor;
+  if(campo==='meta_cumplimiento'||campo==='umbral_critico'||campo==='tolerancia_horometro_pct')v=v/100;
+  const {error}=await sb.from('sos_parametros').update({[campo]:v}).eq('id',1);
+  if(error){alert('No se pudo guardar: '+error.message);return;}
+  PARAM[campo]=v; pintarPM();
+}
+function formPM(id){
+  const p=id?PM.find(x=>String(x.id)===String(id)):{};
+  const tipos=[...new Set(datos.map(d=>d.familia).filter(Boolean))].sort();
+  document.body.insertAdjacentHTML('beforeend',`<div class="modal" id="mpm"><div class="mc">
+    <div class="mh"><h3>${id?'Editar':'Nueva'} combinación</h3><div class="spacer"></div>
+      ${id?'<button class="act bad" id="pm_del">Eliminar</button>':''}
+      <button class="act" onclick="document.getElementById('mpm').remove()">Cerrar</button></div>
+    <div class="mb"><div class="form">
+      <label>Tipo de equipo<input id="pm_tipo" list="pm_tipos" value="${esc(p.tipo_equipo||'')}">
+        <datalist id="pm_tipos">${tipos.map(t=>`<option value="${esc(t)}">`).join('')}</datalist></label>
+      <label>Sistema<input id="pm_sistema" value="${esc(p.sistema||'')}" placeholder="ej: MOTOR, HIDRAULICO…"></label>
+      <label>Frecuencia (HR/KM)<input id="pm_frec" type="number" value="${p.frecuencia||''}"></label>
+    </div>
+    <button class="act primary" id="pm_guardar" style="margin-top:10px">Guardar</button>
+    </div></div></div>`);
+  document.getElementById('mpm').addEventListener('click',ev=>{if(ev.target.id==='mpm')ev.target.remove();});
+  if(id)document.getElementById('pm_del').onclick=()=>{document.getElementById('mpm').remove();borrarPM(id);};
+  document.getElementById('pm_guardar').onclick=async()=>{
+    const d={tipo_equipo:document.getElementById('pm_tipo').value.trim().toUpperCase(),
+      sistema:document.getElementById('pm_sistema').value.trim().toUpperCase(),
+      frecuencia:+document.getElementById('pm_frec').value||0,
+      updated_at:new Date().toISOString()};
+    if(!d.tipo_equipo||!d.sistema||!d.frecuencia)return alert('Completa tipo de equipo, sistema y frecuencia.');
+    const {data,error}= id ? await sb.from('sos_plan_muestreo').update(d).eq('id',id).select().single()
+                            : await sb.from('sos_plan_muestreo').insert(d).select().single();
+    if(error)return alert('No se pudo guardar: '+error.message);
+    if(id){const i=PM.findIndex(x=>String(x.id)===String(id)); PM[i]=data;} else PM.push(data);
+    document.getElementById('mpm').remove(); pintarPM();
+  };
+}
+async function borrarPM(id){
+  if(!confirm('¿Quitar esta combinación del plan de muestreo?'))return;
+  const {error}=await sb.from('sos_plan_muestreo').delete().eq('id',id);
+  if(error)return alert('No se pudo quitar: '+error.message);
+  PM=PM.filter(p=>String(p.id)!==String(id)); pintarPM();
+}
+
 const card=(l,v,s,cls)=>`<div class="c"><div class="l">${l}</div><div class="v ${cls||''}">${v}</div><div class="s">${s}</div></div>`;
 
 
@@ -779,6 +962,8 @@ function formPlan(id){
   };
 }
 btnNuevo.onclick=()=>formPlan(null);
+btnLote.onclick=()=>formLote();
+btnPM.onclick=()=>formPM(null);
 
 /* ═══════════════ EXCEL ═══════════════ */
 btnXls.onclick=()=>{
@@ -954,16 +1139,21 @@ async function traerTodo(tabla,orden,asc){
   }
   return {data:out,error:null};
 }
+let PM=[], PARAM={}, STOCK=[];
 async function cargarTodo(){
   pie.textContent='Cargando…';
-  const [pl,re,al]=await Promise.all([
+  const [pl,re,al,pm,pa,st]=await Promise.all([
     traerTodo('sos_planilla','f_muestreo',false),
     traerTodo('sos_resultados','fecha',false),
-    traerTodo('sos_alertas')
+    traerTodo('sos_alertas'),
+    sb.from('sos_plan_muestreo').select('*').order('tipo_equipo').order('sistema'),
+    sb.from('sos_parametros').select('*').eq('id',1).single(),
+    traerTodo('sos_stock','codigo',true)
   ]);
   if(pl.error||re.error){pie.textContent='No se pudo cargar: '+((pl.error||re.error).message);return;}
   PLAN=pl.data||[]; RES=re.data||[]; ALE=al.data||[];
-  const obras=[...new Set([...PLAN.map(p=>p.obra),...RES.map(r=>r.obra)].filter(Boolean))].sort();
+  PM=pm.data||[]; PARAM=pa.data||{}; STOCK=st.data||[];
+  const obras=[...new Set([...PLAN.map(p=>p.obra),...RES.map(r=>r.obra),...datos.map(d=>d.cod_proyec)].filter(Boolean))].sort();
   fObra.innerHTML='<option value="">Todas las obras</option>'+obras.map(o=>`<option>${esc(o)}</option>`).join('');
   const siss=[...new Set(RES.map(r=>r.sistema_std).filter(Boolean))].sort();
   fSistema.innerHTML='<option value="">Todos los sistemas</option>'+siss.map(s=>`<option>${esc(s)}</option>`).join('');
