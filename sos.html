@@ -225,7 +225,8 @@ function mant(e){
 
 /* ═══════════════════ SOS · MUESTREO DE ACEITES ═══════════════════ */
 let datos=[], DIDX=new Map(), perfil=null;
-let PLAN=[], RES=[], ALE=[], EQE=new Map(), EQS=new Map(), EQLE=[], EQLS=[];
+let PLAN=[], RES=[], ALE=[], EQE=new Map(), EQS=new Map(), EQLE=[], EQLS=[], EQT=new Map(), EQLT=[];
+function tipoEstandar(equipo){ const t=nrm(equipo||''); return EQT.get(t)||String(equipo||'').trim(); }
 let vista='plan';
 
 const nrm=s=>String(s??'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toUpperCase().replace(/\s+/g,' ').trim();
@@ -770,7 +771,7 @@ async function guardarParametro(campo,valor){
 }
 function formPM(id){
   const p=id?PM.find(x=>String(x.id)===String(id)):{};
-  const tipos=[...new Set(datos.map(d=>d.familia).filter(Boolean))].sort();
+  const tipos=[...new Set(datos.map(d=>tipoEstandar(d.equipo)).filter(Boolean))].sort();
   document.body.insertAdjacentHTML('beforeend',`<div class="modal" id="mpm"><div class="mc">
     <div class="mh"><h3>${id?'Editar':'Nueva'} combinación</h3><div class="spacer"></div>
       ${id?'<button class="act bad" id="pm_del">Eliminar</button>':''}
@@ -818,7 +819,7 @@ function calcProgramacion(){
   const mesActual=isoDe(hoy).slice(0,7);
   const filas=[];
   datos.filter(e=>!esDesmov(e.status)).forEach(e=>{
-    PM.filter(p=>nrm(p.tipo_equipo)===nrm(e.familia)).forEach(p=>{
+    PM.filter(p=>nrm(p.tipo_equipo)===nrm(tipoEstandar(e.equipo))).forEach(p=>{
       const freq=+p.frecuencia||0; if(!freq)return;
       const horAct=+e.hrkm_actual||0, hrDia=+e.hr_dia||0;
       const hist=RES.filter(r=>r.cod_sap===e.cod_sap&&nrm(r.sistema_std||r.componente||'')===nrm(p.sistema))
@@ -889,7 +890,7 @@ function calcRango(){
   const tipo=fTipoEq.value, sis=fSistema.value;
   const filas=RES.filter(r=>{
     const e=eqPorSap.get(r.cod_sap); if(!e)return false;
-    if(tipo&&nrm(e.familia)!==nrm(tipo))return false;
+    if(tipo&&nrm(tipoEstandar(e.equipo))!==nrm(tipo))return false;
     if(sis&&nrm(r.sistema_std||'')!==nrm(sis))return false;
     return e.hrkm_ingreso!=null&&r.horometro!=null;
   }).map(r=>{
@@ -1232,10 +1233,13 @@ function eqAbrir(){
   const faltaE=[...new Set(RES.filter(r=>r.estado&&!r.estado_std).map(r=>r.estado))].sort();
   const faltaS=[...new Set([...RES.filter(r=>r.componente&&!r.sistema_std).map(r=>r.componente),
                             ...PLAN.filter(p=>p.sistema&&!p.sistema_std).map(p=>p.sistema)])].sort();
+  const tiposPM=new Set(PM.map(p=>nrm(p.tipo_equipo)));
+  const faltaT=[...new Set(datos.filter(d=>d.equipo&&!tiposPM.has(nrm(tipoEstandar(d.equipo)))).map(d=>d.equipo))].sort();
   const stds=[...new Set([...EQS.values()])].sort();
+  const tiposStd=[...new Set(PM.map(p=>p.tipo_equipo))].sort();
   document.body.insertAdjacentHTML('beforeend',`<div class="modal" id="meq"><div class="mc">
     <div class="mh"><div><h3>Equivalencias</h3>
-      <div class="sub">Uniforman el texto de cada laboratorio a un estado y un sistema comunes.</div></div>
+      <div class="sub">Uniforman el texto de cada laboratorio a un estado y un sistema comunes, y el "Equipo" de Maestro al Tipo de Equipo que usa Plan de Muestreo.</div></div>
       <div class="spacer"></div><button class="act" id="eqCer">Cerrar</button></div>
     <div class="mb">
       ${(faltaE.length||faltaS.length)?`<div class="campo"><b>Sin equivalencia en los datos cargados</b>
@@ -1262,6 +1266,17 @@ function eqAbrir(){
           <input id="s_std" placeholder="Sistema estándar" list="stdl">
           <datalist id="stdl">${stds.map(t=>`<option>${esc(t)}</option>`).join('')}</datalist>
           <button class="act primary" id="s_add">Agregar</button></div>`:''}
+      </div>
+      <div class="campo"><b>Tipo de equipo (Maestro → Plan de Muestreo)</b>
+        ${faltaT.length?`<div class="warn" style="font-size:12px;margin-bottom:4px">Sin plan de muestreo todavía: ${faltaT.map(esc).join(' · ')}</div>`:''}
+        <table class="t"><thead><tr><th>Equipo (en Maestro)</th><th>Tipo de equipo estándar</th>${admin?'<th></th>':''}</tr></thead>
+        <tbody id="eqTT"></tbody></table>
+        ${admin?`<div class="eqnew">
+          <input id="t_txt" placeholder="Equipo tal como está en Maestro" list="faltaT">
+          <datalist id="faltaT">${faltaT.map(t=>`<option>${esc(t)}</option>`).join('')}</datalist>
+          <input id="t_std" placeholder="Tipo de equipo estándar" list="tstdl">
+          <datalist id="tstdl">${tiposStd.map(t=>`<option>${esc(t)}</option>`).join('')}</datalist>
+          <button class="act primary" id="t_add">Agregar</button></div>`:''}
       </div>
       ${admin?'':'<div class="hint">Solo los administradores pueden modificar estas tablas.</div>'}
     </div></div></div>`);
@@ -1290,9 +1305,18 @@ function eqAbrir(){
     document.getElementById('s_txt').value='';
     eqPintarTablas(); reNormalizar();
   };
+  document.getElementById('t_add').onclick=async()=>{
+    const t=document.getElementById('t_txt').value.trim(), s=document.getElementById('t_std').value.trim();
+    if(!t||!s)return alert('Completa el equipo y el tipo estándar.');
+    const {error}=await sb.from('sos_eq_tipo').insert({texto:t,estandar:s});
+    if(error)return alert('No se pudo agregar: '+error.message);
+    EQT.set(nrm(t),s); EQLT.push({texto:t,estandar:s});
+    document.getElementById('t_txt').value='';
+    eqPintarTablas(); pintar();
+  };
 }
 function eqPintarTablas(){
-  const te=document.getElementById('eqTE'), ts=document.getElementById('eqTS');
+  const te=document.getElementById('eqTE'), ts=document.getElementById('eqTS'), tt=document.getElementById('eqTT');
   if(!te)return;
   const admin=perfil&&perfil.rol==='admin';
   te.innerHTML=EQLE.slice().sort((a,b)=>a.estandar.localeCompare(b.estandar)||a.texto.localeCompare(b.texto))
@@ -1302,6 +1326,9 @@ function eqPintarTablas(){
   ts.innerHTML=EQLS.slice().sort((a,b)=>a.estandar.localeCompare(b.estandar)||a.texto.localeCompare(b.texto))
     .map(x=>`<tr><td>${esc(x.texto)}</td><td>${esc(x.estandar)}</td>
       ${admin&&x.id?`<td class="c"><button class="mini" data-ds="${x.id}">✕</button></td>`:(admin?'<td></td>':'')}</tr>`).join('');
+  tt.innerHTML=EQLT.slice().sort((a,b)=>a.estandar.localeCompare(b.estandar)||a.texto.localeCompare(b.texto))
+    .map(x=>`<tr><td>${esc(x.texto)}</td><td>${esc(x.estandar)}</td>
+      ${admin&&x.id?`<td class="c"><button class="mini" data-dt="${x.id}">✕</button></td>`:(admin?'<td></td>':'')}</tr>`).join('');
   te.querySelectorAll('[data-de]').forEach(b=>b.onclick=async()=>{
     if(!confirm('¿Eliminar esta equivalencia?'))return;
     await sb.from('sos_eq_estado').delete().eq('id',b.dataset.de);
@@ -1314,6 +1341,12 @@ function eqPintarTablas(){
     const i=EQLS.findIndex(x=>String(x.id)===b.dataset.ds);
     if(i>=0){EQS.delete(nrm(EQLS[i].texto));EQLS.splice(i,1);}
     eqPintarTablas(); reNormalizar();});
+  tt.querySelectorAll('[data-dt]').forEach(b=>b.onclick=async()=>{
+    if(!confirm('¿Eliminar esta equivalencia?'))return;
+    await sb.from('sos_eq_tipo').delete().eq('id',b.dataset.dt);
+    const i=EQLT.findIndex(x=>String(x.id)===b.dataset.dt);
+    if(i>=0){EQT.delete(nrm(EQLT[i].texto));EQLT.splice(i,1);}
+    eqPintarTablas(); pintar();});
 }
 /* al cambiar una equivalencia se vuelven a uniformar los datos ya guardados */
 async function reNormalizar(){
@@ -1371,7 +1404,7 @@ async function cargarTodo(){
   fObra.innerHTML='<option value="">Todas las obras</option>'+obras.map(o=>`<option>${esc(o)}</option>`).join('');
   const siss=[...new Set(RES.map(r=>r.sistema_std).filter(Boolean))].sort();
   fSistema.innerHTML='<option value="">Todos los sistemas</option>'+siss.map(s=>`<option>${esc(s)}</option>`).join('');
-  const tipos=[...new Set(datos.map(d=>d.familia).filter(Boolean))].sort();
+  const tipos=[...new Set(datos.map(d=>tipoEstandar(d.equipo)).filter(Boolean))].sort();
   fTipoEq.innerHTML='<option value="">Todos los tipos de equipo</option>'+tipos.map(t=>`<option>${esc(t)}</option>`).join('');
   pie.textContent=`${PLAN.length} muestra(s) en planilla · ${RES.length} resultado(s) · ${ALE.length} en seguimiento.`;
   pintar();
@@ -1468,13 +1501,14 @@ function pintarNav(actual){
      +'<p style="color:#6b747d">Un administrador debe habilitarte esta pesta&ntilde;a desde Usuarios.</p></div>';return;}
   const {data:m}=await sb.from('maestro').select('id,cod_sap,equipo,marca,modelo,serie_placa,cod_proyec,familia,status,hrkm_actual,fecha_lectura,hr_dia,hrkm_ult_mntto,hrkm_ingreso');
   datos=m||[]; DIDX=new Map(datos.map(e=>[String(e.id),e]));
-  const [ee,es]=await Promise.all([
-    sb.from('sos_eq_estado').select('*'), sb.from('sos_eq_sistema').select('*')
+  const [ee,es,et]=await Promise.all([
+    sb.from('sos_eq_estado').select('*'), sb.from('sos_eq_sistema').select('*'), sb.from('sos_eq_tipo').select('*')
   ]);
   // el archivo trae "CRÍTICO" con tilde y "PRECAUCION" sin ella: se unifica
-  EQLE=ee.data||[]; EQLS=es.data||[];
+  EQLE=ee.data||[]; EQLS=es.data||[]; EQLT=et.data||[];
   EQLE.forEach(x=>EQE.set(nrm(x.texto),nrm(x.estandar)));
   EQLS.forEach(x=>EQS.set(nrm(x.texto),String(x.estandar).trim()));
+  EQLT.forEach(x=>EQT.set(nrm(x.texto),String(x.estandar).trim()));
   const hoy=new Date(), ini=new Date(hoy.getFullYear(),0,1);
   fDesde.value=isoDe(ini); fHasta.value=isoDe(hoy);
   await cargarTodo();
