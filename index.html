@@ -87,7 +87,8 @@
   table.mx{border-collapse:separate;border-spacing:0;font-size:11.5px;background:#fff;min-width:1200px}
   .mx th,.mx td{border-bottom:1px solid #e6e8eb;border-right:1px solid #eef0f2;white-space:nowrap;
     overflow:hidden;text-overflow:ellipsis}
-  .mx thead th{position:sticky;color:#fff;font-size:11px;font-weight:400;letter-spacing:0;padding:2px 4px;text-align:center;z-index:5;overflow:hidden;border:none;border-right:1px solid #fff;border-bottom:1px solid #fff}
+  .mx thead th{position:sticky;color:#fff;font-size:11px;font-weight:400;letter-spacing:0;padding:2px 4px;text-align:center;z-index:5;overflow:hidden;border:none;border-right:1px solid #fff;border-bottom:1px solid #fff;
+    will-change:transform}
   .mx thead tr.bands th{top:0;height:auto;cursor:pointer;user-select:none;font-weight:600}
   .mx thead tr.cols th{top:var(--bandsH,30px);font-weight:400;text-transform:none;vertical-align:top}
   .mx thead .hlab{padding:2px 0 3px;line-height:1.05}
@@ -109,7 +110,7 @@
   .mx td.calc{padding:1px 5px;text-align:right;font-family:"SF Mono",monospace;color:var(--muted);background:#fbfbfc}
   .mx td.ctr{text-align:center}
   /* congelados */
-  .frz{position:sticky;background:#fff;z-index:6}
+  .frz{position:sticky;background:#fff;z-index:6;will-change:transform}
   .mx thead .frz{z-index:9}
   .mx tbody tr:hover td.frz{background:#f9fafb}
   /* estado / semáforos */
@@ -1760,6 +1761,10 @@ function mostrarPanel(t){
   paneUsers.classList.toggle("hide",t!=="users");
   Object.keys(IFRAME_PAGINAS).forEach(k=>{
     const pane=document.getElementById('paneFrame_'+k); if(pane)pane.classList.toggle('hide',t!==k);
+    // pausa el trabajo de fondo de la pestaña que se oculta, reanuda la que se muestra
+    const w=_iframes[k]&&_iframes[k].contentWindow;
+    if(!w)return;
+    try{ (t===k ? w.reanudarFondo : w.pausarFondo)&&(t===k ? w.reanudarFondo() : w.pausarFondo()); }catch(_){}
   });
   if(t==="users")cargarUsuarios();
   if(IFRAME_PAGINAS[t])asegurarIframe(t);

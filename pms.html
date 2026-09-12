@@ -1699,7 +1699,19 @@ OFF.vigilar(()=>{ offPintarEstado(); if(navigator.onLine)OFF.sincronizar(sb).the
 }); });
 setTimeout(revisarPendientesViejos,1500);
 offPintarEstado();
-setInterval(()=>{ if(navigator.onLine&&!document.hidden)OFF.sincronizar(sb).then(r=>{if(r.ok)offPintarEstado();}); },30000);
+/* Este temporizador (revisar cambios sin conexión pendientes de enviar)
+   se pausa cuando la pestaña PM-S está oculta dentro de Equipos, y se
+   reanuda de inmediato al volver a ella — evita trabajo de fondo
+   innecesario mientras estás mirando otra pestaña. */
+let _pmsSyncTimer=null, _pmsSyncPausado=false;
+function _pmsIniciarSync(){
+  if(_pmsSyncTimer)return;
+  _pmsSyncTimer=setInterval(()=>{ if(navigator.onLine&&!document.hidden)OFF.sincronizar(sb).then(r=>{if(r.ok)offPintarEstado();}); },30000);
+}
+window.pausarFondo=function(){ _pmsSyncPausado=true; if(_pmsSyncTimer){clearInterval(_pmsSyncTimer);_pmsSyncTimer=null;} };
+window.reanudarFondo=function(){ _pmsSyncPausado=false; _pmsIniciarSync();
+  if(navigator.onLine)OFF.sincronizar(sb).then(r=>{if(r.ok)offPintarEstado();}); };
+_pmsIniciarSync();
 
   const add=new URLSearchParams(location.search).get('add');
   if(add){
