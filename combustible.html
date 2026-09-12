@@ -11,7 +11,7 @@
 <link rel="manifest" href="manifest.json">
 <meta name="theme-color" content="#1c232b">
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" onerror="this.onerror=null;document.write('&lt;script src=&quot;https://unpkg.com/@supabase/supabase-js@2&quot;&gt;&lt;\/script&gt;')"></script>
+<script src="supabase.js" onerror="this.onerror=null;document.write('&lt;script src=&quot;https://unpkg.com/@supabase/supabase-js@2&quot;&gt;&lt;\/script&gt;')"></script>
 <style>
 :root{
     --steel:#1c232b;--steel-2:#2a333d;--bg:#eef0f2;--card:#fff;--line:#d3d8dd;--ink:#1a1d21;
@@ -375,6 +375,14 @@ if(!CFG||!CFG.url){
    +'<h2 style="font-size:18px;margin-bottom:10px">Abre primero la p&aacute;gina principal</h2>'
    +'<p style="color:#6b747d">Esta pesta&ntilde;a toma la conexi&oacute;n y la sesi&oacute;n desde el Maestro de Equipos.</p></div>';
   throw new Error('sin configuracion');
+}
+if(!window.supabase){
+  document.body.innerHTML='<div style="padding:60px;text-align:center;font-family:-apple-system,sans-serif">'
+    +'<h2 style="font-size:18px;margin-bottom:10px">No se pudo cargar un componente necesario</h2>'
+    +'<p style="color:#6b747d;max-width:420px;margin:0 auto 16px">Revisa tu conexión a internet e inténtalo de nuevo. '
+    +'Si el problema sigue, puede ser un corte temporal de un servicio externo — prueba en unos minutos.</p>'
+    +'<button onclick="location.reload()" style="background:#FFCD11;border:none;border-radius:9px;padding:10px 20px;font-weight:700;cursor:pointer">Reintentar</button></div>';
+  throw new Error('window.supabase no disponible');
 }
 const sb=window.supabase.createClient(CFG.url,CFG.key);
 let datos=[], perfil=null;

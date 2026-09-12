@@ -635,7 +635,7 @@
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" onerror="this.onerror=null;document.write('&lt;script src=&quot;https://unpkg.com/@supabase/supabase-js@2&quot;&gt;&lt;\/script&gt;')"></script>
+<script src="supabase.js" onerror="this.onerror=null;document.write('&lt;script src=&quot;https://unpkg.com/@supabase/supabase-js@2&quot;&gt;&lt;\/script&gt;')"></script>
 <script>
 /* Nombre fijo de esta ventana: así, sin importar cómo se abrió (URL directa,
    marcador, o desde otra pestaña), las demás páginas (PM-S, Combustible, SOS)
@@ -645,6 +645,14 @@ try{window.name='gllr_index';}catch(_){}
 const SUPABASE_URL = "https://hklwvdhzltjsbfvlewbu.supabase.co";   // ← reemplaza
 const SUPABASE_KEY = "sb_publishable_NgDfyDHDI_KByR-qf35EpA_ZuKI5E0K";                 // ← reemplaza
 /* ──────────────────────────────────────────────────────────────── */
+if(!window.supabase){
+  document.body.innerHTML='<div style="padding:60px;text-align:center;font-family:-apple-system,sans-serif">'
+    +'<h2 style="font-size:18px;margin-bottom:10px">No se pudo cargar un componente necesario</h2>'
+    +'<p style="color:#6b747d;max-width:420px;margin:0 auto 16px">Revisa tu conexión a internet e inténtalo de nuevo. '
+    +'Si el problema sigue, puede ser un corte temporal de un servicio externo — prueba en unos minutos.</p>'
+    +'<button onclick="location.reload()" style="background:#FFCD11;border:none;border-radius:9px;padding:10px 20px;font-weight:700;cursor:pointer">Reintentar</button></div>';
+  throw new Error('window.supabase no disponible');
+}
 const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 try{localStorage.setItem('gllr_sbcfg',JSON.stringify({url:SUPABASE_URL,key:SUPABASE_KEY}));}catch(_){}
 /* ═══════════════════ MODO OFFLINE ═══════════════════
