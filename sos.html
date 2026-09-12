@@ -128,6 +128,7 @@
   <button id="tab_stock">Stock de frascos</button>
   <button id="tab_pm">Plan de muestreo</button>
   <button id="tab_prog">Programación mensual</button>
+  <button id="tab_rango">Cumplimiento / Rango operación</button>
 </div>
 <div class="toolbar">
   <input type="search" id="fBusca" placeholder="Equipo, frasco, n&deg; muestra&hellip;" style="width:250px">
@@ -135,6 +136,7 @@
   <select id="fObra"><option value="">Todas las obras</option></select>
   <select id="fEstado"><option value="">Todos los estados</option><option value="CRITICO">Cr&iacute;tico</option><option value="PRECAUCION">Precauci&oacute;n</option><option value="NORMAL">Normal</option></select>
   <select id="fSistema"><option value="">Todos los sistemas</option></select>
+  <select id="fTipoEq" class="hide"><option value="">Todos los tipos de equipo</option></select>
   <select id="fFuente"><option value="">Los 3 laboratorios</option><option>FESA</option><option>LUBTEC</option><option>MARCO PERUANA</option></select>
   <span class="chip" id="chN">&mdash;</span>
   <div class="spacer"></div>
@@ -154,6 +156,7 @@
   <div id="boxStock" class="hide"></div>
   <div id="boxPM" class="hide"></div>
   <div id="boxProg" class="hide"></div>
+  <div id="boxRango" class="hide"></div>
 </div>
 <footer id="pie">Cargando&hellip;</footer>
 <script>
@@ -387,7 +390,7 @@ function enlazarPlanilla(r){
 /* ═══════════════ VISTAS ═══════════════ */
 function verVista(v){
   vista=v;
-  ['plan','res','ale','stock','pm','prog'].forEach(k=>{
+  ['plan','res','ale','stock','pm','prog','rango'].forEach(k=>{
     document.getElementById('tab_'+k).classList.toggle('on',k===v);
   });
   boxPlan.classList.toggle('hide',v!=='plan');
@@ -396,23 +399,25 @@ function verVista(v){
   boxStock.classList.toggle('hide',v!=='stock');
   boxPM.classList.toggle('hide',v!=='pm');
   boxProg.classList.toggle('hide',v!=='prog');
+  boxRango.classList.toggle('hide',v!=='rango');
   btnSubir.textContent='⬆ Subir archivo';
-  btnSubir.classList.toggle('hide',v==='ale'||v==='stock'||v==='pm'||v==='prog');
+  btnSubir.classList.toggle('hide',v!=='plan'&&v!=='res');
   btnNuevo.classList.toggle('hide',v!=='plan');
   btnXls.classList.toggle('hide',v==='pm');
-  btnEq.classList.toggle('hide',v==='stock'||v==='pm'||v==='prog');
+  btnEq.classList.toggle('hide',v!=='plan'&&v!=='res');
   const admin=perfil&&perfil.rol==='admin';
   btnLote.classList.toggle('hide',v!=='stock');
   btnPM.classList.toggle('hide',v!=='pm'||!admin);
-  fDesde.classList.toggle('hide',v==='stock'||v==='pm'||v==='prog');
-  fHasta.classList.toggle('hide',v==='stock'||v==='pm'||v==='prog');
-  fEstado.classList.toggle('hide',v==='stock'||v==='pm'||v==='prog');
-  fSistema.classList.toggle('hide',v==='stock'||v==='pm'||v==='prog');
+  fDesde.classList.toggle('hide',v!=='plan'&&v!=='res'&&v!=='ale');
+  fHasta.classList.toggle('hide',v!=='plan'&&v!=='res'&&v!=='ale');
+  fEstado.classList.toggle('hide',v!=='res'&&v!=='ale');
+  fSistema.classList.toggle('hide',v!=='res'&&v!=='rango');
+  fTipoEq.classList.toggle('hide',v!=='rango');
   fFuente.classList.toggle('hide',v!=='res');
-  fObra.classList.toggle('hide',v==='pm');
+  fObra.classList.toggle('hide',v==='pm'||v==='rango');
   pintar();
 }
-['plan','res','ale','stock','pm','prog'].forEach(k=>document.getElementById('tab_'+k).onclick=()=>verVista(k));
+['plan','res','ale','stock','pm','prog','rango'].forEach(k=>document.getElementById('tab_'+k).onclick=()=>verVista(k));
 
 function pintar(){
   if(vista==='plan')pintarPlan();
@@ -420,7 +425,8 @@ function pintar(){
   else if(vista==='ale')pintarAle();
   else if(vista==='stock')pintarStock();
   else if(vista==='pm')pintarPM();
-  else pintarProg();
+  else if(vista==='prog')pintarProg();
+  else pintarRango();
 }
 
 /* ───────── PLANILLA ───────── */
@@ -846,6 +852,55 @@ function pintarProg(){
     </tr>`).join('')}</tbody></table>`;
 }
 
+/* ───────── CUMPLIMIENTO / RANGO DE OPERACIÓN ─────────
+   Cruza el histórico de Resultados con la "vida útil" de cada componente
+   (horómetro de la muestra menos el horómetro de ingreso del equipo,
+   ya guardado en Maestro) para ver en qué tramo de vida empiezan a
+   fallar los sistemas. */
+function tramoDe(vida){
+  if(vida==null||vida<0)return null;
+  const ini=Math.floor(vida/2000)*2000;
+  return `${ini/1000}k-${(ini+2000)/1000}k h`;
+}
+function calcRango(){
+  const eqPorSap=new Map(datos.map(e=>[e.cod_sap,e]));
+  const tipo=fTipoEq.value, sis=fSistema.value;
+  const filas=RES.filter(r=>{
+    const e=eqPorSap.get(r.cod_sap); if(!e)return false;
+    if(tipo&&nrm(e.familia)!==nrm(tipo))return false;
+    if(sis&&nrm(r.sistema_std||'')!==nrm(sis))return false;
+    return e.hrkm_ingreso!=null&&r.horometro!=null;
+  }).map(r=>{
+    const e=eqPorSap.get(r.cod_sap);
+    const vida=(+r.horometro||0)-(+e.hrkm_ingreso||0);
+    return {vida,tramo:tramoDe(vida),estado:r.estado_std};
+  }).filter(f=>f.tramo);
+  const porTramo=new Map();
+  filas.forEach(f=>{
+    if(!porTramo.has(f.tramo))porTramo.set(f.tramo,{total:0,normal:0,precaucion:0,critico:0});
+    const t=porTramo.get(f.tramo); t.total++;
+    if(f.estado==='NORMAL')t.normal++; else if(f.estado==='PRECAUCION')t.precaucion++; else if(f.estado==='CRITICO')t.critico++;
+  });
+  return [...porTramo.entries()].sort((a,b)=>+a[0].replace('k','')-+b[0].replace('k',''));
+}
+function pintarRango(){
+  const T=calcRango();
+  const totalMuestras=T.reduce((a,[,c])=>a+c.total,0);
+  const totalObs=T.reduce((a,[,c])=>a+c.precaucion+c.critico,0);
+  cards.innerHTML=card('Muestras analizadas',totalMuestras,'con vida útil calculable')
+    +card('Con observación',totalObs,'precaución + crítico','warn')
+    +card('% con observación',totalMuestras?Math.round(totalObs/totalMuestras*100)+'%':'—','del total','bad');
+  if(!T.length){boxRango.innerHTML='<div class="vacio">Sin datos suficientes — revisa que Maestro tenga el horómetro de ingreso cargado y que haya resultados con horómetro.</div>';return;}
+  boxRango.innerHTML=`<table class="t"><thead><tr>
+    <th>Rango de operación</th><th class="r">N° de muestras</th><th class="r">Normal</th>
+    <th class="r">Precaución</th><th class="r">Crítico</th><th class="r">% con observación</th></tr></thead><tbody>
+    ${T.map(([tramo,c])=>`<tr>
+      <td class="mono">${esc(tramo)}</td><td class="r mono">${c.total}</td>
+      <td class="r mono">${c.normal}</td><td class="r mono">${c.precaucion}</td><td class="r mono">${c.critico}</td>
+      <td class="r mono">${Math.round((c.precaucion+c.critico)/c.total*100)}%</td>
+    </tr>`).join('')}</tbody></table>`;
+}
+
 const card=(l,v,s,cls)=>`<div class="c"><div class="l">${l}</div><div class="v ${cls||''}">${v}</div><div class="s">${s}</div></div>`;
 
 
@@ -1230,6 +1285,8 @@ async function cargarTodo(){
   fObra.innerHTML='<option value="">Todas las obras</option>'+obras.map(o=>`<option>${esc(o)}</option>`).join('');
   const siss=[...new Set(RES.map(r=>r.sistema_std).filter(Boolean))].sort();
   fSistema.innerHTML='<option value="">Todos los sistemas</option>'+siss.map(s=>`<option>${esc(s)}</option>`).join('');
+  const tipos=[...new Set(datos.map(d=>d.familia).filter(Boolean))].sort();
+  fTipoEq.innerHTML='<option value="">Todos los tipos de equipo</option>'+tipos.map(t=>`<option>${esc(t)}</option>`).join('');
   pie.textContent=`${PLAN.length} muestra(s) en planilla · ${RES.length} resultado(s) · ${ALE.length} en seguimiento.`;
   pintar();
 }
@@ -1323,7 +1380,7 @@ function pintarNav(actual){
     document.body.innerHTML='<div style="padding:60px;text-align:center;font-family:sans-serif">'
      +'<h2 style="font-size:18px;margin-bottom:10px">Sin acceso a SOS</h2>'
      +'<p style="color:#6b747d">Un administrador debe habilitarte esta pesta&ntilde;a desde Usuarios.</p></div>';return;}
-  const {data:m}=await sb.from('maestro').select('id,cod_sap,equipo,marca,modelo,serie_placa,cod_proyec,familia,status,hrkm_actual,fecha_lectura,hr_dia,hrkm_ult_mntto');
+  const {data:m}=await sb.from('maestro').select('id,cod_sap,equipo,marca,modelo,serie_placa,cod_proyec,familia,status,hrkm_actual,fecha_lectura,hr_dia,hrkm_ult_mntto,hrkm_ingreso');
   datos=m||[]; DIDX=new Map(datos.map(e=>[String(e.id),e]));
   const [ee,es]=await Promise.all([
     sb.from('sos_eq_estado').select('*'), sb.from('sos_eq_sistema').select('*')
