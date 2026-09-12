@@ -647,7 +647,7 @@ async function guardarAlerta(rid,ctrl){
 
 /* ───────── STOCK DE FRASCOS ───────── */
 function pintarStock(){
-  const usados=new Set(PLAN.map(p=>nrm(p.frasco||'')).filter(Boolean));
+  const usados=new Set(PLAN.map(p=>nrm(p.nro_frasco||'')).filter(Boolean));
   const q=nrm(fBusca.value), o=fObra.value;
   const L=STOCK.filter(s=>{
     if(o&&String(s.cod_proyec||'')!==o)return false;
@@ -940,7 +940,7 @@ function pintarDash(){
   const pendientes=programados-ejecutados;
   const pctCump=programados?Math.round(ejecutados/programados*100):null;
 
-  const usados=new Set(PLAN.map(p=>nrm(p.frasco||'')).filter(Boolean));
+  const usados=new Set(PLAN.map(p=>nrm(p.nro_frasco||'')).filter(Boolean));
   const stockF=STOCK.filter(s=>!o||String(s.cod_proyec||'')===o);
   const disp=stockF.filter(s=>!usados.has(nrm(s.codigo))).length;
   const usa=stockF.filter(s=>usados.has(nrm(s.codigo))).length;
