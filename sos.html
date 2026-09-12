@@ -111,6 +111,22 @@
   .form input,.form select{padding:8px;border:1px solid var(--line);border-radius:8px;font-size:13px;font-weight:400;color:var(--ink)}
   .barra-mini{background:#eef0f2;border-radius:6px;overflow:hidden;height:8px}
   .barra-mini i{display:block;height:100%;background:#B45309}
+  /* Dashboard */
+  .dgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:12px;margin-bottom:14px}
+  .dcard{background:#fff;border:1px solid var(--line);border-radius:11px;overflow:hidden}
+  .dcard .dh{padding:9px 12px;font-size:10.5px;font-weight:700;text-transform:uppercase;
+    letter-spacing:.02em;color:#fff;text-shadow:0 1px 1px rgba(0,0,0,.3);display:flex;align-items:center;gap:8px}
+  .dh.azul{background:linear-gradient(180deg,#7B87C0,#4254A5 48%,#334281)}
+  .dh.verde{background:linear-gradient(180deg,#55BF5D,#0CA318 48%,#097F13)}
+  .dh.rojo{background:linear-gradient(180deg,#E0787C,#D3141A 48%,#A51014)}
+  .dh.amarillo{background:linear-gradient(180deg,#FFDC58,#FFCD11 48%,#C7A00D);color:#3B2E00;text-shadow:none}
+  .dh a{margin-left:auto;color:#fff;text-decoration:none;font-weight:700;font-size:10px;opacity:.9}
+  .dh.amarillo a{color:#3B2E00}
+  .dcard .dc{padding:13px 12px;display:flex;gap:16px;flex-wrap:wrap}
+  .dnum{font-size:24px;font-weight:800;line-height:1}
+  .dnum span{display:block;font-size:9px;font-weight:600;color:#8E959C;margin-top:3px;text-transform:none}
+  .dnum.ok{color:#15803d}.dnum.warn{color:#B45309}.dnum.bad{color:#dc2626}.dnum.info{color:#1F3864}
+  .dtabla table{width:100%}
 </style>
 </head>
 <body>
@@ -129,6 +145,7 @@
   <button id="tab_pm">Plan de muestreo</button>
   <button id="tab_prog">Programación mensual</button>
   <button id="tab_rango">Cumplimiento / Rango operación</button>
+  <button id="tab_dash">Dashboard</button>
 </div>
 <div class="toolbar">
   <input type="search" id="fBusca" placeholder="Equipo, frasco, n&deg; muestra&hellip;" style="width:250px">
@@ -157,6 +174,7 @@
   <div id="boxPM" class="hide"></div>
   <div id="boxProg" class="hide"></div>
   <div id="boxRango" class="hide"></div>
+  <div id="boxDash" class="hide"></div>
 </div>
 <footer id="pie">Cargando&hellip;</footer>
 <script>
@@ -390,7 +408,7 @@ function enlazarPlanilla(r){
 /* ═══════════════ VISTAS ═══════════════ */
 function verVista(v){
   vista=v;
-  ['plan','res','ale','stock','pm','prog','rango'].forEach(k=>{
+  ['plan','res','ale','stock','pm','prog','rango','dash'].forEach(k=>{
     document.getElementById('tab_'+k).classList.toggle('on',k===v);
   });
   boxPlan.classList.toggle('hide',v!=='plan');
@@ -400,14 +418,17 @@ function verVista(v){
   boxPM.classList.toggle('hide',v!=='pm');
   boxProg.classList.toggle('hide',v!=='prog');
   boxRango.classList.toggle('hide',v!=='rango');
+  boxDash.classList.toggle('hide',v!=='dash');
+  cards.classList.toggle('hide',v==='dash');
   btnSubir.textContent='⬆ Subir archivo';
   btnSubir.classList.toggle('hide',v!=='plan'&&v!=='res');
   btnNuevo.classList.toggle('hide',v!=='plan');
-  btnXls.classList.toggle('hide',v==='pm');
+  btnXls.classList.toggle('hide',v==='pm'||v==='dash');
   btnEq.classList.toggle('hide',v!=='plan'&&v!=='res');
   const admin=perfil&&perfil.rol==='admin';
   btnLote.classList.toggle('hide',v!=='stock');
   btnPM.classList.toggle('hide',v!=='pm'||!admin);
+  fBusca.classList.toggle('hide',v==='dash');
   fDesde.classList.toggle('hide',v!=='plan'&&v!=='res'&&v!=='ale');
   fHasta.classList.toggle('hide',v!=='plan'&&v!=='res'&&v!=='ale');
   fEstado.classList.toggle('hide',v!=='res'&&v!=='ale');
@@ -417,7 +438,7 @@ function verVista(v){
   fObra.classList.toggle('hide',v==='pm'||v==='rango');
   pintar();
 }
-['plan','res','ale','stock','pm','prog','rango'].forEach(k=>document.getElementById('tab_'+k).onclick=()=>verVista(k));
+['plan','res','ale','stock','pm','prog','rango','dash'].forEach(k=>document.getElementById('tab_'+k).onclick=()=>verVista(k));
 
 function pintar(){
   if(vista==='plan')pintarPlan();
@@ -426,7 +447,8 @@ function pintar(){
   else if(vista==='stock')pintarStock();
   else if(vista==='pm')pintarPM();
   else if(vista==='prog')pintarProg();
-  else pintarRango();
+  else if(vista==='rango')pintarRango();
+  else pintarDash();
 }
 
 /* ───────── PLANILLA ───────── */
@@ -903,6 +925,70 @@ function pintarRango(){
 
 const card=(l,v,s,cls)=>`<div class="c"><div class="l">${l}</div><div class="v ${cls||''}">${v}</div><div class="s">${s}</div></div>`;
 
+/* ───────── DASHBOARD ─────────
+   Junta lo que ya calculan las demás pestañas, filtrado por obra.
+   No guarda nada propio — todo sale de Programación, Stock, Resultados
+   y Seguimiento de Alertas. */
+function pintarDash(){
+  const o=fObra.value;
+  chN.textContent=o||'Todas las obras';
+  const prog=calcProgramacion().filter(f=>!o||String(f.equipo.cod_proyec||'')===o);
+  const programados=prog.filter(f=>f.estado==='Programado'||f.estado==='Ejecutado'||f.estado==='Vencido'||f.estado==='Vence esta semana').length;
+  const ejecutados=prog.filter(f=>f.estado==='Ejecutado').length;
+  const vencidos=prog.filter(f=>f.estado==='Vencido').length;
+  const vencenSemana=prog.filter(f=>f.estado==='Vence esta semana').length;
+  const pendientes=programados-ejecutados;
+  const pctCump=programados?Math.round(ejecutados/programados*100):null;
+
+  const usados=new Set(PLAN.map(p=>nrm(p.frasco||'')).filter(Boolean));
+  const stockF=STOCK.filter(s=>!o||String(s.cod_proyec||'')===o);
+  const disp=stockF.filter(s=>!usados.has(nrm(s.codigo))).length;
+  const usa=stockF.filter(s=>usados.has(nrm(s.codigo))).length;
+
+  const resF=RES.filter(r=>!o||String(r.obra||'')===o);
+  const critico=resF.filter(r=>r.estado_std==='CRITICO').length;
+  const precau=resF.filter(r=>r.estado_std==='PRECAUCION').length;
+  const criticasPend=resF.filter(r=>r.estado_std==='CRITICO'&&(ale(r).estado_seg||'OM abierta')!=='Cerrado').length;
+
+  const alertasF=resF.filter(r=>r.estado_std==='CRITICO'||r.estado_std==='PRECAUCION');
+  const seg=n=>alertasF.filter(r=>(ale(r).estado_seg||'OM abierta')===n).length;
+  const estadosSeg=['OM abierta','En ejecución','Verificado','Cerrado'];
+
+  boxDash.innerHTML=`
+  <div class="dgrid">
+    <div class="dcard"><div class="dh azul">Cumplimiento del mes<a href="#" data-ir="prog">→ Programación</a></div>
+      <div class="dc">
+        <div class="dnum ok">${pctCump!=null?pctCump+'%':'—'}<span>% cumplimiento</span></div>
+        <div class="dnum info">${programados}<span>programados</span></div>
+        <div class="dnum ok">${ejecutados}<span>ejecutados</span></div>
+        <div class="dnum warn">${pendientes}<span>pendientes</span></div>
+      </div></div>
+    <div class="dcard"><div class="dh rojo">Vencidos y por vencer<a href="#" data-ir="prog">→ Programación</a></div>
+      <div class="dc">
+        <div class="dnum bad">${vencidos}<span>vencidos</span></div>
+        <div class="dnum warn">${vencenSemana}<span>vencen esta semana</span></div>
+      </div></div>
+    <div class="dcard"><div class="dh verde">Stock de frascos<a href="#" data-ir="stock">→ Stock</a></div>
+      <div class="dc">
+        <div class="dnum ok">${disp}<span>disponibles</span></div>
+        <div class="dnum info">${usa}<span>usados</span></div>
+      </div></div>
+    <div class="dcard"><div class="dh amarillo">Alertas<a href="#" data-ir="ale">→ Alertas</a></div>
+      <div class="dc">
+        <div class="dnum bad">${critico}<span>crítico</span></div>
+        <div class="dnum warn">${precau}<span>precaución</span></div>
+        <div class="dnum bad">${criticasPend}<span>críticas pendientes</span></div>
+      </div></div>
+  </div>
+  <div class="dgrid" style="grid-template-columns:1fr">
+    <div class="dcard"><div class="dh rojo">Seguimiento de acciones correctivas<a href="#" data-ir="ale">→ Alertas</a></div>
+      <div class="dc dtabla"><table class="t"><thead><tr><th>Estado</th><th class="r">Cantidad</th></tr></thead><tbody>
+        ${estadosSeg.map(e=>`<tr><td>${esc(e)}</td><td class="r mono">${seg(e)}</td></tr>`).join('')}
+      </tbody></table></div></div>
+  </div>`;
+  boxDash.querySelectorAll('[data-ir]').forEach(a=>a.onclick=ev=>{ev.preventDefault();verVista(a.dataset.ir);});
+}
+
 
 /* ═══════════════ SUBIR ARCHIVO ═══════════════ */
 /* Reconoce el archivo por sus columnas, no por el nombre */
@@ -1248,7 +1334,7 @@ btnEq.onclick=eqAbrir;
 
 /* ═══════════════ CARGA ═══════════════ */
 [fBusca].forEach(x=>x.oninput=pintar);
-[fObra,fDesde,fHasta,fEstado,fSistema,fFuente].forEach(x=>x.onchange=pintar);
+[fObra,fDesde,fHasta,fEstado,fSistema,fFuente,fTipoEq].forEach(x=>x.onchange=pintar);
 btnRec.onclick=()=>cargarTodo();
 
 /* Supabase entrega como máximo 1.000 filas por consulta. Esta función
