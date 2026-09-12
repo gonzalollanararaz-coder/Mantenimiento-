@@ -127,6 +127,7 @@
   <button id="tab_ale">Seguimiento de alertas</button>
   <button id="tab_stock">Stock de frascos</button>
   <button id="tab_pm">Plan de muestreo</button>
+  <button id="tab_prog">Programación mensual</button>
 </div>
 <div class="toolbar">
   <input type="search" id="fBusca" placeholder="Equipo, frasco, n&deg; muestra&hellip;" style="width:250px">
@@ -152,6 +153,7 @@
   <div id="boxAle" class="hide"></div>
   <div id="boxStock" class="hide"></div>
   <div id="boxPM" class="hide"></div>
+  <div id="boxProg" class="hide"></div>
 </div>
 <footer id="pie">Cargando&hellip;</footer>
 <script>
@@ -385,7 +387,7 @@ function enlazarPlanilla(r){
 /* ═══════════════ VISTAS ═══════════════ */
 function verVista(v){
   vista=v;
-  ['plan','res','ale','stock','pm'].forEach(k=>{
+  ['plan','res','ale','stock','pm','prog'].forEach(k=>{
     document.getElementById('tab_'+k).classList.toggle('on',k===v);
   });
   boxPlan.classList.toggle('hide',v!=='plan');
@@ -393,30 +395,32 @@ function verVista(v){
   boxAle.classList.toggle('hide',v!=='ale');
   boxStock.classList.toggle('hide',v!=='stock');
   boxPM.classList.toggle('hide',v!=='pm');
+  boxProg.classList.toggle('hide',v!=='prog');
   btnSubir.textContent='⬆ Subir archivo';
-  btnSubir.classList.toggle('hide',v==='ale'||v==='stock'||v==='pm');
+  btnSubir.classList.toggle('hide',v==='ale'||v==='stock'||v==='pm'||v==='prog');
   btnNuevo.classList.toggle('hide',v!=='plan');
   btnXls.classList.toggle('hide',v==='pm');
-  btnEq.classList.toggle('hide',v==='stock'||v==='pm');
+  btnEq.classList.toggle('hide',v==='stock'||v==='pm'||v==='prog');
   const admin=perfil&&perfil.rol==='admin';
   btnLote.classList.toggle('hide',v!=='stock');
   btnPM.classList.toggle('hide',v!=='pm'||!admin);
-  fDesde.classList.toggle('hide',v==='stock'||v==='pm');
-  fHasta.classList.toggle('hide',v==='stock'||v==='pm');
-  fEstado.classList.toggle('hide',v==='stock'||v==='pm');
-  fSistema.classList.toggle('hide',v==='stock'||v==='pm');
+  fDesde.classList.toggle('hide',v==='stock'||v==='pm'||v==='prog');
+  fHasta.classList.toggle('hide',v==='stock'||v==='pm'||v==='prog');
+  fEstado.classList.toggle('hide',v==='stock'||v==='pm'||v==='prog');
+  fSistema.classList.toggle('hide',v==='stock'||v==='pm'||v==='prog');
   fFuente.classList.toggle('hide',v!=='res');
   fObra.classList.toggle('hide',v==='pm');
   pintar();
 }
-['plan','res','ale','stock','pm'].forEach(k=>document.getElementById('tab_'+k).onclick=()=>verVista(k));
+['plan','res','ale','stock','pm','prog'].forEach(k=>document.getElementById('tab_'+k).onclick=()=>verVista(k));
 
 function pintar(){
   if(vista==='plan')pintarPlan();
   else if(vista==='res')pintarRes();
   else if(vista==='ale')pintarAle();
   else if(vista==='stock')pintarStock();
-  else pintarPM();
+  else if(vista==='pm')pintarPM();
+  else pintarProg();
 }
 
 /* ───────── PLANILLA ───────── */
@@ -771,6 +775,75 @@ async function borrarPM(id){
   const {error}=await sb.from('sos_plan_muestreo').delete().eq('id',id);
   if(error)return alert('No se pudo quitar: '+error.message);
   PM=PM.filter(p=>String(p.id)!==String(id)); pintarPM();
+}
+
+/* ───────── PROGRAMACIÓN MENSUAL ─────────
+   Se calcula sola cruzando el Maestro de Equipos (ubicación y horómetro,
+   ya en vivo — no se vuelve a pedir esa información acá) con el Plan de
+   Muestreo (frecuencia por tipo+sistema) y el histórico de Resultados
+   (para saber qué ya se ejecutó). */
+function esDesmov(s){return /^DESMOVILIZ/.test(String(s||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toUpperCase());}
+function calcProgramacion(){
+  const hoy=hoy0();
+  const finMes=new Date(hoy.getFullYear(),hoy.getMonth()+1,0);
+  const diasRestantes=Math.max(0,dias(finMes,hoy));
+  const mesActual=isoDe(hoy).slice(0,7);
+  const filas=[];
+  datos.filter(e=>!esDesmov(e.status)).forEach(e=>{
+    PM.filter(p=>nrm(p.tipo_equipo)===nrm(e.familia)).forEach(p=>{
+      const freq=+p.frecuencia||0; if(!freq)return;
+      const horAct=+e.hrkm_actual||0, hrDia=+e.hr_dia||0;
+      const hist=RES.filter(r=>r.cod_sap===e.cod_sap&&nrm(r.sistema_std||r.componente||'')===nrm(p.sistema))
+        .sort((a,b)=>String(b.fecha||'').localeCompare(String(a.fecha||'')));
+      const ultimo=hist[0]||null;
+      const baseHor=ultimo?(+ultimo.horometro||0):0;
+      const proximoHor=freq*(Math.floor(baseHor/freq)+1);
+      const proyectadoFin=horAct+hrDia*diasRestantes;
+      const proyectado7=horAct+hrDia*7;
+      const vencido=horAct>=proximoHor;
+      const venceSemana=!vencido&&proyectado7>=proximoHor;
+      const venceMes=!vencido&&!venceSemana&&proyectadoFin>=proximoHor;
+      const ejecutadoEsteMes=ultimo&&String(ultimo.fecha||'').slice(0,7)===mesActual&&baseHor>=proximoHor-freq;
+      let estado='OK';
+      if(ejecutadoEsteMes)estado='Ejecutado';
+      else if(vencido)estado='Vencido';
+      else if(venceSemana)estado='Vence esta semana';
+      else if(venceMes)estado='Programado';
+      filas.push({equipo:e,plan:p,horAct,proximoHor,faltan:Math.round(proximoHor-horAct),estado,ultimo});
+    });
+  });
+  return filas;
+}
+function pintarProg(){
+  const q=nrm(fBusca.value), o=fObra.value;
+  const todas=calcProgramacion().filter(f=>{
+    if(o&&String(f.equipo.cod_proyec||'')!==o)return false;
+    if(q&&!nrm(`${f.equipo.cod_sap} ${f.equipo.equipo||''} ${f.plan.sistema}`).includes(q))return false;
+    return true;
+  });
+  const prog=todas.filter(f=>f.estado==='Programado').length;
+  const ejec=todas.filter(f=>f.estado==='Ejecutado').length;
+  const venc=todas.filter(f=>f.estado==='Vencido').length;
+  const sem=todas.filter(f=>f.estado==='Vence esta semana').length;
+  cards.innerHTML=card('Programados (este mes)',prog+ejec,'ejecutados + pendientes')
+    +card('Ejecutados a tiempo',ejec,'este mes','ok')
+    +card('Vencidos',venc,'requieren atención ya','bad')
+    +card('Vencen esta semana',sem,'','warn');
+  const L=todas.filter(f=>f.estado!=='OK').sort((a,b)=>a.faltan-b.faltan);
+  chN.textContent=L.length+' pendiente(s) de '+todas.length+' combinación(es)';
+  if(!datos.length||!PM.length){boxProg.innerHTML='<div class="vacio">Falta cargar equipos o el Plan de Muestreo para poder calcular esto.</div>';return;}
+  if(!L.length){boxProg.innerHTML='<div class="vacio">Nada pendiente con estos filtros — todo al día.</div>';return;}
+  const colorEstado={Vencido:'e-CRITICO','Vence esta semana':'e-PRECAUCION',Programado:'e-NA',Ejecutado:'e-NORMAL'};
+  boxProg.innerHTML=`<table class="t"><thead><tr>
+    <th>Obra</th><th>Cód. SAP</th><th>Equipo</th><th>Sistema</th><th class="r">Horómetro actual</th>
+    <th class="r">Próximo vencimiento</th><th class="r">Faltan</th><th class="c">Estado</th></tr></thead><tbody>
+    ${L.map(f=>`<tr>
+      <td class="mono">${esc(f.equipo.cod_proyec||'')}</td><td class="mono">${esc(f.equipo.cod_sap)}</td>
+      <td>${esc(f.equipo.equipo||'')}</td><td>${esc(f.plan.sistema)}</td>
+      <td class="r mono">${f0(f.horAct)}</td><td class="r mono">${f0(f.proximoHor)}</td>
+      <td class="r mono">${f0(f.faltan)}</td>
+      <td class="c"><span class="pill ${colorEstado[f.estado]||'e-NA'}">${esc(f.estado)}</span></td>
+    </tr>`).join('')}</tbody></table>`;
 }
 
 const card=(l,v,s,cls)=>`<div class="c"><div class="l">${l}</div><div class="v ${cls||''}">${v}</div><div class="s">${s}</div></div>`;
@@ -1250,7 +1323,7 @@ function pintarNav(actual){
     document.body.innerHTML='<div style="padding:60px;text-align:center;font-family:sans-serif">'
      +'<h2 style="font-size:18px;margin-bottom:10px">Sin acceso a SOS</h2>'
      +'<p style="color:#6b747d">Un administrador debe habilitarte esta pesta&ntilde;a desde Usuarios.</p></div>';return;}
-  const {data:m}=await sb.from('maestro').select('id,cod_sap,equipo,marca,modelo,serie_placa,cod_proyec,familia,status');
+  const {data:m}=await sb.from('maestro').select('id,cod_sap,equipo,marca,modelo,serie_placa,cod_proyec,familia,status,hrkm_actual,fecha_lectura,hr_dia,hrkm_ult_mntto');
   datos=m||[]; DIDX=new Map(datos.map(e=>[String(e.id),e]));
   const [ee,es]=await Promise.all([
     sb.from('sos_eq_estado').select('*'), sb.from('sos_eq_sistema').select('*')
