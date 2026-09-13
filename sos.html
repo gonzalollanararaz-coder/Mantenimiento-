@@ -109,29 +109,11 @@
   .eqnew{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px;padding-top:8px;border-top:1px dashed var(--line)}
   .eqnew input,.eqnew select{padding:6px 8px;border:1px solid var(--line);border-radius:7px;font-size:12px;flex:1;min-width:120px}
   .form input,.form select{padding:8px;border:1px solid var(--line);border-radius:8px;font-size:13px;font-weight:400;color:var(--ink)}
-  .barra-mini{background:#eef0f2;border-radius:6px;overflow:hidden;height:8px}
-  .barra-mini i{display:block;height:100%;background:#B45309}
-  /* Dashboard */
-  .dgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:12px;margin-bottom:14px}
-  .dcard{background:#fff;border:1px solid var(--line);border-radius:11px;overflow:hidden}
-  .dcard .dh{padding:9px 12px;font-size:10.5px;font-weight:700;text-transform:uppercase;
-    letter-spacing:.02em;color:#fff;text-shadow:0 1px 1px rgba(0,0,0,.3);display:flex;align-items:center;gap:8px}
-  .dh.azul{background:linear-gradient(180deg,#7B87C0,#4254A5 48%,#334281)}
-  .dh.verde{background:linear-gradient(180deg,#55BF5D,#0CA318 48%,#097F13)}
-  .dh.rojo{background:linear-gradient(180deg,#E0787C,#D3141A 48%,#A51014)}
-  .dh.amarillo{background:linear-gradient(180deg,#FFDC58,#FFCD11 48%,#C7A00D);color:#3B2E00;text-shadow:none}
-  .dh a{margin-left:auto;color:#fff;text-decoration:none;font-weight:700;font-size:10px;opacity:.9}
-  .dh.amarillo a{color:#3B2E00}
-  .dcard .dc{padding:13px 12px;display:flex;gap:16px;flex-wrap:wrap}
-  .dnum{font-size:24px;font-weight:800;line-height:1}
-  .dnum span{display:block;font-size:9px;font-weight:600;color:#8E959C;margin-top:3px;text-transform:none}
-  .dnum.ok{color:#15803d}.dnum.warn{color:#B45309}.dnum.bad{color:#dc2626}.dnum.info{color:#1F3864}
-  .dtabla table{width:100%}
 </style>
 </head>
 <body>
 <header id="topbar">
-  <div class="brand-min"><h1>SOS &mdash; Muestreo de Aceites</h1><p>Unidad de Equipos &middot; UDE · 260912-1</p></div>
+  <div class="brand-min"><h1>SOS &mdash; Muestreo de Aceites</h1><p>Unidad de Equipos &middot; UDE · 260912-2</p></div>
   <nav id="navPrin"></nav>
   <div class="sp2"></div>
   <span class="who" id="who"></span>
@@ -141,11 +123,6 @@
   <button id="tab_plan" class="on">Planilla de env&iacute;o</button>
   <button id="tab_res">Resultados</button>
   <button id="tab_ale">Seguimiento de alertas</button>
-  <button id="tab_stock">Stock de frascos</button>
-  <button id="tab_pm">Plan de muestreo</button>
-  <button id="tab_prog">Programación mensual</button>
-  <button id="tab_rango">Cumplimiento / Rango operación</button>
-  <button id="tab_dash">Dashboard</button>
 </div>
 <div class="toolbar">
   <input type="search" id="fBusca" placeholder="Equipo, frasco, n&deg; muestra&hellip;" style="width:250px">
@@ -153,13 +130,10 @@
   <select id="fObra"><option value="">Todas las obras</option></select>
   <select id="fEstado"><option value="">Todos los estados</option><option value="CRITICO">Cr&iacute;tico</option><option value="PRECAUCION">Precauci&oacute;n</option><option value="NORMAL">Normal</option></select>
   <select id="fSistema"><option value="">Todos los sistemas</option></select>
-  <select id="fTipoEq" class="hide"><option value="">Todos los tipos de equipo</option></select>
   <select id="fFuente"><option value="">Los 3 laboratorios</option><option>FESA</option><option>LUBTEC</option><option>MARCO PERUANA</option></select>
   <span class="chip" id="chN">&mdash;</span>
   <div class="spacer"></div>
   <button class="act primary" id="btnNuevo">+ Muestra</button>
-  <button class="act primary hide" id="btnLote">+ Frascos</button>
-  <button class="act primary hide" id="btnPM">+ Sistema</button>
   <button class="act" id="btnSubir" title="Planilla de envío o resultados de laboratorio: se reconoce solo">&#11014; Subir archivo</button>
   <button class="act" id="btnXls">&#8681; Excel</button>
   <button class="act" id="btnEq">&#9878; Equivalencias</button>
@@ -170,11 +144,6 @@
   <div id="boxPlan"></div>
   <div id="boxRes" class="hide"></div>
   <div id="boxAle" class="hide"></div>
-  <div id="boxStock" class="hide"></div>
-  <div id="boxPM" class="hide"></div>
-  <div id="boxProg" class="hide"></div>
-  <div id="boxRango" class="hide"></div>
-  <div id="boxDash" class="hide"></div>
 </div>
 <footer id="pie">Cargando&hellip;</footer>
 <script>
@@ -225,8 +194,7 @@ function mant(e){
 
 /* ═══════════════════ SOS · MUESTREO DE ACEITES ═══════════════════ */
 let datos=[], DIDX=new Map(), perfil=null;
-let PLAN=[], RES=[], ALE=[], EQE=new Map(), EQS=new Map(), EQLE=[], EQLS=[], EQT=new Map(), EQLT=[];
-function tipoEstandar(equipo){ const t=nrm(equipo||''); return EQT.get(t)||String(equipo||'').trim(); }
+let PLAN=[], RES=[], ALE=[], EQE=new Map(), EQS=new Map(), EQLE=[], EQLS=[];
 let vista='plan';
 
 const nrm=s=>String(s??'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toUpperCase().replace(/\s+/g,' ').trim();
@@ -409,47 +377,29 @@ function enlazarPlanilla(r){
 /* ═══════════════ VISTAS ═══════════════ */
 function verVista(v){
   vista=v;
-  ['plan','res','ale','stock','pm','prog','rango','dash'].forEach(k=>{
+  ['plan','res','ale'].forEach(k=>{
     document.getElementById('tab_'+k).classList.toggle('on',k===v);
   });
   boxPlan.classList.toggle('hide',v!=='plan');
   boxRes.classList.toggle('hide',v!=='res');
   boxAle.classList.toggle('hide',v!=='ale');
-  boxStock.classList.toggle('hide',v!=='stock');
-  boxPM.classList.toggle('hide',v!=='pm');
-  boxProg.classList.toggle('hide',v!=='prog');
-  boxRango.classList.toggle('hide',v!=='rango');
-  boxDash.classList.toggle('hide',v!=='dash');
-  cards.classList.toggle('hide',v==='dash');
   btnSubir.textContent='⬆ Subir archivo';
-  btnSubir.classList.toggle('hide',v!=='plan'&&v!=='res');
+  btnSubir.classList.toggle('hide',v==='ale');
   btnNuevo.classList.toggle('hide',v!=='plan');
-  btnXls.classList.toggle('hide',v==='pm'||v==='dash');
-  btnEq.classList.toggle('hide',v!=='plan'&&v!=='res');
-  const admin=perfil&&perfil.rol==='admin';
-  btnLote.classList.toggle('hide',v!=='stock');
-  btnPM.classList.toggle('hide',v!=='pm'||!admin);
-  fBusca.classList.toggle('hide',v==='dash');
-  fDesde.classList.toggle('hide',v!=='plan'&&v!=='res'&&v!=='ale');
-  fHasta.classList.toggle('hide',v!=='plan'&&v!=='res'&&v!=='ale');
+  fDesde.classList.toggle('hide',false);
+  fHasta.classList.toggle('hide',false);
   fEstado.classList.toggle('hide',v!=='res'&&v!=='ale');
-  fSistema.classList.toggle('hide',v!=='res'&&v!=='rango');
-  fTipoEq.classList.toggle('hide',v!=='rango');
+  fSistema.classList.toggle('hide',v!=='res');
   fFuente.classList.toggle('hide',v!=='res');
-  fObra.classList.toggle('hide',v==='pm'||v==='rango');
+  fObra.classList.toggle('hide',false);
   pintar();
 }
-['plan','res','ale','stock','pm','prog','rango','dash'].forEach(k=>document.getElementById('tab_'+k).onclick=()=>verVista(k));
+['plan','res','ale'].forEach(k=>document.getElementById('tab_'+k).onclick=()=>verVista(k));
 
 function pintar(){
   if(vista==='plan')pintarPlan();
   else if(vista==='res')pintarRes();
-  else if(vista==='ale')pintarAle();
-  else if(vista==='stock')pintarStock();
-  else if(vista==='pm')pintarPM();
-  else if(vista==='prog')pintarProg();
-  else if(vista==='rango')pintarRango();
-  else pintarDash();
+  else pintarAle();
 }
 
 /* ───────── PLANILLA ───────── */
@@ -646,350 +596,7 @@ async function guardarAlerta(rid,ctrl){
   }catch(e){ alert('No se pudo guardar: '+e.message); pintarAle(); }
 }
 
-/* ───────── STOCK DE FRASCOS ───────── */
-function pintarStock(){
-  const usados=new Set(PLAN.map(p=>nrm(p.nro_frasco||'')).filter(Boolean));
-  const q=nrm(fBusca.value), o=fObra.value;
-  const L=STOCK.filter(s=>{
-    if(o&&String(s.cod_proyec||'')!==o)return false;
-    if(q&&!nrm(`${s.codigo} ${s.cod_proyec||''}`).includes(q))return false;
-    return true;
-  }).map(s=>({...s,usado:usados.has(nrm(s.codigo))}));
-  chN.textContent=L.length+' frasco(s)';
-  const disp=L.filter(s=>!s.usado).length, usa=L.filter(s=>s.usado).length;
-  cards.innerHTML=card('Disponibles',disp,'sin usar todavía','ok')
-    +card('Usados',usa,'ya aparecen en Planilla','warn')
-    +card('Total',L.length,o?('en '+o):'en todas las obras');
-  const porObra=new Map();
-  STOCK.forEach(s=>{
-    const k=s.cod_proyec||'(sin obra)';
-    if(!porObra.has(k))porObra.set(k,{disp:0,usa:0});
-    const u=usados.has(nrm(s.codigo));
-    porObra.get(k)[u?'usa':'disp']++;
-  });
-  const resumen=[...porObra.entries()].sort((a,b)=>a[0].localeCompare(b[0]))
-    .map(([obra,c])=>`<tr><td class="mono">${esc(obra)}</td><td class="r">${c.disp}</td><td class="r">${c.usa}</td>
-      <td><div class="barra-mini"><i style="width:${c.disp+c.usa?Math.round(c.usa/(c.disp+c.usa)*100):0}%"></i></div></td></tr>`).join('');
-  boxStock.innerHTML=`<div class="hint" style="margin-bottom:10px">Resumen por obra</div>
-    <table class="t" style="max-width:520px;margin-bottom:16px"><thead><tr>
-    <th>Obra</th><th class="r">Disponibles</th><th class="r">Usados</th><th style="width:120px">% usado</th></tr></thead>
-    <tbody>${resumen||'<tr><td colspan="4" class="dim">Sin frascos registrados.</td></tr>'}</tbody></table>
-    ${!L.length?'<div class="vacio">Sin frascos con estos filtros.</div>':`
-    <table class="t"><thead><tr><th>Código</th><th>Obra</th><th class="c">Estado</th><th class="c">Fecha ingreso</th><th></th></tr></thead>
-    <tbody>${L.map(s=>`<tr>
-      <td class="mono">${esc(s.codigo)}</td><td class="mono">${esc(s.cod_proyec||'')}</td>
-      <td class="c"><span class="pill ${s.usado?'e-PRECAUCION':'e-NORMAL'}">${s.usado?'USADO':'DISPONIBLE'}</span></td>
-      <td class="c">${fmtDate(s.fecha_ingreso)}</td>
-      <td class="c"><button class="mini" data-del="${s.id}" title="Quitar del stock">✕</button></td>
-    </tr>`).join('')}</tbody></table>`}`;
-  boxStock.querySelectorAll('[data-del]').forEach(b=>b.onclick=()=>borrarStock(b.dataset.del));
-}
-async function borrarStock(id){
-  if(!confirm('¿Quitar este código del stock? Si ya fue usado en una muestra, igual se puede volver a registrar después.'))return;
-  const {error}=await sb.from('sos_stock').delete().eq('id',id);
-  if(error)return alert('No se pudo quitar: '+error.message);
-  STOCK=STOCK.filter(s=>String(s.id)!==String(id)); pintarStock();
-}
-function formLote(){
-  const obras=[...new Set(datos.map(d=>d.cod_proyec).filter(Boolean))].sort();
-  document.body.insertAdjacentHTML('beforeend',`<div class="modal" id="mlote"><div class="mc">
-    <div class="mh"><h3>Agregar frascos al stock</h3><div class="spacer"></div>
-      <button class="act" onclick="document.getElementById('mlote').remove()">Cerrar</button></div>
-    <div class="mb"><div class="form">
-      <label>Obra<select id="lo_obra">${obras.map(o=>`<option>${esc(o)}</option>`).join('')}</select></label>
-      <label>Prefijo del código<input id="lo_prefijo" placeholder="ej: HUA175"></label>
-      <label>Desde el número<input id="lo_desde" type="number" min="1" value="1"></label>
-      <label>Hasta el número<input id="lo_hasta" type="number" min="1" value="50"></label>
-      <label class="full">Se crean códigos correlativos: PREFIJO-000001, PREFIJO-000002… No se repiten códigos que ya existan.</label>
-    </div>
-    <button class="act primary" id="lo_crear" style="margin-top:10px">Crear frascos</button>
-    </div></div></div>`);
-  document.getElementById('mlote').addEventListener('click',ev=>{if(ev.target.id==='mlote')ev.target.remove();});
-  document.getElementById('lo_crear').onclick=async()=>{
-    const obra=document.getElementById('lo_obra').value;
-    const pre=document.getElementById('lo_prefijo').value.trim().toUpperCase();
-    const d=+document.getElementById('lo_desde').value, h=+document.getElementById('lo_hasta').value;
-    if(!pre)return alert('Escribe un prefijo de código.');
-    if(!(d>0&&h>=d))return alert('Revisa el rango de números.');
-    if(h-d>500)return alert('Máximo 500 frascos por lote — divídelo en tandas más chicas.');
-    const existentes=new Set(STOCK.map(s=>s.codigo));
-    const nuevos=[];
-    for(let n=d;n<=h;n++){
-      const cod=`${pre}-${String(n).padStart(6,'0')}`;
-      if(!existentes.has(cod))nuevos.push({cod_proyec:obra,codigo:cod});
-    }
-    if(!nuevos.length)return alert('Todos esos códigos ya existían en el stock.');
-    const {data,error}=await sb.from('sos_stock').insert(nuevos).select();
-    if(error)return alert('No se pudo guardar: '+error.message);
-    STOCK.push(...(data||[]));
-    document.getElementById('mlote').remove();
-    pintarStock();
-    alert(`${(data||[]).length} frasco(s) agregado(s) al stock.`);
-  };
-}
-
-/* ───────── PLAN DE MUESTREO ───────── */
-function pintarPM(){
-  const admin=perfil&&perfil.rol==='admin';
-  const q=nrm(fBusca.value);
-  const L=PM.filter(p=>!q||nrm(`${p.tipo_equipo} ${p.sistema}`).includes(q))
-    .sort((a,b)=>String(a.tipo_equipo).localeCompare(String(b.tipo_equipo))||String(a.sistema).localeCompare(String(b.sistema)));
-  chN.textContent=L.length+' combinación(es)';
-  cards.innerHTML=card('Tipos de equipo',new Set(PM.map(p=>p.tipo_equipo)).size,'con plan de muestreo')
-    +card('Sistemas configurados',PM.length,'tipo + sistema')
-    +card('Meta de cumplimiento',Math.round((PARAM.meta_cumplimiento||0)*100)+'%','del mes','ok')
-    +card('Umbral crítico',Math.round((PARAM.umbral_critico||0)*100)+'%','por debajo de esto','bad');
-  const params=admin?`<div class="hint" style="margin-bottom:10px">Parámetros de precisión (editables)</div>
-    <div style="display:flex;gap:10px;margin-bottom:18px;flex-wrap:wrap">
-      ${paramCampo('meta_cumplimiento','Meta de cumplimiento (%)',Math.round((PARAM.meta_cumplimiento||0)*100))}
-      ${paramCampo('umbral_critico','Umbral crítico (%)',Math.round((PARAM.umbral_critico||0)*100))}
-      ${paramCampo('tolerancia_horometro_pct','Tolerancia horómetro (± %)',Math.round((PARAM.tolerancia_horometro_pct||0)*100))}
-      ${paramCampo('tolerancia_fecha_dias','Tolerancia de fecha (± días)',PARAM.tolerancia_fecha_dias||0)}
-    </div>`:'';
-  boxPM.innerHTML=params+(!L.length?'<div class="vacio">Sin combinaciones registradas.</div>':`
-    <table class="t"><thead><tr><th>Tipo de equipo</th><th>Sistema</th><th class="r">Frecuencia (HR/KM)</th>${admin?'<th></th>':''}</tr></thead>
-    <tbody>${L.map(p=>`<tr>
-      <td>${esc(p.tipo_equipo)}</td><td>${esc(p.sistema)}</td><td class="r mono">${esc(p.frecuencia)}</td>
-      ${admin?`<td class="c"><button class="mini" data-ed="${p.id}">✎</button> <button class="mini" data-del="${p.id}">✕</button></td>`:''}
-    </tr>`).join('')}</tbody></table>`);
-  if(admin){
-    boxPM.querySelectorAll('[data-pp]').forEach(el=>el.onchange=()=>guardarParametro(el.dataset.pp,el.value));
-    boxPM.querySelectorAll('[data-ed]').forEach(b=>b.onclick=()=>formPM(b.dataset.ed));
-    boxPM.querySelectorAll('[data-del]').forEach(b=>b.onclick=()=>borrarPM(b.dataset.del));
-  }
-}
-function paramCampo(campo,etiqueta,valor){
-  return `<div class="c" style="min-width:170px"><div class="l">${etiqueta}</div>
-    <input class="ed" data-pp="${campo}" type="number" value="${valor}" style="margin-top:4px;font-size:16px;font-weight:800;color:#1F3864"></div>`;
-}
-async function guardarParametro(campo,valor){
-  let v=+valor;
-  if(campo==='meta_cumplimiento'||campo==='umbral_critico'||campo==='tolerancia_horometro_pct')v=v/100;
-  const {error}=await sb.from('sos_parametros').update({[campo]:v}).eq('id',1);
-  if(error){alert('No se pudo guardar: '+error.message);return;}
-  PARAM[campo]=v; pintarPM();
-}
-function formPM(id){
-  const p=id?PM.find(x=>String(x.id)===String(id)):{};
-  const tipos=[...new Set(datos.map(d=>tipoEstandar(d.equipo)).filter(Boolean))].sort();
-  document.body.insertAdjacentHTML('beforeend',`<div class="modal" id="mpm"><div class="mc">
-    <div class="mh"><h3>${id?'Editar':'Nueva'} combinación</h3><div class="spacer"></div>
-      ${id?'<button class="act bad" id="pm_del">Eliminar</button>':''}
-      <button class="act" onclick="document.getElementById('mpm').remove()">Cerrar</button></div>
-    <div class="mb"><div class="form">
-      <label>Tipo de equipo<input id="pm_tipo" list="pm_tipos" value="${esc(p.tipo_equipo||'')}">
-        <datalist id="pm_tipos">${tipos.map(t=>`<option value="${esc(t)}">`).join('')}</datalist></label>
-      <label>Sistema<input id="pm_sistema" value="${esc(p.sistema||'')}" placeholder="ej: MOTOR, HIDRAULICO…"></label>
-      <label>Frecuencia (HR/KM)<input id="pm_frec" type="number" value="${p.frecuencia||''}"></label>
-    </div>
-    <button class="act primary" id="pm_guardar" style="margin-top:10px">Guardar</button>
-    </div></div></div>`);
-  document.getElementById('mpm').addEventListener('click',ev=>{if(ev.target.id==='mpm')ev.target.remove();});
-  if(id)document.getElementById('pm_del').onclick=()=>{document.getElementById('mpm').remove();borrarPM(id);};
-  document.getElementById('pm_guardar').onclick=async()=>{
-    const d={tipo_equipo:document.getElementById('pm_tipo').value.trim().toUpperCase(),
-      sistema:document.getElementById('pm_sistema').value.trim().toUpperCase(),
-      frecuencia:+document.getElementById('pm_frec').value||0,
-      updated_at:new Date().toISOString()};
-    if(!d.tipo_equipo||!d.sistema||!d.frecuencia)return alert('Completa tipo de equipo, sistema y frecuencia.');
-    const {data,error}= id ? await sb.from('sos_plan_muestreo').update(d).eq('id',id).select().single()
-                            : await sb.from('sos_plan_muestreo').insert(d).select().single();
-    if(error)return alert('No se pudo guardar: '+error.message);
-    if(id){const i=PM.findIndex(x=>String(x.id)===String(id)); PM[i]=data;} else PM.push(data);
-    document.getElementById('mpm').remove(); pintarPM();
-  };
-}
-async function borrarPM(id){
-  if(!confirm('¿Quitar esta combinación del plan de muestreo?'))return;
-  const {error}=await sb.from('sos_plan_muestreo').delete().eq('id',id);
-  if(error)return alert('No se pudo quitar: '+error.message);
-  PM=PM.filter(p=>String(p.id)!==String(id)); pintarPM();
-}
-
-/* ───────── PROGRAMACIÓN MENSUAL ─────────
-   Se calcula sola cruzando el Maestro de Equipos (ubicación y horómetro,
-   ya en vivo — no se vuelve a pedir esa información acá) con el Plan de
-   Muestreo (frecuencia por tipo+sistema) y el histórico de Resultados
-   (para saber qué ya se ejecutó). */
-function esDesmov(s){return /^DESMOVILIZ/.test(String(s||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toUpperCase());}
-function calcProgramacion(){
-  const hoy=hoy0();
-  const finMes=new Date(hoy.getFullYear(),hoy.getMonth()+1,0);
-  const diasRestantes=Math.max(0,dias(finMes,hoy));
-  const mesActual=isoDe(hoy).slice(0,7);
-  const filas=[];
-  datos.filter(e=>!esDesmov(e.status)).forEach(e=>{
-    PM.filter(p=>nrm(p.tipo_equipo)===nrm(tipoEstandar(e.equipo))).forEach(p=>{
-      const freq=+p.frecuencia||0; if(!freq)return;
-      const horAct=+e.hrkm_actual||0, hrDia=+e.hr_dia||0;
-      const hist=RES.filter(r=>r.cod_sap===e.cod_sap&&nrm(r.sistema_std||r.componente||'')===nrm(p.sistema))
-        .sort((a,b)=>String(b.fecha||'').localeCompare(String(a.fecha||'')));
-      const ultimo=hist[0]||null;
-      const baseHor=ultimo?(+ultimo.horometro||0):0;
-      const proximoHor=freq*(Math.floor(baseHor/freq)+1);
-      const proyectadoFin=horAct+hrDia*diasRestantes;
-      const proyectado7=horAct+hrDia*7;
-      const vencido=horAct>=proximoHor;
-      const venceSemana=!vencido&&proyectado7>=proximoHor;
-      const venceMes=!vencido&&!venceSemana&&proyectadoFin>=proximoHor;
-      const ejecutadoEsteMes=ultimo&&String(ultimo.fecha||'').slice(0,7)===mesActual&&baseHor>=proximoHor-freq;
-      let estado='OK';
-      if(ejecutadoEsteMes)estado='Ejecutado';
-      else if(vencido)estado='Vencido';
-      else if(venceSemana)estado='Vence esta semana';
-      else if(venceMes)estado='Programado';
-      filas.push({equipo:e,plan:p,horAct,proximoHor,faltan:Math.round(proximoHor-horAct),estado,ultimo});
-    });
-  });
-  return filas;
-}
-function pintarProg(){
-  const q=nrm(fBusca.value), o=fObra.value;
-  const todas=calcProgramacion().filter(f=>{
-    if(o&&String(f.equipo.cod_proyec||'')!==o)return false;
-    if(q&&!nrm(`${f.equipo.cod_sap} ${f.equipo.equipo||''} ${f.plan.sistema}`).includes(q))return false;
-    return true;
-  });
-  const prog=todas.filter(f=>f.estado==='Programado').length;
-  const ejec=todas.filter(f=>f.estado==='Ejecutado').length;
-  const venc=todas.filter(f=>f.estado==='Vencido').length;
-  const sem=todas.filter(f=>f.estado==='Vence esta semana').length;
-  cards.innerHTML=card('Programados (este mes)',prog+ejec,'ejecutados + pendientes')
-    +card('Ejecutados a tiempo',ejec,'este mes','ok')
-    +card('Vencidos',venc,'requieren atención ya','bad')
-    +card('Vencen esta semana',sem,'','warn');
-  const L=todas.filter(f=>f.estado!=='OK').sort((a,b)=>a.faltan-b.faltan);
-  chN.textContent=L.length+' pendiente(s) de '+todas.length+' combinación(es)';
-  if(!datos.length||!PM.length){boxProg.innerHTML='<div class="vacio">Falta cargar equipos o el Plan de Muestreo para poder calcular esto.</div>';return;}
-  if(!L.length){boxProg.innerHTML='<div class="vacio">Nada pendiente con estos filtros — todo al día.</div>';return;}
-  const colorEstado={Vencido:'e-CRITICO','Vence esta semana':'e-PRECAUCION',Programado:'e-NA',Ejecutado:'e-NORMAL'};
-  boxProg.innerHTML=`<table class="t"><thead><tr>
-    <th>Obra</th><th>Cód. SAP</th><th>Equipo</th><th>Sistema</th><th class="r">Horómetro actual</th>
-    <th class="r">Próximo vencimiento</th><th class="r">Faltan</th><th class="c">Estado</th></tr></thead><tbody>
-    ${L.map(f=>`<tr>
-      <td class="mono">${esc(f.equipo.cod_proyec||'')}</td><td class="mono">${esc(f.equipo.cod_sap)}</td>
-      <td>${esc(f.equipo.equipo||'')}</td><td>${esc(f.plan.sistema)}</td>
-      <td class="r mono">${f0(f.horAct)}</td><td class="r mono">${f0(f.proximoHor)}</td>
-      <td class="r mono">${f0(f.faltan)}</td>
-      <td class="c"><span class="pill ${colorEstado[f.estado]||'e-NA'}">${esc(f.estado)}</span></td>
-    </tr>`).join('')}</tbody></table>`;
-}
-
-/* ───────── CUMPLIMIENTO / RANGO DE OPERACIÓN ─────────
-   Cruza el histórico de Resultados con la "vida útil" de cada componente
-   (horómetro de la muestra menos el horómetro de ingreso del equipo,
-   ya guardado en Maestro) para ver en qué tramo de vida empiezan a
-   fallar los sistemas. */
-function tramoDe(vida){
-  if(vida==null||vida<0)return null;
-  const ini=Math.floor(vida/2000)*2000;
-  return `${ini/1000}k-${(ini+2000)/1000}k h`;
-}
-function calcRango(){
-  const eqPorSap=new Map(datos.map(e=>[e.cod_sap,e]));
-  const tipo=fTipoEq.value, sis=fSistema.value;
-  const filas=RES.filter(r=>{
-    const e=eqPorSap.get(r.cod_sap); if(!e)return false;
-    if(tipo&&nrm(tipoEstandar(e.equipo))!==nrm(tipo))return false;
-    if(sis&&nrm(r.sistema_std||'')!==nrm(sis))return false;
-    return e.hrkm_ingreso!=null&&r.horometro!=null;
-  }).map(r=>{
-    const e=eqPorSap.get(r.cod_sap);
-    const vida=(+r.horometro||0)-(+e.hrkm_ingreso||0);
-    return {vida,tramo:tramoDe(vida),estado:r.estado_std};
-  }).filter(f=>f.tramo);
-  const porTramo=new Map();
-  filas.forEach(f=>{
-    if(!porTramo.has(f.tramo))porTramo.set(f.tramo,{total:0,normal:0,precaucion:0,critico:0});
-    const t=porTramo.get(f.tramo); t.total++;
-    if(f.estado==='NORMAL')t.normal++; else if(f.estado==='PRECAUCION')t.precaucion++; else if(f.estado==='CRITICO')t.critico++;
-  });
-  return [...porTramo.entries()].sort((a,b)=>+a[0].replace('k','')-+b[0].replace('k',''));
-}
-function pintarRango(){
-  const T=calcRango();
-  const totalMuestras=T.reduce((a,[,c])=>a+c.total,0);
-  const totalObs=T.reduce((a,[,c])=>a+c.precaucion+c.critico,0);
-  cards.innerHTML=card('Muestras analizadas',totalMuestras,'con vida útil calculable')
-    +card('Con observación',totalObs,'precaución + crítico','warn')
-    +card('% con observación',totalMuestras?Math.round(totalObs/totalMuestras*100)+'%':'—','del total','bad');
-  if(!T.length){boxRango.innerHTML='<div class="vacio">Sin datos suficientes — revisa que Maestro tenga el horómetro de ingreso cargado y que haya resultados con horómetro.</div>';return;}
-  boxRango.innerHTML=`<table class="t"><thead><tr>
-    <th>Rango de operación</th><th class="r">N° de muestras</th><th class="r">Normal</th>
-    <th class="r">Precaución</th><th class="r">Crítico</th><th class="r">% con observación</th></tr></thead><tbody>
-    ${T.map(([tramo,c])=>`<tr>
-      <td class="mono">${esc(tramo)}</td><td class="r mono">${c.total}</td>
-      <td class="r mono">${c.normal}</td><td class="r mono">${c.precaucion}</td><td class="r mono">${c.critico}</td>
-      <td class="r mono">${Math.round((c.precaucion+c.critico)/c.total*100)}%</td>
-    </tr>`).join('')}</tbody></table>`;
-}
-
 const card=(l,v,s,cls)=>`<div class="c"><div class="l">${l}</div><div class="v ${cls||''}">${v}</div><div class="s">${s}</div></div>`;
-
-/* ───────── DASHBOARD ─────────
-   Junta lo que ya calculan las demás pestañas, filtrado por obra.
-   No guarda nada propio — todo sale de Programación, Stock, Resultados
-   y Seguimiento de Alertas. */
-function pintarDash(){
-  const o=fObra.value;
-  chN.textContent=o||'Todas las obras';
-  const prog=calcProgramacion().filter(f=>!o||String(f.equipo.cod_proyec||'')===o);
-  const programados=prog.filter(f=>f.estado==='Programado'||f.estado==='Ejecutado'||f.estado==='Vencido'||f.estado==='Vence esta semana').length;
-  const ejecutados=prog.filter(f=>f.estado==='Ejecutado').length;
-  const vencidos=prog.filter(f=>f.estado==='Vencido').length;
-  const vencenSemana=prog.filter(f=>f.estado==='Vence esta semana').length;
-  const pendientes=programados-ejecutados;
-  const pctCump=programados?Math.round(ejecutados/programados*100):null;
-
-  const usados=new Set(PLAN.map(p=>nrm(p.nro_frasco||'')).filter(Boolean));
-  const stockF=STOCK.filter(s=>!o||String(s.cod_proyec||'')===o);
-  const disp=stockF.filter(s=>!usados.has(nrm(s.codigo))).length;
-  const usa=stockF.filter(s=>usados.has(nrm(s.codigo))).length;
-
-  const resF=RES.filter(r=>!o||String(r.obra||'')===o);
-  const critico=resF.filter(r=>r.estado_std==='CRITICO').length;
-  const precau=resF.filter(r=>r.estado_std==='PRECAUCION').length;
-  const criticasPend=resF.filter(r=>r.estado_std==='CRITICO'&&(ale(r).estado_seg||'OM abierta')!=='Cerrado').length;
-
-  const alertasF=resF.filter(r=>r.estado_std==='CRITICO'||r.estado_std==='PRECAUCION');
-  const seg=n=>alertasF.filter(r=>(ale(r).estado_seg||'OM abierta')===n).length;
-  const estadosSeg=['OM abierta','En ejecución','Verificado','Cerrado'];
-
-  boxDash.innerHTML=`
-  <div class="dgrid">
-    <div class="dcard"><div class="dh azul">Cumplimiento del mes<a href="#" data-ir="prog">→ Programación</a></div>
-      <div class="dc">
-        <div class="dnum ok">${pctCump!=null?pctCump+'%':'—'}<span>% cumplimiento</span></div>
-        <div class="dnum info">${programados}<span>programados</span></div>
-        <div class="dnum ok">${ejecutados}<span>ejecutados</span></div>
-        <div class="dnum warn">${pendientes}<span>pendientes</span></div>
-      </div></div>
-    <div class="dcard"><div class="dh rojo">Vencidos y por vencer<a href="#" data-ir="prog">→ Programación</a></div>
-      <div class="dc">
-        <div class="dnum bad">${vencidos}<span>vencidos</span></div>
-        <div class="dnum warn">${vencenSemana}<span>vencen esta semana</span></div>
-      </div></div>
-    <div class="dcard"><div class="dh verde">Stock de frascos<a href="#" data-ir="stock">→ Stock</a></div>
-      <div class="dc">
-        <div class="dnum ok">${disp}<span>disponibles</span></div>
-        <div class="dnum info">${usa}<span>usados</span></div>
-      </div></div>
-    <div class="dcard"><div class="dh amarillo">Alertas<a href="#" data-ir="ale">→ Alertas</a></div>
-      <div class="dc">
-        <div class="dnum bad">${critico}<span>crítico</span></div>
-        <div class="dnum warn">${precau}<span>precaución</span></div>
-        <div class="dnum bad">${criticasPend}<span>críticas pendientes</span></div>
-      </div></div>
-  </div>
-  <div class="dgrid" style="grid-template-columns:1fr">
-    <div class="dcard"><div class="dh rojo">Seguimiento de acciones correctivas<a href="#" data-ir="ale">→ Alertas</a></div>
-      <div class="dc dtabla"><table class="t"><thead><tr><th>Estado</th><th class="r">Cantidad</th></tr></thead><tbody>
-        ${estadosSeg.map(e=>`<tr><td>${esc(e)}</td><td class="r mono">${seg(e)}</td></tr>`).join('')}
-      </tbody></table></div></div>
-  </div>`;
-  boxDash.querySelectorAll('[data-ir]').forEach(a=>a.onclick=ev=>{ev.preventDefault();verVista(a.dataset.ir);});
-}
-
 
 /* ═══════════════ SUBIR ARCHIVO ═══════════════ */
 /* Reconoce el archivo por sus columnas, no por el nombre */
@@ -1177,8 +784,6 @@ function formPlan(id){
   };
 }
 btnNuevo.onclick=()=>formPlan(null);
-btnLote.onclick=()=>formLote();
-btnPM.onclick=()=>formPM(null);
 
 /* ═══════════════ EXCEL ═══════════════ */
 btnXls.onclick=()=>{
@@ -1233,13 +838,10 @@ function eqAbrir(){
   const faltaE=[...new Set(RES.filter(r=>r.estado&&!r.estado_std).map(r=>r.estado))].sort();
   const faltaS=[...new Set([...RES.filter(r=>r.componente&&!r.sistema_std).map(r=>r.componente),
                             ...PLAN.filter(p=>p.sistema&&!p.sistema_std).map(p=>p.sistema)])].sort();
-  const tiposPM=new Set(PM.map(p=>nrm(p.tipo_equipo)));
-  const faltaT=[...new Set(datos.filter(d=>d.equipo&&!tiposPM.has(nrm(tipoEstandar(d.equipo)))).map(d=>d.equipo))].sort();
   const stds=[...new Set([...EQS.values()])].sort();
-  const tiposStd=[...new Set(PM.map(p=>p.tipo_equipo))].sort();
   document.body.insertAdjacentHTML('beforeend',`<div class="modal" id="meq"><div class="mc">
     <div class="mh"><div><h3>Equivalencias</h3>
-      <div class="sub">Uniforman el texto de cada laboratorio a un estado y un sistema comunes, y el "Equipo" de Maestro al Tipo de Equipo que usa Plan de Muestreo.</div></div>
+      <div class="sub">Uniforman el texto de cada laboratorio a un estado y un sistema comunes.</div></div>
       <div class="spacer"></div><button class="act" id="eqCer">Cerrar</button></div>
     <div class="mb">
       ${(faltaE.length||faltaS.length)?`<div class="campo"><b>Sin equivalencia en los datos cargados</b>
@@ -1266,17 +868,6 @@ function eqAbrir(){
           <input id="s_std" placeholder="Sistema estándar" list="stdl">
           <datalist id="stdl">${stds.map(t=>`<option>${esc(t)}</option>`).join('')}</datalist>
           <button class="act primary" id="s_add">Agregar</button></div>`:''}
-      </div>
-      <div class="campo"><b>Tipo de equipo (Maestro → Plan de Muestreo)</b>
-        ${faltaT.length?`<div class="warn" style="font-size:12px;margin-bottom:4px">Sin plan de muestreo todavía: ${faltaT.map(esc).join(' · ')}</div>`:''}
-        <table class="t"><thead><tr><th>Equipo (en Maestro)</th><th>Tipo de equipo estándar</th>${admin?'<th></th>':''}</tr></thead>
-        <tbody id="eqTT"></tbody></table>
-        ${admin?`<div class="eqnew">
-          <input id="t_txt" placeholder="Equipo tal como está en Maestro" list="faltaT">
-          <datalist id="faltaT">${faltaT.map(t=>`<option>${esc(t)}</option>`).join('')}</datalist>
-          <input id="t_std" placeholder="Tipo de equipo estándar" list="tstdl">
-          <datalist id="tstdl">${tiposStd.map(t=>`<option>${esc(t)}</option>`).join('')}</datalist>
-          <button class="act primary" id="t_add">Agregar</button></div>`:''}
       </div>
       ${admin?'':'<div class="hint">Solo los administradores pueden modificar estas tablas.</div>'}
     </div></div></div>`);
@@ -1305,18 +896,9 @@ function eqAbrir(){
     document.getElementById('s_txt').value='';
     eqPintarTablas(); reNormalizar();
   };
-  document.getElementById('t_add').onclick=async()=>{
-    const t=document.getElementById('t_txt').value.trim(), s=document.getElementById('t_std').value.trim();
-    if(!t||!s)return alert('Completa el equipo y el tipo estándar.');
-    const {error}=await sb.from('sos_eq_tipo').insert({texto:t,estandar:s});
-    if(error)return alert('No se pudo agregar: '+error.message);
-    EQT.set(nrm(t),s); EQLT.push({texto:t,estandar:s});
-    document.getElementById('t_txt').value='';
-    eqPintarTablas(); pintar();
-  };
 }
 function eqPintarTablas(){
-  const te=document.getElementById('eqTE'), ts=document.getElementById('eqTS'), tt=document.getElementById('eqTT');
+  const te=document.getElementById('eqTE'), ts=document.getElementById('eqTS');
   if(!te)return;
   const admin=perfil&&perfil.rol==='admin';
   te.innerHTML=EQLE.slice().sort((a,b)=>a.estandar.localeCompare(b.estandar)||a.texto.localeCompare(b.texto))
@@ -1326,9 +908,6 @@ function eqPintarTablas(){
   ts.innerHTML=EQLS.slice().sort((a,b)=>a.estandar.localeCompare(b.estandar)||a.texto.localeCompare(b.texto))
     .map(x=>`<tr><td>${esc(x.texto)}</td><td>${esc(x.estandar)}</td>
       ${admin&&x.id?`<td class="c"><button class="mini" data-ds="${x.id}">✕</button></td>`:(admin?'<td></td>':'')}</tr>`).join('');
-  tt.innerHTML=EQLT.slice().sort((a,b)=>a.estandar.localeCompare(b.estandar)||a.texto.localeCompare(b.texto))
-    .map(x=>`<tr><td>${esc(x.texto)}</td><td>${esc(x.estandar)}</td>
-      ${admin&&x.id?`<td class="c"><button class="mini" data-dt="${x.id}">✕</button></td>`:(admin?'<td></td>':'')}</tr>`).join('');
   te.querySelectorAll('[data-de]').forEach(b=>b.onclick=async()=>{
     if(!confirm('¿Eliminar esta equivalencia?'))return;
     await sb.from('sos_eq_estado').delete().eq('id',b.dataset.de);
@@ -1341,12 +920,6 @@ function eqPintarTablas(){
     const i=EQLS.findIndex(x=>String(x.id)===b.dataset.ds);
     if(i>=0){EQS.delete(nrm(EQLS[i].texto));EQLS.splice(i,1);}
     eqPintarTablas(); reNormalizar();});
-  tt.querySelectorAll('[data-dt]').forEach(b=>b.onclick=async()=>{
-    if(!confirm('¿Eliminar esta equivalencia?'))return;
-    await sb.from('sos_eq_tipo').delete().eq('id',b.dataset.dt);
-    const i=EQLT.findIndex(x=>String(x.id)===b.dataset.dt);
-    if(i>=0){EQT.delete(nrm(EQLT[i].texto));EQLT.splice(i,1);}
-    eqPintarTablas(); pintar();});
 }
 /* al cambiar una equivalencia se vuelven a uniformar los datos ya guardados */
 async function reNormalizar(){
@@ -1367,7 +940,7 @@ btnEq.onclick=eqAbrir;
 
 /* ═══════════════ CARGA ═══════════════ */
 [fBusca].forEach(x=>x.oninput=pintar);
-[fObra,fDesde,fHasta,fEstado,fSistema,fFuente,fTipoEq].forEach(x=>x.onchange=pintar);
+[fObra,fDesde,fHasta,fEstado,fSistema,fFuente].forEach(x=>x.onchange=pintar);
 btnRec.onclick=()=>cargarTodo();
 
 /* Supabase entrega como máximo 1.000 filas por consulta. Esta función
@@ -1386,26 +959,19 @@ async function traerTodo(tabla,orden,asc){
   }
   return {data:out,error:null};
 }
-let PM=[], PARAM={}, STOCK=[];
 async function cargarTodo(){
   pie.textContent='Cargando…';
-  const [pl,re,al,pm,pa,st]=await Promise.all([
+  const [pl,re,al]=await Promise.all([
     traerTodo('sos_planilla','f_muestreo',false),
     traerTodo('sos_resultados','fecha',false),
-    traerTodo('sos_alertas'),
-    sb.from('sos_plan_muestreo').select('*').order('tipo_equipo').order('sistema'),
-    sb.from('sos_parametros').select('*').eq('id',1).single(),
-    traerTodo('sos_stock','codigo',true)
+    traerTodo('sos_alertas')
   ]);
   if(pl.error||re.error){pie.textContent='No se pudo cargar: '+((pl.error||re.error).message);return;}
   PLAN=pl.data||[]; RES=re.data||[]; ALE=al.data||[];
-  PM=pm.data||[]; PARAM=pa.data||{}; STOCK=st.data||[];
-  const obras=[...new Set([...PLAN.map(p=>p.obra),...RES.map(r=>r.obra),...datos.map(d=>d.cod_proyec)].filter(Boolean))].sort();
+  const obras=[...new Set([...PLAN.map(p=>p.obra),...RES.map(r=>r.obra)].filter(Boolean))].sort();
   fObra.innerHTML='<option value="">Todas las obras</option>'+obras.map(o=>`<option>${esc(o)}</option>`).join('');
   const siss=[...new Set(RES.map(r=>r.sistema_std).filter(Boolean))].sort();
   fSistema.innerHTML='<option value="">Todos los sistemas</option>'+siss.map(s=>`<option>${esc(s)}</option>`).join('');
-  const tipos=[...new Set(datos.map(d=>tipoEstandar(d.equipo)).filter(Boolean))].sort();
-  fTipoEq.innerHTML='<option value="">Todos los tipos de equipo</option>'+tipos.map(t=>`<option>${esc(t)}</option>`).join('');
   pie.textContent=`${PLAN.length} muestra(s) en planilla · ${RES.length} resultado(s) · ${ALE.length} en seguimiento.`;
   pintar();
 }
@@ -1499,16 +1065,15 @@ function pintarNav(actual){
     document.body.innerHTML='<div style="padding:60px;text-align:center;font-family:sans-serif">'
      +'<h2 style="font-size:18px;margin-bottom:10px">Sin acceso a SOS</h2>'
      +'<p style="color:#6b747d">Un administrador debe habilitarte esta pesta&ntilde;a desde Usuarios.</p></div>';return;}
-  const {data:m}=await sb.from('maestro').select('id,cod_sap,equipo,marca,modelo,serie_placa,cod_proyec,familia,status,hrkm_actual,fecha_lectura,hr_dia,hrkm_ult_mntto,hrkm_ingreso');
+  const {data:m}=await sb.from('maestro').select('id,cod_sap,equipo,marca,modelo,serie_placa,cod_proyec,familia,status');
   datos=m||[]; DIDX=new Map(datos.map(e=>[String(e.id),e]));
-  const [ee,es,et]=await Promise.all([
-    sb.from('sos_eq_estado').select('*'), sb.from('sos_eq_sistema').select('*'), sb.from('sos_eq_tipo').select('*')
+  const [ee,es]=await Promise.all([
+    sb.from('sos_eq_estado').select('*'), sb.from('sos_eq_sistema').select('*')
   ]);
   // el archivo trae "CRÍTICO" con tilde y "PRECAUCION" sin ella: se unifica
-  EQLE=ee.data||[]; EQLS=es.data||[]; EQLT=et.data||[];
+  EQLE=ee.data||[]; EQLS=es.data||[];
   EQLE.forEach(x=>EQE.set(nrm(x.texto),nrm(x.estandar)));
   EQLS.forEach(x=>EQS.set(nrm(x.texto),String(x.estandar).trim()));
-  EQLT.forEach(x=>EQT.set(nrm(x.texto),String(x.estandar).trim()));
   const hoy=new Date(), ini=new Date(hoy.getFullYear(),0,1);
   fDesde.value=isoDe(ini); fHasta.value=isoDe(hoy);
   await cargarTodo();
