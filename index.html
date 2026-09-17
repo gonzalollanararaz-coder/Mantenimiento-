@@ -575,6 +575,7 @@
     <button id="tabPms" data-tab="pms">PM-S</button>
     <button id="tabComb" data-tab="comb">Combustible</button>
     <button id="tabSos" data-tab="sos">SOS</button>
+    <button id="tabPendientes" data-tab="pendientes">Pendientes</button>
     <button id="tabUsers" data-tab="users" style="display:none">Usuarios</button>
   </nav>
 </div>
@@ -907,7 +908,8 @@ const FCALC=['_alerta','_sem','_alertamntto']; // columnas calculadas con filtro
 const PAGINAS=[
   {k:'pms',   lab:'PM-S',        arch:'pms.html'},
   {k:'comb',  lab:'Combustible', arch:'combustible.html'},
-  {k:'sos',   lab:'SOS',         arch:'sos.html'}
+  {k:'sos',   lab:'SOS',         arch:'sos.html'},
+  {k:'pendientes', lab:'Pendientes', arch:'pendientes.html'}
 ];
 function puedePagina(k){
   if(!perfil)return false;
@@ -1773,8 +1775,20 @@ document.querySelectorAll("nav button").forEach(b=>b.onclick=()=>{
   const t=b.dataset.tab;
   const pag=PAGINAS.find(p=>p.k===t);
   if(pag&&!puedePagina(t)){alert('No tienes acceso a la pestaña '+pag.lab+'.\n\nPídeselo a un administrador.');return;}
+  if(t==='pendientes'){abrirPendientes();return;}
   mostrarPanel(t);
 });
+/* Pendientes es la única pestaña que vive en ventana aparte (no en un
+   panel/iframe como las demás) — a propósito, así pedido. Usa la misma
+   referencia directa (VENT) que ya tiene Equipos para las demás
+   ventanas: si ya está abierta, se enfoca directo; si no, se abre. */
+function abrirPendientes(){
+  const ref=VENT['gllr_pendientes'];
+  if(ref&&!ref.closed){ try{ref.focus();return;}catch(_){} }
+  const w=window.open('pendientes.html','gllr_pendientes');
+  if(w){ try{w.focus();}catch(_){} VENT['gllr_pendientes']=w; }
+  else alert('El navegador bloqueó la ventana emergente.\n\nPermite las ventanas emergentes de este sitio.');
+}
 
 /* admin */
 async function cargarUsuarios(){
