@@ -255,10 +255,10 @@ function pintarHead(){
   <tr class="cols">
     <th class="azul frz">#</th>
     <th class="azul">${cabCol('estatus','Estatus',true)}</th>
-    <th class="azul">Proyecto</th>
-    <th class="azul">Cód. SAP</th>
-    <th class="azul">Equipo / Vehículo</th>
-    <th class="azul">Falla reportada</th>
+    <th class="azul">${cabCol('proyecto','Proyecto',true)}</th>
+    <th class="azul">${cabCol('equipo_sap','Cód. SAP',true)}</th>
+    <th class="azul">${cabCol('equipo','Equipo / Vehículo',true)}</th>
+    <th class="azul">${cabCol('falla','Falla reportada',true)}</th>
     <th class="amarillo">${cabCol('responsable','Responsable',true)}</th>
     <th class="amarillo">${cabCol('prioridad','Prioridad',true)}</th>
     <th class="amarillo">F. compromiso</th>
@@ -323,9 +323,11 @@ function pintar(){
       <td data-campo="comentario" style="color:var(--muted)">${esc(d.comentario||'')}</td>
     </tr>`;
   }).join('');
-  tbody.querySelectorAll('tr[data-id]').forEach(tr=>tr.onclick=ev=>{
-    if(ev.target.closest('td[data-campo]'))return; // esas celdas se editan con doble clic, no abren el formulario
-    abrirForm(tr.dataset.id);
+  tbody.querySelectorAll('tr[data-id]').forEach(tr=>{
+    // el clic simple ya no abre nada; el doble clic en Proyecto/SAP/Equipo/Falla
+    // abre el formulario completo (ahí se edita eso y se puede eliminar), y en
+    // las demás columnas edita la celda misma, tipo Excel.
+    tr.querySelectorAll('td:not([data-campo])').forEach(td=>td.ondblclick=()=>abrirForm(tr.dataset.id));
   });
   tbody.querySelectorAll('td[data-campo]').forEach(td=>td.ondblclick=ev=>{ ev.stopPropagation(); editarCelda(td); });
 }
@@ -503,11 +505,29 @@ function abrirRapido(){
 btnRapido.onclick=abrirRapido;
 
 // ---- Volver a Equipos sin recargar ----
+// Mismo protocolo ping/pong por BroadcastChannel que ya usan PM-S/Combustible/SOS
+// para volver a Equipos — no depende de window.opener (esa referencia se puede
+// perder por políticas de seguridad del navegador aunque la ventana se haya
+// abierto bien).
 let winEquipos=null;
-function volverAEquipos(){
+function pingIndex(ms){
+  if(!('BroadcastChannel' in window))return Promise.resolve(false);
+  return new Promise(res=>{
+    const ch=new BroadcastChannel('gllr_index');
+    let listo=false;
+    const oye=ev=>{ if(ev.data&&ev.data.tipo==='pong'){listo=true;ch.removeEventListener('message',oye);ch.close();res(true);} };
+    ch.addEventListener('message',oye);
+    ch.postMessage({tipo:'ping'});
+    setTimeout(()=>{ if(!listo){ch.removeEventListener('message',oye);ch.close();res(false);} },ms||300);
+  });
+}
+async function volverAEquipos(){
+  if(winEquipos && !winEquipos.closed){ try{winEquipos.focus();return;}catch(_){} }
   if(window.opener && !window.opener.closed){ try{window.opener.focus();return;}catch(_){} }
-  if(winEquipos && !winEquipos.closed){ winEquipos.focus(); }
-  else{ winEquipos=window.open('index.html','gllr_index'); }
+  if(await pingIndex())return; // ya estaba abierta y se acaba de enfocar sola
+  winEquipos=window.open('index.html','gllr_index');
+  if(winEquipos){ try{winEquipos.focus();}catch(_){} }
+  else alert('El navegador bloqueó la ventana emergente.\n\nPermite las ventanas emergentes de este sitio.');
 }
 volverBtn.onclick=volverAEquipos;
 
@@ -533,10 +553,11 @@ volverBtn.onclick=volverAEquipos;
   ]);
   MAESTRO=m||[];
   const esDesmov=s=>/^DESMOVILIZ/.test(nrm(s));
+  const esMovilizado=s=>nrm(s)==='MOVILIZADO';
   dlSap.innerHTML=MAESTRO.filter(e=>!esDesmov(e.status)).map(e=>`<option value="${esc(e.cod_sap)}">`).join('');
   USUARIOS=(us||[]).filter(u=>Array.isArray(u.paginas)&&u.paginas.includes('pendientes'));
   if(!USUARIOS.some(u=>u.id===perfil.id))USUARIOS.unshift({id:perfil.id,nombre:perfil.nombre});
-  const proys=[...new Set(MAESTRO.map(e=>e.cod_proyec).filter(Boolean))].sort();
+  const proys=[...new Set(MAESTRO.filter(e=>esMovilizado(e.status)).map(e=>e.cod_proyec).filter(Boolean))].sort();
   fObra.innerHTML='<option value="">Todas las obras</option>'+proys.map(p=>`<option>${esc(p)}</option>`).join('');
   if(error){ pie.textContent='No se pudo cargar: '+error.message; DATA=[]; } else DATA=pd||[];
   pintarHead();
