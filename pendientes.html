@@ -25,12 +25,10 @@
   .act{border:1px solid #DDE0E3;background:#fff;border-radius:8px;padding:7px 13px;font:inherit;font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap;letter-spacing:.01em}
   .act.primary{background:linear-gradient(180deg,#FFE98A,#FFD84A);border-color:#E0B93A;color:#5C4708}
   .act.grande{background:#12161B;color:#fff;border-color:#12161B}
-  .act.f-inop.on{background:#D3141A;border-color:#A51014;color:#fff}
-  .act.f-obs.on{background:#FFCD11;border-color:#9E7F0B;color:#3B2E00}
-  .act.f-urg.on{background:#D3141A;border-color:#A51014;color:#fff}
-  .act.f-med.on{background:#FFCD11;border-color:#9E7F0B;color:#3B2E00}
-  .act.f-baja.on{background:#0CA318;border-color:#07650F;color:#fff}
-  .divisor{width:1px;background:var(--line);align-self:stretch;margin:0 2px}
+  .act.grande.off{background:#fff;color:var(--ink);border-color:#DDE0E3}
+  .card-filtro{cursor:pointer;transition:box-shadow .1s}
+  .card-filtro:hover{box-shadow:0 0 0 2px #DDE0E3}
+  .card-filtro.on{box-shadow:0 0 0 2px var(--amber);background:#FFFBE8}
   .chip{background:#FBFBFB;border:1px solid #E0E3E6;border-radius:8px;padding:7px 12px;font-size:12.5px;color:var(--muted)}
   .sp2{flex:1}
 
@@ -120,12 +118,7 @@
 <div class="toolbar">
   <input type="search" id="fBusca" placeholder="Buscar falla, proyecto, equipo, responsable…">
   <select class="chip" id="fObra"><option value="">Todas las obras</option></select>
-  <button class="act f-inop" data-est="Inoperativo">INOPERATIVO</button>
-  <button class="act f-obs" data-est="Observación">OBSERVACIÓN</button>
-  <div class="divisor"></div>
-  <button class="act f-urg" data-prio="Urgente">URGENTE</button>
-  <button class="act f-med" data-prio="Media">MEDIA</button>
-  <button class="act f-baja" data-prio="Baja">BAJA</button>
+  <button class="act" id="btnLimpiar">✕ Borrar filtros</button>
   <div class="sp2"></div>
   <button class="act grande" id="btnOcultar">Ocultar completados</button>
   <button class="act grande" id="btnRapido">⚡ Reporte rápido</button>
@@ -138,8 +131,8 @@
   <table id="tabla">
     <colgroup>
       <col style="width:34px"><col style="width:112px"><col style="width:78px"><col style="width:96px">
-      <col style="width:160px"><col style="width:210px"><col style="width:120px"><col style="width:78px">
-      <col style="width:98px"><col style="width:118px"><col style="width:98px"><col style="width:170px">
+      <col style="width:160px"><col style="width:300px"><col style="width:120px"><col style="width:78px">
+      <col style="width:98px"><col style="width:118px"><col style="width:98px"><col style="width:260px">
     </colgroup>
     <thead id="thead"></thead>
     <tbody id="tbody"></tbody>
@@ -175,19 +168,23 @@ function abreviarNombre(raw){
   const partes=base.split(/[.\s_]+/).filter(Boolean);
   if(!partes.length)return raw;
   const inicial=partes[0].charAt(0).toUpperCase();
-  const apellido=partes[partes.length-1].toUpperCase();
-  return partes.length>1?`${inicial}.${apellido}`:apellido;
+  if(partes.length===1)return partes[0].toUpperCase();
+  // 2 partes (nombre.apellido) → el apellido es la segunda; 3+ partes
+  // (nombres + apellido paterno + materno) → el apellido paterno es el
+  // penúltimo token, no el último.
+  const apellido = partes.length===2 ? partes[1] : partes[partes.length-2];
+  return inicial+apellido.toUpperCase();
 }
 const ORDEN_ESTATUS={'Inoperativo':0,'Observación':1};
 const ORDEN_PRIO={'Urgente':0,'Media':1,'Baja':2};
-const COLOR_ESTATUS={'Inoperativo':'#D3141A','Observación':'#9E7F0B'};
-const COLOR_ESTADO={'Pendiente':'#8E959C','En proceso':'#4254A5','Completado':'#0CA318'};
+const COLOR_ESTATUS={'Inoperativo':'#D3141A','Observación':'#4254A5'};
+const COLOR_ESTADO={'Pendiente':'#D3141A','En proceso':'#4254A5','Completado':'#0CA318'};
 function hoyISO(){ const d=new Date(); return new Date(d.getTime()-d.getTimezoneOffset()*60000).toISOString().slice(0,10); }
 function vencido(f,estado){ return estado!=='Completado' && f && f<hoyISO(); }
 
 /* ── filtros de columna (tipo Excel) ── */
 let colFiltros={}; // {campo: Set(valores)}
-let filtroEstatusBtn=new Set(), filtroPrioBtn=new Set();
+let filtroCard=null;
 let ocultarCompletados=true;
 
 function cabCol(campo,etiqueta,filtrable){
@@ -272,13 +269,21 @@ function pintarHead(){
 }
 
 /* ── cuerpo ── */
+function fechaCorta(iso){
+  if(!iso)return '';
+  const p=String(iso).split('-'); if(p.length!==3)return iso;
+  return `${p[2]}/${p[1]}/${p[0].slice(2)}`;
+}
 function pintar(){
   const q=nrm(fBusca.value), obra=fObra.value;
+  const esteMes=hoyISO().slice(0,7);
   const L=DATA.filter(d=>{
+    if(filtroCard==='comp'){ return d.estado==='Completado'&&(d.fecha_cierre||'').slice(0,7)===esteMes; }
     if(ocultarCompletados&&d.estado==='Completado')return false;
     if(obra&&d.proyecto!==obra)return false;
-    if(filtroEstatusBtn.size&&!filtroEstatusBtn.has(d.estatus))return false;
-    if(filtroPrioBtn.size&&!filtroPrioBtn.has(d.prioridad))return false;
+    if(filtroCard==='inop'&&d.estatus!=='Inoperativo')return false;
+    if(filtroCard==='urg'&&(d.prioridad!=='Urgente'||d.estado==='Completado'))return false;
+    if(filtroCard==='venc'&&!vencido(d.fecha_compromiso,d.estado))return false;
     for(const campo in colFiltros){
       const f=colFiltros[campo]; if(!f||!f.size)continue;
       const v=String(d[campo]??'').trim()||'(vacío)';
@@ -289,12 +294,15 @@ function pintar(){
   }).sort((a,b)=>(ORDEN_ESTATUS[a.estatus]??9)-(ORDEN_ESTATUS[b.estatus]??9) || (ORDEN_PRIO[a.prioridad]??9)-(ORDEN_PRIO[b.prioridad]??9));
 
   const activos=DATA.filter(d=>d.estado!=='Completado');
-  const esteMes=hoyISO().slice(0,7);
   cards.innerHTML=`
-    <div class="c"><div class="l">Inoperativos</div><div class="v bad">${activos.filter(d=>d.estatus==='Inoperativo').length}</div></div>
-    <div class="c"><div class="l">Urgentes abiertos</div><div class="v bad">${activos.filter(d=>d.prioridad==='Urgente').length}</div></div>
-    <div class="c"><div class="l">Vencidos</div><div class="v warn">${activos.filter(d=>vencido(d.fecha_compromiso,d.estado)).length}</div></div>
-    <div class="c"><div class="l">Completados este mes</div><div class="v ok">${DATA.filter(d=>d.estado==='Completado'&&(d.fecha_cierre||'').slice(0,7)===esteMes).length}</div></div>`;
+    <div class="c card-filtro${filtroCard==='inop'?' on':''}" data-f="inop"><div class="l">Inoperativos</div><div class="v bad">${activos.filter(d=>d.estatus==='Inoperativo').length}</div></div>
+    <div class="c card-filtro${filtroCard==='urg'?' on':''}" data-f="urg"><div class="l">Urgentes abiertos</div><div class="v bad">${activos.filter(d=>d.prioridad==='Urgente').length}</div></div>
+    <div class="c card-filtro${filtroCard==='venc'?' on':''}" data-f="venc"><div class="l">Vencidos</div><div class="v warn">${activos.filter(d=>vencido(d.fecha_compromiso,d.estado)).length}</div></div>
+    <div class="c card-filtro${filtroCard==='comp'?' on':''}" data-f="comp"><div class="l">Completados este mes</div><div class="v ok">${DATA.filter(d=>d.estado==='Completado'&&(d.fecha_cierre||'').slice(0,7)===esteMes).length}</div></div>`;
+  cards.querySelectorAll('[data-f]').forEach(c=>c.onclick=()=>{
+    filtroCard = filtroCard===c.dataset.f ? null : c.dataset.f;
+    pintar();
+  });
 
   pie.textContent=`${L.length} pendiente(s) mostrados de ${DATA.length} en total.`;
   if(!L.length){ tbody.innerHTML='<tr><td colspan="12" class="vacio">Sin pendientes con estos filtros.</td></tr>'; return; }
@@ -302,31 +310,76 @@ function pintar(){
     const v=vencido(d.fecha_compromiso,d.estado);
     return `<tr data-id="${d.id}">
       <td class="frz">${i+1}</td>
-      <td><span class="pill"><span class="dot" style="background:${COLOR_ESTATUS[d.estatus]||'#8E959C'}"></span>${esc(d.estatus)}</span></td>
+      <td data-campo="estatus"><span class="pill"><span class="dot" style="background:${COLOR_ESTATUS[d.estatus]||'#8E959C'}"></span>${esc(d.estatus)}</span></td>
       <td class="mono">${esc(d.proyecto||'')}</td>
       <td class="mono">${esc(d.equipo_sap||'')}</td>
       <td>${esc(d.equipo||'')}</td>
       <td>${esc(d.falla||'')}</td>
-      <td>${d.responsable?esc(abreviarNombre(d.responsable)):'<span style="color:#B45309;font-weight:600">Sin asignar</span>'}</td>
-      <td><span class="prio ${nrm(d.prioridad).toLowerCase()}">${esc((d.prioridad||'').toUpperCase())}</span></td>
-      <td class="mono ${v?'venc':''}">${esc(d.fecha_compromiso||'')}${v?' ⚠':''}</td>
-      <td><span class="pill"><span class="dot" style="background:${COLOR_ESTADO[d.estado]||'#8E959C'}"></span>${esc(d.estado)}</span></td>
-      <td class="mono">${esc(d.fecha_cierre||'—')}</td>
-      <td style="color:var(--muted)">${esc(d.comentario||'')}</td>
+      <td data-campo="responsable_id">${d.responsable?esc(abreviarNombre(d.responsable)):'<span style="color:#B45309;font-weight:600">Sin asignar</span>'}</td>
+      <td data-campo="prioridad"><span class="prio ${nrm(d.prioridad).toLowerCase()}">${esc((d.prioridad||'').toUpperCase())}</span></td>
+      <td data-campo="fecha_compromiso" class="mono ${v?'venc':''}">${fechaCorta(d.fecha_compromiso)}${v?' ⚠':''}</td>
+      <td data-campo="estado"><span class="pill"><span class="dot" style="background:${COLOR_ESTADO[d.estado]||'#8E959C'}"></span>${esc(d.estado)}</span></td>
+      <td data-campo="fecha_cierre" class="mono">${fechaCorta(d.fecha_cierre)||'—'}</td>
+      <td data-campo="comentario" style="color:var(--muted)">${esc(d.comentario||'')}</td>
     </tr>`;
   }).join('');
-  tbody.querySelectorAll('tr[data-id]').forEach(tr=>tr.onclick=()=>abrirForm(tr.dataset.id));
+  tbody.querySelectorAll('tr[data-id]').forEach(tr=>tr.onclick=ev=>{
+    if(ev.target.closest('td[data-campo]'))return; // esas celdas se editan con doble clic, no abren el formulario
+    abrirForm(tr.dataset.id);
+  });
+  tbody.querySelectorAll('td[data-campo]').forEach(td=>td.ondblclick=ev=>{ ev.stopPropagation(); editarCelda(td); });
 }
 
-/* ── botones de filtro rápido ── */
-document.querySelectorAll('[data-est]').forEach(b=>b.onclick=()=>{
-  const v=b.dataset.est; filtroEstatusBtn.has(v)?filtroEstatusBtn.delete(v):filtroEstatusBtn.add(v);
-  b.classList.toggle('on'); pintar();
-});
-document.querySelectorAll('[data-prio]').forEach(b=>b.onclick=()=>{
-  const v=b.dataset.prio; filtroPrioBtn.has(v)?filtroPrioBtn.delete(v):filtroPrioBtn.add(v);
-  b.classList.toggle('on'); pintar();
-});
+/* ── edición tipo Excel: doble clic en la celda ── */
+const OPCIONES_CAMPO={estatus:['Inoperativo','Observación'],prioridad:['Urgente','Media','Baja'],estado:['Pendiente','En proceso','Completado']};
+function editarCelda(td){
+  if(td.querySelector('input,select'))return;
+  const tr=td.closest('tr'), id=tr.dataset.id;
+  const d=DATA.find(x=>String(x.id)===String(id)); if(!d)return;
+  const campo=td.dataset.campo, original=td.innerHTML;
+  let editor;
+  if(campo==='responsable_id'){
+    editor=document.createElement('select');
+    editor.innerHTML='<option value="">Sin asignar</option>'+USUARIOS.map(u=>
+      `<option value="${u.id}" ${u.id===d.responsable_id?'selected':''}>${esc(abreviarNombre(u.nombre))}</option>`).join('');
+  }else if(OPCIONES_CAMPO[campo]){
+    editor=document.createElement('select');
+    editor.innerHTML=OPCIONES_CAMPO[campo].map(v=>`<option ${v===d[campo]?'selected':''}>${esc(v)}</option>`).join('');
+  }else if(campo==='fecha_compromiso'||campo==='fecha_cierre'){
+    editor=document.createElement('input'); editor.type='date'; editor.value=d[campo]||'';
+  }else{
+    editor=document.createElement('input'); editor.type='text'; editor.value=d[campo]||'';
+  }
+  editor.style.cssText='width:100%;border:1px solid var(--amber);border-radius:5px;padding:3px 5px;font:inherit;font-size:11.5px;background:#fff';
+  td.innerHTML=''; td.appendChild(editor); editor.focus();
+  let resuelto=false;
+  async function confirmar(){
+    if(resuelto)return; resuelto=true;
+    let patch;
+    if(campo==='responsable_id'){
+      const ru=USUARIOS.find(u=>u.id===editor.value);
+      patch={responsable_id:editor.value||null, responsable:ru?ru.nombre:null};
+    }else{
+      patch={[campo]:editor.value||null};
+      if(campo==='estado'&&editor.value==='Completado'&&!d.fecha_cierre)patch.fecha_cierre=hoyISO();
+    }
+    patch.updated_at=new Date().toISOString();
+    const {data,error}=await sb.from('pendientes').update(patch).eq('id',id).select().single();
+    if(error){ alert('No se pudo guardar: '+error.message); td.innerHTML=original; return; }
+    Object.assign(d,data); pintar();
+  }
+  editor.onblur=confirmar;
+  editor.onkeydown=ev=>{
+    if(ev.key==='Enter')editor.blur();
+    if(ev.key==='Escape'){ resuelto=true; td.innerHTML=original; }
+  };
+  if(editor.tagName==='SELECT')editor.onchange=confirmar;
+}
+
+btnLimpiar.onclick=()=>{  fBusca.value=''; fObra.value=''; colFiltros={}; filtroCard=null;
+  document.querySelectorAll('.hcab.filtrado').forEach(h=>h.classList.remove('filtrado'));
+  pintar();
+};
 btnOcultar.onclick=()=>{
   ocultarCompletados=!ocultarCompletados;
   btnOcultar.textContent=ocultarCompletados?'Ocultar completados':'Mostrar completados';
@@ -406,19 +459,21 @@ function abrirRapido(){
         <label class="full">Cód. SAP<input id="rSap" list="dlSap" placeholder="Escribe o elige el código"></label>
         <label class="full" id="rInfoWrap" style="display:none">Equipo<span id="rInfo" style="font-size:13px;color:var(--ink);font-weight:600"></span></label>
         <label class="full">Falla reportada<textarea id="rFalla" placeholder="¿Qué está pasando?"></textarea></label>
+        <label class="full">¿Quién atenderá? (opcional)
+          <select id="rResp"><option value="">Sin asignar todavía</option></select></label>
       </div>
       <div style="margin-top:10px">
         <div style="font-size:11px;color:var(--muted);font-weight:600;margin-bottom:6px">Estatus</div>
         <div style="display:flex;gap:8px">
           <button class="act" id="rInop" style="flex:1;padding:14px;font-size:13px">🔴 INOPERATIVO</button>
-          <button class="act" id="rObs" style="flex:1;padding:14px;font-size:13px">🟡 OBSERVACIÓN</button>
+          <button class="act" id="rObs" style="flex:1;padding:14px;font-size:13px">🔵 OBSERVACIÓN</button>
         </div>
       </div>
       <div class="hint" style="font-size:11px;color:var(--muted);margin-top:10px">
-        Queda como Pendiente, prioridad Media, sin responsable asignado — alguien lo completa después.
+        Queda como Pendiente, prioridad Media — si no eliges quién atenderá, queda "Sin asignar" hasta que alguien lo derive.
       </div>
     </div></div></div>`);
-  let estatusElegido=null;
+  document.getElementById('rResp').innerHTML += USUARIOS.map(u=>`<option value="${u.id}">${esc(abreviarNombre(u.nombre))}</option>`).join('');
   const cerrar=()=>document.getElementById('mRapido').remove();
   document.getElementById('rCerrar').onclick=cerrar;
   document.getElementById('mRapido').addEventListener('click',ev=>{if(ev.target.id==='mRapido')cerrar();});
@@ -433,8 +488,10 @@ function abrirRapido(){
     const falla=document.getElementById('rFalla').value.trim();
     if(!falla)return alert('Escribe qué está pasando (falla reportada).');
     const e=MAESTRO.find(x=>x.cod_sap===sap);
+    const rid=document.getElementById('rResp').value;
+    const ru=USUARIOS.find(u=>u.id===rid);
     const fila={estatus, proyecto:e?e.cod_proyec:null, equipo_sap:sap||null, equipo:e?e.equipo:null,
-      falla, responsable_id:null, responsable:null, prioridad:'Media', estado:'Pendiente',
+      falla, responsable_id:rid||null, responsable:ru?ru.nombre:null, prioridad:'Media', estado:'Pendiente',
       fecha_compromiso:null, fecha_cierre:null, comentario:null};
     const {data,error}=await sb.from('pendientes').insert(fila).select().single();
     if(error)return alert('No se pudo guardar: '+error.message);
