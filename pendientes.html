@@ -26,9 +26,9 @@
   .act.primary{background:linear-gradient(180deg,#FFE98A,#FFD84A);border-color:#E0B93A;color:#5C4708}
   .act.grande{background:#12161B;color:#fff;border-color:#12161B}
   .act.f-inop.on{background:#D3141A;border-color:#A51014;color:#fff}
-  .act.f-obs.on{background:#B45309;border-color:#8A3F06;color:#fff}
+  .act.f-obs.on{background:#FFCD11;border-color:#9E7F0B;color:#3B2E00}
   .act.f-urg.on{background:#D3141A;border-color:#A51014;color:#fff}
-  .act.f-med.on{background:#B45309;border-color:#8A3F06;color:#fff}
+  .act.f-med.on{background:#FFCD11;border-color:#9E7F0B;color:#3B2E00}
   .act.f-baja.on{background:#0CA318;border-color:#07650F;color:#fff}
   .divisor{width:1px;background:var(--line);align-self:stretch;margin:0 2px}
   .chip{background:#FBFBFB;border:1px solid #E0E3E6;border-radius:8px;padding:7px 12px;font-size:12.5px;color:var(--muted)}
@@ -75,7 +75,7 @@
   .pill{display:inline-flex;align-items:center;gap:5px;font-weight:700;font-size:11px}
   .dot{width:7px;height:7px;border-radius:50%;flex-shrink:0}
   .prio{font-weight:800;font-size:10.5px;letter-spacing:.02em}
-  .prio.urgente{color:#D3141A}.prio.media{color:#B45309}.prio.baja{color:#0C7A16}
+  .prio.urgente{color:#D3141A}.prio.media{color:#9E7F0B}.prio.baja{color:#0C7A16}
   .venc{color:#D3141A;font-weight:700}
   .vacio{padding:30px;text-align:center;color:#98A2AD;font-size:12.5px}
   .pie{padding:8px 16px;font-size:11px;color:#98A2AD}
@@ -128,6 +128,7 @@
   <button class="act f-baja" data-prio="Baja">BAJA</button>
   <div class="sp2"></div>
   <button class="act grande" id="btnOcultar">Ocultar completados</button>
+  <button class="act grande" id="btnRapido">⚡ Reporte rápido</button>
   <button class="act primary" id="btnNuevo">+ Pendiente</button>
 </div>
 
@@ -145,6 +146,7 @@
   </table>
 </div>
 <div class="pie" id="pie"></div>
+<datalist id="dlSap"></datalist>
 
 <script>
 const CFG=(()=>{try{return JSON.parse(localStorage.getItem('gllr_sbcfg')||'null')}catch(_){return null}})();
@@ -166,9 +168,19 @@ const sb=window.supabase.createClient(CFG.url,CFG.key);
 let perfil=null, MAESTRO=[], USUARIOS=[], DATA=[];
 const esc=s=>String(s??"").replace(/&/g,"&amp;").replace(/"/g,"&quot;").replace(/</g,"&lt;");
 const nrm=s=>String(s??'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toUpperCase().replace(/\s+/g,' ').trim();
+function abreviarNombre(raw){
+  if(!raw)return '';
+  let base=String(raw).trim();
+  if(base.includes('@'))base=base.split('@')[0];          // quita el dominio del correo
+  const partes=base.split(/[.\s_]+/).filter(Boolean);
+  if(!partes.length)return raw;
+  const inicial=partes[0].charAt(0).toUpperCase();
+  const apellido=partes[partes.length-1].toUpperCase();
+  return partes.length>1?`${inicial}.${apellido}`:apellido;
+}
 const ORDEN_ESTATUS={'Inoperativo':0,'Observación':1};
 const ORDEN_PRIO={'Urgente':0,'Media':1,'Baja':2};
-const COLOR_ESTATUS={'Inoperativo':'#D3141A','Observación':'#B45309'};
+const COLOR_ESTATUS={'Inoperativo':'#D3141A','Observación':'#9E7F0B'};
 const COLOR_ESTADO={'Pendiente':'#8E959C','En proceso':'#4254A5','Completado':'#0CA318'};
 function hoyISO(){ const d=new Date(); return new Date(d.getTime()-d.getTimezoneOffset()*60000).toISOString().slice(0,10); }
 function vencido(f,estado){ return estado!=='Completado' && f && f<hoyISO(); }
@@ -227,7 +239,7 @@ function colLista(){
   const vals=[...cnt.keys()].filter(v=>!q||nrm(v).includes(q)).sort((a,b)=>a.localeCompare(b,'es',{numeric:true}));
   const L=document.getElementById('cpL');
   L.innerHTML=vals.length? vals.map(v=>`<label><input type="checkbox" value="${esc(v)}" ${colSel.has(v)?'checked':''}>
-      <span>${esc(v)}</span><span class="cp-n">${cnt.get(v)}</span></label>`).join('')
+      <span>${esc(colActivo==='responsable'?abreviarNombre(v):v)}</span><span class="cp-n">${cnt.get(v)}</span></label>`).join('')
     : '<div style="padding:12px;color:#98a2ad;font-size:12px;text-align:center">Sin coincidencias.</div>';
   L.querySelectorAll('input[value]').forEach(i=>i.onchange=()=>{ i.checked?colSel.add(i.value):colSel.delete(i.value); });
 }
@@ -295,7 +307,7 @@ function pintar(){
       <td class="mono">${esc(d.equipo_sap||'')}</td>
       <td>${esc(d.equipo||'')}</td>
       <td>${esc(d.falla||'')}</td>
-      <td>${esc(d.responsable||'')}</td>
+      <td>${d.responsable?esc(abreviarNombre(d.responsable)):'<span style="color:#B45309;font-weight:600">Sin asignar</span>'}</td>
       <td><span class="prio ${nrm(d.prioridad).toLowerCase()}">${esc((d.prioridad||'').toUpperCase())}</span></td>
       <td class="mono ${v?'venc':''}">${esc(d.fecha_compromiso||'')}${v?' ⚠':''}</td>
       <td><span class="pill"><span class="dot" style="background:${COLOR_ESTADO[d.estado]||'#8E959C'}"></span>${esc(d.estado)}</span></td>
@@ -345,11 +357,10 @@ function abrirForm(id){
       <label class="full">Comentario / Observación<textarea id="pCom"></textarea></label>
     </div>
     <button class="act primary" id="pGuardar" style="margin-top:12px;width:100%">Guardar</button>
-    </div></div></div>
-    <datalist id="dlSap">${MAESTRO.map(e=>`<option value="${esc(e.cod_sap)}">`).join('')}</datalist>`);
+    </div></div></div>`);
   const proys=[...new Set(MAESTRO.map(e=>e.cod_proyec).filter(Boolean))].sort();
   pProyecto.innerHTML=proys.map(p=>`<option>${esc(p)}</option>`).join('');
-  pResp.innerHTML=USUARIOS.map(u=>`<option value="${u.id}">${esc(u.nombre)}</option>`).join('');
+  pResp.innerHTML=USUARIOS.map(u=>`<option value="${u.id}">${esc(abreviarNombre(u.nombre))}</option>`).join('');
   pEstatus.value=d.estatus||'Observación'; pPrioridad.value=d.prioridad||'Media';
   pProyecto.value=d.proyecto||proys[0]||''; pSap.value=d.equipo_sap||''; pEquipo.value=d.equipo||'';
   pFalla.value=d.falla||''; pResp.value=d.responsable_id||(USUARIOS[0]&&USUARIOS[0].id)||'';
@@ -386,6 +397,54 @@ function abrirForm(id){
 }
 btnNuevo.onclick=()=>abrirForm(null);
 
+/* ── reporte rápido ── */
+function abrirRapido(){
+  document.body.insertAdjacentHTML('beforeend',`<div class="modal" id="mRapido"><div class="mc" style="width:min(420px,96vw)">
+    <div class="mh"><h3>Reporte rápido</h3><div style="flex:1"></div><button class="act" id="rCerrar">Cerrar</button></div>
+    <div class="mb">
+      <div class="form">
+        <label class="full">Cód. SAP<input id="rSap" list="dlSap" placeholder="Escribe o elige el código"></label>
+        <label class="full" id="rInfoWrap" style="display:none">Equipo<span id="rInfo" style="font-size:13px;color:var(--ink);font-weight:600"></span></label>
+        <label class="full">Falla reportada<textarea id="rFalla" placeholder="¿Qué está pasando?"></textarea></label>
+      </div>
+      <div style="margin-top:10px">
+        <div style="font-size:11px;color:var(--muted);font-weight:600;margin-bottom:6px">Estatus</div>
+        <div style="display:flex;gap:8px">
+          <button class="act" id="rInop" style="flex:1;padding:14px;font-size:13px">🔴 INOPERATIVO</button>
+          <button class="act" id="rObs" style="flex:1;padding:14px;font-size:13px">🟡 OBSERVACIÓN</button>
+        </div>
+      </div>
+      <div class="hint" style="font-size:11px;color:var(--muted);margin-top:10px">
+        Queda como Pendiente, prioridad Media, sin responsable asignado — alguien lo completa después.
+      </div>
+    </div></div></div>`);
+  let estatusElegido=null;
+  const cerrar=()=>document.getElementById('mRapido').remove();
+  document.getElementById('rCerrar').onclick=cerrar;
+  document.getElementById('mRapido').addEventListener('click',ev=>{if(ev.target.id==='mRapido')cerrar();});
+  document.getElementById('rSap').oninput=function(){
+    const e=MAESTRO.find(x=>x.cod_sap===this.value);
+    const w=document.getElementById('rInfoWrap'), i=document.getElementById('rInfo');
+    if(e){ w.style.display=''; i.textContent=`${e.equipo||''} · ${e.cod_proyec||''}`; }
+    else w.style.display='none';
+  };
+  async function guardarRapido(estatus){
+    const sap=document.getElementById('rSap').value.trim();
+    const falla=document.getElementById('rFalla').value.trim();
+    if(!falla)return alert('Escribe qué está pasando (falla reportada).');
+    const e=MAESTRO.find(x=>x.cod_sap===sap);
+    const fila={estatus, proyecto:e?e.cod_proyec:null, equipo_sap:sap||null, equipo:e?e.equipo:null,
+      falla, responsable_id:null, responsable:null, prioridad:'Media', estado:'Pendiente',
+      fecha_compromiso:null, fecha_cierre:null, comentario:null};
+    const {data,error}=await sb.from('pendientes').insert(fila).select().single();
+    if(error)return alert('No se pudo guardar: '+error.message);
+    DATA.push(data); cerrar(); pintar();
+  }
+  document.getElementById('rInop').onclick=()=>guardarRapido('Inoperativo');
+  document.getElementById('rObs').onclick=()=>guardarRapido('Observación');
+}
+btnRapido.onclick=abrirRapido;
+
 // ---- Volver a Equipos sin recargar ----
 let winEquipos=null;
 function volverAEquipos(){
@@ -411,12 +470,15 @@ volverBtn.onclick=volverAEquipos;
      +'<p style="color:#6b747d">Un administrador debe habilitarte esta pestaña desde Usuarios.</p></div>';return;}
 
   const [{data:m},{data:us},{data:pd,error}]=await Promise.all([
-    sb.from('maestro').select('id,cod_sap,equipo,cod_proyec'),
+    sb.from('maestro').select('id,cod_sap,equipo,cod_proyec,status'),
     sb.from('profiles').select('id,nombre,paginas,estado').eq('estado','aprobado'),
     sb.from('pendientes').select('*').order('created_at',{ascending:false})
   ]);
   MAESTRO=m||[];
+  const esDesmov=s=>/^DESMOVILIZ/.test(nrm(s));
+  dlSap.innerHTML=MAESTRO.filter(e=>!esDesmov(e.status)).map(e=>`<option value="${esc(e.cod_sap)}">`).join('');
   USUARIOS=(us||[]).filter(u=>Array.isArray(u.paginas)&&u.paginas.includes('pendientes'));
+  if(!USUARIOS.some(u=>u.id===perfil.id))USUARIOS.unshift({id:perfil.id,nombre:perfil.nombre});
   const proys=[...new Set(MAESTRO.map(e=>e.cod_proyec).filter(Boolean))].sort();
   fObra.innerHTML='<option value="">Todas las obras</option>'+proys.map(p=>`<option>${esc(p)}</option>`).join('');
   if(error){ pie.textContent='No se pudo cargar: '+error.message; DATA=[]; } else DATA=pd||[];
