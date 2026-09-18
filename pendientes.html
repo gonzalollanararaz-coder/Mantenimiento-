@@ -70,10 +70,9 @@
 
   td{padding:6px 8px;border-bottom:1px solid #F0F1F3}
   tbody tr:hover td{background:#FBFBFA}
-  .pill{display:inline-flex;align-items:center;gap:5px;font-weight:700;font-size:11px}
-  .dot{width:7px;height:7px;border-radius:50%;flex-shrink:0}
-  .prio{font-weight:800;font-size:10.5px;letter-spacing:.02em}
-  .prio.urgente{color:#D3141A}.prio.media{color:#9E7F0B}.prio.baja{color:#0C7A16}
+  tbody tr.fila-sel td{background:#FFF3B0}
+  tbody tr.fila-sel td.frz{background:#FFF3B0}
+  .badgeB{display:inline-flex;align-items:center;gap:5px;font-weight:700;font-size:11px}
   .venc{color:#D3141A;font-weight:700}
   .vacio{padding:30px;text-align:center;color:#98A2AD;font-size:12.5px}
   .pie{padding:8px 16px;font-size:11px;color:#98A2AD}
@@ -178,7 +177,11 @@ function abreviarNombre(raw){
 const ORDEN_ESTATUS={'Inoperativo':0,'Observación':1};
 const ORDEN_PRIO={'Urgente':0,'Media':1,'Baja':2};
 const COLOR_ESTATUS={'Inoperativo':'#D3141A','Observación':'#4254A5'};
-const COLOR_ESTADO={'Pendiente':'#D3141A','En proceso':'#4254A5','Completado':'#0CA318'};
+const ICONO_ESTATUS={'Inoperativo':'🔴','Observación':'🔵'};
+const COLOR_ESTADO={'Pendiente':'#D3141A','En proceso':'#4254A5','Completado':'#0C7A16'};
+const ICONO_ESTADO={'Pendiente':'○','En proceso':'◐','Completado':'●'};
+const COLOR_PRIO={'Urgente':'#D3141A','Media':'#9E7F0B','Baja':'#0C7A16'};
+const ICONO_PRIO={'Urgente':'▲','Media':'●','Baja':'▼'};
 function hoyISO(){ const d=new Date(); return new Date(d.getTime()-d.getTimezoneOffset()*60000).toISOString().slice(0,10); }
 function vencido(f,estado){ return estado!=='Completado' && f && f<hoyISO(); }
 
@@ -310,15 +313,15 @@ function pintar(){
     const v=vencido(d.fecha_compromiso,d.estado);
     return `<tr data-id="${d.id}">
       <td class="frz">${i+1}</td>
-      <td data-campo="estatus"><span class="pill"><span class="dot" style="background:${COLOR_ESTATUS[d.estatus]||'#8E959C'}"></span>${esc(d.estatus)}</span></td>
+      <td data-campo="estatus"><span class="badgeB" style="color:${COLOR_ESTATUS[d.estatus]||'#8E959C'}">${ICONO_ESTATUS[d.estatus]||''} ${esc(d.estatus)}</span></td>
       <td class="mono">${esc(d.proyecto||'')}</td>
       <td class="mono">${esc(d.equipo_sap||'')}</td>
       <td>${esc(d.equipo||'')}</td>
       <td>${esc(d.falla||'')}</td>
       <td data-campo="responsable_id">${d.responsable?esc(abreviarNombre(d.responsable)):'<span style="color:#B45309;font-weight:600">Sin asignar</span>'}</td>
-      <td data-campo="prioridad"><span class="prio ${nrm(d.prioridad).toLowerCase()}">${esc((d.prioridad||'').toUpperCase())}</span></td>
+      <td data-campo="prioridad"><span class="badgeB" style="color:${COLOR_PRIO[d.prioridad]||'#8E959C'}">${ICONO_PRIO[d.prioridad]||''} ${esc((d.prioridad||'').toUpperCase())}</span></td>
       <td data-campo="fecha_compromiso" class="mono ${v?'venc':''}">${fechaCorta(d.fecha_compromiso)}${v?' ⚠':''}</td>
-      <td data-campo="estado"><span class="pill"><span class="dot" style="background:${COLOR_ESTADO[d.estado]||'#8E959C'}"></span>${esc(d.estado)}</span></td>
+      <td data-campo="estado"><span class="badgeB" style="color:${COLOR_ESTADO[d.estado]||'#8E959C'}">${ICONO_ESTADO[d.estado]||''} ${esc(d.estado)}</span></td>
       <td data-campo="fecha_cierre" class="mono">${fechaCorta(d.fecha_cierre)||'—'}</td>
       <td data-campo="comentario" style="color:var(--muted)">${esc(d.comentario||'')}</td>
     </tr>`;
@@ -331,6 +334,12 @@ function pintar(){
   });
   tbody.querySelectorAll('td[data-campo]').forEach(td=>td.ondblclick=ev=>{ ev.stopPropagation(); editarCelda(td); });
 }
+/* resalta en amarillo la fila de la celda elegida (clic simple en cualquier celda) */
+tbody.addEventListener('click',ev=>{
+  const tr=ev.target.closest('tr[data-id]'); if(!tr)return;
+  tbody.querySelectorAll('tr.fila-sel').forEach(x=>x.classList.remove('fila-sel'));
+  tr.classList.add('fila-sel');
+});
 
 /* ── edición tipo Excel: doble clic en la celda ── */
 const OPCIONES_CAMPO={estatus:['Inoperativo','Observación'],prioridad:['Urgente','Media','Baja'],estado:['Pendiente','En proceso','Completado']};
