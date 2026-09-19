@@ -69,7 +69,6 @@
   tr.cols th.frz{z-index:5}
 
   td{padding:3px 8px;border-bottom:1px solid #e6e8eb;border-right:1px solid #eef0f2;line-height:1.3}
-  td:nth-child(6),td:nth-child(12){white-space:normal;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical}
   tbody tr:hover td{background:#FBFBFA}
   tbody tr.fila-sel td{background:#FFF3B0}
   tbody tr.fila-sel td.frz{background:#FFF3B0}
@@ -352,13 +351,13 @@ function pintar(){
       <td class="mono">${esc(d.proyecto||'')}</td>
       <td class="mono">${esc(d.equipo_sap||'')}</td>
       <td>${esc(d.equipo||'')}</td>
-      <td>${esc(d.falla||'')}</td>
+      <td${d.falla&&d.falla.length>55?` title="${esc(d.falla)}"`:''}>${esc(d.falla||'')}</td>
       <td data-campo="responsable_id">${d.responsable?esc(abreviarNombre(d.responsable)):'<span style="color:#B45309;font-weight:600">Sin asignar</span>'}</td>
       <td data-campo="prioridad"><span class="badgeB" style="color:${COLOR_PRIO[d.prioridad]||'#8E959C'}">${ICONO_PRIO[d.prioridad]||''} ${esc((d.prioridad||'').toUpperCase())}</span></td>
       <td data-campo="fecha_compromiso" class="mono ${v?'venc':''}">${fechaCorta(d.fecha_compromiso)}${v?' ⚠':''}</td>
       <td data-campo="estado"><span class="badgeB" style="color:${COLOR_ESTADO[d.estado]||'#8E959C'}">${ICONO_ESTADO[d.estado]||''} ${esc(d.estado)}</span></td>
       <td data-campo="fecha_cierre" class="mono">${fechaCorta(d.fecha_cierre)||'—'}</td>
-      <td data-campo="comentario" style="color:var(--muted)">${esc(d.comentario||'')}</td>
+      <td data-campo="comentario"${d.comentario&&d.comentario.length>55?` title="${esc(d.comentario)}"`:''} style="color:var(--muted)">${esc(d.comentario||'')}</td>
     </tr>`;
   }).join('');
   tbody.querySelectorAll('tr[data-id]').forEach(tr=>{
