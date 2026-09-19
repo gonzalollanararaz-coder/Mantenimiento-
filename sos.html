@@ -109,6 +109,29 @@
   .eqnew{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px;padding-top:8px;border-top:1px dashed var(--line)}
   .eqnew input,.eqnew select{padding:6px 8px;border:1px solid var(--line);border-radius:7px;font-size:12px;flex:1;min-width:120px}
   .form input,.form select{padding:8px;border:1px solid var(--line);border-radius:8px;font-size:13px;font-weight:400;color:var(--ink)}
+
+  /* ── ESTILO OFICIAL GLLR: encabezado de 2 filas (banda + columna pastel) ── */
+  table.of{width:100%;border-collapse:collapse;font-size:11.5px;background:#fff}
+  table.of thead th{position:sticky;z-index:4}
+  table.of tr.bands th{top:0;background:#fff;padding:3px 3px 4px;border:none;border-bottom:1px solid var(--line);text-align:center}
+  table.of .bnd{display:block;border-radius:7px;padding:4px 8px;font-size:10.5px;font-weight:700;letter-spacing:.02em}
+  table.of .bnd.azul{background:linear-gradient(180deg,#7B87C0 0%,#4254A5 48%,#334281 100%);border:1px solid #293466;color:#fff;text-shadow:0 1px 1px rgba(0,0,0,.3)}
+  table.of .bnd.amarillo{background:linear-gradient(180deg,#FFDC58 0%,#FFCD11 48%,#C7A00D 100%);border:1px solid #9E7F0B;color:#3B2E00;text-shadow:none}
+  table.of .bnd.verde{background:linear-gradient(180deg,#55BF5D 0%,#0CA318 48%,#097F13 100%);border:1px solid #07650F;color:#fff;text-shadow:0 1px 1px rgba(0,0,0,.3)}
+  table.of .bnd.plomo{background:linear-gradient(180deg,#ADADAD 0%,#8A8A8A 48%,#6C6C6C 100%);border:1px solid #565656;color:#fff;text-shadow:0 1px 1px rgba(0,0,0,.3)}
+  table.of tr.cols th{top:29px;padding:5px 7px;text-align:left;font-weight:600;font-size:10px;border-right:1px solid #fff;border-bottom:1px solid #fff}
+  table.of tr.cols th.c{text-align:center}
+  table.of th.azul{background:#E5E7F2;color:#4254A5}
+  table.of th.amarillo{background:#FFF8DE;color:#9E7F0B}
+  table.of th.verde{background:#DDF2DF;color:#0C7A16}
+  table.of th.plomo{background:#EFEFEF;color:#6C6C6C}
+  table.of td{padding:4px 7px;border-bottom:1px solid #e6e8eb;border-right:1px solid #eef0f2;line-height:1.3;vertical-align:middle}
+  table.of td.c{text-align:center}table.of td.r{text-align:right}
+  table.of tbody tr:hover td{background:#f7fbff}
+  table.of .frz{position:sticky;left:0;background:#fff;z-index:2}
+  table.of tr.bands .frz{background:#fff;z-index:5}
+  table.of tr.cols th.frz{z-index:5}
+  table.of tbody tr:hover td.frz{background:#f7fbff}
 </style>
 </head>
 <body>
@@ -121,7 +144,7 @@
 <script>if(window.self!==window.top){document.getElementById('topbar').style.display='none';}</script>
 <div id="subnav">
   <button id="tab_fra" class="on">&#128230; Frascos</button>
-  <button id="tab_plan">Planilla de env&iacute;o</button>
+  <button id="tab_plan">PLANILLA DE MUESTRAS DE ACEITE</button>
   <button id="tab_res">Resultados</button>
   <button id="tab_ale">Seguimiento de alertas</button>
 </div>
@@ -291,19 +314,18 @@ const val=(f,cols,...nombres)=>{
 const PLAN_COLS=['Obra','N° de Planilla','Item','N° Frasco','Código del Equipo','Marca','Modelo','Serie',
   'Sistema','Tipo de Aceite','Horometro','Muestreo','Envio'];
 function leerPlanilla(filas){
-  const m=leerHoja(filas,['N° Frasco','Sistema','Obra','Codigo del Equipo','Horometro']);
+  const m=leerHoja(filas,['N° Frasco','Sistema','Obra','Horometro','Item']);
   if(!m)return null;
   const out=[];
   for(let i=m.fila+1;i<filas.length;i++){
     const f=filas[i]||[];
-    const sap=String(val(f,m.cols,'Código del Equipo','Codigo del Equipo','Código\ndel Equipo','EQUIPO')??'').trim();
+    const sap=String(val(f,m.cols,'Código SAP\ndel Equipo','Código SAP del Equipo','Código del Equipo','Codigo del Equipo','Código\ndel Equipo','EQUIPO')??'').trim();
     const sis=String(val(f,m.cols,'Sistema')??'').trim();
     if(!sap&&!sis)continue;
     const e=datos.find(x=>nrm(x.cod_sap)===nrm(sap));
     out.push({
       obra:String(val(f,m.cols,'Obra')??'').trim()||null,
       nro_planilla:String(val(f,m.cols,'N° de Planilla','Nro de Planilla')??'').trim()||null,
-      item:aNum(val(f,m.cols,'Item')),
       nro_frasco:String(val(f,m.cols,'N° Frasco','Nro Frasco')??'').trim()||null,
       cod_sap:sap||null, maestro_id:e?e.id:null,
       marca:String(val(f,m.cols,'Marca')??'').trim()||(e?e.marca:null),
@@ -315,11 +337,10 @@ function leerPlanilla(filas){
       horometro:aNum(val(f,m.cols,'Horometro','Horómetro')),
       horas_aceite:aNum(val(f,m.cols,'Horas\ndel aceite','Horas del aceite')),
       cant_agregado:aNum(val(f,m.cols,'Cant.\nAgregado','Cant. Agregado')),
-      f_muestreo:aFecha(val(f,m.cols,'Muestreo')),
-      f_envio:aFecha(val(f,m.cols,'Envio','Envío')),
+      f_muestreo:aFecha(val(f,m.cols,'Fecha\nMuestreo','Muestreo')),
+      f_envio:aFecha(val(f,m.cols,'Fecha\nEnvio','Fecha\nEnvío','Envio','Envío')),
       tipo:String(val(f,m.cols,'Tipo:\n[Cambio]\n[Muestra]','Tipo')??'').trim()||null,
-      observacion:String(val(f,m.cols,'Observacion:','Observación')??'').trim()||null,
-      validacion:String(val(f,m.cols,'Validación (vs. STOCK)','Validacion')??'').trim()||null
+      observacion:String(val(f,m.cols,'Observacion:','Observación')??'').trim()||null
     });
   }
   return out;
@@ -567,6 +588,14 @@ function filtrarPlan(){
     return true;
   });
 }
+function estadoValidacion(p){
+  if(!p.nro_frasco)return {txt:'—',cls:'dim'};
+  const f=FRASCOS.find(x=>x.codigo===p.nro_frasco);
+  if(!f)return {txt:'⚠ no existe en catálogo',cls:'b-mid'};
+  if(f.estado==='Usado'&&String(f.planilla_id)===String(p.id))return {txt:'✓ OK',cls:'e-NORMAL'};
+  if(f.estado==='Usado'&&String(f.planilla_id)!==String(p.id))return {txt:'⚠ vinculado a otra muestra',cls:'b-bad'};
+  return {txt:'⚠ frasco no marcado Usado',cls:'b-mid'};
+}
 function pintarPlan(){
   const L=filtrarPlan().sort((a,b)=>String(b.f_muestreo||'').localeCompare(String(a.f_muestreo||''))
     ||String(a.cod_sap||'').localeCompare(String(b.cod_sap||'')));
@@ -577,29 +606,61 @@ function pintarPlan(){
     +card('Planillas',new Set(L.map(p=>p.nro_planilla).filter(Boolean)).size,'distintas')
     +card('Sin sistema uniformado',L.filter(p=>p.sistema&&!p.sistema_std).length,'revisar equivalencias');
   if(!L.length){boxPlan.innerHTML='<div class="vacio">Sin muestras registradas con estos filtros.</div>';return;}
-  let prev=null;
-  boxPlan.innerHTML=`<table class="t"><thead><tr>
-    <th>Clave</th><th>Muestreo</th><th>Obra</th><th>Planilla</th><th class="c">Frasco</th><th>Cód. SAP</th><th>Equipo</th>
-    <th>Sistema</th><th>Tipo aceite</th><th class="r">Horómetro</th><th class="r">Hrs aceite</th>
-    <th class="c">Tipo</th><th class="c">Resultado</th><th></th></tr></thead><tbody>
-    ${L.map(p=>{
-      const e=getE(p.maestro_id), r=RES.find(x=>x.planilla_id===p.id);
-      const corte=prev!==null&&String(p.f_muestreo||'')!==prev; prev=String(p.f_muestreo||'');
-      return `<tr class="${corte?'corte':''}" data-pid="${p.id}">
-        <td class="mono clave">${esc(claveMuestra(p.cod_sap,p.sistema_std||p.sistema,p.f_muestreo)||'—')}</td>
-        <td>${fmtDate(p.f_muestreo)}</td><td>${esc(p.obra||'')}</td><td>${esc(p.nro_planilla||'')}</td>
-        <td class="c mono">${esc(p.nro_frasco||'')}</td><td class="mono">${esc(p.cod_sap||'')}</td>
-        <td>${esc(e?e.equipo:'')}</td>
+  const total=L.length;
+  boxPlan.innerHTML=`<table class="of"><colgroup>
+      <col style="width:38px"><col style="width:88px"><col style="width:72px"><col style="width:92px">
+      <col style="width:80px"><col style="width:92px"><col style="width:80px">
+      <col style="width:150px"><col style="width:100px"><col style="width:60px"><col style="width:78px">
+      <col style="width:70px"><col style="width:70px"><col style="width:80px"><col style="width:80px">
+      <col style="width:72px"><col style="width:78px">
+      <col style="width:220px"><col style="width:140px"><col style="width:36px">
+    </colgroup>
+    <thead>
+    <tr class="bands">
+      <th colspan="7" class="frz"><span class="bnd azul">IDENTIFICACIÓN DEL EQUIPO</span></th>
+      <th colspan="10"><span class="bnd amarillo">DATOS DE LA MUESTRA DE ACEITE</span></th>
+      <th colspan="1"><span class="bnd plomo">OBSERVACIÓN</span></th>
+      <th colspan="2"><span class="bnd verde">VALIDACIÓN</span></th>
+    </tr>
+    <tr class="cols">
+      <th class="azul c frz">Item</th><th class="azul">N° Planilla</th><th class="azul">Obra</th><th class="azul">Cód. SAP</th>
+      <th class="azul">Marca</th><th class="azul">Modelo</th><th class="azul">Serie</th>
+      <th class="amarillo">Sistema</th><th class="amarillo">Tipo de aceite</th><th class="amarillo c">Gal.</th><th class="amarillo r">Horómetro</th>
+      <th class="amarillo r">Hrs. aceite</th><th class="amarillo r">Cant. agreg.</th><th class="amarillo c">F. muestreo</th><th class="amarillo c">F. envío</th>
+      <th class="amarillo c">Tipo</th><th class="amarillo c">N° Frasco</th>
+      <th class="plomo">Observación</th>
+      <th class="verde">Validación (vs. stock)</th><th class="verde c"></th>
+    </tr>
+    </thead><tbody>
+    ${L.map((p,i)=>{
+      const e=getE(p.maestro_id);
+      const v=estadoValidacion(p);
+      return `<tr data-pid="${p.id}">
+        <td class="c mono frz">${total-i}</td>
+        <td>${esc(p.nro_planilla||'')}</td><td>${esc(p.obra||'')}</td><td class="mono">${esc(p.cod_sap||'')}</td>
+        <td>${esc(p.marca||(e?e.marca:'')||'')}</td><td>${esc(p.modelo||(e?e.modelo:'')||'')}</td><td>${esc(p.serie||(e?e.serie_placa:'')||'')}</td>
         <td>${esc(p.sistema||'')}${p.sistema_std&&nrm(p.sistema_std)!==nrm(p.sistema)?` <i class="std">→ ${esc(p.sistema_std)}</i>`:''}
-            ${p.sistema&&!p.sistema_std?' <b class="warn">sin equivalencia</b>':''}</td>
+            ${p.sistema&&!p.sistema_std?' <b class="warn">sin equiv.</b>':''}</td>
         <td>${esc(p.tipo_aceite||'')}</td>
+        <td class="c">${p.galones!=null?f1(p.galones):''}</td>
         <td class="r mono">${p.horometro!=null?f0(p.horometro):''}</td>
         <td class="r">${p.horas_aceite!=null?f0(p.horas_aceite):''}</td>
+        <td class="r">${p.cant_agregado!=null?f1(p.cant_agregado):''}</td>
+        <td class="c">${fmtDate(p.f_muestreo)}</td>
+        <td class="c">${fmtDate(p.f_envio)}</td>
         <td class="c">${esc(p.tipo||'')}</td>
-        <td class="c">${r?`<span class="pill e-${r.estado_std||'NA'}">${esc(r.estado_std||'—')}</span>`:'<span class="pend">pendiente</span>'}</td>
+        <td class="c mono">${esc(p.nro_frasco||'')}</td>
+        <td class="desc">${esc(p.observacion||'')}</td>
+        <td class="${v.cls}" style="font-size:10.5px">${v.txt}</td>
         <td class="c"><button class="mini" data-edit="${p.id}">✎</button></td></tr>`;}).join('')}
     </tbody></table>`;
   boxPlan.querySelectorAll('[data-edit]').forEach(b=>b.onclick=ev=>{ev.stopPropagation();formPlan(b.dataset.edit);});
+  requestAnimationFrame(()=>{
+    const bandas=boxPlan.querySelector('tr.bands');
+    if(!bandas)return;
+    const h=bandas.getBoundingClientRect().height;
+    boxPlan.querySelectorAll('tr.cols th').forEach(th=>th.style.top=h+'px');
+  });
 }
 
 /* ───────── RESULTADOS ───────── */
