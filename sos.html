@@ -876,25 +876,34 @@ btnSubir.onclick=()=>{
 async function subirPlanilla(filas,nom){
   const regs=leerPlanilla(filas);
   if(!regs||!regs.length){alert('No se reconoció el formato.\n\nDebe tener las columnas de la PLANILLA DE MUESTRAS: N° Frasco, Código del Equipo, Sistema, Muestreo…');return;}
-  const clave=p=>[p.nro_planilla||'',p.nro_frasco||'',p.cod_sap||'',p.sistema||''].join('|');
+  const clave=p=>[p.nro_planilla||'',p.nro_frasco||'',p.cod_sap||'',p.sistema||'',p.f_muestreo||''].join('|');
   const yaHay=new Set(PLAN.map(clave));
-  const nuevos=regs.filter(p=>!yaHay.has(clave(p)));
+  // 1) filas ya guardadas en la base
+  const candidatas=regs.filter(p=>!yaHay.has(clave(p)));
+  // 2) filas repetidas DENTRO del propio archivo (misma clave dos o más veces en las 174)
+  const vistas=new Set(); const nuevos=[]; let repetidasEnArchivo=0;
+  candidatas.forEach(p=>{ const k=clave(p); if(vistas.has(k)){repetidasEnArchivo++;return;} vistas.add(k); nuevos.push(p); });
   const sinEq=regs.filter(p=>!p.maestro_id&&p.cod_sap);
   const sinSis=regs.filter(p=>p.sistema&&!p.sistema_std);
   if(!confirm(`${nom}\n\n`
     +`Muestras leídas: ${regs.length}\n`
     +`Nuevas para agregar: ${nuevos.length}\n`
-    +`Ya registradas (se omiten): ${regs.length-nuevos.length}\n`
+    +`Ya registradas (se omiten): ${regs.length-candidatas.length}\n`
+    +(repetidasEnArchivo?`Repetidas dentro del propio archivo (se omiten): ${repetidasEnArchivo}\n`:'')
     +(sinEq.length?`Códigos que no están en Equipos: ${sinEq.length}\n`:'')
     +(sinSis.length?`Sistemas sin equivalencia: ${sinSis.length} (los podrás asignar después)\n`:'')
     +`\n¿Guardar?`))return;
   if(!nuevos.length)return;
-  let ok=0,err='';
-  for(let i=0;i<nuevos.length;i+=200){
-    const {error}=await sb.from('sos_planilla').insert(nuevos.slice(i,i+200));
-    if(error){err=error.message;break;} ok+=Math.min(200,nuevos.length-i);
+  let ok=0; const fallidas=[];
+  for(const p of nuevos){
+    const {error}=await sb.from('sos_planilla').insert(p);
+    if(error)fallidas.push({p,msg:error.message}); else ok++;
   }
-  if(err)alert('Se guardaron '+ok+' y luego hubo un error:\n'+err);
+  if(fallidas.length){
+    const detalle=fallidas.slice(0,8).map(x=>`· ${x.p.cod_sap||'—'} / ${x.p.sistema||'—'} / ${x.p.f_muestreo||'—'} → ${x.msg}`).join('\n');
+    alert(`Se guardaron ${ok} de ${nuevos.length}.\n\n${fallidas.length} fila(s) rechazadas por la base de datos:\n${detalle}`
+      +(fallidas.length>8?`\n… y ${fallidas.length-8} más.`:''));
+  }
   await cargarTodo();
   pie.textContent=`${ok} muestra(s) agregadas a la planilla.`;
 }
