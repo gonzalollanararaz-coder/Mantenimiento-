@@ -55,6 +55,8 @@
   .c{background:#fff;border:1px solid var(--line);border-radius:11px;padding:9px 12px}
   .c .l{font-size:10px;font-weight:800;color:var(--muted);text-transform:uppercase;letter-spacing:.4px}
   .c .v{font-size:22px;font-weight:800;color:#1F3864;line-height:1.15;margin-top:2px}
+  .c .v .ratio{font-size:14px;color:#98a2ad;font-weight:700}
+  .c .s .ratio{color:#c2c7cd}
   .c .v.bad{color:#dc2626}.c .v.warn{color:#B45309}.c .v.ok{color:#15803d}
   .c .s{font-size:9.5px;color:#98a2ad;margin-top:2px}
   table.t{width:100%;border-collapse:collapse;font-size:11.5px;background:#fff}
@@ -151,6 +153,7 @@
   /* ── ESTILO GLLR · sección 6: comportamiento general (líneas, filtros, resaltado, edición, deshacer) ── */
   table.t td,table.t th{border-right:1px solid #eef0f2}
   table.of tbody tr.fila-sel td,table.t tbody tr.fila-sel td{background:#d3e9f8!important}
+  table.of tbody tr.fila-sel td.celda-sel,table.t tbody tr.fila-sel td.celda-sel{background:#7cb9e0!important;box-shadow:inset 0 0 0 1px #2b7cb0}
   table.of tbody td.col-hov,table.t tbody td.col-hov{background:#EAF2FF}
   table.of tbody tr:hover td.col-hov,table.t tbody tr:hover td.col-hov{background:#DCEBFF}
   .hcabg{cursor:pointer;display:inline-flex;align-items:center;gap:4px;border-radius:5px;padding:2px 4px;margin:-2px -4px}
@@ -195,6 +198,7 @@
   <input type="month" id="fPeriodo" title="Mes de muestreo a calcular">
   <input type="search" id="fBusca" placeholder="Equipo, frasco, n&deg; muestra&hellip;" style="width:250px">
   <input type="date" id="fDesde"><input type="date" id="fHasta">
+  <button class="act" id="btnTodoHist" title="Quitar el filtro de fecha y ver todo el historial">Ver todo</button>
   <select id="fObra"><option value="">Todas las obras</option></select>
   <select id="fEstado"><option value="">Todos los estados</option><option value="CRITICO">Cr&iacute;tico</option><option value="PRECAUCION">Precauci&oacute;n</option><option value="NORMAL">Normal</option></select>
   <select id="fSistema"><option value="">Todos los sistemas</option></select>
@@ -632,9 +636,9 @@ let colFiltros={plan:{},res:{},ale:{},fra:{}};
 let COL_COLAPSADAS={nro_planilla:true,obra:true,marca:false,modelo:false,serie:false,observacion:true};
 function anchoP(campo,normal){ return COL_COLAPSADAS[campo]?26:normal; }
 function cabColapsable(campo,etiqueta,conFiltro){
-  if(COL_COLAPSADAS[campo])return `<button class="colb colb-open" data-cc="${campo}" title="Expandir ${etiqueta}">»</button>`;
+  if(COL_COLAPSADAS[campo])return `<button class="colb colb-open" data-cc="${campo}" title="Expandir ${etiqueta}">+</button>`;
   const lbl=conFiltro?cabColG('plan',campo,etiqueta):esc(etiqueta);
-  return `${lbl}<button class="colb" data-cc="${campo}" title="Contraer ${etiqueta}">«</button>`;
+  return `${lbl} <button class="colb" data-cc="${campo}" title="Contraer ${etiqueta}">−</button>`;
 }
 function celdaColapsable(campo,html){ return COL_COLAPSADAS[campo]?'':html; }
 function cabColG(vista,campo,etiqueta){
@@ -705,11 +709,12 @@ function pasaColFiltros(vista,d){
 function fijarEncabezados(box){
   requestAnimationFrame(()=>{
     const tabla=box.querySelector('table'); if(!tabla)return;
-    const hCards=cards.getBoundingClientRect().height||0;
+    const csCards=getComputedStyle(cards);
+    const hCards=Math.ceil(cards.getBoundingClientRect().height+parseFloat(csCards.marginBottom||0));
     const bandas=tabla.querySelector('tr.bands');
-    const hBand=bandas?bandas.getBoundingClientRect().height:0;
+    const hBand=bandas?Math.ceil(bandas.getBoundingClientRect().height):0;
     if(bandas)bandas.querySelectorAll('th').forEach(th=>th.style.top=hCards+'px');
-    tabla.querySelectorAll('tr.cols th').forEach(th=>th.style.top=(hCards+hBand)+'px');
+    tabla.querySelectorAll('tr.cols th').forEach(th=>th.style.top=(hCards+hBand-1)+'px');
   });
 }
 
@@ -717,9 +722,12 @@ function fijarEncabezados(box){
 function activarResaltado(tabla){
   if(!tabla)return;
   tabla.querySelectorAll('tbody tr').forEach(tr=>tr.onclick=ev=>{
-    if(ev.target.closest('.fx')||ev.target.closest('button')||ev.target.closest('input')||ev.target.closest('select')||ev.target.closest('a'))return;
+    if(ev.target.closest('.fx')||ev.target.closest('.delrow')||ev.target.closest('button')||ev.target.closest('input')||ev.target.closest('select')||ev.target.closest('a'))return;
     tabla.querySelectorAll('tr.fila-sel').forEach(x=>x.classList.remove('fila-sel'));
     tr.classList.add('fila-sel');
+    const td=ev.target.closest('td');
+    tabla.querySelectorAll('td.celda-sel').forEach(x=>x.classList.remove('celda-sel'));
+    if(td)td.classList.add('celda-sel');
   });
   tabla.querySelectorAll('tbody td').forEach(td=>{
     td.onmouseenter=()=>{
@@ -854,6 +862,7 @@ function verVista(v){
   btnXls.classList.toggle('hide',v==='fra');
   [fBusca,fDesde,fHasta,fEstado,fSistema,fFuente,chN].forEach(el=>el.classList.toggle('hide',v==='fra'));
   fPeriodo.classList.toggle('hide',v!=='fra');
+  btnTodoHist.classList.toggle('hide',v==='fra');
   fEstado.classList.toggle('hide',v==='fra'||v==='plan');
   fSistema.classList.toggle('hide',v==='fra'||v==='plan'||v==='ale');
   fFuente.classList.toggle('hide',v!=='res');
@@ -896,7 +905,8 @@ function pintarPlan(){
     ||String(a.cod_sap||'').localeCompare(String(b.cod_sap||'')));
   chN.textContent=L.length+' muestra(s)';
   const conRes=L.filter(p=>RES.some(r=>r.planilla_id===p.id)).length;
-  cards.innerHTML=card('Muestras enviadas',L.length,new Set(L.map(p=>p.cod_sap)).size+' equipos')
+  const eqVista=new Set(L.map(p=>p.cod_sap)).size, eqTotal=new Set(PLAN.map(p=>p.cod_sap)).size;
+  cards.innerHTML=card('Muestras enviadas',`${L.length} <span class="ratio">/ ${PLAN.length}</span>`,`${eqVista} equipos <span class="ratio">/ ${eqTotal} equipos</span>`)
     +card('Con resultado',conRes,L.length-conRes+' pendientes de laboratorio')
     +card('Planillas',new Set(L.map(p=>p.nro_planilla).filter(Boolean)).size,'distintas')
     +card('Sin sistema uniformado',L.filter(p=>p.sistema&&!p.sistema_std).length,'revisar equivalencias');
@@ -921,8 +931,8 @@ function pintarPlan(){
       <th class="azul c frz frz1">#</th>
       <th class="azul">${cabColapsable('nro_planilla','N° Planilla',false)}</th><th class="azul">${cabColapsable('obra','Obra',true)}</th><th class="azul">${cabColG('plan','cod_sap','Cód. SAP')}</th>
       <th class="azul">${cabColapsable('marca','Marca',false)}</th><th class="azul">${cabColapsable('modelo','Modelo',false)}</th><th class="azul">${cabColapsable('serie','Serie',false)}</th>
-      <th class="amarillo">${cabColG('plan','sistema','Sistema')}</th><th class="amarillo">${cabColG('plan','tipo_aceite','Tipo de aceite')}</th><th class="amarillo c">Gal.</th><th class="amarillo r">Horómetro</th>
-      <th class="amarillo r">Hrs. aceite</th><th class="amarillo r">Cant. agreg.</th><th class="amarillo c">F. muestreo</th><th class="amarillo c">F. envío</th>
+      <th class="amarillo">${cabColG('plan','sistema','Sistema')}</th><th class="amarillo">${cabColG('plan','tipo_aceite','Tipo de aceite')}</th><th class="amarillo c">Gal.</th><th class="amarillo c">Horómetro</th>
+      <th class="amarillo c">Hrs. aceite</th><th class="amarillo c">Cant. agreg.</th><th class="amarillo c">F. muestreo</th><th class="amarillo c">F. envío</th>
       <th class="amarillo c">${cabColG('plan','tipo','Tipo')}</th><th class="amarillo c">${cabColG('plan','nro_frasco','N° Frasco')}</th>
       <th class="plomo">${cabColapsable('observacion','Observación',false)}</th>
     </tr>
@@ -941,9 +951,9 @@ function pintarPlan(){
         <td data-campo="sistema">${esc(sisMostrar)}${p.sistema&&!p.sistema_std?' <b class="warn">sin equiv.</b>':''}</td>
         <td data-campo="tipo_aceite">${esc(p.tipo_aceite||'')}</td>
         <td class="c" data-campo="galones" data-tipo="num">${p.galones!=null?f1(p.galones):''}</td>
-        <td class="r mono" data-campo="horometro" data-tipo="num">${p.horometro!=null?f0(p.horometro):''}</td>
-        <td class="r" data-campo="horas_aceite" data-tipo="num">${p.horas_aceite!=null?f0(p.horas_aceite):''}</td>
-        <td class="r" data-campo="cant_agregado" data-tipo="num">${p.cant_agregado!=null?f1(p.cant_agregado):''}</td>
+        <td class="c mono" data-campo="horometro" data-tipo="num">${p.horometro!=null?f0(p.horometro):''}</td>
+        <td class="c" data-campo="horas_aceite" data-tipo="num">${p.horas_aceite!=null?f0(p.horas_aceite):''}</td>
+        <td class="c" data-campo="cant_agregado" data-tipo="num">${p.cant_agregado!=null?f1(p.cant_agregado):''}</td>
         <td class="c" data-campo="f_muestreo" data-tipo="fecha">${fmtDate(p.f_muestreo)}</td>
         <td class="c" data-campo="f_envio" data-tipo="fecha">${fmtDate(p.f_envio)}</td>
         <td class="c" data-campo="tipo" data-tipo="select" data-op="|Muestra|Cambio">${esc(p.tipo||'')}</td>
@@ -1804,10 +1814,11 @@ btnEq.onclick=eqAbrir;
 [fObra,fDesde,fHasta,fEstado,fSistema,fFuente].forEach(x=>x.onchange=pintar);
 fPeriodo.onchange=()=>{ if(vista==='fra')pintarFra(); };
 btnRec.onclick=()=>cargarTodo();
+btnTodoHist.onclick=()=>{ fDesde.value=''; fHasta.value=''; pintar(); };
 btnDeshacer.onclick=deshacer;
 btnLimpiarSOS.onclick=()=>{
   fBusca.value=''; fObra.value=''; fEstado.value=''; fSistema.value=''; fFuente.value='';
-  const hoy=new Date(), ini=new Date(hoy.getFullYear(),0,1);
+  const hoy=new Date(), ini=new Date(hoy.getFullYear(),hoy.getMonth()-11,hoy.getDate());
   fDesde.value=isoDe(ini); fHasta.value=isoDe(hoy);
   colFiltros[vista]={};
   pintar();
@@ -1944,7 +1955,7 @@ function pintarNav(actual){
   EQLE=ee.data||[]; EQLS=es.data||[];
   EQLE.forEach(x=>EQE.set(nrm(x.texto),nrm(x.estandar)));
   EQLS.forEach(x=>EQS.set(nrm(x.texto),String(x.estandar).trim()));
-  const hoy=new Date(), ini=new Date(hoy.getFullYear(),0,1);
+  const hoy=new Date(), ini=new Date(hoy.getFullYear(),hoy.getMonth()-11,hoy.getDate());
   fDesde.value=isoDe(ini); fHasta.value=isoDe(hoy);
   const [ss,st,sf,sa]=await Promise.all([
     sb.from('sos_sistemas').select('*'), sb.from('sos_eq_tipo').select('*'), traerTodo('sos_frascos','codigo'),
