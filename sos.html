@@ -83,6 +83,10 @@
   .warn{color:#B45309;font-size:10px}
   .pend{color:#98a2ad;font-size:10.5px}
   .pill{border-radius:999px;padding:1px 9px;font-size:10px;font-weight:800;display:inline-block}
+  .badgeB{display:inline-flex;align-items:center;gap:4px;border-radius:999px;padding:2px 9px;font-size:10px;font-weight:700}
+  .badgeB.st-ok{background:#DDF2DF;color:#0C7A16}
+  .badgeB.st-mid{background:#FFF8DE;color:#9E7F0B}
+  .badgeB.st-low{background:#EFEFEF;color:#6C6C6C}
   .e-NORMAL{background:#dcfce7;color:#15803d}
   .e-PRECAUCION{background:#fef3c7;color:#B45309}
   .e-CRITICO{background:#fee2e2;color:#b91c1c}
@@ -190,8 +194,7 @@
 <script>if(window.self!==window.top){document.getElementById('topbar').style.display='none';}</script>
 <div id="subnav">
   <button id="tab_fra" class="on">&#128230; Frascos</button>
-  <button id="tab_plan">Planilla de muestras</button>
-  <button id="tab_res">Resultados</button>
+  <button id="tab_plan">Muestras</button>
   <button id="tab_ale">Seguimiento de alertas</button>
 </div>
 <div class="toolbar">
@@ -218,7 +221,6 @@
   <div class="cards" id="cards"></div>
   <div id="boxFra"></div>
   <div id="boxPlan" class="hide"></div>
-  <div id="boxRes" class="hide"></div>
   <div id="boxAle" class="hide"></div>
 </div>
 <footer id="pie">Cargando&hellip;</footer>
@@ -270,7 +272,7 @@ function mant(e){
 
 /* ═══════════════════ SOS · MUESTREO DE ACEITES ═══════════════════ */
 let datos=[], DIDX=new Map(), perfil=null;
-let PLAN=[], RES=[], ALE=[], EQE=new Map(), EQS=new Map(), EQLE=[], EQLS=[];
+let MUESTRAS=[], RES=[], ALE=[], EQE=new Map(), EQS=new Map(), EQLE=[], EQLS=[];
 let SIST=[], EQT=new Map(), EQLT=[], FRASCOS=[], ALTITUD=new Map();
 const FAMILIAS_SIN_SOS=['4_IMPL. EQ.','6_VEH T/PER','7_EQ PLANTA'];
 const RANGO_PM=[['PM4',8],['PM3',4],['PM2',2],['PM1',1]]; // de mayor a menor
@@ -299,7 +301,7 @@ async function altitudDe(proy){
 function sugerirPlanilla(proy,nuevo){
   if(!proy)return '';
   const anio=new Date().getFullYear(), pref=anio+'-';
-  const nums=PLAN.filter(p=>p.obra===proy&&String(p.nro_planilla||'').startsWith(pref))
+  const nums=MUESTRAS.filter(p=>p.obra===proy&&String(p.nro_planilla||'').startsWith(pref))
     .map(p=>parseInt(String(p.nro_planilla).slice(pref.length),10)).filter(n=>!isNaN(n));
   const ultimo=nums.length?Math.max(...nums):0;
   return pref+String(nuevo?ultimo+1:(ultimo||1)).padStart(3,'0');
@@ -488,15 +490,15 @@ function enlazarPlanilla(r){
   // 1) por clave EQUIPO_SISTEMA_FECHA
   const k=claveMuestra(r.cod_sap,r.sistema_std||r.componente,r.fecha);
   if(k){
-    const p=PLAN.find(x=>claveMuestra(x.cod_sap,x.sistema_std||x.sistema,x.f_muestreo)===k);
+    const p=MUESTRAS.find(x=>claveMuestra(x.cod_sap,x.sistema_std||x.sistema,x.f_muestreo)===k);
     if(p)return p;
   }
   if(r.cod_frasco){
-    const p=PLAN.find(x=>x.nro_frasco&&nrm(x.nro_frasco)===nrm(r.cod_frasco));
+    const p=MUESTRAS.find(x=>x.nro_frasco&&nrm(x.nro_frasco)===nrm(r.cod_frasco));
     if(p)return p;
   }
   // sin frasco: mismo equipo, mismo sistema y la fecha de muestreo más cercana
-  const cand=PLAN.filter(x=>nrm(x.cod_sap)===nrm(r.cod_sap)
+  const cand=MUESTRAS.filter(x=>nrm(x.cod_sap)===nrm(r.cod_sap)
     && (!r.sistema_std||!x.sistema_std||x.sistema_std===r.sistema_std));
   if(!cand.length)return null;
   if(!r.fecha)return cand[0];
@@ -670,7 +672,7 @@ function cabColG(vista,campo,etiqueta){
   return `<span class="hcabg${f&&f.size?' filtrado':''}" data-colg="${campo}" data-vg="${vista}">${etiqueta}<i class="emb">▼</i></span>`;
 }
 const FUENTE_COL={
-  plan:()=>PLAN, res:()=>RES, ale:()=>RES.filter(r=>r.estado_std==='CRITICO'||r.estado_std==='PRECAUCION')
+  plan:()=>MUESTRAS, ale:()=>MUESTRAS.filter(r=>r.estado_std==='CRITICO'||r.estado_std==='PRECAUCION')
 };
 function valoresColumnaG(lista,campo){
   const cnt=new Map();
@@ -775,8 +777,8 @@ function marcarAccion(v,acc){ ULTIMA[v]=acc; if(vista===v)btnDeshacer.disabled=f
 async function deshacer(){
   const acc=ULTIMA[vista]; if(!acc||btnDeshacer.disabled)return;
   btnDeshacer.disabled=true;
-  const tabla=({plan:'sos_planilla',res:'sos_resultados',ale:'sos_alertas',fra:'sos_frascos'})[vista];
-  const arr=({plan:()=>PLAN,res:()=>RES,ale:()=>ALE,fra:()=>FRASCOS})[vista]();
+  const tabla=({plan:'sos_muestras',ale:'sos_alertas',fra:'sos_frascos'})[vista];
+  const arr=({plan:()=>MUESTRAS,ale:()=>ALE,fra:()=>FRASCOS})[vista]();
   try{
     if(acc.tipo==='campo'||acc.tipo==='fila'){
       const limpio={...acc.antes}; delete limpio.id; delete limpio.created_at;
@@ -870,12 +872,11 @@ function editarCeldaG(cfg){
 /* ═══════════════ VISTAS ═══════════════ */
 function verVista(v){
   vista=v;
-  ['fra','plan','res','ale'].forEach(k=>{
+  ['fra','plan','ale'].forEach(k=>{
     document.getElementById('tab_'+k).classList.toggle('on',k===v);
   });
   boxFra.classList.toggle('hide',v!=='fra');
   boxPlan.classList.toggle('hide',v!=='plan');
-  boxRes.classList.toggle('hide',v!=='res');
   boxAle.classList.toggle('hide',v!=='ale');
   btnSubir.textContent='⬆ Subir archivo';
   btnSubir.classList.toggle('hide',v==='ale'||v==='fra');
@@ -885,26 +886,25 @@ function verVista(v){
   [fBusca,fDesde,fHasta,fEstado,fSistema,fFuente,chN].forEach(el=>el.classList.toggle('hide',v==='fra'));
   fPeriodo.classList.toggle('hide',v!=='fra');
   btnTodoHist.classList.toggle('hide',v==='fra');
-  fEstado.classList.toggle('hide',v==='fra'||v==='plan');
-  fSistema.classList.toggle('hide',v==='fra'||v==='plan'||v==='ale');
-  fFuente.classList.toggle('hide',v!=='res');
+  fEstado.classList.toggle('hide',v==='fra');
+  fSistema.classList.toggle('hide',v==='fra');
+  fFuente.classList.toggle('hide',v==='fra'||v==='ale');
   cerrarColMenuG();
   btnDeshacer.disabled=!ULTIMA[v];
   pintar();
 }
-['fra','plan','res','ale'].forEach(k=>document.getElementById('tab_'+k).onclick=()=>verVista(k));
+['fra','plan','ale'].forEach(k=>document.getElementById('tab_'+k).onclick=()=>verVista(k));
 
 function pintar(){
   if(vista==='fra')pintarFra();
   else if(vista==='plan')pintarPlan();
-  else if(vista==='res')pintarRes();
   else pintarAle();
 }
 
 /* ───────── PLANILLA ───────── */
 function filtrarPlan(){
   const q=nrm(fBusca.value), o=fObra.value, d=fDesde.value, h=fHasta.value;
-  return PLAN.filter(p=>{
+  return MUESTRAS.filter(p=>{
     const f=p.f_muestreo||'';
     if(d&&f&&f<d)return false;
     if(h&&f&&f>h)return false;
@@ -922,15 +922,21 @@ function estadoValidacion(p){
   if(f.estado==='Usado'&&String(f.planilla_id)!==String(p.id))return {txt:'⚠ vinculado a otra muestra',cls:'b-bad'};
   return {txt:'⚠ frasco no marcado Usado',cls:'b-mid'};
 }
+function estatusMuestra(p){
+  if(p.estado_std||p.fuente)return {txt:'Con resultado',cls:'st-ok',title:p.fuente?('Laboratorio: '+p.fuente):''};
+  if(p.f_envio)return {txt:'En laboratorio',cls:'st-mid',title:''};
+  return {txt:'Pendiente de envío',cls:'st-low',title:''};
+}
 function pintarPlan(){
   const L=filtrarPlan().sort((a,b)=>String(b.f_muestreo||'').localeCompare(String(a.f_muestreo||''))
     ||String(a.cod_sap||'').localeCompare(String(b.cod_sap||'')));
   chN.textContent=L.length+' muestra(s)';
-  const conRes=L.filter(p=>RES.some(r=>r.planilla_id===p.id)).length;
-  const eqVista=new Set(L.map(p=>p.cod_sap)).size, eqTotal=new Set(PLAN.map(p=>p.cod_sap)).size;
-  cards.innerHTML=card('Muestras enviadas',`${L.length} <span class="ratio">/ ${PLAN.length}</span>`,`${eqVista} equipos <span class="ratio">/ ${eqTotal} equipos</span>`)
+  const conRes=L.filter(p=>p.estado_std||p.fuente).length;
+  const criticos=L.filter(p=>p.estado_std==='CRITICO').length;
+  const eqVista=new Set(L.map(p=>p.cod_sap)).size, eqTotal=new Set(MUESTRAS.map(p=>p.cod_sap)).size;
+  cards.innerHTML=card('Muestras',`${L.length} <span class="ratio">/ ${MUESTRAS.length}</span>`,`${eqVista} equipos <span class="ratio">/ ${eqTotal} equipos</span>`)
     +card('Con resultado',conRes,L.length-conRes+' pendientes de laboratorio')
-    +card('Planillas',new Set(L.map(p=>p.nro_planilla).filter(Boolean)).size,'distintas')
+    +card('Críticos',criticos,'requieren acción','bad')
     +card('Sin sistema uniformado',L.filter(p=>p.sistema&&!p.sistema_std).length,'revisar equivalencias');
   if(!L.length){boxPlan.innerHTML='<div class="vacio">Sin muestras registradas con estos filtros.</div>';return;}
   const total=L.length;
@@ -942,12 +948,14 @@ function pintarPlan(){
       <col style="width:56px"><col style="width:58px"><col style="width:64px"><col style="width:64px">
       <col style="width:58px"><col style="width:60px">
       <col style="width:${anchoP('observacion',220)}px">
+      <col style="width:98px"><col style="width:78px"><col style="width:34px">
     </colgroup>
     <thead>
     <tr class="bands">
       <th colspan="7" class="frz"><span class="bnd azul">IDENTIFICACIÓN DEL EQUIPO</span></th>
       <th colspan="10"><span class="bnd amarillo">DATOS DE LA MUESTRA DE ACEITE</span></th>
       <th colspan="1"><span class="bnd plomo">OBSERVACIÓN</span></th>
+      <th colspan="3"><span class="bnd verde">LABORATORIO</span></th>
     </tr>
     <tr class="cols">
       <th class="azul c frz frz1">#</th>
@@ -957,11 +965,13 @@ function pintarPlan(){
       <th class="amarillo c">Hrs. aceite</th><th class="amarillo c">Cant. agreg.</th><th class="amarillo c">F. muestreo</th><th class="amarillo c">F. envío</th>
       <th class="amarillo c">${cabColG('plan','tipo','Tipo')}</th><th class="amarillo c">${cabColG('plan','nro_frasco','N° Frasco')}</th>
       <th class="plomo">${cabColapsable('observacion','Observación',false)}</th>
+      <th class="verde c">${cabColG('plan','_estatus','Estatus')}</th><th class="verde c">${cabColG('plan','estado_std','Estado')}</th><th class="verde c">Ficha</th>
     </tr>
     </thead><tbody>
     ${L.map((p,i)=>{
       const e=getE(p.maestro_id);
       const sisMostrar=p.sistema_std||p.sistema||'';
+      const st=estatusMuestra(p);
       return `<tr data-pid="${p.id}">
         <td class="mono frz frz1 idx"><span class="rn">${total-i}</span><button class="delrow" data-del="${p.id}" title="Eliminar fila">✕</button></td>
         <td>${celdaColapsable('nro_planilla',esc(p.nro_planilla||''))}</td>
@@ -980,127 +990,107 @@ function pintarPlan(){
         <td class="c" data-campo="f_envio" data-tipo="fecha">${fmtDate(p.f_envio)}</td>
         <td class="c" data-campo="tipo" data-tipo="select" data-op="|Muestra|Cambio">${esc(p.tipo||'')}</td>
         <td class="c mono">${esc(p.nro_frasco||'')}</td>
-        <td class="desc"${COL_COLAPSADAS.observacion?'':' data-campo="observacion"'}>${celdaColapsable('observacion',esc(p.observacion||''))}</td></tr>`;}).join('')}
+        <td class="desc"${COL_COLAPSADAS.observacion?'':' data-campo="observacion"'}>${celdaColapsable('observacion',esc(p.observacion||''))}</td>
+        <td class="c"><span class="badgeB ${st.cls}" title="${esc(st.title)}">${st.txt}</span></td>
+        <td class="c">${p.estado_std?`<span class="pill e-${p.estado_std}">${esc(p.estado_std)}</span>`:'<span class="dim">—</span>'}</td>
+        <td class="c">${(p.estado_std||p.fuente)?`<button class="mini" data-ficha="${p.id}" title="Ver Ficha GLLR">📄</button>`:''}</td></tr>`;}).join('')}
     </tbody></table>`;
-  boxPlan.querySelectorAll('[data-del]').forEach(b=>b.onclick=ev=>{ev.stopPropagation();borrarFilaG('plan','sos_planilla',()=>PLAN,b.dataset.del);});
+  boxPlan.querySelectorAll('[data-del]').forEach(b=>b.onclick=ev=>{ev.stopPropagation();borrarFilaG('plan','sos_muestras',()=>MUESTRAS,b.dataset.del);});
   boxPlan.querySelectorAll('[data-cc]').forEach(b=>b.onclick=ev=>{ev.stopPropagation();COL_COLAPSADAS[b.dataset.cc]=!COL_COLAPSADAS[b.dataset.cc];pintarPlan();});
+  boxPlan.querySelectorAll('[data-ficha]').forEach(b=>b.onclick=ev=>{ev.stopPropagation();fichaGLLR(b.dataset.ficha);});
   boxPlan.querySelectorAll('td[data-campo]').forEach(td=>td.ondblclick=ev=>{
     ev.stopPropagation();
-    editarCeldaG({td, tabla:'sos_planilla', vista:'plan', arrGetter:()=>PLAN, id:td.closest('tr').dataset.pid,
+    editarCeldaG({td, tabla:'sos_muestras', vista:'plan', arrGetter:()=>MUESTRAS, id:td.closest('tr').dataset.pid,
       campo:td.dataset.campo, tipo:td.dataset.tipo||'text', opciones:td.dataset.op?td.dataset.op.split('|'):null});
   });
   boxPlan.querySelectorAll('tbody tr').forEach(tr=>tr.ondblclick=ev=>{
-    if(ev.target.closest('td[data-campo]')||ev.target.closest('.delrow'))return;
+    if(ev.target.closest('td[data-campo]')||ev.target.closest('.delrow')||ev.target.closest('[data-ficha]'))return;
     formPlan(tr.dataset.pid);
   });
   activarResaltado(boxPlan.querySelector('table'));
   fijarEncabezados(boxPlan);
 }
 
-/* ───────── RESULTADOS ───────── */
-function filtrarRes(){
-  const q=nrm(fBusca.value), o=fObra.value, d=fDesde.value, h=fHasta.value;
-  const es=fEstado.value, si=fSistema.value, fu=fFuente.value;
-  return RES.filter(r=>{
-    const f=r.fecha||'';
-    if(d&&f&&f<d)return false;
-    if(h&&f&&f>h)return false;
-    if(o&&String(r.obra||'')!==o)return false;
-    if(es&&r.estado_std!==es)return false;
-    if(si&&r.sistema_std!==si)return false;
-    if(fu&&r.fuente!==fu)return false;
-    if(!pasaColFiltros('res',r))return false;
-    if(q&&!nrm(`${r.cod_sap} ${r.nro_muestra} ${r.componente||''} ${r.observacion||''} ${claveMuestra(r.cod_sap,r.sistema_std||r.componente,r.fecha)||''}`).includes(q))return false;
-    return true;
+/* ───────── FICHA GLLR (resumen de laboratorio con gráficos) ───────── */
+const FICHA_GRUPOS=[
+  {titulo:'Desgaste (ppm)', claves:['Hierro (ppm)','Cobre (ppm)','Aluminio (ppm)','Indice PQ']},
+  {titulo:'Contaminantes (ppm)', claves:['Silicio (ppm)']},
+  {titulo:'Salud - aceite', claves:['Hollin','Oxidacion','Nitracion','Sulfatacion']},
+  {titulo:'Salud - viscosidad', claves:['V40','V100']}
+];
+function svgBarrasGrupo(titulo,claves,historial){
+  const colores=['#4254A5','#D3141A','#0CA318','#9E7F0B','#6C6C6C','#7B87C0'];
+  const fechas=historial.map(h=>fmtDate(h.f_muestreo));
+  const series=claves.map((k,i)=>({nombre:k.replace(/\s*\(ppm\)/i,''),color:colores[i%colores.length],
+    valores:historial.map(h=>{const v=h.analisis&&h.analisis[k]; return typeof v==='number'?v:null;})}));
+  const activas=series.filter(s=>s.valores.some(v=>v!=null));
+  if(!activas.length)return `<div class="campo" style="border:1px solid var(--line);border-radius:8px;padding:16px;text-align:center;color:#98a2ad">
+    <b style="font-size:11.5px;color:#1a1d21">${esc(titulo)}</b><br><span style="font-size:11px">Sin datos de este grupo</span></div>`;
+  const W=380,H=180,padL=30,padB=26,padT=8,padR=8;
+  const max=Math.max(1,...activas.flatMap(s=>s.valores.filter(v=>v!=null)))*1.15;
+  const n=fechas.length;
+  const grupoW=(W-padL-padR)/Math.max(1,n);
+  const barW=Math.max(2,grupoW/(activas.length+1)-2);
+  let svg=`<svg viewBox="0 0 ${W} ${H}" width="100%" style="max-width:420px;display:block">`;
+  for(let gl=0;gl<=4;gl++){
+    const y=padT+(H-padT-padB)*(1-gl/4);
+    svg+=`<line x1="${padL}" y1="${y}" x2="${W-padR}" y2="${y}" stroke="#eef0f2"/>`;
+    svg+=`<text x="${padL-4}" y="${y+3}" font-size="7" text-anchor="end" fill="#98a2ad">${f1(max*gl/4)}</text>`;
+  }
+  historial.forEach((h,ix)=>{
+    activas.forEach((s,si)=>{
+      const v=s.valores[ix]; if(v==null)return;
+      const x=padL+ix*grupoW+si*(barW+2)+2;
+      const bh=(H-padT-padB)*(v/max);
+      const y=H-padB-bh;
+      svg+=`<rect x="${x}" y="${y}" width="${barW}" height="${bh}" fill="${s.color}" rx="1"><title>${esc(s.nombre)}: ${v} (${fechas[ix]})</title></rect>`;
+    });
+    const xc=padL+ix*grupoW+grupoW/2;
+    svg+=`<text x="${xc}" y="${H-padB+11}" font-size="6.5" text-anchor="middle" fill="#6b747d">${esc(fechas[ix])}</text>`;
   });
+  svg+='</svg>';
+  const leyenda=activas.map(s=>`<span style="display:inline-flex;align-items:center;gap:3px;margin-right:8px;font-size:10px;color:#444">
+    <span style="width:8px;height:8px;background:${s.color};display:inline-block;border-radius:2px"></span>${esc(s.nombre)}</span>`).join('');
+  return `<div class="campo" style="border:1px solid var(--line);border-radius:8px;padding:8px">
+    <b style="font-size:11.5px">${esc(titulo)}</b>
+    <div style="margin:4px 0">${leyenda}</div>${svg}
+  </div>`;
 }
-function pintarRes(){
-  const L=filtrarRes().sort((a,b)=>String(b.fecha||'').localeCompare(String(a.fecha||'')));
-  chN.textContent=L.length+' resultado(s)';
-  const n=e=>L.filter(r=>r.estado_std===e).length;
-  cards.innerHTML=card('Resultados',L.length,new Set(L.map(r=>r.cod_sap)).size+' equipos')
-    +card('Críticos',n('CRITICO'),'requieren acción','bad')
-    +card('Precaución',n('PRECAUCION'),'a vigilar','warn')
-    +card('Normales',n('NORMAL'),'sin novedad','ok');
-  if(!L.length){boxRes.innerHTML='<div class="vacio">Sin resultados con estos filtros.</div>';return;}
-  boxRes.innerHTML=`<table class="of"><colgroup>
-      <col style="width:110px"><col style="width:76px"><col style="width:90px"><col style="width:96px">
-      <col style="width:88px"><col style="width:140px"><col style="width:110px"><col style="width:110px">
-      <col style="width:70px"><col style="width:80px"><col style="width:76px">
-      <col style="width:220px">
-      <col style="width:64px"><col style="width:50px"><col style="width:30px">
-    </colgroup>
-    <thead>
-    <tr class="bands">
-      <th colspan="8" class="frz"><span class="bnd azul">IDENTIFICACIÓN</span></th>
-      <th colspan="3"><span class="bnd amarillo">DATOS DEL ANÁLISIS</span></th>
-      <th colspan="1"><span class="bnd plomo">OBSERVACIÓN</span></th>
-      <th colspan="3"><span class="bnd verde">REFERENCIA</span></th>
-    </tr>
-    <tr class="cols">
-      <th class="azul frz">Clave</th><th class="azul">Fecha</th><th class="azul">${cabColG('res','fuente','Fuente')}</th><th class="azul">N° Muestra</th>
-      <th class="azul">Cód. SAP</th><th class="azul">Equipo</th><th class="azul">Componente</th><th class="azul">${cabColG('res','sistema_std','Sistema')}</th>
-      <th class="amarillo r">Horóm.</th><th class="amarillo c">Estado lab.</th><th class="amarillo c">${cabColG('res','estado_std','Estado')}</th>
-      <th class="plomo">Observación</th>
-      <th class="verde c">Planilla</th><th class="verde c">PDF</th><th class="verde c"></th>
-    </tr>
-    </thead><tbody>
-    ${L.slice(0,800).map(r=>{
-      const e=getE(r.maestro_id);
-      return `<tr data-rid="${r.id}">
-        <td class="mono clave frz">${esc(claveMuestra(r.cod_sap,r.sistema_std||r.componente,r.fecha)||'—')}</td>
-        <td>${fmtDate(r.fecha)}</td><td>${esc(r.fuente)}</td><td class="mono">${esc(r.nro_muestra)}</td>
-        <td class="mono">${esc(r.cod_sap||'')}</td><td>${esc(e?e.equipo:'')}</td>
-        <td>${esc(r.componente||'')}</td>
-        <td>${esc(r.sistema_std||'')}${r.componente&&!r.sistema_std?'<b class="warn">sin equivalencia</b>':''}</td>
-        <td class="r mono">${r.horometro!=null?f0(r.horometro):''}</td>
-        <td class="c dim">${esc(r.estado||'')}</td>
-        <td class="c"><span class="pill e-${r.estado_std||'NA'}">${esc(r.estado_std||'?')}</span></td>
-        <td class="desc" data-campo="observacion">${esc(r.observacion||'')}</td>
-        <td class="c">${r.planilla_id?'✓':'<span class="dim">—</span>'}</td>
-        <td class="c">${r.link_pdf?`<a href="${esc(r.link_pdf)}" target="_blank">PDF</a>`:''}</td>
-        <td class="c"><button class="fx" data-del="${r.id}" title="Eliminar fila">✕</button></td></tr>`;}).join('')}
-    </tbody></table>
-    <div class="hint">Doble clic en una fila para ver la observación completa y todos los parámetros del análisis.
-      ${L.length>800?`· Mostrando 800 de ${L.length}: afina los filtros.`:''}</div>`;
-  boxRes.querySelectorAll('tbody tr').forEach(tr=>tr.ondblclick=ev=>{ if(!ev.target.closest('td[data-campo]'))detalleRes(tr.dataset.rid); });
-  boxRes.querySelectorAll('[data-del]').forEach(b=>b.onclick=ev=>{ev.stopPropagation();borrarFilaG('res','sos_resultados',()=>RES,b.dataset.del);});
-  boxRes.querySelectorAll('td[data-campo]').forEach(td=>td.ondblclick=ev=>{
-    ev.stopPropagation();
-    editarCeldaG({td, tabla:'sos_resultados', vista:'res', arrGetter:()=>RES, id:td.closest('tr').dataset.rid, campo:td.dataset.campo, tipo:'text'});
-  });
-  activarResaltado(boxRes.querySelector('table'));
-  fijarEncabezados(boxRes);
-}
-function detalleRes(id){
-  const r=RES.find(x=>String(x.id)===String(id)); if(!r)return;
-  const e=getE(r.maestro_id);
-  const an=r.analisis||{};
-  const ks=Object.keys(an);
-  document.body.insertAdjacentHTML('beforeend',`<div class="modal" id="mdet"><div class="mc">
-    <div class="mh"><div><h3>${esc(r.nro_muestra)} · ${esc(r.cod_sap||'')} ${esc(e?e.equipo:'')}</h3>
-      <div class="sub"><b class="clave">${esc(claveMuestra(r.cod_sap,r.sistema_std||r.componente,r.fecha)||'')}</b>
-        · ${esc(r.fuente)} · ${fmtDate(r.fecha)} · ${esc(r.componente||'')}
-        ${r.sistema_std?'→ '+esc(r.sistema_std):''}</div></div>
+function fichaGLLR(id){
+  const p=MUESTRAS.find(x=>String(x.id)===String(id)); if(!p)return;
+  if(!p.estado_std&&!p.fuente){alert('Esta muestra todavía no tiene resultado de laboratorio.');return;}
+  const e=getE(p.maestro_id);
+  const historial=MUESTRAS.filter(x=>nrm(x.cod_sap)===nrm(p.cod_sap)&&nrm(x.sistema_std||x.sistema||'')===nrm(p.sistema_std||p.sistema||'')&&x.analisis&&x.f_muestreo)
+    .sort((a,b)=>String(a.f_muestreo).localeCompare(String(b.f_muestreo)));
+  document.body.insertAdjacentHTML('beforeend',`<div class="modal" id="mficha"><div class="mc" style="width:min(920px,97vw)">
+    <div class="mh"><h3>Ficha GLLR — Muestreo de aceite</h3>
+      <div class="sub">${esc(e?e.equipo:'')} · ${esc(p.cod_sap||'')} · ${esc(p.sistema_std||p.sistema||'')} · ${fmtDate(p.f_muestreo)} · N° muestra ${esc(p.nro_muestra||'—')} · ${esc(p.fuente||'')}</div>
       <div class="spacer"></div>
-      <span class="pill e-${r.estado_std||'NA'}">${esc(r.estado_std||'?')}</span>
-      <button class="act" onclick="document.getElementById('mdet').remove()">Cerrar</button></div>
+      ${p.link_pdf?`<a class="act" href="${esc(p.link_pdf)}" target="_blank">Ver PDF del laboratorio</a>`:''}
+      <button class="act" id="fichaCer">Cerrar</button></div>
     <div class="mb">
-      ${r.observacion?`<div class="campo"><b>Observación del reporte</b><div style="line-height:1.5">${esc(r.observacion)}</div></div>`:''}
-      ${ks.length?`<div class="campo"><b>Análisis</b><div class="an">
-        ${ks.map(k=>`<div><span>${esc(k)}</span><b>${esc(String(an[k]))}</b></div>`).join('')}</div></div>`:''}
-      ${r.link_pdf?`<div class="campo"><a class="act primary" href="${esc(r.link_pdf)}" target="_blank">Abrir reporte PDF</a></div>`:''}
-    </div></div></div>`);
-  document.getElementById('mdet').addEventListener('click',ev=>{if(ev.target.id==='mdet')ev.target.remove();});
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px">
+        <span class="pill e-${p.estado_std||'NA'}" style="font-size:13px;padding:4px 12px">${esc(p.estado_std||'Sin evaluar')}</span>
+        ${p.observacion_lab?`<span class="dim" style="font-size:12px">${esc(p.observacion_lab)}</span>`:''}
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+        ${FICHA_GRUPOS.map(g=>svgBarrasGrupo(g.titulo,g.claves,historial)).join('')}
+      </div>
+    </div>
+  </div></div>`);
+  const cerrar=()=>{const m=document.getElementById('mficha');if(m)m.remove();};
+  document.getElementById('fichaCer').onclick=cerrar;
+  document.getElementById('mficha').addEventListener('click',ev=>{if(ev.target.id==='mficha')cerrar();});
 }
+
 
 /* ───────── SEGUIMIENTO DE ALERTAS ───────── */
 function pintarAle(){
   // toda muestra crítica o en precaución entra al seguimiento
-  const base=RES.filter(r=>r.estado_std==='CRITICO'||r.estado_std==='PRECAUCION');
+  const base=MUESTRAS.filter(r=>r.estado_std==='CRITICO'||r.estado_std==='PRECAUCION');
   const q=nrm(fBusca.value), o=fObra.value, d=fDesde.value, h=fHasta.value, es=fEstado.value;
   const L=base.filter(r=>{
-    const f=r.fecha||'';
+    const f=r.f_muestreo||'';
     if(d&&f&&f<d)return false;
     if(h&&f&&f>h)return false;
     if(o&&String(r.obra||'')!==o)return false;
@@ -1110,7 +1100,7 @@ function pintarAle(){
     return true;
   }).sort((a,b)=>{
     const pa=a.estado_std==='CRITICO'?0:1, pb=b.estado_std==='CRITICO'?0:1;
-    return pa-pb||String(b.fecha||'').localeCompare(String(a.fecha||''));
+    return pa-pb||String(b.f_muestreo||'').localeCompare(String(a.f_muestreo||''));
   });
   chN.textContent=L.length+' alerta(s)';
   const seg=n=>L.filter(r=>(ale(r).estado_seg||'OM abierta')===n).length;
@@ -1150,10 +1140,10 @@ function pintarAle(){
       }
       return `<tr data-rid="${r.id}">
         <td class="mono frz">${esc(r.nro_muestra)}</td><td class="mono">${esc(r.cod_sap||'')}</td>
-        <td>${esc(r.sistema_std||r.componente||'')}</td>
+        <td>${esc(r.sistema_std||r.sistema||'')}</td>
         <td class="c"><span class="pill e-${r.estado_std}">${esc(r.estado_std)}</span></td>
         <td class="r mono">${r.horometro!=null?f0(r.horometro):''}</td>
-        <td class="desc dim" title="${esc(r.observacion||'')}">${esc(r.observacion||'')}</td>
+        <td class="desc dim" title="${esc(r.observacion_lab||'')}">${esc(r.observacion_lab||'')}</td>
         <td><input class="ed" data-c="om_sap" value="${esc(a.om_sap||'')}" placeholder="OM"></td>
         <td><input class="ed lg" data-c="acciones" value="${esc(a.acciones||'')}" placeholder="qué se hará"></td>
         <td class="c"><input class="ed" type="date" data-c="f_indicacion" value="${a.f_indicacion||''}"></td>
@@ -1178,7 +1168,7 @@ function pintarAle(){
 }
 function ale(r){ return ALE.find(a=>String(a.resultado_id)===String(r.id))||{}; }
 async function guardarAlerta(rid,ctrl){
-  const r=RES.find(x=>String(x.id)===String(rid)); if(!r)return;
+  const r=MUESTRAS.find(x=>String(x.id)===String(rid)); if(!r)return;
   const col=ctrl.dataset.c;
   let val=ctrl.value===''?null:ctrl.value;
   let a=ALE.find(x=>String(x.resultado_id)===String(r.id));
@@ -1229,7 +1219,7 @@ btnSubir.onclick=()=>{
       // sin importar en qué vista estés
       const tipo=detectarTipo(filas,f.name,wb.SheetNames[0]);
       if(tipo==='plan'){ verVista('plan'); await subirPlanilla(filas,f.name); }
-      else if(tipo==='res'){ verVista('res'); await subirResultados(filas,f.name,wb.SheetNames[0]); }
+      else if(tipo==='res'){ verVista('plan'); await subirResultados(filas,f.name,wb.SheetNames[0]); }
       else alert('No se reconoció el formato del archivo.\n\n'
         +'Se esperaba una PLANILLA DE MUESTRAS (con N° Frasco, Código del Equipo, Sistema, Muestreo)\n'
         +'o un archivo de laboratorio (con N° MUESTRA, EQUIPO, COMPONENTE, FECHA, ESTADO).');
@@ -1265,7 +1255,7 @@ async function subirPlanilla(filas,nom){
   const regs=leerPlanilla(filas);
   if(!regs||!regs.length){alert('No se reconoció el formato.\n\nDebe tener las columnas de la PLANILLA DE MUESTRAS: N° Frasco, Código del Equipo, Sistema, Muestreo…');return;}
   const clave=p=>[p.cod_sap||'',p.sistema||'',p.f_muestreo||''].join('|');
-  const mapaExistente=new Map(PLAN.map(p=>[clave(p),p]));
+  const mapaExistente=new Map(MUESTRAS.map(p=>[clave(p),p]));
   const candidatas=[]; const conCambios=[];
   const vistas=new Set(); let repetidasEnArchivo=0, yaIgual=0;
   regs.forEach(p=>{
@@ -1302,7 +1292,7 @@ async function subirPlanilla(filas,nom){
   }
   let ok=0; const fallidas=[];
   for(const p of nuevos){
-    const {error}=await sb.from('sos_planilla').insert(p);
+    const {error}=await sb.from('sos_muestras').insert(p);
     if(error)fallidas.push({p,msg:error.message}); else ok++;
   }
   if(fallidas.length){
@@ -1346,7 +1336,7 @@ function revisarCambiosPlanilla(lista){
     for(const i of idxSel){
       const g=lista[i];
       const patch={}; g.cambios.forEach(c=>patch[c.campo]=c.despues);
-      const {data,error}=await sb.from('sos_planilla').update(patch).eq('id',g.existente.id).select().single();
+      const {data,error}=await sb.from('sos_muestras').update(patch).eq('id',g.existente.id).select().single();
       if(error){fallidas.push({g,msg:error.message});continue;}
       Object.assign(g.existente,data); ok++;
     }
@@ -1360,7 +1350,7 @@ function revisarCambiosPlanilla(lista){
 
 function buscarDuplicadosPlanilla(){
   const grupos=new Map();
-  PLAN.forEach(p=>{
+  MUESTRAS.forEach(p=>{
     const k=[p.cod_sap||'',p.sistema||'',p.f_muestreo||''].join('|');
     if(!p.cod_sap||!p.sistema||!p.f_muestreo)return; // sin estos 3 datos no hay forma confiable de agrupar
     if(!grupos.has(k))grupos.set(k,[]);
@@ -1402,10 +1392,10 @@ function buscarDuplicadosPlanilla(){
     dup.forEach((g,gi)=>{ const keepPi=mantener.has(gi)?mantener.get(gi):0; g.forEach((p,pi)=>{ if(pi!==keepPi)aBorrar.push(p); }); });
     if(!aBorrar.length){cerrar();return;}
     if(!confirm(`¿Eliminar ${aBorrar.length} fila(s) duplicada(s)? (se puede deshacer con Ctrl+Z justo después)`))return;
-    const {error}=await sb.from('sos_planilla').delete().in('id',aBorrar.map(p=>p.id));
+    const {error}=await sb.from('sos_muestras').delete().in('id',aBorrar.map(p=>p.id));
     if(error){alert('No se pudo eliminar: '+error.message);return;}
     const antes=aBorrar.map(p=>({...p}));
-    aBorrar.forEach(p=>{ const i=PLAN.findIndex(x=>String(x.id)===String(p.id)); if(i>-1)PLAN.splice(i,1); });
+    aBorrar.forEach(p=>{ const i=MUESTRAS.findIndex(x=>String(x.id)===String(p.id)); if(i>-1)MUESTRAS.splice(i,1); });
     marcarAccion('plan',{tipo:'lote_eliminada',antes});
     cerrar();
     pie.textContent=`${aBorrar.length} fila(s) duplicada(s) eliminadas.`;
@@ -1425,47 +1415,48 @@ async function subirResultados(filas,nom,hoja){
   }
   const regs=leerResultados(filas,fuente);
   if(!regs||!regs.length){alert('No se reconoció el formato.\n\nDebe tener las columnas N° MUESTRA, EQUIPO, COMPONENTE, FECHA y ESTADO.');return;}
-  // enlazar con la planilla y detectar lo que falta uniformar
-  regs.forEach(r=>{const p=enlazarPlanilla(r); r.planilla_id=p?p.id:null;});
-  const yaHay=new Set(RES.map(r=>r.fuente+'|'+nrm(r.nro_muestra)));
-  const nuevos=regs.filter(r=>!yaHay.has(r.fuente+'|'+nrm(r.nro_muestra)));
+  // ya registrado = misma fuente + mismo N° de muestra ya tiene resultado en Muestras
+  const yaHay=new Set(MUESTRAS.filter(m=>m.fuente).map(m=>m.fuente+'|'+nrm(m.nro_muestra)));
+  const nuevos=regs.filter(r=>!yaHay.has(fuente+'|'+nrm(r.nro_muestra)));
+  // por cada nuevo: buscar una fila de Muestras que YA exista (planilla) y que TODAVÍA no tenga resultado propio
+  nuevos.forEach(r=>{
+    const p=enlazarPlanilla(r);
+    r.muestraExistente=(p&&!p.estado_std&&!p.fuente)?p:null;
+  });
+  const conMuestra=nuevos.filter(r=>r.muestraExistente);
+  const sinMuestra=nuevos.filter(r=>!r.muestraExistente);
   const sinEst=[...new Set(regs.filter(r=>r.estado&&!r.estado_std).map(r=>r.estado))];
   const sinSis=[...new Set(regs.filter(r=>r.componente&&!r.sistema_std).map(r=>r.componente))];
-  const enl=nuevos.filter(r=>r.planilla_id).length;
-  const sinEnl=nuevos.filter(r=>!r.planilla_id).length;
   let msg=`${nom}  ·  laboratorio: ${fuente}\n\n`
     +`Resultados leídos: ${regs.length}\n`
     +`Nuevos para agregar: ${nuevos.length}\n`
     +`Ya registrados (se omiten): ${regs.length-nuevos.length}\n`
-    +`Enlazados con una muestra de la planilla: ${enl} de ${nuevos.length}\n`
-    +(sinEnl?`Sin enlazar (te los mostraré para armar su fila en Planilla): ${sinEnl}\n`:'');
+    +`Enlazados con una muestra ya registrada: ${conMuestra.length} de ${nuevos.length}\n`
+    +(sinMuestra.length?`Sin enlazar (te los mostraré para armar su fila): ${sinMuestra.length}\n`:'');
   if(sinEst.length)msg+=`\n⚠ Estados sin equivalencia (quedarán sin uniformar):\n  ${sinEst.slice(0,6).join(', ')}${sinEst.length>6?'…':''}\n`;
   if(sinSis.length)msg+=`\n⚠ Sistemas sin equivalencia:\n  ${sinSis.slice(0,6).join(', ')}${sinSis.length>6?'…':''}\n`;
   msg+='\n¿Guardar?';
   if(!confirm(msg))return;
   if(!nuevos.length)return;
-  let ok=0,err='';
-  const guardados=[]; // resultados insertados, con su id real, para poder enlazarlos después
-  for(let i=0;i<nuevos.length;i+=150){
-    const tanda=nuevos.slice(i,i+150).map(({candidato,...limpio})=>limpio);
-    const {data,error}=await sb.from('sos_resultados').insert(tanda).select();
-    if(error){err=error.message;break;}
-    ok+=tanda.length;
-    (data||[]).forEach(d=>guardados.push(d));
+  let ok=0; const fallidas=[];
+  for(const r of conMuestra){
+    const patch={
+      fuente:r.fuente, nro_muestra:r.nro_muestra,
+      cod_frasco:r.muestraExistente.nro_frasco||r.cod_frasco||null,
+      horometro:r.muestraExistente.horometro??r.horometro,
+      estado:r.estado, estado_std:r.estado_std, observacion_lab:r.observacion, link_pdf:r.link_pdf, analisis:r.analisis
+    };
+    const {data,error}=await sb.from('sos_muestras').update(patch).eq('id',r.muestraExistente.id).select().single();
+    if(error){fallidas.push({r,msg:error.message});continue;}
+    Object.assign(r.muestraExistente,data); ok++;
   }
-  if(err)alert('Se guardaron '+ok+' y luego hubo un error:\n'+err);
-  // los que quedaron enlazados actualizan el N° de muestra en la planilla
-  for(const r of nuevos.filter(x=>x.planilla_id)){
-    await sb.from('sos_planilla').update({nro_muestra:r.nro_muestra}).eq('id',r.planilla_id);
+  if(fallidas.length){
+    const detalle=fallidas.slice(0,8).map(x=>`· ${x.r.cod_sap||'—'} / ${x.r.componente||'—'} / ${x.r.fecha||'—'} → ${x.msg}`).join('\n');
+    alert(`Se enlazaron ${ok} de ${conMuestra.length}.\n\n${fallidas.length} fila(s) rechazadas:\n${detalle}`);
   }
   await cargarTodo();
-  pie.textContent=`${ok} resultado(s) agregados · ${enl} enlazados con la planilla.`;
-  // emparejar cada resultado guardado (con su id real) con su candidato de Planilla, para los que quedaron sin enlazar
-  const porClave=new Map(guardados.map(d=>[d.fuente+'|'+nrm(d.nro_muestra),d]));
-  const pendientes=nuevos.filter(r=>!r.planilla_id).map(r=>({
-    resultado:porClave.get(r.fuente+'|'+nrm(r.nro_muestra))||null, ...r
-  })).filter(x=>x.resultado);
-  if(pendientes.length)revisarNuevasPlanillas(pendientes);
+  pie.textContent=`${ok} resultado(s) enlazados con muestras existentes.`;
+  if(sinMuestra.length)revisarNuevasPlanillas(sinMuestra);
   if(sinEst.length||sinSis.length){
     // se nombra exactamente qué falta y se ofrece resolverlo al momento
     const det=(sinEst.length?`Estados sin equivalencia (${sinEst.length}):\n   ${sinEst.join('\n   ')}\n\n`:'')
@@ -1545,16 +1536,14 @@ function revisarNuevasPlanillas(lista){
         tipo_aceite:c.tipo_aceite, galones:c.galones, horometro:c.horometro,
         horas_aceite:c.horas_aceite, cant_agregado:c.cant_agregado??0,
         f_muestreo:c.f_muestreo, f_envio:c.f_envio, tipo:c.tipo,
-        observacion:x.observacion, nro_muestra:x.nro_muestra,
+        nro_muestra:x.nro_muestra, fuente:x.fuente,
+        estado:x.estado, estado_std:x.estado_std, observacion_lab:x.observacion,
+        link_pdf:x.link_pdf, analisis:x.analisis,
         registrado_por:perfil?perfil.nombre:null
       };
-      const {data,error}=await sb.from('sos_planilla').insert(fila).select().single();
+      const {data,error}=await sb.from('sos_muestras').insert(fila).select().single();
       if(error){fallidas.push({x,msg:error.message});continue;}
-      PLAN.push(data);
-      if(x.resultado){
-        await sb.from('sos_resultados').update({planilla_id:data.id}).eq('id',x.resultado.id);
-        const rr=RES.find(y=>String(y.id)===String(x.resultado.id)); if(rr)rr.planilla_id=data.id;
-      }
+      MUESTRAS.push(data);
       ok++;
     }
     cerrar();
@@ -1567,7 +1556,7 @@ function revisarNuevasPlanillas(lista){
 
 /* ═══════════════ INGRESO MANUAL A LA PLANILLA ═══════════════ */
 function formPlan(id){
-  const p=id?PLAN.find(x=>String(x.id)===String(id)):{};
+  const p=id?MUESTRAS.find(x=>String(x.id)===String(id)):{};
   const eqs=datos.slice().sort((a,b)=>String(a.cod_sap).localeCompare(String(b.cod_sap)));
   const sis=[...new Set([...EQS.values()])].sort();
   document.body.insertAdjacentHTML('beforeend',`<div class="modal" id="mpl"><div class="mc">
@@ -1635,7 +1624,7 @@ function formPlan(id){
   const del=document.getElementById('plDel');
   if(del)del.onclick=async()=>{
     if(!confirm('¿Eliminar esta muestra de la planilla?'))return;
-    const {error}=await sb.from('sos_planilla').delete().eq('id',p.id);
+    const {error}=await sb.from('sos_muestras').delete().eq('id',p.id);
     if(error)return alert('No se pudo eliminar: '+error.message);
     cerrar(); await cargarTodo();
   };
@@ -1670,8 +1659,8 @@ function formPlan(id){
     };
     if(!d.maestro_id){alert('Elige el equipo.');return;}
     if(!d.f_muestreo){alert('Indica la fecha de muestreo.');return;}
-    const {data:guardado,error}= id ? await sb.from('sos_planilla').update(d).eq('id',p.id).select().single()
-                      : await sb.from('sos_planilla').insert(d).select().single();
+    const {data:guardado,error}= id ? await sb.from('sos_muestras').update(d).eq('id',p.id).select().single()
+                      : await sb.from('sos_muestras').insert(d).select().single();
     if(error)return alert('No se pudo guardar: '+error.message);
     // sincronizar el catálogo de frascos si el N° de frasco cambió
     if(fraCod!==(p.nro_frasco||null)){
@@ -1699,37 +1688,29 @@ btnNuevo.onclick=()=>formPlan(null);
 btnXls.onclick=()=>{
   let rows=[],nombre='SOS';
   if(vista==='plan'){
-    nombre='Planilla_envio';
-    rows=filtrarPlan().map(p=>{const e=getE(p.maestro_id), r=RES.find(x=>x.planilla_id===p.id);
-      return {'Clave':claveMuestra(p.cod_sap,p.sistema_std||p.sistema,p.f_muestreo)||'',
+    nombre='Muestras';
+    rows=filtrarPlan().map(p=>{const e=getE(p.maestro_id);
+      const base={'Clave':claveMuestra(p.cod_sap,p.sistema_std||p.sistema,p.f_muestreo)||'',
         'Obra':p.obra||'','N° de Planilla':p.nro_planilla||'','N° Frasco':p.nro_frasco||'',
         'Código del Equipo':p.cod_sap||'','Equipo':e?e.equipo:'','Marca':p.marca||'','Modelo':p.modelo||'',
         'Serie':p.serie||'','Sistema':p.sistema||'','Sistema estándar':p.sistema_std||'',
         'Tipo de Aceite':p.tipo_aceite||'','Cnt. (Galones)':p.galones??'','Horometro':p.horometro??'',
         'Horas del aceite':p.horas_aceite??'','Cant. Agregado':p.cant_agregado??'',
         'Muestreo':p.f_muestreo||'','Envio':p.f_envio||'','Tipo':p.tipo||'','Observacion':p.observacion||'',
-        'N° Muestra':p.nro_muestra||'','Estado resultado':r?(r.estado_std||''):''};});
-  }else if(vista==='res'){
-    nombre='Resultados';
-    rows=filtrarRes().map(r=>{const e=getE(r.maestro_id);
-      const base={'Clave':claveMuestra(r.cod_sap,r.sistema_std||r.componente,r.fecha)||'',
-        'FUENTE':r.fuente,'EQUIPO':r.cod_sap||'','Descripción':e?e.equipo:'',
-        'COMPONENTE':r.componente||'','SISTEMA (estandarizado)':r.sistema_std||'','Horometro':r.horometro??'',
-        'N° MUESTRA':r.nro_muestra,'CÓDIGO FRASCO':r.cod_frasco||'','FECHA':r.fecha||'',
-        'ESTADO':r.estado||'','ESTADO ESTÁNDAR':r.estado_std||'','OBRA':r.obra||'',
-        'Observación del reporte':r.observacion||'','Link al reporte PDF':r.link_pdf||''};
-      Object.entries(r.analisis||{}).forEach(([k,v])=>base[k]=v);
+        'N° Muestra':p.nro_muestra||'','Fuente':p.fuente||'','Estatus':estatusMuestra(p).txt,
+        'Estado':p.estado_std||'','Observación del laboratorio':p.observacion_lab||'','Link PDF':p.link_pdf||''};
+      Object.entries(p.analisis||{}).forEach(([k,v])=>base[k]=v);
       return base;});
   }else{
     nombre='Seguimiento_alertas';
     const hoy=new Date();
-    rows=RES.filter(r=>r.estado_std==='CRITICO'||r.estado_std==='PRECAUCION').map(r=>{
+    rows=MUESTRAS.filter(r=>r.estado_std==='CRITICO'||r.estado_std==='PRECAUCION').map(r=>{
       const a=ale(r);
       let dias='';
       if(a.f_indicacion&&(a.estado_seg||'OM abierta')!=='Cerrado')
         dias=Math.max(0,Math.round((hoy-new Date(a.f_indicacion+'T00:00:00'))/86400000));
-      return {'N° Muestra':r.nro_muestra,'Código de Equipo':r.cod_sap||'','Sistema':r.sistema_std||r.componente||'',
-        'Estado':r.estado_std,'Horómetro':r.horometro??'','Observación del reporte':r.observacion||'',
+      return {'N° Muestra':r.nro_muestra,'Código de Equipo':r.cod_sap||'','Sistema':r.sistema_std||r.sistema||'',
+        'Estado':r.estado_std,'Horómetro':r.horometro??'','Observación del laboratorio':r.observacion_lab||'',
         'N° OM SAP':a.om_sap||'','Acciones correctivas':a.acciones||'','Fecha de indicación':a.f_indicacion||'',
         'Estado de seguimiento':a.estado_seg||'OM abierta','Días transcurridos':dias,
         'Link al reporte PDF':a.link_pdf||r.link_pdf||''};});
@@ -1745,9 +1726,8 @@ btnXls.onclick=()=>{
 function eqAbrir(){
   const admin=perfil&&perfil.rol==='admin';
   // textos que aparecen en los datos pero aún no tienen equivalencia
-  const faltaE=[...new Set(RES.filter(r=>r.estado&&!r.estado_std).map(r=>r.estado))].sort();
-  const faltaS=[...new Set([...RES.filter(r=>r.componente&&!r.sistema_std).map(r=>r.componente),
-                            ...PLAN.filter(p=>p.sistema&&!p.sistema_std).map(p=>p.sistema)])].sort();
+  const faltaE=[...new Set(MUESTRAS.filter(r=>r.estado&&!r.estado_std).map(r=>r.estado))].sort();
+  const faltaS=[...new Set(MUESTRAS.filter(p=>p.sistema&&!p.sistema_std).map(p=>p.sistema))].sort();
   const stds=[...new Set([...EQS.values()])].sort();
   const faltaT=[...new Set(datos.filter(e=>!esDesmovM(e)&&!sinSOS(e)&&e.equipo&&!EQT.has(nrm(e.equipo))).map(e=>e.equipo))].sort();
   const tipos=[...new Set(SIST.map(s=>s.tipo_equipo))].sort();
@@ -1914,16 +1894,12 @@ function eqPintarTablas(){
 /* al cambiar una equivalencia se vuelven a uniformar los datos ya guardados */
 async function reNormalizar(){
   const camb=[];
-  RES.forEach(r=>{
-    const e=estadoStd(r.estado), s=sistemaStd(r.componente);
-    if(e!==r.estado_std||s!==r.sistema_std){r.estado_std=e;r.sistema_std=s;camb.push(r);}
+  MUESTRAS.forEach(p=>{
+    const e=p.estado?estadoStd(p.estado):p.estado_std, s=sistemaStd(p.sistema);
+    if(e!==p.estado_std||s!==p.sistema_std){p.estado_std=e;p.sistema_std=s;camb.push(p);}
   });
-  const cambP=[];
-  PLAN.forEach(p=>{const s=sistemaStd(p.sistema);
-    if(s!==p.sistema_std){p.sistema_std=s;cambP.push(p);}});
-  for(const r of camb) await sb.from('sos_resultados').update({estado_std:r.estado_std,sistema_std:r.sistema_std}).eq('id',r.id);
-  for(const p of cambP) await sb.from('sos_planilla').update({sistema_std:p.sistema_std}).eq('id',p.id);
-  if(camb.length||cambP.length)pie.textContent=`Se uniformaron ${camb.length} resultado(s) y ${cambP.length} muestra(s).`;
+  for(const p of camb) await sb.from('sos_muestras').update({estado_std:p.estado_std,sistema_std:p.sistema_std}).eq('id',p.id);
+  if(camb.length)pie.textContent=`Se uniformaron ${camb.length} muestra(s).`;
   pintar();
 }
 btnEq.onclick=eqAbrir;
@@ -1961,18 +1937,17 @@ async function traerTodo(tabla,orden,asc){
 }
 async function cargarTodo(){
   pie.textContent='Cargando…';
-  const [pl,re,al]=await Promise.all([
-    traerTodo('sos_planilla','f_muestreo',false),
-    traerTodo('sos_resultados','fecha',false),
+  const [pl,al]=await Promise.all([
+    traerTodo('sos_muestras','f_muestreo',false),
     traerTodo('sos_alertas')
   ]);
-  if(pl.error||re.error){pie.textContent='No se pudo cargar: '+((pl.error||re.error).message);return;}
-  PLAN=pl.data||[]; RES=re.data||[]; ALE=al.data||[];
-  const obras=[...new Set([...PLAN.map(p=>p.obra),...RES.map(r=>r.obra)].filter(Boolean))].sort();
+  if(pl.error){pie.textContent='No se pudo cargar: '+pl.error.message;return;}
+  MUESTRAS=pl.data||[]; ALE=al.data||[];
+  const obras=[...new Set(MUESTRAS.map(p=>p.obra).filter(Boolean))].sort();
   fObra.innerHTML='<option value="">Todas las obras</option>'+obras.map(o=>`<option>${esc(o)}</option>`).join('');
-  const siss=[...new Set(RES.map(r=>r.sistema_std).filter(Boolean))].sort();
+  const siss=[...new Set(MUESTRAS.map(r=>r.sistema_std).filter(Boolean))].sort();
   fSistema.innerHTML='<option value="">Todos los sistemas</option>'+siss.map(s=>`<option>${esc(s)}</option>`).join('');
-  pie.textContent=`${PLAN.length} muestra(s) en planilla · ${RES.length} resultado(s) · ${ALE.length} en seguimiento.`;
+  pie.textContent=`${MUESTRAS.length} muestra(s) · ${MUESTRAS.filter(m=>m.estado_std).length} con resultado · ${ALE.length} en seguimiento.`;
   pintar();
 }
 
