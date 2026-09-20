@@ -1176,26 +1176,59 @@ btnSubir.onclick=()=>{
   i.click();
 };
 
+const CAMPOS_COMPARABLES_PLAN=[
+  ['obra','Obra'],['marca','Marca'],['modelo','Modelo'],['serie','Serie'],
+  ['tipo_aceite','Tipo de aceite'],['galones','Galones'],['horometro','Horómetro'],
+  ['horas_aceite','Horas del aceite'],['cant_agregado','Cant. agregado'],
+  ['f_envio','Fecha de envío'],['tipo','Tipo'],['observacion','Observación']
+];
+function diffCamposPlan(existente,entrante){
+  const cambios=[];
+  for(const [campo,label] of CAMPOS_COMPARABLES_PLAN){
+    const nuevo=entrante[campo];
+    if(nuevo===null||nuevo===undefined||nuevo==='')continue; // nunca pisar con un valor vacío
+    const actual=existente[campo];
+    if(String(actual??'')!==String(nuevo))cambios.push({campo,label,antes:actual,despues:nuevo});
+  }
+  return cambios;
+}
+function mostrarValor(campo,v){
+  if(v===null||v===undefined||v==='')return '<span class="dim">(vacío)</span>';
+  if(campo==='f_envio')return esc(fmtDate(v));
+  return esc(String(v));
+}
 async function subirPlanilla(filas,nom){
   const regs=leerPlanilla(filas);
   if(!regs||!regs.length){alert('No se reconoció el formato.\n\nDebe tener las columnas de la PLANILLA DE MUESTRAS: N° Frasco, Código del Equipo, Sistema, Muestreo…');return;}
   const clave=p=>[p.nro_planilla||'',p.nro_frasco||'',p.cod_sap||'',p.sistema||'',p.f_muestreo||''].join('|');
-  const yaHay=new Set(PLAN.map(clave));
-  // 1) filas ya guardadas en la base
-  const candidatas=regs.filter(p=>!yaHay.has(clave(p)));
-  // 2) filas repetidas DENTRO del propio archivo (misma clave dos o más veces en las 174)
-  const vistas=new Set(); const nuevos=[]; let repetidasEnArchivo=0;
-  candidatas.forEach(p=>{ const k=clave(p); if(vistas.has(k)){repetidasEnArchivo++;return;} vistas.add(k); nuevos.push(p); });
+  const mapaExistente=new Map(PLAN.map(p=>[clave(p),p]));
+  const candidatas=[]; const conCambios=[];
+  const vistas=new Set(); let repetidasEnArchivo=0, yaIgual=0;
+  regs.forEach(p=>{
+    const k=clave(p);
+    if(mapaExistente.has(k)){
+      const existente=mapaExistente.get(k);
+      const cambios=diffCamposPlan(existente,p);
+      if(cambios.length)conCambios.push({existente,entrante:p,cambios});
+      else yaIgual++;
+      return;
+    }
+    if(vistas.has(k)){repetidasEnArchivo++;return;}
+    vistas.add(k);
+    candidatas.push(p);
+  });
+  const nuevos=candidatas;
   const sinEq=regs.filter(p=>!p.maestro_id&&p.cod_sap);
   const sinSis=regs.filter(p=>p.sistema&&!p.sistema_std);
   if(!confirm(`${nom}\n\n`
     +`Muestras leídas: ${regs.length}\n`
     +`Nuevas para agregar: ${nuevos.length}\n`
-    +`Ya registradas (se omiten): ${regs.length-candidatas.length}\n`
+    +`Ya registradas, sin cambios: ${yaIgual}\n`
+    +(conCambios.length?`Ya registradas, con datos nuevos o distintos (te las muestro a continuación): ${conCambios.length}\n`:'')
     +(repetidasEnArchivo?`Repetidas dentro del propio archivo (se omiten): ${repetidasEnArchivo}\n`:'')
     +(sinEq.length?`Códigos que no están en Equipos: ${sinEq.length}\n`:'')
     +(sinSis.length?`Sistemas sin equivalencia: ${sinSis.length} (los podrás asignar después)\n`:'')
-    +`\n¿Guardar?`))return;
+    +`\n¿Continuar?`))return;
   // ampliar el filtro de fechas visible para que se vea todo lo cargado (nuevo o ya existente)
   const fechas=regs.map(r=>r.f_muestreo).filter(Boolean).sort();
   if(fechas.length){
@@ -1203,7 +1236,6 @@ async function subirPlanilla(filas,nom){
     const ultima=fechas[fechas.length-1];
     if(!fHasta.value||ultima>fHasta.value)fHasta.value=ultima;
   }
-  if(!nuevos.length){ pintar(); return; }
   let ok=0; const fallidas=[];
   for(const p of nuevos){
     const {error}=await sb.from('sos_planilla').insert(p);
@@ -1214,8 +1246,52 @@ async function subirPlanilla(filas,nom){
     alert(`Se guardaron ${ok} de ${nuevos.length}.\n\n${fallidas.length} fila(s) rechazadas por la base de datos:\n${detalle}`
       +(fallidas.length>8?`\n… y ${fallidas.length-8} más.`:''));
   }
-  await cargarTodo();
+  if(ok||fallidas.length)await cargarTodo();
   pie.textContent=`${ok} muestra(s) agregadas a la planilla.`;
+  if(conCambios.length)revisarCambiosPlanilla(conCambios);
+}
+function revisarCambiosPlanilla(lista){
+  document.body.insertAdjacentHTML('beforeend',`<div class="modal" id="mrev"><div class="mc" style="width:min(760px,96vw)">
+    <div class="mh"><h3>Filas con datos nuevos o distintos</h3>
+      <div class="sub">${lista.length} fila(s) ya existían pero el archivo trae celdas vacías completadas o valores distintos. Revisa y confirma cuáles aplicar.</div>
+      <div class="spacer"></div><button class="act" id="revCer">Cerrar sin aplicar</button></div>
+    <div class="mb">
+      ${lista.map((g,i)=>{
+        const p=g.existente;
+        return `<div class="campo" style="border:1px solid var(--line);border-radius:8px">
+          <label style="display:flex;align-items:center;gap:8px;font-size:12.5px;color:#1F3864">
+            <input type="checkbox" class="revChk" data-i="${i}" checked>
+            <b>${esc(p.cod_sap||'')} · ${esc(p.sistema||'')} · ${fmtDate(p.f_muestreo)}${p.nro_planilla?' · Planilla '+esc(p.nro_planilla):''}</b>
+          </label>
+          <table class="t" style="margin-top:6px"><thead><tr><th>Campo</th><th>Valor actual</th><th>Valor nuevo</th></tr></thead>
+          <tbody>${g.cambios.map(c=>`<tr><td>${esc(c.label)}</td><td>${mostrarValor(c.campo,c.antes)}</td><td><b>${mostrarValor(c.campo,c.despues)}</b></td></tr>`).join('')}</tbody></table>
+        </div>`;
+      }).join('')}
+    </div>
+    <div style="display:flex;gap:8px;justify-content:flex-end;padding:12px 16px;border-top:1px solid var(--line)">
+      <button class="act" id="revNo">Cancelar</button><button class="act primary" id="revOk">Aplicar seleccionados</button></div>
+  </div></div>`);
+  const cerrar=()=>{const e=document.getElementById('mrev');if(e)e.remove();};
+  document.getElementById('revCer').onclick=cerrar;
+  document.getElementById('revNo').onclick=cerrar;
+  document.getElementById('mrev').addEventListener('click',ev=>{if(ev.target.id==='mrev')cerrar();});
+  document.getElementById('revOk').onclick=async()=>{
+    const idxSel=[...document.querySelectorAll('.revChk:checked')].map(c=>+c.dataset.i);
+    if(!idxSel.length){cerrar();return;}
+    let ok=0; const fallidas=[];
+    for(const i of idxSel){
+      const g=lista[i];
+      const patch={}; g.cambios.forEach(c=>patch[c.campo]=c.despues);
+      const {data,error}=await sb.from('sos_planilla').update(patch).eq('id',g.existente.id).select().single();
+      if(error){fallidas.push({g,msg:error.message});continue;}
+      Object.assign(g.existente,data); ok++;
+    }
+    cerrar();
+    if(fallidas.length)alert(`Se actualizaron ${ok} de ${idxSel.length}.\n\n${fallidas.length} no se pudieron guardar:\n`
+      +fallidas.slice(0,6).map(x=>`· ${x.g.existente.cod_sap||'—'} → ${x.msg}`).join('\n'));
+    pie.textContent=`${ok} muestra(s) actualizadas con datos del archivo.`;
+    pintar();
+  };
 }
 
 async function subirResultados(filas,nom,hoja){
