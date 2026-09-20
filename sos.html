@@ -49,8 +49,8 @@
   .chip{background:#FBFBFB;border:1px solid #E0E3E6;border-radius:9px;height:34px;padding:0 13px;font-size:12.5px;font-weight:500;color:#9AA0A6;display:inline-flex;align-items:center}
   footer{padding:6px 16px;color:var(--muted);font-size:12px;text-align:center;flex-shrink:0}
   #wrap{flex:1;overflow:auto;padding:10px 14px;min-height:0}
-  .cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:9px;margin-bottom:10px;
-    position:sticky;top:0;z-index:8;background:var(--bg);padding-top:2px}
+  .cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:9px;
+    position:sticky;top:0;z-index:8;background:var(--bg);padding:2px 0 10px}
   .cards2{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:9px;margin-bottom:10px}
   .c{background:#fff;border:1px solid var(--line);border-radius:11px;padding:9px 12px}
   .c .l{font-size:10px;font-weight:800;color:var(--muted);text-transform:uppercase;letter-spacing:.4px}
@@ -709,9 +709,10 @@ function pasaColFiltros(vista,d){
 function fijarEncabezados(box){
   requestAnimationFrame(()=>{
     const thead=box.querySelector('table thead'); if(!thead)return;
-    const csCards=getComputedStyle(cards);
-    const hCards=Math.ceil(cards.getBoundingClientRect().height+parseFloat(csCards.marginBottom||0));
-    thead.style.top=hCards+'px';
+    const hCards=Math.ceil(cards.getBoundingClientRect().height);
+    // se superpone 2px bajo las tarjetas (fondo sólido, mayor z-index) para que cualquier
+    // micro-hueco de redondeo quede tapado, nunca transparente
+    thead.style.top=Math.max(0,hCards-2)+'px';
   });
 }
 
