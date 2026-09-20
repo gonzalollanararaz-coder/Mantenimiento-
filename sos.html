@@ -109,6 +109,7 @@
   .eqnew{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px;padding-top:8px;border-top:1px dashed var(--line)}
   .eqnew input,.eqnew select{padding:6px 8px;border:1px solid var(--line);border-radius:7px;font-size:12px;flex:1;min-width:120px}
   .form input,.form select{padding:8px;border:1px solid var(--line);border-radius:8px;font-size:13px;font-weight:400;color:var(--ink)}
+  .form input[readonly]{background:#f5f6f8;color:#6b747d}
 
   /* ── ESTILO OFICIAL GLLR: encabezado de 2 filas (banda + columna pastel) ── */
   table.of{width:100%;border-collapse:collapse;font-size:11.5px;background:#fff}
@@ -221,7 +222,7 @@ function mant(e){
 /* ═══════════════════ SOS · MUESTREO DE ACEITES ═══════════════════ */
 let datos=[], DIDX=new Map(), perfil=null;
 let PLAN=[], RES=[], ALE=[], EQE=new Map(), EQS=new Map(), EQLE=[], EQLS=[];
-let SIST=[], EQT=new Map(), EQLT=[], FRASCOS=[];
+let SIST=[], EQT=new Map(), EQLT=[], FRASCOS=[], ALTITUD=new Map();
 const FAMILIAS_SIN_SOS=['4_IMPL. EQ.','6_VEH T/PER','7_EQ PLANTA'];
 const RANGO_PM=[['PM4',8],['PM3',4],['PM2',2],['PM1',1]]; // de mayor a menor
 function nivelPM(proximoHr,freq){
@@ -236,6 +237,24 @@ function rangoIncluye(pmEvento,pmSistema){ // PM4 incluye PM3,PM2,PM1; etc. (acu
 function tipoDe(e){ return EQT.get(nrm(e.equipo))||null; }
 function esDesmovM(e){ return /^DESMOVILIZ/.test(nrm(e.status)); }
 function sinSOS(e){ return FAMILIAS_SIN_SOS.some(f=>nrm(f)===nrm(e.familia)); }
+async function altitudDe(proy){
+  if(!proy)return null;
+  if(ALTITUD.has(nrm(proy)))return ALTITUD.get(nrm(proy));
+  const v=prompt(`No tengo la altitud registrada para "${proy}".\n¿A qué altitud (m.s.n.m.) trabaja este proyecto? (déjalo en blanco para omitir)`);
+  const n=v==null?null:Math.round(+v);
+  if(!n||!isFinite(n)||n<=0)return null;
+  const {error}=await sb.from('sos_altitud_obra').insert({proyecto:proy,altitud:n});
+  if(!error)ALTITUD.set(nrm(proy),n);
+  return n;
+}
+function sugerirPlanilla(proy,nuevo){
+  if(!proy)return '';
+  const anio=new Date().getFullYear(), pref=anio+'-';
+  const nums=PLAN.filter(p=>p.obra===proy&&String(p.nro_planilla||'').startsWith(pref))
+    .map(p=>parseInt(String(p.nro_planilla).slice(pref.length),10)).filter(n=>!isNaN(n));
+  const ultimo=nums.length?Math.max(...nums):0;
+  return pref+String(nuevo?ultimo+1:(ultimo||1)).padStart(3,'0');
+}
 let vista='fra';
 
 const nrm=s=>String(s??'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toUpperCase().replace(/\s+/g,' ').trim();
@@ -336,13 +355,19 @@ function leerPlanilla(filas){
       galones:aNum(val(f,m.cols,'Cnt.\n(Galones)','Cnt. (Galones)','Galones')),
       horometro:aNum(val(f,m.cols,'Horometro','Horómetro')),
       horas_aceite:aNum(val(f,m.cols,'Horas\ndel aceite','Horas del aceite')),
-      cant_agregado:aNum(val(f,m.cols,'Cant.\nAgregado','Cant. Agregado')),
+      cant_agregado:aNum(val(f,m.cols,'Cant.\nAgregado','Cant. Agregado'))??0,
       f_muestreo:aFecha(val(f,m.cols,'Fecha\nMuestreo','Muestreo')),
       f_envio:aFecha(val(f,m.cols,'Fecha\nEnvio','Fecha\nEnvío','Envio','Envío')),
       tipo:String(val(f,m.cols,'Tipo:\n[Cambio]\n[Muestra]','Tipo')??'').trim()||null,
       observacion:String(val(f,m.cols,'Observacion:','Observación')??'').trim()||null
     });
   }
+  const anio2026='2026-01-01';
+  out.forEach(r=>{
+    if(!r.observacion&&r.obra&&r.f_muestreo&&r.f_muestreo>=anio2026&&ALTITUD.has(nrm(r.obra))){
+      r.observacion=`Trabaja a: ${ALTITUD.get(nrm(r.obra))} m.s.n.m.`;
+    }
+  });
   return out;
 }
 
@@ -623,7 +648,7 @@ function pintarPlan(){
       <th colspan="2"><span class="bnd verde">VALIDACIÓN</span></th>
     </tr>
     <tr class="cols">
-      <th class="azul c frz">Item</th><th class="azul">N° Planilla</th><th class="azul">Obra</th><th class="azul">Cód. SAP</th>
+      <th class="azul c frz">#</th><th class="azul">N° Planilla</th><th class="azul">Obra</th><th class="azul">Cód. SAP</th>
       <th class="azul">Marca</th><th class="azul">Modelo</th><th class="azul">Serie</th>
       <th class="amarillo">Sistema</th><th class="amarillo">Tipo de aceite</th><th class="amarillo c">Gal.</th><th class="amarillo r">Horómetro</th>
       <th class="amarillo r">Hrs. aceite</th><th class="amarillo r">Cant. agreg.</th><th class="amarillo c">F. muestreo</th><th class="amarillo c">F. envío</th>
@@ -939,30 +964,62 @@ function formPlan(id){
       <button class="act" id="plCan">Cancelar</button>
       <button class="act primary" id="plOk">Guardar</button></div>
     <div class="mb"><div class="form">
-      <label>Obra<input id="p_obra" value="${esc(p.obra||'')}"></label>
-      <label>N° de planilla<input id="p_pla" value="${esc(p.nro_planilla||'')}"></label>
-      <label>N° de frasco<input id="p_fra" list="fral" value="${esc(p.nro_frasco||'')}" placeholder="Elige de los enviados a obra">
-        <datalist id="fral">${[...new Set([p.nro_frasco,...FRASCOS.filter(f=>f.estado==='Enviado').map(f=>f.codigo)].filter(Boolean))].sort()
+      <label>Obra<input id="p_obra" value="${esc(p.obra||'')}" ${p.obra?'':'placeholder="Automático al elegir equipo"'} readonly></label>
+      <label>N° de planilla<div style="display:flex;gap:5px">
+        <input id="p_pla" value="${esc(p.nro_planilla||'')}" placeholder="Automático" style="flex:1">
+        <button type="button" class="act" id="p_plaNuevo" title="Empezar una planilla nueva para esta obra" style="padding:0 9px">🆕</button></div></label>
+      <label>N° de frasco<input id="p_fra" list="fral" value="${esc(p.nro_frasco||'')}" placeholder="Disponible o ya enviado a obra">
+        <datalist id="fral">${[...new Set([p.nro_frasco,...FRASCOS.filter(f=>f.estado==='Enviado'||f.estado==='Disponible').map(f=>f.codigo)].filter(Boolean))].sort()
           .map(c=>`<option>${esc(c)}</option>`).join('')}</datalist></label>
       <label>Equipo<select id="p_eq"><option value="">—</option>
         ${eqs.map(e=>`<option value="${e.id}" ${String(p.maestro_id)===String(e.id)?'selected':''}>${esc(e.cod_sap)} · ${esc(e.equipo||'')}</option>`).join('')}
       </select></label>
+      <label>Marca<input id="p_marca" value="${esc(p.marca||'')}" readonly placeholder="Automático"></label>
+      <label>Modelo<input id="p_modelo" value="${esc(p.modelo||'')}" readonly placeholder="Automático"></label>
+      <label>Serie<input id="p_serie" value="${esc(p.serie||'')}" readonly placeholder="Automático"></label>
       <label>Sistema<input id="p_sis" list="sisl" value="${esc(p.sistema||'')}">
         <datalist id="sisl">${sis.map(s=>`<option>${esc(s)}</option>`).join('')}</datalist></label>
       <label>Tipo de aceite<input id="p_ace" value="${esc(p.tipo_aceite||'')}"></label>
       <label>Horómetro<input id="p_hor" type="number" step="1" value="${p.horometro??''}"></label>
       <label>Horas del aceite<input id="p_hac" type="number" step="1" value="${p.horas_aceite??''}"></label>
       <label>Cantidad (galones)<input id="p_gal" type="number" step="0.1" value="${p.galones??''}"></label>
-      <label>Cantidad agregada<input id="p_agr" type="number" step="0.1" value="${p.cant_agregado??''}"></label>
+      <label>Cantidad agregada<input id="p_agr" type="number" step="0.1" value="${p.cant_agregado??0}"></label>
       <label>Fecha de muestreo<input id="p_fm" type="date" value="${p.f_muestreo||''}"></label>
       <label>Fecha de envío<input id="p_fe" type="date" value="${p.f_envio||''}"></label>
       <label>Tipo<select id="p_tip">
         ${['','Muestra','Cambio'].map(o=>`<option ${String(p.tipo||'')===o?'selected':''}>${o}</option>`).join('')}</select></label>
-      <label class="full">Observación<input id="p_obs" value="${esc(p.observacion||'')}"></label>
+      <label class="full">Observación<input id="p_obs" value="${esc(p.observacion||'')}" placeholder="Automático a partir de 2026 (según altitud del proyecto)"></label>
     </div></div></div></div>`);
   const cerrar=()=>{const e=document.getElementById('mpl');if(e)e.remove();};
   document.getElementById('plCan').onclick=cerrar;
   document.getElementById('mpl').addEventListener('click',ev=>{if(ev.target.id==='mpl')cerrar();});
+  function actualizarPorEquipo(){
+    const eid=document.getElementById('p_eq').value, e=eid?getE(eid):null;
+    document.getElementById('p_marca').value=e?(e.marca||''):'';
+    document.getElementById('p_modelo').value=e?(e.modelo||''):'';
+    document.getElementById('p_serie').value=e?(e.serie_placa||''):'';
+    const obraEl=document.getElementById('p_obra');
+    obraEl.value=e?(e.cod_proyec||''):'';
+    if(!id){ // solo autogenerar en muestras nuevas; al editar no se pisa lo ya guardado
+      const plaEl=document.getElementById('p_pla');
+      plaEl.value=e&&e.cod_proyec?sugerirPlanilla(e.cod_proyec,false):'';
+    }
+    sugerirObservacion();
+  }
+  function sugerirObservacion(){
+    const obsEl=document.getElementById('p_obs');
+    if(obsEl.value.trim())return; // no pisar lo que el usuario ya escribió
+    const obra=document.getElementById('p_obra').value, fm=document.getElementById('p_fm').value;
+    if(!obra||!fm||fm<'2026-01-01')return;
+    if(ALTITUD.has(nrm(obra)))obsEl.value=`Trabaja a: ${ALTITUD.get(nrm(obra))} m.s.n.m.`;
+  }
+  document.getElementById('p_eq').onchange=actualizarPorEquipo;
+  document.getElementById('p_fm').onchange=sugerirObservacion;
+  document.getElementById('p_plaNuevo').onclick=()=>{
+    const obra=document.getElementById('p_obra').value;
+    if(!obra)return alert('Elige primero el equipo (define la obra).');
+    document.getElementById('p_pla').value=sugerirPlanilla(obra,true);
+  };
   const del=document.getElementById('plDel');
   if(del)del.onclick=async()=>{
     if(!confirm('¿Eliminar esta muestra de la planilla?'))return;
@@ -975,9 +1032,15 @@ function formPlan(id){
     const e=eid?getE(eid):null;
     const sisTxt=document.getElementById('p_sis').value.trim();
     const fraCod=document.getElementById('p_fra').value.trim()||null;
+    const fmuestreo=document.getElementById('p_fm').value||null;
+    let obs=document.getElementById('p_obs').value.trim();
+    const obra=document.getElementById('p_obra').value.trim()||(e?e.cod_proyec:null);
+    if(!obs&&obra&&fmuestreo&&fmuestreo>='2026-01-01'){
+      const alt=await altitudDe(obra);
+      if(alt)obs=`Trabaja a: ${alt} m.s.n.m.`;
+    }
     const d={
-      obra:document.getElementById('p_obra').value.trim()||(e?e.cod_proyec:null),
-      nro_planilla:document.getElementById('p_pla').value.trim()||null,
+      obra, nro_planilla:document.getElementById('p_pla').value.trim()||null,
       nro_frasco:fraCod,
       cod_sap:e?e.cod_sap:null, maestro_id:e?e.id:null,
       marca:e?e.marca:null, modelo:e?e.modelo:null, serie:e?e.serie_placa:null,
@@ -986,11 +1049,11 @@ function formPlan(id){
       horometro:aNum(document.getElementById('p_hor').value),
       horas_aceite:aNum(document.getElementById('p_hac').value),
       galones:aNum(document.getElementById('p_gal').value),
-      cant_agregado:aNum(document.getElementById('p_agr').value),
-      f_muestreo:document.getElementById('p_fm').value||null,
+      cant_agregado:aNum(document.getElementById('p_agr').value)??0,
+      f_muestreo:fmuestreo,
       f_envio:document.getElementById('p_fe').value||null,
       tipo:document.getElementById('p_tip').value||null,
-      observacion:document.getElementById('p_obs').value.trim()||null,
+      observacion:obs||null,
       registrado_por:perfil?perfil.nombre:null
     };
     if(!d.maestro_id){alert('Elige el equipo.');return;}
@@ -1344,11 +1407,13 @@ function pintarNav(actual){
   EQLS.forEach(x=>EQS.set(nrm(x.texto),String(x.estandar).trim()));
   const hoy=new Date(), ini=new Date(hoy.getFullYear(),0,1);
   fDesde.value=isoDe(ini); fHasta.value=isoDe(hoy);
-  const [ss,st,sf]=await Promise.all([
-    sb.from('sos_sistemas').select('*'), sb.from('sos_eq_tipo').select('*'), traerTodo('sos_frascos','codigo')
+  const [ss,st,sf,sa]=await Promise.all([
+    sb.from('sos_sistemas').select('*'), sb.from('sos_eq_tipo').select('*'), traerTodo('sos_frascos','codigo'),
+    sb.from('sos_altitud_obra').select('*')
   ]);
   SIST=ss.data||[]; EQLT=st.data||[]; FRASCOS=sf.data||[];
   EQLT.forEach(x=>EQT.set(nrm(x.texto),x.estandar));
+  (sa.data||[]).forEach(x=>ALTITUD.set(nrm(x.proyecto),+x.altitud));
   const sigMes=new Date(hoy.getFullYear(),hoy.getMonth()+1,1);
   fPeriodo.value=`${sigMes.getFullYear()}-${String(sigMes.getMonth()+1).padStart(2,'0')}`;
   await cargarTodo();
