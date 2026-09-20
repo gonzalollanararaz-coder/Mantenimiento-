@@ -1611,13 +1611,54 @@ function eqAbrir(){
     eqPintarTablas(); if(vista==='fra')pintarFra();
   };
 }
+function reconstruirEQE(){ EQE.clear(); EQLE.forEach(x=>EQE.set(nrm(x.texto),nrm(x.estandar))); }
+function reconstruirEQS(){ EQS.clear(); EQLS.forEach(x=>EQS.set(nrm(x.texto),String(x.estandar).trim())); }
+function reconstruirEQT(){ EQT.clear(); EQLT.forEach(x=>EQT.set(nrm(x.texto),x.estandar)); }
+function eqEditar(td,tabla,lista,recomponer,id,campo,tipo,opciones){
+  if(!(perfil&&perfil.rol==='admin'))return;
+  if(td.querySelector('input,select'))return;
+  const row=lista.find(x=>String(x.id)===String(id)); if(!row)return;
+  const original=td.innerHTML;
+  let editor;
+  if(tipo==='select'){
+    editor=document.createElement('select');
+    opciones.forEach(o=>{const op=document.createElement('option'); op.value=o; op.textContent=o; if(nrm(row[campo]||'')===nrm(o))op.selected=true; editor.appendChild(op);});
+  }else{
+    editor=document.createElement('input'); editor.type='text'; editor.value=row[campo]||'';
+  }
+  editor.className='ed'; editor.style.width='100%'; editor.style.boxSizing='border-box';
+  td.innerHTML=''; td.appendChild(editor); editor.focus(); if(editor.select)editor.select();
+  let resuelto=false;
+  async function confirmar(){
+    if(resuelto)return; resuelto=true;
+    const nuevo=editor.value.trim();
+    if(campo!=='laboratorio'&&!nuevo){ td.innerHTML=original; return; }
+    if(nuevo===(row[campo]||'')){ eqPintarTablas(); return; }
+    const {error}=await sb.from(tabla).update({[campo]:nuevo||null}).eq('id',id);
+    if(error){ alert('No se pudo guardar: '+error.message); td.innerHTML=original; return; }
+    row[campo]=nuevo||null;
+    recomponer();
+    eqPintarTablas();
+    if(tabla==='sos_eq_estado'||tabla==='sos_eq_sistema')reNormalizar();
+    if(tabla==='sos_eq_tipo'&&vista==='fra')pintarFra();
+  }
+  editor.onblur=confirmar;
+  editor.onkeydown=ev=>{
+    if(ev.key==='Enter'){ev.preventDefault();confirmar();}
+    if(ev.key==='Escape'){resuelto=true; td.innerHTML=original;}
+  };
+  if(editor.tagName==='SELECT')editor.onchange=confirmar;
+}
 function eqPintarTablas(){
   const te=document.getElementById('eqTE'), ts=document.getElementById('eqTS'), tt=document.getElementById('eqTT');
   if(!te)return;
   const admin=perfil&&perfil.rol==='admin';
+  const ttl=admin?' title="Doble clic para editar"':'';
   if(tt){
     tt.innerHTML=EQLT.slice().sort((a,b)=>a.estandar.localeCompare(b.estandar)||a.texto.localeCompare(b.texto))
-      .map(x=>`<tr><td>${esc(x.texto)}</td><td>${esc(x.estandar)}</td>
+      .map(x=>`<tr>
+        <td${admin&&x.id?` data-eqc="texto" data-eqid="${x.id}"${ttl}`:''}>${esc(x.texto)}</td>
+        <td${admin&&x.id?` data-eqc="estandar" data-eqid="${x.id}"${ttl}`:''}>${esc(x.estandar)}</td>
         ${admin&&x.id?`<td class="c"><button class="mini" data-dt="${x.id}">✕</button></td>`:(admin?'<td></td>':'')}</tr>`).join('');
     tt.querySelectorAll('[data-dt]').forEach(b=>b.onclick=async()=>{
       if(!confirm('¿Eliminar esta equivalencia?'))return;
@@ -1625,13 +1666,18 @@ function eqPintarTablas(){
       const i=EQLT.findIndex(x=>String(x.id)===b.dataset.dt);
       if(i>=0){EQT.delete(nrm(EQLT[i].texto));EQLT.splice(i,1);}
       eqPintarTablas(); if(vista==='fra')pintarFra();});
+    tt.querySelectorAll('[data-eqc]').forEach(td=>td.ondblclick=()=>eqEditar(td,'sos_eq_tipo',EQLT,reconstruirEQT,td.dataset.eqid,td.dataset.eqc,'text'));
   }
   te.innerHTML=EQLE.slice().sort((a,b)=>a.estandar.localeCompare(b.estandar)||a.texto.localeCompare(b.texto))
-    .map(x=>`<tr><td>${esc(x.texto)}</td><td class="dim">${esc(x.laboratorio||'')}</td>
-      <td><span class="pill e-${nrm(x.estandar)}">${esc(nrm(x.estandar))}</span></td>
+    .map(x=>`<tr>
+      <td${admin&&x.id?` data-eqc="texto" data-eqid="${x.id}"${ttl}`:''}>${esc(x.texto)}</td>
+      <td class="dim"${admin&&x.id?` data-eqc="laboratorio" data-eqid="${x.id}"${ttl}`:''}>${esc(x.laboratorio||'')}</td>
+      <td${admin&&x.id?` data-eqc="estandar" data-eqid="${x.id}" data-eqop="NORMAL|PRECAUCION|CRITICO"${ttl}`:''}><span class="pill e-${nrm(x.estandar)}">${esc(nrm(x.estandar))}</span></td>
       ${admin&&x.id?`<td class="c"><button class="mini" data-de="${x.id}">✕</button></td>`:(admin?'<td></td>':'')}</tr>`).join('');
   ts.innerHTML=EQLS.slice().sort((a,b)=>a.estandar.localeCompare(b.estandar)||a.texto.localeCompare(b.texto))
-    .map(x=>`<tr><td>${esc(x.texto)}</td><td>${esc(x.estandar)}</td>
+    .map(x=>`<tr>
+      <td${admin&&x.id?` data-eqc="texto" data-eqid="${x.id}"${ttl}`:''}>${esc(x.texto)}</td>
+      <td${admin&&x.id?` data-eqc="estandar" data-eqid="${x.id}"${ttl}`:''}>${esc(x.estandar)}</td>
       ${admin&&x.id?`<td class="c"><button class="mini" data-ds="${x.id}">✕</button></td>`:(admin?'<td></td>':'')}</tr>`).join('');
   te.querySelectorAll('[data-de]').forEach(b=>b.onclick=async()=>{
     if(!confirm('¿Eliminar esta equivalencia?'))return;
@@ -1639,12 +1685,14 @@ function eqPintarTablas(){
     const i=EQLE.findIndex(x=>String(x.id)===b.dataset.de);
     if(i>=0){EQE.delete(nrm(EQLE[i].texto));EQLE.splice(i,1);}
     eqPintarTablas(); reNormalizar();});
+  te.querySelectorAll('[data-eqc]').forEach(td=>td.ondblclick=()=>eqEditar(td,'sos_eq_estado',EQLE,reconstruirEQE,td.dataset.eqid,td.dataset.eqc,td.dataset.eqop?'select':'text',td.dataset.eqop?td.dataset.eqop.split('|'):null));
   ts.querySelectorAll('[data-ds]').forEach(b=>b.onclick=async()=>{
     if(!confirm('¿Eliminar esta equivalencia?'))return;
     await sb.from('sos_eq_sistema').delete().eq('id',b.dataset.ds);
     const i=EQLS.findIndex(x=>String(x.id)===b.dataset.ds);
     if(i>=0){EQS.delete(nrm(EQLS[i].texto));EQLS.splice(i,1);}
     eqPintarTablas(); reNormalizar();});
+  ts.querySelectorAll('[data-eqc]').forEach(td=>td.ondblclick=()=>eqEditar(td,'sos_eq_sistema',EQLS,reconstruirEQS,td.dataset.eqid,td.dataset.eqc,'text'));
 }
 /* al cambiar una equivalencia se vuelven a uniformar los datos ya guardados */
 async function reNormalizar(){
