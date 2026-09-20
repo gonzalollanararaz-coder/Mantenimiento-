@@ -49,7 +49,9 @@
   .chip{background:#FBFBFB;border:1px solid #E0E3E6;border-radius:9px;height:34px;padding:0 13px;font-size:12.5px;font-weight:500;color:#9AA0A6;display:inline-flex;align-items:center}
   footer{padding:6px 16px;color:var(--muted);font-size:12px;text-align:center;flex-shrink:0}
   #wrap{flex:1;overflow:auto;padding:10px 14px;min-height:0}
-  .cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:9px;margin-bottom:10px}
+  .cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:9px;margin-bottom:10px;
+    position:sticky;top:0;z-index:8;background:var(--bg);padding-top:2px}
+  .cards2{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:9px;margin-bottom:10px}
   .c{background:#fff;border:1px solid var(--line);border-radius:11px;padding:9px 12px}
   .c .l{font-size:10px;font-weight:800;color:var(--muted);text-transform:uppercase;letter-spacing:.4px}
   .c .v{font-size:22px;font-weight:800;color:#1F3864;line-height:1.15;margin-top:2px}
@@ -120,13 +122,13 @@
   table.of .bnd.amarillo{background:linear-gradient(180deg,#FFDC58 0%,#FFCD11 48%,#C7A00D 100%);border:1px solid #9E7F0B;color:#3B2E00;text-shadow:none}
   table.of .bnd.verde{background:linear-gradient(180deg,#55BF5D 0%,#0CA318 48%,#097F13 100%);border:1px solid #07650F;color:#fff;text-shadow:0 1px 1px rgba(0,0,0,.3)}
   table.of .bnd.plomo{background:linear-gradient(180deg,#ADADAD 0%,#8A8A8A 48%,#6C6C6C 100%);border:1px solid #565656;color:#fff;text-shadow:0 1px 1px rgba(0,0,0,.3)}
-  table.of tr.cols th{top:29px;padding:5px 7px;text-align:left;font-weight:600;font-size:10px;border-right:1px solid #fff;border-bottom:1px solid #fff}
+  table.of tr.cols th{top:29px;padding:3px 6px;text-align:left;font-weight:600;font-size:10px;line-height:1.15;border-right:1px solid #fff;border-bottom:1px solid #fff}
   table.of tr.cols th.c{text-align:center}
   table.of th.azul{background:#E5E7F2;color:#4254A5}
   table.of th.amarillo{background:#FFF8DE;color:#9E7F0B}
   table.of th.verde{background:#DDF2DF;color:#0C7A16}
   table.of th.plomo{background:#EFEFEF;color:#6C6C6C}
-  table.of td{padding:4px 7px;border-bottom:1px solid #e6e8eb;border-right:1px solid #eef0f2;line-height:1.3;vertical-align:middle;
+  table.of td{padding:2px 6px;border-bottom:1px solid #e6e8eb;border-right:1px solid #eef0f2;line-height:1.2;vertical-align:middle;
     white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
   table.of td.c{text-align:center}table.of td.r{text-align:right}
   table.of tbody tr:hover td{background:#f7fbff}
@@ -137,6 +139,11 @@
   table.of .frz1{left:0}
   table.of .frz2{left:30px}
   table.of .frz3{left:58px}
+  table.of td.idx{text-align:center}
+  table.of td.idx .rn{font-weight:600}
+  table.of td.idx .delrow{opacity:0;vertical-align:middle;border:none;background:none;color:#cbd2d9;cursor:pointer;font-size:12px;padding:0 0 0 3px;line-height:1}
+  table.of tbody tr:hover td.idx .delrow{opacity:1}
+  table.of tbody tr:hover td.idx .delrow:hover{color:#D3141A}
   .colb{border:none;background:transparent;color:inherit;opacity:.55;cursor:pointer;font-size:10px;padding:0 2px;vertical-align:middle}
   .colb:hover{opacity:1}
   .colb-open{opacity:.8;font-size:11px}
@@ -525,7 +532,7 @@ function pintarFra(){
   }
   const filasVisibles=filas.filter(([proy])=>pasaColFiltros('fra',{proyecto:proy}));
   boxFra.innerHTML=`
-    <div class="cards">
+    <div class="cards2">
       <div class="c"><div class="l">Frascos disponibles</div><div class="v ok">${disp}</div></div>
       <div class="c"><div class="l">En campo (enviados)</div><div class="v warn">${enviados.length}</div></div>
       <div class="c"><div class="l">Usados (histórico)</div><div class="v">${usados}</div></div>
@@ -692,6 +699,18 @@ function pasaColFiltros(vista,d){
     if(!f.has(v))return false;
   }
   return true;
+}
+
+// -- fija las tarjetas de resumen + las 2 filas de encabezado, una debajo de la otra --
+function fijarEncabezados(box){
+  requestAnimationFrame(()=>{
+    const tabla=box.querySelector('table'); if(!tabla)return;
+    const hCards=cards.getBoundingClientRect().height||0;
+    const bandas=tabla.querySelector('tr.bands');
+    const hBand=bandas?bandas.getBoundingClientRect().height:0;
+    if(bandas)bandas.querySelectorAll('th').forEach(th=>th.style.top=hCards+'px');
+    tabla.querySelectorAll('tr.cols th').forEach(th=>th.style.top=(hCards+hBand)+'px');
+  });
 }
 
 // -- resaltado de fila + columna al estilo Excel --
@@ -884,22 +903,22 @@ function pintarPlan(){
   if(!L.length){boxPlan.innerHTML='<div class="vacio">Sin muestras registradas con estos filtros.</div>';return;}
   const total=L.length;
   boxPlan.innerHTML=`<table class="of"><colgroup>
-      <col style="width:30px"><col style="width:28px"><col style="width:28px">
+      <col style="width:30px">
       <col style="width:${anchoP('nro_planilla',88)}px"><col style="width:${anchoP('obra',72)}px"><col style="width:92px">
-      <col style="width:${anchoP('marca',80)}px"><col style="width:${anchoP('modelo',92)}px"><col style="width:${anchoP('serie',80)}px">
-      <col style="width:150px"><col style="width:100px"><col style="width:60px"><col style="width:78px">
-      <col style="width:70px"><col style="width:70px"><col style="width:80px"><col style="width:80px">
-      <col style="width:72px"><col style="width:78px">
+      <col style="width:${anchoP('marca',80)}px"><col style="width:${anchoP('modelo',66)}px"><col style="width:${anchoP('serie',58)}px">
+      <col style="width:150px"><col style="width:100px"><col style="width:42px"><col style="width:60px">
+      <col style="width:56px"><col style="width:58px"><col style="width:64px"><col style="width:64px">
+      <col style="width:58px"><col style="width:60px">
       <col style="width:${anchoP('observacion',220)}px">
     </colgroup>
     <thead>
     <tr class="bands">
-      <th colspan="9" class="frz"><span class="bnd azul">IDENTIFICACIÓN DEL EQUIPO</span></th>
+      <th colspan="7" class="frz"><span class="bnd azul">IDENTIFICACIÓN DEL EQUIPO</span></th>
       <th colspan="10"><span class="bnd amarillo">DATOS DE LA MUESTRA DE ACEITE</span></th>
       <th colspan="1"><span class="bnd plomo">OBSERVACIÓN</span></th>
     </tr>
     <tr class="cols">
-      <th class="azul c frz frz1">#</th><th class="azul c frz frz2" title="Eliminar fila">✕</th><th class="azul c frz frz3" title="Editar fila">✎</th>
+      <th class="azul c frz frz1">#</th>
       <th class="azul">${cabColapsable('nro_planilla','N° Planilla',false)}</th><th class="azul">${cabColapsable('obra','Obra',true)}</th><th class="azul">${cabColG('plan','cod_sap','Cód. SAP')}</th>
       <th class="azul">${cabColapsable('marca','Marca',false)}</th><th class="azul">${cabColapsable('modelo','Modelo',false)}</th><th class="azul">${cabColapsable('serie','Serie',false)}</th>
       <th class="amarillo">${cabColG('plan','sistema','Sistema')}</th><th class="amarillo">${cabColG('plan','tipo_aceite','Tipo de aceite')}</th><th class="amarillo c">Gal.</th><th class="amarillo r">Horómetro</th>
@@ -910,18 +929,16 @@ function pintarPlan(){
     </thead><tbody>
     ${L.map((p,i)=>{
       const e=getE(p.maestro_id);
+      const sisMostrar=p.sistema_std||p.sistema||'';
       return `<tr data-pid="${p.id}">
-        <td class="c mono frz frz1">${total-i}</td>
-        <td class="c frz frz2"><button class="fx" data-del="${p.id}" title="Eliminar fila">✕</button></td>
-        <td class="c frz frz3"><button class="mini" data-edit="${p.id}">✎</button></td>
+        <td class="mono frz frz1 idx"><span class="rn">${total-i}</span><button class="delrow" data-del="${p.id}" title="Eliminar fila">✕</button></td>
         <td>${celdaColapsable('nro_planilla',esc(p.nro_planilla||''))}</td>
         <td>${celdaColapsable('obra',esc(p.obra||''))}</td>
         <td class="mono">${esc(p.cod_sap||'')}</td>
         <td>${celdaColapsable('marca',esc(p.marca||(e?e.marca:'')||''))}</td>
         <td>${celdaColapsable('modelo',esc(p.modelo||(e?e.modelo:'')||''))}</td>
         <td>${celdaColapsable('serie',esc(p.serie||(e?e.serie_placa:'')||''))}</td>
-        <td data-campo="sistema">${esc(p.sistema||'')}${p.sistema_std&&nrm(p.sistema_std)!==nrm(p.sistema)?` <i class="std">→ ${esc(p.sistema_std)}</i>`:''}
-            ${p.sistema&&!p.sistema_std?' <b class="warn">sin equiv.</b>':''}</td>
+        <td data-campo="sistema">${esc(sisMostrar)}${p.sistema&&!p.sistema_std?' <b class="warn">sin equiv.</b>':''}</td>
         <td data-campo="tipo_aceite">${esc(p.tipo_aceite||'')}</td>
         <td class="c" data-campo="galones" data-tipo="num">${p.galones!=null?f1(p.galones):''}</td>
         <td class="r mono" data-campo="horometro" data-tipo="num">${p.horometro!=null?f0(p.horometro):''}</td>
@@ -933,7 +950,6 @@ function pintarPlan(){
         <td class="c mono">${esc(p.nro_frasco||'')}</td>
         <td class="desc"${COL_COLAPSADAS.observacion?'':' data-campo="observacion"'}>${celdaColapsable('observacion',esc(p.observacion||''))}</td></tr>`;}).join('')}
     </tbody></table>`;
-  boxPlan.querySelectorAll('[data-edit]').forEach(b=>b.onclick=ev=>{ev.stopPropagation();formPlan(b.dataset.edit);});
   boxPlan.querySelectorAll('[data-del]').forEach(b=>b.onclick=ev=>{ev.stopPropagation();borrarFilaG('plan','sos_planilla',()=>PLAN,b.dataset.del);});
   boxPlan.querySelectorAll('[data-cc]').forEach(b=>b.onclick=ev=>{ev.stopPropagation();COL_COLAPSADAS[b.dataset.cc]=!COL_COLAPSADAS[b.dataset.cc];pintarPlan();});
   boxPlan.querySelectorAll('td[data-campo]').forEach(td=>td.ondblclick=ev=>{
@@ -941,13 +957,12 @@ function pintarPlan(){
     editarCeldaG({td, tabla:'sos_planilla', vista:'plan', arrGetter:()=>PLAN, id:td.closest('tr').dataset.pid,
       campo:td.dataset.campo, tipo:td.dataset.tipo||'text', opciones:td.dataset.op?td.dataset.op.split('|'):null});
   });
-  activarResaltado(boxPlan.querySelector('table'));
-  requestAnimationFrame(()=>{
-    const bandas=boxPlan.querySelector('tr.bands');
-    if(!bandas)return;
-    const h=bandas.getBoundingClientRect().height;
-    boxPlan.querySelectorAll('tr.cols th').forEach(th=>th.style.top=h+'px');
+  boxPlan.querySelectorAll('tbody tr').forEach(tr=>tr.ondblclick=ev=>{
+    if(ev.target.closest('td[data-campo]')||ev.target.closest('.delrow'))return;
+    formPlan(tr.dataset.pid);
   });
+  activarResaltado(boxPlan.querySelector('table'));
+  fijarEncabezados(boxPlan);
 }
 
 /* ───────── RESULTADOS ───────── */
@@ -1023,11 +1038,7 @@ function pintarRes(){
     editarCeldaG({td, tabla:'sos_resultados', vista:'res', arrGetter:()=>RES, id:td.closest('tr').dataset.rid, campo:td.dataset.campo, tipo:'text'});
   });
   activarResaltado(boxRes.querySelector('table'));
-  requestAnimationFrame(()=>{
-    const bandas=boxRes.querySelector('tr.bands'); if(!bandas)return;
-    const h=bandas.getBoundingClientRect().height;
-    boxRes.querySelectorAll('tr.cols th').forEach(th=>th.style.top=h+'px');
-  });
+  fijarEncabezados(boxRes);
 }
 function detalleRes(id){
   const r=RES.find(x=>String(x.id)===String(id)); if(!r)return;
@@ -1131,11 +1142,7 @@ function pintarAle(){
     borrarFilaG('ale','sos_alertas',()=>ALE,b.dataset.delale);
   });
   activarResaltado(boxAle.querySelector('table'));
-  requestAnimationFrame(()=>{
-    const bandas=boxAle.querySelector('tr.bands'); if(!bandas)return;
-    const h=bandas.getBoundingClientRect().height;
-    boxAle.querySelectorAll('tr.cols th').forEach(th=>th.style.top=h+'px');
-  });
+  fijarEncabezados(boxAle);
 }
 function ale(r){ return ALE.find(a=>String(a.resultado_id)===String(r.id))||{}; }
 async function guardarAlerta(rid,ctrl){
