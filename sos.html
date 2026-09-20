@@ -112,7 +112,7 @@
   .form input[readonly]{background:#f5f6f8;color:#6b747d}
 
   /* ── ESTILO OFICIAL GLLR: encabezado de 2 filas (banda + columna pastel) ── */
-  table.of{width:100%;border-collapse:collapse;font-size:11.5px;background:#fff}
+  table.of{width:100%;border-collapse:collapse;font-size:11.5px;background:#fff;table-layout:fixed}
   table.of thead th{position:sticky;z-index:4}
   table.of tr.bands th{top:0;background:#fff;padding:3px 3px 4px;border:none;border-bottom:1px solid var(--line);text-align:center}
   table.of .bnd{display:block;border-radius:7px;padding:4px 8px;font-size:10.5px;font-weight:700;letter-spacing:.02em}
@@ -126,13 +126,20 @@
   table.of th.amarillo{background:#FFF8DE;color:#9E7F0B}
   table.of th.verde{background:#DDF2DF;color:#0C7A16}
   table.of th.plomo{background:#EFEFEF;color:#6C6C6C}
-  table.of td{padding:4px 7px;border-bottom:1px solid #e6e8eb;border-right:1px solid #eef0f2;line-height:1.3;vertical-align:middle}
+  table.of td{padding:4px 7px;border-bottom:1px solid #e6e8eb;border-right:1px solid #eef0f2;line-height:1.3;vertical-align:middle;
+    white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
   table.of td.c{text-align:center}table.of td.r{text-align:right}
   table.of tbody tr:hover td{background:#f7fbff}
   table.of .frz{position:sticky;left:0;background:#fff;z-index:2}
   table.of tr.bands .frz{background:#fff;z-index:5}
   table.of tr.cols th.frz{z-index:5}
   table.of tbody tr:hover td.frz{background:#f7fbff}
+  table.of .frz1{left:0}
+  table.of .frz2{left:30px}
+  table.of .frz3{left:58px}
+  .colb{border:none;background:transparent;color:inherit;opacity:.55;cursor:pointer;font-size:10px;padding:0 2px;vertical-align:middle}
+  .colb:hover{opacity:1}
+  .colb-open{opacity:.8;font-size:11px}
 
   /* ── ESTILO GLLR · sección 6: comportamiento general (líneas, filtros, resaltado, edición, deshacer) ── */
   table.t td,table.t th{border-right:1px solid #eef0f2}
@@ -173,7 +180,7 @@
 <script>if(window.self!==window.top){document.getElementById('topbar').style.display='none';}</script>
 <div id="subnav">
   <button id="tab_fra" class="on">&#128230; Frascos</button>
-  <button id="tab_plan">PLANILLA DE MUESTRAS DE ACEITE</button>
+  <button id="tab_plan">Planilla de muestras</button>
   <button id="tab_res">Resultados</button>
   <button id="tab_ale">Seguimiento de alertas</button>
 </div>
@@ -614,6 +621,14 @@ async function agregarFrascos(){
 /* ═══════ ESTILO GLLR · sección 6: infraestructura compartida ═══════ */
 // -- filtros de columna tipo Excel, uno por sub-pestaña --
 let colFiltros={plan:{},res:{},ale:{},fra:{}};
+let COL_COLAPSADAS={nro_planilla:true,obra:true,marca:false,modelo:false,serie:false,observacion:true};
+function anchoP(campo,normal){ return COL_COLAPSADAS[campo]?26:normal; }
+function cabColapsable(campo,etiqueta,conFiltro){
+  if(COL_COLAPSADAS[campo])return `<button class="colb colb-open" data-cc="${campo}" title="Expandir ${etiqueta}">»</button>`;
+  const lbl=conFiltro?cabColG('plan',campo,etiqueta):esc(etiqueta);
+  return `${lbl}<button class="colb" data-cc="${campo}" title="Contraer ${etiqueta}">«</button>`;
+}
+function celdaColapsable(campo,html){ return COL_COLAPSADAS[campo]?'':html; }
 function cabColG(vista,campo,etiqueta){
   const f=colFiltros[vista][campo];
   return `<span class="hcabg${f&&f.size?' filtrado':''}" data-colg="${campo}" data-vg="${vista}">${etiqueta}<i class="emb">▼</i></span>`;
@@ -863,37 +878,42 @@ function pintarPlan(){
   if(!L.length){boxPlan.innerHTML='<div class="vacio">Sin muestras registradas con estos filtros.</div>';return;}
   const total=L.length;
   boxPlan.innerHTML=`<table class="of"><colgroup>
-      <col style="width:38px"><col style="width:88px"><col style="width:72px"><col style="width:92px">
-      <col style="width:80px"><col style="width:92px"><col style="width:80px">
+      <col style="width:30px"><col style="width:28px"><col style="width:28px">
+      <col style="width:${anchoP('nro_planilla',88)}px"><col style="width:${anchoP('obra',72)}px"><col style="width:92px">
+      <col style="width:${anchoP('marca',80)}px"><col style="width:${anchoP('modelo',92)}px"><col style="width:${anchoP('serie',80)}px">
       <col style="width:150px"><col style="width:100px"><col style="width:60px"><col style="width:78px">
       <col style="width:70px"><col style="width:70px"><col style="width:80px"><col style="width:80px">
       <col style="width:72px"><col style="width:78px">
-      <col style="width:220px"><col style="width:140px"><col style="width:36px"><col style="width:30px">
+      <col style="width:${anchoP('observacion',220)}px">
     </colgroup>
     <thead>
     <tr class="bands">
-      <th colspan="7" class="frz"><span class="bnd azul">IDENTIFICACIÓN DEL EQUIPO</span></th>
+      <th colspan="9" class="frz"><span class="bnd azul">IDENTIFICACIÓN DEL EQUIPO</span></th>
       <th colspan="10"><span class="bnd amarillo">DATOS DE LA MUESTRA DE ACEITE</span></th>
       <th colspan="1"><span class="bnd plomo">OBSERVACIÓN</span></th>
-      <th colspan="3"><span class="bnd verde">VALIDACIÓN</span></th>
     </tr>
     <tr class="cols">
-      <th class="azul c frz">#</th><th class="azul">N° Planilla</th><th class="azul">${cabColG('plan','obra','Obra')}</th><th class="azul">${cabColG('plan','cod_sap','Cód. SAP')}</th>
-      <th class="azul">Marca</th><th class="azul">Modelo</th><th class="azul">Serie</th>
+      <th class="azul c frz frz1">#</th><th class="azul c frz frz2" title="Eliminar fila">✕</th><th class="azul c frz frz3" title="Editar fila">✎</th>
+      <th class="azul">${cabColapsable('nro_planilla','N° Planilla',false)}</th><th class="azul">${cabColapsable('obra','Obra',true)}</th><th class="azul">${cabColG('plan','cod_sap','Cód. SAP')}</th>
+      <th class="azul">${cabColapsable('marca','Marca',false)}</th><th class="azul">${cabColapsable('modelo','Modelo',false)}</th><th class="azul">${cabColapsable('serie','Serie',false)}</th>
       <th class="amarillo">${cabColG('plan','sistema','Sistema')}</th><th class="amarillo">${cabColG('plan','tipo_aceite','Tipo de aceite')}</th><th class="amarillo c">Gal.</th><th class="amarillo r">Horómetro</th>
       <th class="amarillo r">Hrs. aceite</th><th class="amarillo r">Cant. agreg.</th><th class="amarillo c">F. muestreo</th><th class="amarillo c">F. envío</th>
       <th class="amarillo c">${cabColG('plan','tipo','Tipo')}</th><th class="amarillo c">${cabColG('plan','nro_frasco','N° Frasco')}</th>
-      <th class="plomo">Observación</th>
-      <th class="verde">Validación (vs. stock)</th><th class="verde c"></th><th class="verde c"></th>
+      <th class="plomo">${cabColapsable('observacion','Observación',false)}</th>
     </tr>
     </thead><tbody>
     ${L.map((p,i)=>{
       const e=getE(p.maestro_id);
-      const v=estadoValidacion(p);
       return `<tr data-pid="${p.id}">
-        <td class="c mono frz">${total-i}</td>
-        <td>${esc(p.nro_planilla||'')}</td><td>${esc(p.obra||'')}</td><td class="mono">${esc(p.cod_sap||'')}</td>
-        <td>${esc(p.marca||(e?e.marca:'')||'')}</td><td>${esc(p.modelo||(e?e.modelo:'')||'')}</td><td>${esc(p.serie||(e?e.serie_placa:'')||'')}</td>
+        <td class="c mono frz frz1">${total-i}</td>
+        <td class="c frz frz2"><button class="fx" data-del="${p.id}" title="Eliminar fila">✕</button></td>
+        <td class="c frz frz3"><button class="mini" data-edit="${p.id}">✎</button></td>
+        <td>${celdaColapsable('nro_planilla',esc(p.nro_planilla||''))}</td>
+        <td>${celdaColapsable('obra',esc(p.obra||''))}</td>
+        <td class="mono">${esc(p.cod_sap||'')}</td>
+        <td>${celdaColapsable('marca',esc(p.marca||(e?e.marca:'')||''))}</td>
+        <td>${celdaColapsable('modelo',esc(p.modelo||(e?e.modelo:'')||''))}</td>
+        <td>${celdaColapsable('serie',esc(p.serie||(e?e.serie_placa:'')||''))}</td>
         <td data-campo="sistema">${esc(p.sistema||'')}${p.sistema_std&&nrm(p.sistema_std)!==nrm(p.sistema)?` <i class="std">→ ${esc(p.sistema_std)}</i>`:''}
             ${p.sistema&&!p.sistema_std?' <b class="warn">sin equiv.</b>':''}</td>
         <td data-campo="tipo_aceite">${esc(p.tipo_aceite||'')}</td>
@@ -905,13 +925,11 @@ function pintarPlan(){
         <td class="c" data-campo="f_envio" data-tipo="fecha">${fmtDate(p.f_envio)}</td>
         <td class="c" data-campo="tipo" data-tipo="select" data-op="|Muestra|Cambio">${esc(p.tipo||'')}</td>
         <td class="c mono">${esc(p.nro_frasco||'')}</td>
-        <td class="desc" data-campo="observacion">${esc(p.observacion||'')}</td>
-        <td class="${v.cls}" style="font-size:10.5px">${v.txt}</td>
-        <td class="c"><button class="mini" data-edit="${p.id}">✎</button></td>
-        <td class="c"><button class="fx" data-del="${p.id}" title="Eliminar fila">✕</button></td></tr>`;}).join('')}
+        <td class="desc"${COL_COLAPSADAS.observacion?'':' data-campo="observacion"'}>${celdaColapsable('observacion',esc(p.observacion||''))}</td></tr>`;}).join('')}
     </tbody></table>`;
   boxPlan.querySelectorAll('[data-edit]').forEach(b=>b.onclick=ev=>{ev.stopPropagation();formPlan(b.dataset.edit);});
   boxPlan.querySelectorAll('[data-del]').forEach(b=>b.onclick=ev=>{ev.stopPropagation();borrarFilaG('plan','sos_planilla',()=>PLAN,b.dataset.del);});
+  boxPlan.querySelectorAll('[data-cc]').forEach(b=>b.onclick=ev=>{ev.stopPropagation();COL_COLAPSADAS[b.dataset.cc]=!COL_COLAPSADAS[b.dataset.cc];pintarPlan();});
   boxPlan.querySelectorAll('td[data-campo]').forEach(td=>td.ondblclick=ev=>{
     ev.stopPropagation();
     editarCeldaG({td, tabla:'sos_planilla', vista:'plan', arrGetter:()=>PLAN, id:td.closest('tr').dataset.pid,
