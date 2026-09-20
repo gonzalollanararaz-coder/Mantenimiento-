@@ -1442,7 +1442,7 @@ async function subirResultados(filas,nom,hoja){
   for(const r of conMuestra){
     const patch={
       fuente:r.fuente, nro_muestra:r.nro_muestra,
-      cod_frasco:r.muestraExistente.nro_frasco||r.cod_frasco||null,
+      nro_frasco:r.muestraExistente.nro_frasco||r.cod_frasco||null,
       horometro:r.muestraExistente.horometro??r.horometro,
       estado:r.estado, estado_std:r.estado_std, observacion_lab:r.observacion, link_pdf:r.link_pdf, analisis:r.analisis
     };
