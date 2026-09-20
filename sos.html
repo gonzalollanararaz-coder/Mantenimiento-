@@ -443,18 +443,42 @@ function leerResultados(filas,fuente){
     const an={};
     ANALISIS.forEach(k=>{const v=val(f,m.cols,k); const n=aNum(v);
       if(n!=null)an[k]=n; else if(v!=null&&String(v).trim()&&String(v).trim()!=='-')an[k]=String(v).trim();});
+    const fmuestreo=aFecha(val(f,m.cols,'FECHA','Fecha de muestreo'));
+    const horom=aNum(val(f,m.cols,'HORAS','Horometro','Horómetro','Hrs equipo'));
+    // -- candidato para crear la fila de Planilla, si el resultado no logra enlazarse a una ya existente --
+    let tipoAceite=String(val(f,m.cols,'Aceite lubricante','Producto Usado')??'').trim();
+    if(!tipoAceite){
+      const marca=String(val(f,m.cols,'Fluid Brand')??'').trim();
+      const peso=String(val(f,m.cols,'Fluid Weight')??'').trim();
+      tipoAceite=[marca,peso].filter(x=>x&&x!=='.').join(' ').trim();
+    }
+    let tipoCambio=null;
+    const fluidoCambiado=String(val(f,m.cols,'Fluido Cambiado')??'').trim();
+    if(fluidoCambiado)tipoCambio=/^[SY]/i.test(fluidoCambiado)?'Cambio':'Muestra';
+    const candidato={
+      obra:e?e.cod_proyec:null,
+      marca:e?e.marca:null, modelo:e?e.modelo:null, serie:e?e.serie_placa:null,
+      sistema:comp||null, tipo_aceite:tipoAceite||null,
+      galones:aNum(val(f,m.cols,'Volumen relleno')),
+      horometro:horom, horas_aceite:aNum(val(f,m.cols,'Hrs aceite','Horas del Aceite','Estimacion de horas del fluido')),
+      cant_agregado:0,
+      f_muestreo:fmuestreo,
+      f_envio:aFecha(val(f,m.cols,'Fecha de reporte','Fecha de laboratorio','Fecha de recibo de la muestra','Fecha del reporte')),
+      tipo:tipoCambio
+    };
     out.push({
       fuente, nro_muestra:nro,
       cod_frasco:String(val(f,m.cols,'CÓDIGO FRASCO (si aplica)','No. de Etiqueta','Codigo Frasco')??'').trim()||null,
       cod_sap:sap||null, maestro_id:e?e.id:null,
       obra:String(val(f,m.cols,'OBRA','Nombre del Cliente','Cuenta')??'').trim()||(e?e.cod_proyec:null),
       componente:comp||null, sistema_std:sistemaStd(comp),
-      fecha:aFecha(val(f,m.cols,'FECHA','Fecha de muestreo')),
-      horometro:aNum(val(f,m.cols,'HORAS','Horometro','Horómetro','Hrs equipo')),
+      fecha:fmuestreo,
+      horometro:horom,
       estado:est||null, estado_std:estadoStd(est),
       observacion:String(val(f,m.cols,'Interpretacion','Recomendaciones','Comentarios','Observación del reporte')??'').trim()||null,
       link_pdf:String(val(f,m.cols,'Link al reporte PDF (OneDrive)','Link PDF')??'').trim()||null,
-      analisis:Object.keys(an).length?an:null
+      analisis:Object.keys(an).length?an:null,
+      candidato
     });
   }
   return out;
@@ -1408,20 +1432,26 @@ async function subirResultados(filas,nom,hoja){
   const sinEst=[...new Set(regs.filter(r=>r.estado&&!r.estado_std).map(r=>r.estado))];
   const sinSis=[...new Set(regs.filter(r=>r.componente&&!r.sistema_std).map(r=>r.componente))];
   const enl=nuevos.filter(r=>r.planilla_id).length;
+  const sinEnl=nuevos.filter(r=>!r.planilla_id).length;
   let msg=`${nom}  ·  laboratorio: ${fuente}\n\n`
     +`Resultados leídos: ${regs.length}\n`
     +`Nuevos para agregar: ${nuevos.length}\n`
     +`Ya registrados (se omiten): ${regs.length-nuevos.length}\n`
-    +`Enlazados con una muestra de la planilla: ${enl} de ${nuevos.length}\n`;
+    +`Enlazados con una muestra de la planilla: ${enl} de ${nuevos.length}\n`
+    +(sinEnl?`Sin enlazar (te los mostraré para armar su fila en Planilla): ${sinEnl}\n`:'');
   if(sinEst.length)msg+=`\n⚠ Estados sin equivalencia (quedarán sin uniformar):\n  ${sinEst.slice(0,6).join(', ')}${sinEst.length>6?'…':''}\n`;
   if(sinSis.length)msg+=`\n⚠ Sistemas sin equivalencia:\n  ${sinSis.slice(0,6).join(', ')}${sinSis.length>6?'…':''}\n`;
   msg+='\n¿Guardar?';
   if(!confirm(msg))return;
   if(!nuevos.length)return;
   let ok=0,err='';
+  const guardados=[]; // resultados insertados, con su id real, para poder enlazarlos después
   for(let i=0;i<nuevos.length;i+=150){
-    const {error}=await sb.from('sos_resultados').insert(nuevos.slice(i,i+150));
-    if(error){err=error.message;break;} ok+=Math.min(150,nuevos.length-i);
+    const tanda=nuevos.slice(i,i+150).map(({candidato,...limpio})=>limpio);
+    const {data,error}=await sb.from('sos_resultados').insert(tanda).select();
+    if(error){err=error.message;break;}
+    ok+=tanda.length;
+    (data||[]).forEach(d=>guardados.push(d));
   }
   if(err)alert('Se guardaron '+ok+' y luego hubo un error:\n'+err);
   // los que quedaron enlazados actualizan el N° de muestra en la planilla
@@ -1430,6 +1460,12 @@ async function subirResultados(filas,nom,hoja){
   }
   await cargarTodo();
   pie.textContent=`${ok} resultado(s) agregados · ${enl} enlazados con la planilla.`;
+  // emparejar cada resultado guardado (con su id real) con su candidato de Planilla, para los que quedaron sin enlazar
+  const porClave=new Map(guardados.map(d=>[d.fuente+'|'+nrm(d.nro_muestra),d]));
+  const pendientes=nuevos.filter(r=>!r.planilla_id).map(r=>({
+    resultado:porClave.get(r.fuente+'|'+nrm(r.nro_muestra))||null, ...r
+  })).filter(x=>x.resultado);
+  if(pendientes.length)revisarNuevasPlanillas(pendientes);
   if(sinEst.length||sinSis.length){
     // se nombra exactamente qué falta y se ofrece resolverlo al momento
     const det=(sinEst.length?`Estados sin equivalencia (${sinEst.length}):\n   ${sinEst.join('\n   ')}\n\n`:'')
@@ -1442,6 +1478,91 @@ async function subirResultados(filas,nom,hoja){
       +`(al guardarlas, los datos ya cargados se corrigen solos)`);
     if(abrir)eqAbrir();
   }
+}
+function revisarNuevasPlanillas(lista){
+  const eqs=datos.filter(e=>!esDesmovM(e)).sort((a,b)=>String(a.cod_sap||'').localeCompare(String(b.cod_sap||'')));
+  document.body.insertAdjacentHTML('beforeend',`<div class="modal" id="mnp"><div class="mc" style="width:min(880px,96vw)">
+    <div class="mh"><h3>Resultados sin fila en Planilla</h3>
+      <div class="sub">${lista.length} resultado(s) no encontraron una muestra ya registrada. Se armó una fila con lo que trae el laboratorio — revisa y confirma cuáles crear.</div>
+      <div class="spacer"></div><button class="act" id="npCer">Cerrar sin crear</button></div>
+    <div class="mb">
+      ${lista.map((x,i)=>{
+        const c=x.candidato, r=x.resultado;
+        return `<div class="campo" style="border:1px solid var(--line);border-radius:8px">
+          <label style="display:flex;align-items:center;gap:8px;font-size:12.5px;color:#1F3864">
+            <input type="checkbox" class="npChk" data-i="${i}" checked>
+            <b>N° muestra ${esc(r.nro_muestra)} · ${esc(x.fuente)} · ${fmtDate(c.f_muestreo)}</b>
+            ${!x.maestro_id?' <span class="b-mid">código de equipo no reconocido</span>':''}
+          </label>
+          <div class="form" style="margin-top:6px">
+            <label>Cód. SAP<input class="npF" data-i="${i}" data-c="cod_sap" list="npEq${i}" value="${esc(x.cod_sap||'')}"></label>
+            <datalist id="npEq${i}">${eqs.map(e=>`<option value="${esc(e.cod_sap)}">${esc(e.equipo||'')}</option>`).join('')}</datalist>
+            <label>Sistema<input class="npF" data-i="${i}" data-c="sistema" value="${esc(c.sistema||'')}"></label>
+            <label>Tipo de aceite<input class="npF" data-i="${i}" data-c="tipo_aceite" value="${esc(c.tipo_aceite||'')}"></label>
+            <label>Galones<input class="npF" data-i="${i}" data-c="galones" type="number" step="0.1" value="${c.galones??''}"></label>
+            <label>Horómetro<input class="npF" data-i="${i}" data-c="horometro" type="number" step="1" value="${c.horometro??''}"></label>
+            <label>Horas del aceite<input class="npF" data-i="${i}" data-c="horas_aceite" type="number" step="1" value="${c.horas_aceite??''}"></label>
+            <label>Cant. agregado<input class="npF" data-i="${i}" data-c="cant_agregado" type="number" step="0.1" value="${c.cant_agregado??0}"></label>
+            <label>F. muestreo<input class="npF" data-i="${i}" data-c="f_muestreo" type="date" value="${c.f_muestreo||''}"></label>
+            <label>F. envío<input class="npF" data-i="${i}" data-c="f_envio" type="date" value="${c.f_envio||''}"></label>
+            <label>Tipo<select class="npF" data-i="${i}" data-c="tipo">
+              ${['','Muestra','Cambio'].map(o=>`<option ${String(c.tipo||'')===o?'selected':''}>${o}</option>`).join('')}</select></label>
+          </div>
+        </div>`;
+      }).join('')}
+    </div>
+    <div style="display:flex;gap:8px;justify-content:flex-end;padding:12px 16px;border-top:1px solid var(--line)">
+      <button class="act" id="npNo">Cancelar</button><button class="act primary" id="npOk">Crear las marcadas</button></div>
+  </div></div>`);
+  const cerrar=()=>{const e=document.getElementById('mnp');if(e)e.remove();};
+  document.getElementById('npCer').onclick=cerrar;
+  document.getElementById('npNo').onclick=cerrar;
+  document.getElementById('mnp').addEventListener('click',ev=>{if(ev.target.id==='mnp')cerrar();});
+  document.querySelectorAll('.npF').forEach(inp=>inp.onchange=()=>{
+    const i=+inp.dataset.i, campo=inp.dataset.c;
+    if(campo==='cod_sap'){
+      lista[i].cod_sap=inp.value.trim();
+      const e=datos.find(x=>nrm(x.cod_sap)===nrm(inp.value));
+      lista[i].maestro_id=e?e.id:null;
+      if(e){lista[i].candidato.obra=e.cod_proyec; lista[i].candidato.marca=e.marca; lista[i].candidato.modelo=e.modelo; lista[i].candidato.serie=e.serie_placa;}
+    }else{
+      const v=inp.value===''?null:(inp.type==='number'?+inp.value:inp.value);
+      lista[i].candidato[campo]=v;
+    }
+  });
+  document.getElementById('npOk').onclick=async()=>{
+    const idxSel=[...document.querySelectorAll('.npChk:checked')].map(c=>+c.dataset.i);
+    if(!idxSel.length){cerrar();return;}
+    let ok=0; const fallidas=[];
+    for(const i of idxSel){
+      const x=lista[i], c=x.candidato;
+      if(!x.maestro_id){fallidas.push({x,msg:'Sin equipo válido (Cód. SAP no reconocido)'});continue;}
+      const fila={
+        obra:c.obra, nro_planilla:null, nro_frasco:x.cod_frasco||null,
+        cod_sap:x.cod_sap, maestro_id:x.maestro_id,
+        marca:c.marca, modelo:c.modelo, serie:c.serie,
+        sistema:c.sistema, sistema_std:sistemaStd(c.sistema)||x.sistema_std,
+        tipo_aceite:c.tipo_aceite, galones:c.galones, horometro:c.horometro,
+        horas_aceite:c.horas_aceite, cant_agregado:c.cant_agregado??0,
+        f_muestreo:c.f_muestreo, f_envio:c.f_envio, tipo:c.tipo,
+        observacion:x.observacion, nro_muestra:x.nro_muestra,
+        registrado_por:perfil?perfil.nombre:null
+      };
+      const {data,error}=await sb.from('sos_planilla').insert(fila).select().single();
+      if(error){fallidas.push({x,msg:error.message});continue;}
+      PLAN.push(data);
+      if(x.resultado){
+        await sb.from('sos_resultados').update({planilla_id:data.id}).eq('id',x.resultado.id);
+        const rr=RES.find(y=>String(y.id)===String(x.resultado.id)); if(rr)rr.planilla_id=data.id;
+      }
+      ok++;
+    }
+    cerrar();
+    if(fallidas.length)alert(`Se crearon ${ok} de ${idxSel.length}.\n\n${fallidas.length} no se pudieron crear:\n`
+      +fallidas.slice(0,6).map(x=>`· ${x.x.cod_sap||'—'} → ${x.msg}`).join('\n'));
+    pie.textContent=`${ok} fila(s) nuevas creadas en Planilla desde resultados de laboratorio.`;
+    pintar();
+  };
 }
 
 /* ═══════════════ INGRESO MANUAL A LA PLANILLA ═══════════════ */
