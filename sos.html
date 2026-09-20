@@ -893,7 +893,14 @@ async function subirPlanilla(filas,nom){
     +(sinEq.length?`Códigos que no están en Equipos: ${sinEq.length}\n`:'')
     +(sinSis.length?`Sistemas sin equivalencia: ${sinSis.length} (los podrás asignar después)\n`:'')
     +`\n¿Guardar?`))return;
-  if(!nuevos.length)return;
+  // ampliar el filtro de fechas visible para que se vea todo lo cargado (nuevo o ya existente)
+  const fechas=regs.map(r=>r.f_muestreo).filter(Boolean).sort();
+  if(fechas.length){
+    if(!fDesde.value||fechas[0]<fDesde.value)fDesde.value=fechas[0];
+    const ultima=fechas[fechas.length-1];
+    if(!fHasta.value||ultima>fHasta.value)fHasta.value=ultima;
+  }
+  if(!nuevos.length){ pintar(); return; }
   let ok=0; const fallidas=[];
   for(const p of nuevos){
     const {error}=await sb.from('sos_planilla').insert(p);
