@@ -61,7 +61,7 @@
     text-align:left;position:sticky;top:0;z-index:2;text-shadow:0 1px 1px rgba(0,0,0,.3)}
   table.t th.c,table.t td.c{text-align:center}
   table.t th.r,table.t td.r{text-align:right}
-  table.t td{padding:4px 6px;border-bottom:1px solid #eef1f4;vertical-align:middle}
+  table.t td{padding:4px 6px;border-bottom:1px solid #e6e8eb;vertical-align:middle}
   table.t tbody tr:hover td{background:#f7fbff}
   table.t tr.corte td{border-top:2px solid #cbd5e1}
   /* Filas de una sola línea: el texto que no entra se corta con puntos
@@ -133,6 +133,34 @@
   table.of tr.bands .frz{background:#fff;z-index:5}
   table.of tr.cols th.frz{z-index:5}
   table.of tbody tr:hover td.frz{background:#f7fbff}
+
+  /* ── ESTILO GLLR · sección 6: comportamiento general (líneas, filtros, resaltado, edición, deshacer) ── */
+  table.t td,table.t th{border-right:1px solid #eef0f2}
+  table.of tbody tr.fila-sel td,table.t tbody tr.fila-sel td{background:#FFF3B0!important}
+  table.of tbody td.col-hov,table.t tbody td.col-hov{background:#EAF2FF}
+  table.of tbody tr:hover td.col-hov,table.t tbody tr:hover td.col-hov{background:#DCEBFF}
+  .hcabg{cursor:pointer;display:inline-flex;align-items:center;gap:4px;border-radius:5px;padding:2px 4px;margin:-2px -4px}
+  .hcabg:hover{background:rgba(0,0,0,.07)}
+  .hcabg.filtrado{background:rgba(0,0,0,.13)}
+  .hcabg .emb{font-size:8px;opacity:.7}
+  .hcabg.filtrado .emb{opacity:1}
+  #colPop{position:fixed;background:#fff;border:1px solid #dfe3e7;border-radius:10px;
+    box-shadow:0 10px 30px rgba(20,30,50,.18);width:250px;z-index:60;display:none}
+  #colPop.abierto{display:block}
+  #colPop .cp-h{padding:9px 11px;border-bottom:1px solid #f1f3f5;font-size:11.5px;color:#1f3864;font-weight:700}
+  #colPop .cp-b{padding:8px 9px}
+  #colPop input[type=search]{width:100%;border:1px solid #dfe3e7;border-radius:7px;padding:7px 9px;font:inherit;font-size:12.5px;margin-bottom:6px}
+  #colPop .cp-l{max-height:196px;overflow:auto;border-top:1px solid #f1f3f5;padding-top:5px}
+  #colPop .cp-l label{display:flex;align-items:center;gap:8px;padding:5px 4px;font-size:12.5px;border-radius:6px;cursor:pointer}
+  #colPop .cp-l label:hover{background:#f7f8f9}
+  #colPop .cp-l label span:nth-child(2){flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  #colPop .cp-n{color:#98a2ad;font-size:11px}
+  #colPop .cp-f{display:flex;gap:6px;padding:8px 9px;border-top:1px solid #f1f3f5}
+  #colPop .cp-f button{flex:1;border:1px solid #dfe3e7;background:#fff;border-radius:7px;padding:7px;font:inherit;font-size:12px;font-weight:600;cursor:pointer}
+  #colPop .cp-f .ok{background:var(--amber);border-color:var(--amber);color:#1a1200}
+  .fx{border:none;background:transparent;color:#c2c7cd;font-size:13px;cursor:pointer;padding:0 4px;line-height:1}
+  .fx:hover{color:#D3141A}
+  .act:disabled{opacity:.4;cursor:not-allowed}
 </style>
 </head>
 <body>
@@ -158,6 +186,8 @@
   <select id="fSistema"><option value="">Todos los sistemas</option></select>
   <select id="fFuente"><option value="">Los 3 laboratorios</option><option>FESA</option><option>LUBTEC</option><option>MARCO PERUANA</option></select>
   <span class="chip" id="chN">&mdash;</span>
+  <button class="act" id="btnLimpiarSOS">&#10005; Borrar filtros</button>
+  <button class="act" id="btnDeshacer" title="Ctrl+Z" disabled>&#8630; Deshacer</button>
   <div class="spacer"></div>
   <button class="act primary" id="btnNuevo">+ Muestra</button>
   <button class="act" id="btnSubir" title="Planilla de envío o resultados de laboratorio: se reconoce solo">&#11014; Subir archivo</button>
@@ -485,6 +515,7 @@ function pintarFra(){
       ${sinSistemas.length?`<div class="warn" style="font-size:11.5px;margin-top:4px">Sin sistemas definidos en la tabla para: ${sinSistemas.map(esc).join(' · ')}.</div>`:''}
     </div>`;
   }
+  const filasVisibles=filas.filter(([proy])=>pasaColFiltros('fra',{proyecto:proy}));
   boxFra.innerHTML=`
     <div class="cards">
       <div class="c"><div class="l">Frascos disponibles</div><div class="v ok">${disp}</div></div>
@@ -494,9 +525,9 @@ function pintarFra(){
     </div>
     ${av}
     <div class="campo"><b>Necesidad calculada · ${esc(nombreMes(periodo))}</b>
-      <table class="t"><thead><tr><th>Proyecto</th><th class="c">Sugerido</th><th class="c">A enviar</th><th class="c">Detalle</th><th class="c">Acción</th></tr></thead>
+      <table class="t"><thead><tr><th>${cabColG('fra','proyecto','Proyecto')}</th><th class="c">Sugerido</th><th class="c">A enviar</th><th class="c">Detalle</th><th class="c">Acción</th></tr></thead>
       <tbody>
-      ${filas.length?filas.map(([proy,reg])=>{
+      ${filasVisibles.length?filasVisibles.map(([proy,reg])=>{
         const key=periodo+'|'+proy;
         const val=EDITADO.has(key)?EDITADO.get(key):reg.sugerido;
         return `<tr data-proy="${esc(proy)}">
@@ -506,7 +537,7 @@ function pintarFra(){
           <td class="c"><button class="mini" data-det="${esc(proy)}">Ver</button></td>
           <td class="c"><button class="act primary" style="height:26px;padding:0 10px;font-size:11.5px" data-desp="${esc(proy)}">Despachar</button></td>
         </tr>`;
-      }).join(''):'<tr><td colspan="5" class="dim" style="text-align:center;padding:16px">Ningún equipo programado ese mes (o todos ya excluidos por familia/desmovilizados).</td></tr>'}
+      }).join(''):'<tr><td colspan="5" class="dim" style="text-align:center;padding:16px">Ningún equipo programado ese mes (o todos ya excluidos por familia/desmovilizados/filtro).</td></tr>'}
       </tbody></table>
     </div>
     <div class="campo"><b>Frascos en campo (por proyecto)</b>
@@ -526,6 +557,7 @@ function pintarFra(){
   boxFra.querySelectorAll('[data-desp]').forEach(b=>b.onclick=()=>despacharProyecto(b.dataset.desp,periodo));
   boxFra.querySelectorAll('[data-regresa]').forEach(b=>b.onclick=()=>regresarFrasco(b.dataset.regresa));
   const ag=document.getElementById('fraAgregar'); if(ag)ag.onclick=agregarFrascos;
+  activarResaltado(boxFra.querySelector('table.t'));
 }
 function verDetalleProy(proy,reg){
   document.body.insertAdjacentHTML('beforeend',`<div class="modal" id="mdet"><div class="mc" style="width:min(640px,96vw)">
@@ -546,20 +578,24 @@ async function despacharProyecto(proy,periodo){
   const libres=FRASCOS.filter(f=>f.estado==='Disponible').sort((a,b)=>a.codigo.localeCompare(b.codigo)).slice(0,n);
   if(libres.length<n)return alert(`Solo hay ${libres.length} frasco(s) disponible(s) en stock; necesitas ${n}. Agrega más frascos o reduce la cantidad.`);
   if(!confirm(`¿Despachar ${n} frasco(s) (${libres[0].codigo} … ${libres[libres.length-1].codigo}) a ${proy}?`))return;
+  const antes=libres.map(f=>({...f}));
   const hoy=isoDe(new Date());
   const {error}=await sb.from('sos_frascos').update({estado:'Enviado',proyecto_actual:proy,fecha_envio:hoy,fecha_regreso:null,updated_at:new Date().toISOString()})
     .in('id',libres.map(f=>f.id));
   if(error)return alert('No se pudo despachar: '+error.message);
   libres.forEach(f=>{f.estado='Enviado';f.proyecto_actual=proy;f.fecha_envio=hoy;});
   EDITADO.delete(key);
+  marcarAccion('fra',{tipo:'lote',antes});
   pintarFra();
 }
 async function regresarFrasco(id){
   if(!confirm('¿Este frasco regresó sin usar? Vuelve a Disponible.'))return;
+  const f=FRASCOS.find(x=>String(x.id)===String(id)); if(!f)return;
+  const antes={...f};
   const {error}=await sb.from('sos_frascos').update({estado:'Disponible',proyecto_actual:null,fecha_regreso:isoDe(new Date()),updated_at:new Date().toISOString()}).eq('id',id);
   if(error)return alert('No se pudo actualizar: '+error.message);
-  const f=FRASCOS.find(x=>String(x.id)===String(id));
-  if(f){f.estado='Disponible';f.proyecto_actual=null;}
+  f.estado='Disponible';f.proyecto_actual=null;
+  marcarAccion('fra',{tipo:'campo',id,antes});
   pintarFra();
 }
 async function agregarFrascos(){
@@ -571,7 +607,195 @@ async function agregarFrascos(){
   const {data,error}=await sb.from('sos_frascos').insert(nuevos).select();
   if(error)return alert('No se pudo agregar: '+error.message);
   FRASCOS=FRASCOS.concat(data||[]);
+  marcarAccion('fra',{tipo:'lote_nueva',ids:(data||[]).map(x=>x.id)});
   pintarFra();
+}
+
+/* ═══════ ESTILO GLLR · sección 6: infraestructura compartida ═══════ */
+// -- filtros de columna tipo Excel, uno por sub-pestaña --
+let colFiltros={plan:{},res:{},ale:{},fra:{}};
+function cabColG(vista,campo,etiqueta){
+  const f=colFiltros[vista][campo];
+  return `<span class="hcabg${f&&f.size?' filtrado':''}" data-colg="${campo}" data-vg="${vista}">${etiqueta}<i class="emb">▼</i></span>`;
+}
+const FUENTE_COL={
+  plan:()=>PLAN, res:()=>RES, ale:()=>RES.filter(r=>r.estado_std==='CRITICO'||r.estado_std==='PRECAUCION')
+};
+function valoresColumnaG(lista,campo){
+  const cnt=new Map();
+  lista.forEach(d=>{ let v=String(d[campo]??'').trim(); const key=v===''?'(vacío)':v; cnt.set(key,(cnt.get(key)||0)+1); });
+  return cnt;
+}
+let colActivoG=null, colVistaG=null, colSelG=new Set();
+function abrirColMenuG(el){
+  const campo=el.dataset.colg, v=el.dataset.vg; if(!campo)return;
+  colActivoG=campo; colVistaG=v;
+  colSelG=new Set(colFiltros[v][campo]?colFiltros[v][campo]:[]);
+  let caja=document.getElementById('colPop');
+  if(!caja){
+    caja=document.createElement('div'); caja.id='colPop';
+    caja.innerHTML=`<div class="cp-h" id="cpTit"></div>
+      <div class="cp-b"><input type="search" id="cpQ" placeholder="Buscar…" autocomplete="off">
+      <div class="cp-l" id="cpL"></div></div>
+      <div class="cp-f"><button id="cpNo">Quitar filtro</button><button class="ok" id="cpOk">Aplicar</button></div>`;
+    document.body.appendChild(caja);
+    caja.onclick=ev=>ev.stopPropagation();
+    document.getElementById('cpQ').oninput=colListaG;
+    document.getElementById('cpOk').onclick=()=>{
+      if(colSelG.size)colFiltros[colVistaG][colActivoG]=new Set(colSelG); else delete colFiltros[colVistaG][colActivoG];
+      cerrarColMenuG(); pintar();
+    };
+    document.getElementById('cpNo').onclick=()=>{ delete colFiltros[colVistaG][colActivoG]; cerrarColMenuG(); pintar(); };
+  }
+  document.getElementById('cpTit').textContent=el.textContent.replace('▼','').trim();
+  document.getElementById('cpQ').value=''; colListaG();
+  const r=el.getBoundingClientRect();
+  caja.style.left=Math.max(8,Math.min(r.left,innerWidth-258))+'px';
+  caja.style.top=Math.min(r.bottom+4,innerHeight-360)+'px';
+  caja.classList.add('abierto');
+  document.getElementById('cpQ').focus();
+}
+function colListaG(){
+  const q=nrm(document.getElementById('cpQ').value);
+  const cnt=valoresColumnaG(FUENTE_COL[colVistaG](),colActivoG);
+  const vals=[...cnt.keys()].filter(v=>!q||nrm(v).includes(q)).sort((a,b)=>a.localeCompare(b,'es',{numeric:true}));
+  const L=document.getElementById('cpL');
+  L.innerHTML=vals.length? vals.map(v=>`<label><input type="checkbox" value="${esc(v)}" ${colSelG.has(v)?'checked':''}>
+      <span>${esc(v)}</span><span class="cp-n">${cnt.get(v)}</span></label>`).join('')
+    : '<div style="padding:12px;color:#98a2ad;font-size:12px;text-align:center">Sin coincidencias.</div>';
+  L.querySelectorAll('input[value]').forEach(i=>i.onchange=()=>{ i.checked?colSelG.add(i.value):colSelG.delete(i.value); });
+}
+function cerrarColMenuG(){ const c=document.getElementById('colPop'); if(c)c.classList.remove('abierto'); }
+document.addEventListener('click',ev=>{ if(!ev.target.closest('#colPop'))cerrarColMenuG(); });
+document.addEventListener('click',ev=>{ const c=ev.target.closest('[data-colg]'); if(c){ev.stopPropagation();abrirColMenuG(c);} });
+function pasaColFiltros(vista,d){
+  const cf=colFiltros[vista];
+  for(const campo in cf){
+    const f=cf[campo]; if(!f||!f.size)continue;
+    const v=String(d[campo]??'').trim()||'(vacío)';
+    if(!f.has(v))return false;
+  }
+  return true;
+}
+
+// -- resaltado de fila + columna al estilo Excel --
+function activarResaltado(tabla){
+  if(!tabla)return;
+  tabla.querySelectorAll('tbody tr').forEach(tr=>tr.onclick=ev=>{
+    if(ev.target.closest('.fx')||ev.target.closest('button')||ev.target.closest('input')||ev.target.closest('select')||ev.target.closest('a'))return;
+    tabla.querySelectorAll('tr.fila-sel').forEach(x=>x.classList.remove('fila-sel'));
+    tr.classList.add('fila-sel');
+  });
+  tabla.querySelectorAll('tbody td').forEach(td=>{
+    td.onmouseenter=()=>{
+      const i=td.cellIndex;
+      tabla.querySelectorAll(`tbody tr td:nth-child(${i+1})`).forEach(c=>c.classList.add('col-hov'));
+    };
+    td.onmouseleave=()=>{
+      const i=td.cellIndex;
+      tabla.querySelectorAll(`tbody tr td:nth-child(${i+1})`).forEach(c=>c.classList.remove('col-hov'));
+    };
+  });
+}
+
+// -- cierre de cualquier cuadro de diálogo con Esc --
+document.addEventListener('keydown',ev=>{
+  if(ev.key!=='Escape')return;
+  const m=document.querySelector('.modal'); if(m)m.remove();
+});
+
+// -- Deshacer (Ctrl+Z), independiente por sub-pestaña --
+let ULTIMA={fra:null,plan:null,res:null,ale:null};
+function marcarAccion(v,acc){ ULTIMA[v]=acc; if(vista===v)btnDeshacer.disabled=false; }
+async function deshacer(){
+  const acc=ULTIMA[vista]; if(!acc||btnDeshacer.disabled)return;
+  btnDeshacer.disabled=true;
+  const tabla=({plan:'sos_planilla',res:'sos_resultados',ale:'sos_alertas',fra:'sos_frascos'})[vista];
+  const arr=({plan:()=>PLAN,res:()=>RES,ale:()=>ALE,fra:()=>FRASCOS})[vista]();
+  try{
+    if(acc.tipo==='campo'||acc.tipo==='fila'){
+      const limpio={...acc.antes}; delete limpio.id; delete limpio.created_at;
+      const {data,error}=await sb.from(tabla).update(limpio).eq('id',acc.id).select().single();
+      if(error)throw error;
+      const i=arr.findIndex(x=>String(x.id)===String(acc.id)); if(i>-1)arr[i]=data; else arr.push(data);
+    }else if(acc.tipo==='nueva'){
+      const {error}=await sb.from(tabla).delete().eq('id',acc.id);
+      if(error)throw error;
+      const i=arr.findIndex(x=>String(x.id)===String(acc.id)); if(i>-1)arr.splice(i,1);
+    }else if(acc.tipo==='eliminada'){
+      const {data,error}=await sb.from(tabla).insert(acc.antes).select().single();
+      if(error)throw error;
+      arr.push(data);
+    }else if(acc.tipo==='lote'){
+      for(const prev of acc.antes){
+        const limpio={...prev}; delete limpio.id;
+        const {data,error}=await sb.from(tabla).update(limpio).eq('id',prev.id).select().single();
+        if(error)throw error;
+        const i=arr.findIndex(x=>String(x.id)===String(prev.id)); if(i>-1)arr[i]=data;
+      }
+    }else if(acc.tipo==='lote_nueva'){
+      const {error}=await sb.from(tabla).delete().in('id',acc.ids);
+      if(error)throw error;
+      acc.ids.forEach(id=>{ const i=arr.findIndex(x=>String(x.id)===String(id)); if(i>-1)arr.splice(i,1); });
+    }
+    ULTIMA[vista]=null; pintar();
+  }catch(err){
+    alert('No se pudo deshacer: '+err.message);
+    ULTIMA[vista]=acc; btnDeshacer.disabled=false;
+  }
+}
+document.addEventListener('keydown',ev=>{
+  const t=ev.target, enCampo=t&&(t.tagName==='INPUT'||t.tagName==='TEXTAREA'||t.isContentEditable);
+  if((ev.ctrlKey||ev.metaKey)&&ev.key.toLowerCase()==='z'&&!enCampo){ ev.preventDefault(); deshacer(); }
+});
+
+// -- "✕" para eliminar filas erróneas (borrado real, con confirmación y deshacer) --
+async function borrarFilaG(vista,tabla,arrGetter,id){
+  if(!confirm('¿Eliminar esta fila? (se puede deshacer con Ctrl+Z justo después)'))return;
+  const arr=arrGetter(); const i=arr.findIndex(x=>String(x.id)===String(id)); if(i<0)return;
+  const antes={...arr[i]};
+  const {error}=await sb.from(tabla).delete().eq('id',id);
+  if(error)return alert('No se pudo eliminar: '+error.message);
+  arr.splice(i,1);
+  marcarAccion(vista,{tipo:'eliminada',antes});
+  pintar();
+}
+
+// -- edición en línea (doble clic) genérica, para campos simples sin dependencias cruzadas --
+function editarCeldaG(cfg){
+  const {td,tabla,vista,arrGetter,id,campo,tipo,opciones}=cfg;
+  if(td.querySelector('input,select'))return;
+  const d=arrGetter().find(x=>String(x.id)===String(id)); if(!d)return;
+  const original=td.innerHTML;
+  let editor;
+  if(tipo==='select'){
+    editor=document.createElement('select');
+    (opciones||['']).forEach(o=>{const op=document.createElement('option'); op.value=o; op.textContent=o||'—'; if((d[campo]||'')===o)op.selected=true; editor.appendChild(op);});
+  }else{
+    editor=document.createElement('input');
+    editor.type=tipo==='fecha'?'date':(tipo==='num'?'number':'text');
+    if(tipo==='num')editor.step='any';
+    editor.value=d[campo]??'';
+  }
+  editor.className='ed'; editor.style.width='100%'; editor.style.boxSizing='border-box';
+  td.innerHTML=''; td.appendChild(editor); editor.focus();
+  if(editor.select)editor.select();
+  let resuelto=false;
+  async function confirmar(){
+    if(resuelto)return; resuelto=true;
+    const antes={...d};
+    const val=editor.value===''?null:(tipo==='num'?(+editor.value):editor.value);
+    if(val===(d[campo]??null)){ pintar(); return; }
+    const {data,error}=await sb.from(tabla).update({[campo]:val}).eq('id',id).select().single();
+    if(error){ alert('No se pudo guardar: '+error.message); td.innerHTML=original; return; }
+    Object.assign(d,data); marcarAccion(vista,{tipo:'campo',id,antes}); pintar();
+  }
+  editor.onblur=confirmar;
+  editor.onkeydown=ev=>{
+    if(ev.key==='Enter'){ev.preventDefault();confirmar();}
+    if(ev.key==='Escape'){resuelto=true; td.innerHTML=original;}
+  };
+  if(editor.tagName==='SELECT')editor.onchange=confirmar;
 }
 
 /* ═══════════════ VISTAS ═══════════════ */
@@ -590,6 +814,11 @@ function verVista(v){
   btnXls.classList.toggle('hide',v==='fra');
   [fBusca,fDesde,fHasta,fEstado,fSistema,fFuente,chN].forEach(el=>el.classList.toggle('hide',v==='fra'));
   fPeriodo.classList.toggle('hide',v!=='fra');
+  fEstado.classList.toggle('hide',v==='fra'||v==='plan');
+  fSistema.classList.toggle('hide',v==='fra'||v==='plan'||v==='ale');
+  fFuente.classList.toggle('hide',v!=='res');
+  cerrarColMenuG();
+  btnDeshacer.disabled=!ULTIMA[v];
   pintar();
 }
 ['fra','plan','res','ale'].forEach(k=>document.getElementById('tab_'+k).onclick=()=>verVista(k));
@@ -609,6 +838,7 @@ function filtrarPlan(){
     if(d&&f&&f<d)return false;
     if(h&&f&&f>h)return false;
     if(o&&String(p.obra||'')!==o)return false;
+    if(!pasaColFiltros('plan',p))return false;
     if(q&&!nrm(`${p.cod_sap} ${p.nro_frasco||''} ${p.sistema||''} ${p.nro_planilla||''} ${p.nro_muestra||''} ${claveMuestra(p.cod_sap,p.sistema_std||p.sistema,p.f_muestreo)||''}`).includes(q))return false;
     return true;
   });
@@ -638,23 +868,23 @@ function pintarPlan(){
       <col style="width:150px"><col style="width:100px"><col style="width:60px"><col style="width:78px">
       <col style="width:70px"><col style="width:70px"><col style="width:80px"><col style="width:80px">
       <col style="width:72px"><col style="width:78px">
-      <col style="width:220px"><col style="width:140px"><col style="width:36px">
+      <col style="width:220px"><col style="width:140px"><col style="width:36px"><col style="width:30px">
     </colgroup>
     <thead>
     <tr class="bands">
       <th colspan="7" class="frz"><span class="bnd azul">IDENTIFICACIÓN DEL EQUIPO</span></th>
       <th colspan="10"><span class="bnd amarillo">DATOS DE LA MUESTRA DE ACEITE</span></th>
       <th colspan="1"><span class="bnd plomo">OBSERVACIÓN</span></th>
-      <th colspan="2"><span class="bnd verde">VALIDACIÓN</span></th>
+      <th colspan="3"><span class="bnd verde">VALIDACIÓN</span></th>
     </tr>
     <tr class="cols">
-      <th class="azul c frz">#</th><th class="azul">N° Planilla</th><th class="azul">Obra</th><th class="azul">Cód. SAP</th>
+      <th class="azul c frz">#</th><th class="azul">N° Planilla</th><th class="azul">${cabColG('plan','obra','Obra')}</th><th class="azul">${cabColG('plan','cod_sap','Cód. SAP')}</th>
       <th class="azul">Marca</th><th class="azul">Modelo</th><th class="azul">Serie</th>
-      <th class="amarillo">Sistema</th><th class="amarillo">Tipo de aceite</th><th class="amarillo c">Gal.</th><th class="amarillo r">Horómetro</th>
+      <th class="amarillo">${cabColG('plan','sistema','Sistema')}</th><th class="amarillo">${cabColG('plan','tipo_aceite','Tipo de aceite')}</th><th class="amarillo c">Gal.</th><th class="amarillo r">Horómetro</th>
       <th class="amarillo r">Hrs. aceite</th><th class="amarillo r">Cant. agreg.</th><th class="amarillo c">F. muestreo</th><th class="amarillo c">F. envío</th>
-      <th class="amarillo c">Tipo</th><th class="amarillo c">N° Frasco</th>
+      <th class="amarillo c">${cabColG('plan','tipo','Tipo')}</th><th class="amarillo c">${cabColG('plan','nro_frasco','N° Frasco')}</th>
       <th class="plomo">Observación</th>
-      <th class="verde">Validación (vs. stock)</th><th class="verde c"></th>
+      <th class="verde">Validación (vs. stock)</th><th class="verde c"></th><th class="verde c"></th>
     </tr>
     </thead><tbody>
     ${L.map((p,i)=>{
@@ -664,22 +894,30 @@ function pintarPlan(){
         <td class="c mono frz">${total-i}</td>
         <td>${esc(p.nro_planilla||'')}</td><td>${esc(p.obra||'')}</td><td class="mono">${esc(p.cod_sap||'')}</td>
         <td>${esc(p.marca||(e?e.marca:'')||'')}</td><td>${esc(p.modelo||(e?e.modelo:'')||'')}</td><td>${esc(p.serie||(e?e.serie_placa:'')||'')}</td>
-        <td>${esc(p.sistema||'')}${p.sistema_std&&nrm(p.sistema_std)!==nrm(p.sistema)?` <i class="std">→ ${esc(p.sistema_std)}</i>`:''}
+        <td data-campo="sistema">${esc(p.sistema||'')}${p.sistema_std&&nrm(p.sistema_std)!==nrm(p.sistema)?` <i class="std">→ ${esc(p.sistema_std)}</i>`:''}
             ${p.sistema&&!p.sistema_std?' <b class="warn">sin equiv.</b>':''}</td>
-        <td>${esc(p.tipo_aceite||'')}</td>
-        <td class="c">${p.galones!=null?f1(p.galones):''}</td>
-        <td class="r mono">${p.horometro!=null?f0(p.horometro):''}</td>
-        <td class="r">${p.horas_aceite!=null?f0(p.horas_aceite):''}</td>
-        <td class="r">${p.cant_agregado!=null?f1(p.cant_agregado):''}</td>
-        <td class="c">${fmtDate(p.f_muestreo)}</td>
-        <td class="c">${fmtDate(p.f_envio)}</td>
-        <td class="c">${esc(p.tipo||'')}</td>
+        <td data-campo="tipo_aceite">${esc(p.tipo_aceite||'')}</td>
+        <td class="c" data-campo="galones" data-tipo="num">${p.galones!=null?f1(p.galones):''}</td>
+        <td class="r mono" data-campo="horometro" data-tipo="num">${p.horometro!=null?f0(p.horometro):''}</td>
+        <td class="r" data-campo="horas_aceite" data-tipo="num">${p.horas_aceite!=null?f0(p.horas_aceite):''}</td>
+        <td class="r" data-campo="cant_agregado" data-tipo="num">${p.cant_agregado!=null?f1(p.cant_agregado):''}</td>
+        <td class="c" data-campo="f_muestreo" data-tipo="fecha">${fmtDate(p.f_muestreo)}</td>
+        <td class="c" data-campo="f_envio" data-tipo="fecha">${fmtDate(p.f_envio)}</td>
+        <td class="c" data-campo="tipo" data-tipo="select" data-op="|Muestra|Cambio">${esc(p.tipo||'')}</td>
         <td class="c mono">${esc(p.nro_frasco||'')}</td>
-        <td class="desc">${esc(p.observacion||'')}</td>
+        <td class="desc" data-campo="observacion">${esc(p.observacion||'')}</td>
         <td class="${v.cls}" style="font-size:10.5px">${v.txt}</td>
-        <td class="c"><button class="mini" data-edit="${p.id}">✎</button></td></tr>`;}).join('')}
+        <td class="c"><button class="mini" data-edit="${p.id}">✎</button></td>
+        <td class="c"><button class="fx" data-del="${p.id}" title="Eliminar fila">✕</button></td></tr>`;}).join('')}
     </tbody></table>`;
   boxPlan.querySelectorAll('[data-edit]').forEach(b=>b.onclick=ev=>{ev.stopPropagation();formPlan(b.dataset.edit);});
+  boxPlan.querySelectorAll('[data-del]').forEach(b=>b.onclick=ev=>{ev.stopPropagation();borrarFilaG('plan','sos_planilla',()=>PLAN,b.dataset.del);});
+  boxPlan.querySelectorAll('td[data-campo]').forEach(td=>td.ondblclick=ev=>{
+    ev.stopPropagation();
+    editarCeldaG({td, tabla:'sos_planilla', vista:'plan', arrGetter:()=>PLAN, id:td.closest('tr').dataset.pid,
+      campo:td.dataset.campo, tipo:td.dataset.tipo||'text', opciones:td.dataset.op?td.dataset.op.split('|'):null});
+  });
+  activarResaltado(boxPlan.querySelector('table'));
   requestAnimationFrame(()=>{
     const bandas=boxPlan.querySelector('tr.bands');
     if(!bandas)return;
@@ -700,6 +938,7 @@ function filtrarRes(){
     if(es&&r.estado_std!==es)return false;
     if(si&&r.sistema_std!==si)return false;
     if(fu&&r.fuente!==fu)return false;
+    if(!pasaColFiltros('res',r))return false;
     if(q&&!nrm(`${r.cod_sap} ${r.nro_muestra} ${r.componente||''} ${r.observacion||''} ${claveMuestra(r.cod_sap,r.sistema_std||r.componente,r.fecha)||''}`).includes(q))return false;
     return true;
   });
@@ -713,14 +952,32 @@ function pintarRes(){
     +card('Precaución',n('PRECAUCION'),'a vigilar','warn')
     +card('Normales',n('NORMAL'),'sin novedad','ok');
   if(!L.length){boxRes.innerHTML='<div class="vacio">Sin resultados con estos filtros.</div>';return;}
-  boxRes.innerHTML=`<table class="t"><thead><tr>
-    <th>Clave</th><th>Fecha</th><th>Fuente</th><th>N° Muestra</th><th>Cód. SAP</th><th>Equipo</th><th>Componente</th>
-    <th>Sistema</th><th class="r">Horóm.</th><th class="c">Estado lab.</th><th class="c">Estado</th>
-    <th>Observación</th><th class="c">Planilla</th><th class="c">PDF</th></tr></thead><tbody>
+  boxRes.innerHTML=`<table class="of"><colgroup>
+      <col style="width:110px"><col style="width:76px"><col style="width:90px"><col style="width:96px">
+      <col style="width:88px"><col style="width:140px"><col style="width:110px"><col style="width:110px">
+      <col style="width:70px"><col style="width:80px"><col style="width:76px">
+      <col style="width:220px">
+      <col style="width:64px"><col style="width:50px"><col style="width:30px">
+    </colgroup>
+    <thead>
+    <tr class="bands">
+      <th colspan="8" class="frz"><span class="bnd azul">IDENTIFICACIÓN</span></th>
+      <th colspan="3"><span class="bnd amarillo">DATOS DEL ANÁLISIS</span></th>
+      <th colspan="1"><span class="bnd plomo">OBSERVACIÓN</span></th>
+      <th colspan="3"><span class="bnd verde">REFERENCIA</span></th>
+    </tr>
+    <tr class="cols">
+      <th class="azul frz">Clave</th><th class="azul">Fecha</th><th class="azul">${cabColG('res','fuente','Fuente')}</th><th class="azul">N° Muestra</th>
+      <th class="azul">Cód. SAP</th><th class="azul">Equipo</th><th class="azul">Componente</th><th class="azul">${cabColG('res','sistema_std','Sistema')}</th>
+      <th class="amarillo r">Horóm.</th><th class="amarillo c">Estado lab.</th><th class="amarillo c">${cabColG('res','estado_std','Estado')}</th>
+      <th class="plomo">Observación</th>
+      <th class="verde c">Planilla</th><th class="verde c">PDF</th><th class="verde c"></th>
+    </tr>
+    </thead><tbody>
     ${L.slice(0,800).map(r=>{
       const e=getE(r.maestro_id);
       return `<tr data-rid="${r.id}">
-        <td class="mono clave">${esc(claveMuestra(r.cod_sap,r.sistema_std||r.componente,r.fecha)||'—')}</td>
+        <td class="mono clave frz">${esc(claveMuestra(r.cod_sap,r.sistema_std||r.componente,r.fecha)||'—')}</td>
         <td>${fmtDate(r.fecha)}</td><td>${esc(r.fuente)}</td><td class="mono">${esc(r.nro_muestra)}</td>
         <td class="mono">${esc(r.cod_sap||'')}</td><td>${esc(e?e.equipo:'')}</td>
         <td>${esc(r.componente||'')}</td>
@@ -728,13 +985,25 @@ function pintarRes(){
         <td class="r mono">${r.horometro!=null?f0(r.horometro):''}</td>
         <td class="c dim">${esc(r.estado||'')}</td>
         <td class="c"><span class="pill e-${r.estado_std||'NA'}">${esc(r.estado_std||'?')}</span></td>
-        <td class="desc" title="${esc(r.observacion||'')}">${esc(r.observacion||'')}</td>
+        <td class="desc" data-campo="observacion">${esc(r.observacion||'')}</td>
         <td class="c">${r.planilla_id?'✓':'<span class="dim">—</span>'}</td>
-        <td class="c">${r.link_pdf?`<a href="${esc(r.link_pdf)}" target="_blank">PDF</a>`:''}</td></tr>`;}).join('')}
+        <td class="c">${r.link_pdf?`<a href="${esc(r.link_pdf)}" target="_blank">PDF</a>`:''}</td>
+        <td class="c"><button class="fx" data-del="${r.id}" title="Eliminar fila">✕</button></td></tr>`;}).join('')}
     </tbody></table>
-    <div class="hint">Haz clic en una fila para ver la observación completa y todos los parámetros del análisis.
+    <div class="hint">Doble clic en una fila para ver la observación completa y todos los parámetros del análisis.
       ${L.length>800?`· Mostrando 800 de ${L.length}: afina los filtros.`:''}</div>`;
-  boxRes.querySelectorAll('tbody tr').forEach(tr=>tr.onclick=()=>detalleRes(tr.dataset.rid));
+  boxRes.querySelectorAll('tbody tr').forEach(tr=>tr.ondblclick=ev=>{ if(!ev.target.closest('td[data-campo]'))detalleRes(tr.dataset.rid); });
+  boxRes.querySelectorAll('[data-del]').forEach(b=>b.onclick=ev=>{ev.stopPropagation();borrarFilaG('res','sos_resultados',()=>RES,b.dataset.del);});
+  boxRes.querySelectorAll('td[data-campo]').forEach(td=>td.ondblclick=ev=>{
+    ev.stopPropagation();
+    editarCeldaG({td, tabla:'sos_resultados', vista:'res', arrGetter:()=>RES, id:td.closest('tr').dataset.rid, campo:td.dataset.campo, tipo:'text'});
+  });
+  activarResaltado(boxRes.querySelector('table'));
+  requestAnimationFrame(()=>{
+    const bandas=boxRes.querySelector('tr.bands'); if(!bandas)return;
+    const h=bandas.getBoundingClientRect().height;
+    boxRes.querySelectorAll('tr.cols th').forEach(th=>th.style.top=h+'px');
+  });
 }
 function detalleRes(id){
   const r=RES.find(x=>String(x.id)===String(id)); if(!r)return;
@@ -769,6 +1038,7 @@ function pintarAle(){
     if(h&&f&&f>h)return false;
     if(o&&String(r.obra||'')!==o)return false;
     if(es&&r.estado_std!==es)return false;
+    if(!pasaColFiltros('ale',r))return false;
     if(q&&!nrm(`${r.cod_sap} ${r.nro_muestra} ${r.sistema_std||''}`).includes(q))return false;
     return true;
   }).sort((a,b)=>{
@@ -783,10 +1053,28 @@ function pintarAle(){
     +card('Cerradas',seg('Cerrado'),'atendidas','ok');
   if(!L.length){boxAle.innerHTML='<div class="vacio">No hay muestras en estado crítico o precaución.</div>';return;}
   const hoy=new Date();
-  boxAle.innerHTML=`<table class="t"><thead><tr>
-    <th>N° Muestra</th><th>Cód. SAP</th><th>Sistema</th><th class="c">Estado</th><th class="r">Horóm.</th>
-    <th>Observación del reporte</th><th>N° OM SAP*</th><th>Acciones correctivas*</th>
-    <th class="c">F. indicación*</th><th class="c">Seguimiento*</th><th class="r">Días</th><th>Link PDF*</th></tr></thead><tbody>
+  boxAle.innerHTML=`<table class="of"><colgroup>
+      <col style="width:90px"><col style="width:88px"><col style="width:110px"><col style="width:80px">
+      <col style="width:70px"><col style="width:200px">
+      <col style="width:90px"><col style="width:160px"><col style="width:96px"><col style="width:110px"><col style="width:56px">
+      <col style="width:150px">
+      <col style="width:30px">
+    </colgroup>
+    <thead>
+    <tr class="bands">
+      <th colspan="6" class="frz"><span class="bnd azul">IDENTIFICACIÓN</span></th>
+      <th colspan="5"><span class="bnd amarillo">SEGUIMIENTO</span></th>
+      <th colspan="1"><span class="bnd plomo">REFERENCIA</span></th>
+      <th colspan="1"><span class="bnd verde">ACCIÓN</span></th>
+    </tr>
+    <tr class="cols">
+      <th class="azul frz">N° Muestra</th><th class="azul">Cód. SAP</th><th class="azul">${cabColG('ale','sistema_std','Sistema')}</th><th class="azul c">${cabColG('ale','estado_std','Estado')}</th>
+      <th class="azul r">Horóm.</th><th class="azul">Observación del reporte</th>
+      <th class="amarillo">N° OM SAP</th><th class="amarillo">Acciones correctivas</th><th class="amarillo c">F. indicación</th><th class="amarillo c">Seguimiento</th><th class="amarillo r">Días</th>
+      <th class="plomo">Link PDF</th>
+      <th class="verde c"></th>
+    </tr>
+    </thead><tbody>
     ${L.map(r=>{
       const a=ale(r), e=getE(r.maestro_id);
       let dias='';
@@ -794,7 +1082,7 @@ function pintarAle(){
         dias=Math.max(0,Math.round((hoy-new Date(a.f_indicacion+'T00:00:00'))/86400000));
       }
       return `<tr data-rid="${r.id}">
-        <td class="mono">${esc(r.nro_muestra)}</td><td class="mono">${esc(r.cod_sap||'')}</td>
+        <td class="mono frz">${esc(r.nro_muestra)}</td><td class="mono">${esc(r.cod_sap||'')}</td>
         <td>${esc(r.sistema_std||r.componente||'')}</td>
         <td class="c"><span class="pill e-${r.estado_std}">${esc(r.estado_std)}</span></td>
         <td class="r mono">${r.horometro!=null?f0(r.horometro):''}</td>
@@ -807,11 +1095,23 @@ function pintarAle(){
         </select></td>
         <td class="r ${dias>30?'b-bad':(dias>15?'b-mid':'')}">${dias!==''?dias:''}</td>
         <td><input class="ed lg" data-c="link_pdf" value="${esc(a.link_pdf||r.link_pdf||'')}" placeholder="enlace"></td>
+        <td class="c"><button class="fx" data-delale="${a.id||''}" title="Quitar seguimiento de esta fila">✕</button></td>
       </tr>`;}).join('')}
     </tbody></table>
-    <div class="hint">Las columnas con * son editables; se guardan al salir de la celda.
+    <div class="hint">Las columnas de Seguimiento son editables; se guardan al salir de la celda.
       Los días se cuentan desde la fecha de indicación y dejan de correr al cerrar.</div>`;
   boxAle.querySelectorAll('.ed').forEach(el=>el.onchange=()=>guardarAlerta(el.closest('tr').dataset.rid,el));
+  boxAle.querySelectorAll('[data-delale]').forEach(b=>b.onclick=ev=>{
+    ev.stopPropagation();
+    if(!b.dataset.delale)return alert('Esta fila no tiene datos de seguimiento registrados todavía.');
+    borrarFilaG('ale','sos_alertas',()=>ALE,b.dataset.delale);
+  });
+  activarResaltado(boxAle.querySelector('table'));
+  requestAnimationFrame(()=>{
+    const bandas=boxAle.querySelector('tr.bands'); if(!bandas)return;
+    const h=bandas.getBoundingClientRect().height;
+    boxAle.querySelectorAll('tr.cols th').forEach(th=>th.style.top=h+'px');
+  });
 }
 function ale(r){ return ALE.find(a=>String(a.resultado_id)===String(r.id))||{}; }
 async function guardarAlerta(rid,ctrl){
@@ -821,14 +1121,17 @@ async function guardarAlerta(rid,ctrl){
   let a=ALE.find(x=>String(x.resultado_id)===String(r.id));
   try{
     if(a){
+      const antes={...a};
       const {error}=await sb.from('sos_alertas').update({[col]:val}).eq('id',a.id).select('id');
       if(error)throw error;
       a[col]=val;
+      marcarAccion('ale',{tipo:'campo',id:a.id,antes});
     }else{
       const nueva={resultado_id:r.id,nro_muestra:r.nro_muestra,link_pdf:r.link_pdf||null,[col]:val};
       const {data,error}=await sb.from('sos_alertas').insert(nueva).select().single();
       if(error)throw error;
       ALE.push(data);
+      marcarAccion('ale',{tipo:'nueva',id:data.id});
     }
     ctrl.classList.add('ok'); setTimeout(()=>ctrl.classList.remove('ok'),900);
     if(col==='f_indicacion'||col==='estado_seg')pintarAle();
@@ -1289,6 +1592,14 @@ btnEq.onclick=eqAbrir;
 [fObra,fDesde,fHasta,fEstado,fSistema,fFuente].forEach(x=>x.onchange=pintar);
 fPeriodo.onchange=()=>{ if(vista==='fra')pintarFra(); };
 btnRec.onclick=()=>cargarTodo();
+btnDeshacer.onclick=deshacer;
+btnLimpiarSOS.onclick=()=>{
+  fBusca.value=''; fObra.value=''; fEstado.value=''; fSistema.value=''; fFuente.value='';
+  const hoy=new Date(), ini=new Date(hoy.getFullYear(),0,1);
+  fDesde.value=isoDe(ini); fHasta.value=isoDe(hoy);
+  colFiltros[vista]={};
+  pintar();
+};
 
 /* Supabase entrega como máximo 1.000 filas por consulta. Esta función
    pide de a mil hasta traerlas todas, para que no falten periodos. */
