@@ -117,14 +117,14 @@
 
   /* ── ESTILO OFICIAL GLLR: encabezado de 2 filas (banda + columna pastel) ── */
   table.of{width:100%;border-collapse:collapse;font-size:11.5px;background:#fff;table-layout:fixed}
-  table.of thead th{position:sticky;z-index:4}
-  table.of tr.bands th{top:0;background:#fff;padding:3px 3px 4px;border:none;border-bottom:1px solid var(--line);text-align:center}
+  table.of thead{position:sticky;top:0;z-index:6}
+  table.of tr.bands th{background:#fff;padding:3px 3px 4px;border:none;border-bottom:1px solid var(--line);text-align:center}
   table.of .bnd{display:block;border-radius:7px;padding:4px 8px;font-size:10.5px;font-weight:700;letter-spacing:.02em}
   table.of .bnd.azul{background:linear-gradient(180deg,#7B87C0 0%,#4254A5 48%,#334281 100%);border:1px solid #293466;color:#fff;text-shadow:0 1px 1px rgba(0,0,0,.3)}
   table.of .bnd.amarillo{background:linear-gradient(180deg,#FFDC58 0%,#FFCD11 48%,#C7A00D 100%);border:1px solid #9E7F0B;color:#3B2E00;text-shadow:none}
   table.of .bnd.verde{background:linear-gradient(180deg,#55BF5D 0%,#0CA318 48%,#097F13 100%);border:1px solid #07650F;color:#fff;text-shadow:0 1px 1px rgba(0,0,0,.3)}
   table.of .bnd.plomo{background:linear-gradient(180deg,#ADADAD 0%,#8A8A8A 48%,#6C6C6C 100%);border:1px solid #565656;color:#fff;text-shadow:0 1px 1px rgba(0,0,0,.3)}
-  table.of tr.cols th{top:29px;padding:3px 6px;text-align:left;font-weight:600;font-size:10px;line-height:1.15;border-right:1px solid #fff;border-bottom:1px solid #fff}
+  table.of tr.cols th{padding:3px 6px;text-align:left;font-weight:600;font-size:10px;line-height:1.15;border-right:1px solid #fff;border-bottom:1px solid #fff}
   table.of tr.cols th.c{text-align:center}
   table.of th.azul{background:#E5E7F2;color:#4254A5}
   table.of th.amarillo{background:#FFF8DE;color:#9E7F0B}
@@ -708,13 +708,10 @@ function pasaColFiltros(vista,d){
 // -- fija las tarjetas de resumen + las 2 filas de encabezado, una debajo de la otra --
 function fijarEncabezados(box){
   requestAnimationFrame(()=>{
-    const tabla=box.querySelector('table'); if(!tabla)return;
+    const thead=box.querySelector('table thead'); if(!thead)return;
     const csCards=getComputedStyle(cards);
     const hCards=Math.ceil(cards.getBoundingClientRect().height+parseFloat(csCards.marginBottom||0));
-    const bandas=tabla.querySelector('tr.bands');
-    const hBand=bandas?Math.ceil(bandas.getBoundingClientRect().height):0;
-    if(bandas)bandas.querySelectorAll('th').forEach(th=>th.style.top=hCards+'px');
-    tabla.querySelectorAll('tr.cols th').forEach(th=>th.style.top=(hCards+hBand-1)+'px');
+    thead.style.top=hCards+'px';
   });
 }
 
