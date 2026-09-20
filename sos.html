@@ -450,7 +450,7 @@ function leerResultados(filas,fuente){
       obra:String(val(f,m.cols,'OBRA','Nombre del Cliente','Cuenta')??'').trim()||(e?e.cod_proyec:null),
       componente:comp||null, sistema_std:sistemaStd(comp),
       fecha:aFecha(val(f,m.cols,'FECHA','Fecha de muestreo')),
-      horometro:aNum(val(f,m.cols,'HORAS','Horometro','Horómetro')),
+      horometro:aNum(val(f,m.cols,'HORAS','Horometro','Horómetro','Hrs equipo')),
       estado:est||null, estado_std:estadoStd(est),
       observacion:String(val(f,m.cols,'Interpretacion','Recomendaciones','Comentarios','Observación del reporte')??'').trim()||null,
       link_pdf:String(val(f,m.cols,'Link al reporte PDF (OneDrive)','Link PDF')??'').trim()||null,
