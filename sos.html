@@ -1195,6 +1195,7 @@ btnSubir.onclick=()=>{
 };
 
 const CAMPOS_COMPARABLES_PLAN=[
+  ['nro_planilla','N° Planilla'],['nro_frasco','N° Frasco'],
   ['obra','Obra'],['marca','Marca'],['modelo','Modelo'],['serie','Serie'],
   ['tipo_aceite','Tipo de aceite'],['galones','Galones'],['horometro','Horómetro'],
   ['horas_aceite','Horas del aceite'],['cant_agregado','Cant. agregado'],
@@ -1218,7 +1219,7 @@ function mostrarValor(campo,v){
 async function subirPlanilla(filas,nom){
   const regs=leerPlanilla(filas);
   if(!regs||!regs.length){alert('No se reconoció el formato.\n\nDebe tener las columnas de la PLANILLA DE MUESTRAS: N° Frasco, Código del Equipo, Sistema, Muestreo…');return;}
-  const clave=p=>[p.nro_planilla||'',p.nro_frasco||'',p.cod_sap||'',p.sistema||'',p.f_muestreo||''].join('|');
+  const clave=p=>[p.cod_sap||'',p.sistema||'',p.f_muestreo||''].join('|');
   const mapaExistente=new Map(PLAN.map(p=>[clave(p),p]));
   const candidatas=[]; const conCambios=[];
   const vistas=new Set(); let repetidasEnArchivo=0, yaIgual=0;
