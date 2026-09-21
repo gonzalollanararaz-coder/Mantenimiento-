@@ -1912,27 +1912,27 @@ function eqAbrir(){
     if(!t)return alert('Escribe el texto del laboratorio.');
     const d={texto:t,laboratorio:document.getElementById('e_lab').value.trim()||null,
              estandar:document.getElementById('e_std').value};
-    const {error}=await sb.from('sos_eq_estado').insert(d);
+    const {data,error}=await sb.from('sos_eq_estado').insert(d).select().single();
     if(error)return alert('No se pudo agregar: '+error.message);
-    EQE.set(nrm(t),nrm(d.estandar)); EQLE.push(d);
+    EQE.set(nrm(t),nrm(d.estandar)); EQLE.push(data);
     document.getElementById('e_txt').value='';
     eqPintarTablas(); reNormalizar();
   };
   document.getElementById('s_add').onclick=async()=>{
     const t=document.getElementById('s_txt').value.trim(), s=document.getElementById('s_std').value.trim();
     if(!t||!s)return alert('Completa el texto y el sistema estándar.');
-    const {error}=await sb.from('sos_eq_sistema').insert({texto:t,estandar:s});
+    const {data,error}=await sb.from('sos_eq_sistema').insert({texto:t,estandar:s}).select().single();
     if(error)return alert('No se pudo agregar: '+error.message);
-    EQS.set(nrm(t),s); EQLS.push({texto:t,estandar:s});
+    EQS.set(nrm(t),s); EQLS.push(data);
     document.getElementById('s_txt').value='';
     eqPintarTablas(); reNormalizar();
   };
   document.getElementById('t_add').onclick=async()=>{
     const t=document.getElementById('t_txt').value.trim(), s=document.getElementById('t_std').value.trim();
     if(!t||!s)return alert('Completa el equipo y el tipo estándar.');
-    const {error}=await sb.from('sos_eq_tipo').insert({texto:t,estandar:s});
+    const {data,error}=await sb.from('sos_eq_tipo').insert({texto:t,estandar:s}).select().single();
     if(error)return alert('No se pudo agregar: '+error.message);
-    EQT.set(nrm(t),s); EQLT.push({texto:t,estandar:s});
+    EQT.set(nrm(t),s); EQLT.push(data);
     document.getElementById('t_txt').value='';
     eqPintarTablas(); if(vista==='fra')pintarFra();
   };
