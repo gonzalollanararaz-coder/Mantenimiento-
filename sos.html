@@ -41,6 +41,7 @@
   .toolbar{display:flex;flex-wrap:nowrap;gap:12px;align-items:center;padding:9px 16px;background:#fff;border-bottom:1px solid var(--line);flex-shrink:0;height:auto;overflow-x:auto}
   .toolbar>*{flex:0 0 auto}
   .toolbar input,.toolbar select{border:1px solid var(--line);border-radius:9px;height:34px;padding:0 12px;font-size:12.5px}
+  #fObra,#fSistema,#fFuente{min-width:150px;flex:0 0 auto}
   .act{border:1px solid var(--line);background:#fff;border-radius:9px;height:34px;padding:0 13px;
     font-weight:500;font-size:12.5px;color:var(--ink);cursor:pointer;display:inline-flex;align-items:center;gap:6px;white-space:nowrap}
   .act:hover{border-color:#C9CDD2;filter:none}
@@ -997,7 +998,7 @@ function pintarPlan(){
     <tr class="bands">
       <th colspan="7" class="frz"><span class="bnd azul">IDENTIFICACIÓN DEL EQUIPO</span></th>
       <th colspan="10"><span class="bnd amarillo">DATOS DE LA MUESTRA DE ACEITE</span></th>
-      <th colspan="1"><span class="bnd plomo">OBSERVACIÓN</span></th>
+      <th colspan="1"><span class="bnd plomo">OBS.</span></th>
       <th colspan="3"><span class="bnd verde">LABORATORIO</span></th>
     </tr>
     <tr class="cols">
@@ -1055,12 +1056,13 @@ function pintarPlan(){
 }
 
 /* ───────── FICHA GLLR (resumen de laboratorio con gráficos) ───────── */
-const FICHA_GRUPOS=[
-  {titulo:'Desgaste (ppm)', claves:['Hierro (ppm)','Plomo (ppm)','Cobre (ppm)','Aluminio (ppm)','Cromo (ppm)','Estaño (ppm)']},
-  {titulo:'Contaminantes (ppm)', claves:['Potasio (ppm)','Sodio (ppm)','Silicio (ppm)']},
-  {titulo:'Salud - aceite', claves:['Hollin','TBN (mg KOH/g)','Indice PQ','Oxidacion','Nitracion','Sulfatacion']},
-  {titulo:'Salud - viscosidad', claves:['V40','V100']}
-];
+const GRUPOS_FICHA_FIJOS=['Desgaste','Contaminantes','Salud - aceite','Salud - viscosidad'];
+function gruposFicha(){
+  return GRUPOS_FICHA_FIJOS.map(titulo=>({
+    titulo,
+    claves: LIMITES.filter(x=>x.grupo===titulo).sort((a,b)=>(a.orden||0)-(b.orden||0)).map(x=>x.parametro)
+  }));
+}
 function unidadDe(clave){ const m=clave.match(/\(([^)]+)\)/); return m?m[1]:''; }
 function svgLineasGrupo(titulo,claves,historial){
   const colores=['#4254A5','#0CA318','#C7A00D','#D3141A','#7B5EA7','#1a1d21']; // azul, verde, amarillo, rojo, violeta, negro
@@ -1163,7 +1165,7 @@ function fichaSOS(id){
 
       ${caja(30,10,66,87,`${chip('verde','GRÁFICOS Y TENDENCIAS')}
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:8px;overflow-y:auto;flex:1">
-          ${FICHA_GRUPOS.map(g=>svgLineasGrupo(g.titulo,g.claves,historial)).join('')}
+          ${gruposFicha().map(g=>svgLineasGrupo(g.titulo,g.claves,historial)).join('')}
         </div>`)}
 
     </div>
@@ -1894,10 +1896,9 @@ function eqAbrir(){
           <datalist id="tipl">${tipos.map(t=>`<option>${esc(t)}</option>`).join('')}</datalist>
           <button class="act primary" id="t_add">Agregar</button></div>`:''}
       </div>
-      <div class="campo"><b>Límites por parámetro (Ficha SOS)</b>
-        <div class="hint">Define el límite máximo aceptable de cada parámetro que se usa en los gráficos de la Ficha SOS. ${admin?'Doble clic sobre el límite para editarlo.':''} Vacío = todavía no hay ese dato.</div>
-        <table class="t"><thead><tr><th>Grupo</th><th>Parámetro</th><th class="c">Límite</th></tr></thead>
-        <tbody id="eqTL"></tbody></table>
+      <div class="campo"><b>Componentes de los gráficos (Ficha SOS)</b>
+        <div class="hint">Elige qué parámetros aparecen en cada uno de los 4 gráficos de la Ficha SOS, y el límite de referencia de cada uno. ${admin?'Doble clic sobre el límite para editarlo; "✕" lo quita del gráfico; elige uno del desplegable y "Agregar" para sumarlo.':''}</div>
+        <div id="eqGruposFicha" style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:8px"></div>
       </div>
       ${admin?'':'<div class="hint">Solo los administradores pueden modificar estas tablas.</div>'}
     </div></div></div>`);
@@ -1996,12 +1997,48 @@ function eqPintarTablas(){
       eqPintarTablas(); if(vista==='fra')pintarFra();});
     tt.querySelectorAll('[data-eqc]').forEach(td=>td.ondblclick=()=>eqEditar(td,'sos_eq_tipo',EQLT,reconstruirEQT,td.dataset.eqid,td.dataset.eqc,'text'));
   }
-  const tl=document.getElementById('eqTL');
-  if(tl){
-    tl.innerHTML=LIMITES.slice().sort((a,b)=>(a.orden||0)-(b.orden||0))
-      .map(x=>`<tr><td class="dim">${esc(x.grupo)}</td><td>${esc(x.parametro.replace(/\s*\([^)]*\)/,''))}</td>
-        <td class="c"${admin?` data-eqc="limite" data-eqid="${x.id}" data-eqtipo="num"${ttl}`:''}>${x.limite??'<span class="dim">—</span>'}</td></tr>`).join('');
-    tl.querySelectorAll('[data-eqc]').forEach(td=>td.ondblclick=()=>eqEditar(td,'sos_limites',LIMITES,()=>{},td.dataset.eqid,td.dataset.eqc,'num'));
+  const gf=document.getElementById('eqGruposFicha');
+  if(gf){
+    const slug=s=>s.toLowerCase().replace(/[^a-z0-9]+/g,'_');
+    const usados=new Set(LIMITES.map(x=>x.parametro));
+    const disponibles=ANALISIS.filter(a=>!usados.has(a));
+    gf.innerHTML=GRUPOS_FICHA_FIJOS.map(grupo=>{
+      const filas=LIMITES.filter(x=>x.grupo===grupo).sort((a,b)=>(a.orden||0)-(b.orden||0));
+      return `<div class="campo" style="border:1px solid var(--line);border-radius:8px;margin:0">
+        <b style="font-size:12.5px">${esc(grupo)}</b>
+        <table class="t" style="margin-top:4px"><tbody>
+          ${filas.length?filas.map(x=>`<tr>
+            <td>${esc(x.parametro.replace(/\s*\([^)]*\)/,''))}</td>
+            <td class="c" style="width:60px"${admin?` data-eqc="limite" data-eqid="${x.id}" data-eqtipo="num"${ttl}`:''}>${x.limite??'<span class="dim">—</span>'}</td>
+            ${admin?`<td class="c" style="width:24px"><button class="mini" data-qg="${x.id}" title="Quitar del gráfico">✕</button></td>`:''}
+          </tr>`).join(''):`<tr><td class="dim" style="padding:6px 4px">Sin parámetros asignados.</td></tr>`}
+        </tbody></table>
+        ${admin?`<div class="eqnew" style="margin-top:6px">
+          <select id="addSel_${slug(grupo)}" style="flex:1"><option value="">+ agregar parámetro…</option>
+            ${disponibles.map(a=>`<option value="${esc(a)}">${esc(a.replace(/\s*\([^)]*\)/,''))}</option>`).join('')}
+          </select>
+          <button class="act primary" data-addg="${esc(grupo)}">Agregar</button></div>`:''}
+      </div>`;
+    }).join('');
+    gf.querySelectorAll('[data-eqc]').forEach(td=>td.ondblclick=()=>eqEditar(td,'sos_limites',LIMITES,()=>{},td.dataset.eqid,td.dataset.eqc,'num'));
+    gf.querySelectorAll('[data-qg]').forEach(b=>b.onclick=async()=>{
+      if(!confirm('¿Quitar este parámetro del gráfico? (no borra los datos del análisis, solo deja de graficarlo)'))return;
+      const {error}=await sb.from('sos_limites').delete().eq('id',b.dataset.qg);
+      if(error)return alert('No se pudo quitar: '+error.message);
+      const i=LIMITES.findIndex(x=>String(x.id)===b.dataset.qg);
+      if(i>=0)LIMITES.splice(i,1);
+      eqPintarTablas();
+    });
+    gf.querySelectorAll('[data-addg]').forEach(b=>b.onclick=async()=>{
+      const grupo=b.dataset.addg;
+      const sel=document.getElementById('addSel_'+slug(grupo));
+      const parametro=sel.value; if(!parametro)return;
+      const orden=Math.max(0,...LIMITES.filter(x=>x.grupo===grupo).map(x=>x.orden||0))+1;
+      const {data,error}=await sb.from('sos_limites').insert({grupo,parametro,orden}).select().single();
+      if(error)return alert('No se pudo agregar: '+error.message);
+      LIMITES.push(data);
+      eqPintarTablas();
+    });
   }
   te.innerHTML=EQLE.slice().sort((a,b)=>a.estandar.localeCompare(b.estandar)||a.texto.localeCompare(b.texto))
     .map(x=>`<tr>
