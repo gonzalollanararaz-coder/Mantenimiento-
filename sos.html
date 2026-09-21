@@ -432,7 +432,7 @@ function leerPlanilla(filas){
 const ANALISIS=['Hierro (ppm)','Cromo (ppm)','Plomo (ppm)','Cobre (ppm)','Estaño (ppm)','Aluminio (ppm)',
  'Niquel (ppm)','Plata (ppm)','Silicio (ppm)','Indice PQ','V40','V100','Hollin','Oxidacion','Nitracion',
  'Sulfatacion','ISO','ISO 4406 >5','ISO 4406 >10','ISO 4406 >15','4µm','6µm','10µm','14µm','18µm','21µm',
- '38µm','50µm','70µm','TBN (mg KOH/g)','Agua (% V)','Diesel (%)','Refrigerante (%)','Sodio (ppm)',
+ '38µm','50µm','70µm','TBN (mg KOH/g)','Agua (% V)','Diesel (%)','Refrigerante (%)','Sodio (ppm)','Potasio (ppm)',
  'Boro (ppm)','Magnesio (ppm)','Calcio (ppm)','Zinc (ppm)','Fosforo (ppm)'];
 
 function leerResultados(filas,fuente){
@@ -1049,9 +1049,9 @@ function pintarPlan(){
 
 /* ───────── FICHA GLLR (resumen de laboratorio con gráficos) ───────── */
 const FICHA_GRUPOS=[
-  {titulo:'Desgaste (ppm)', claves:['Hierro (ppm)','Cobre (ppm)','Aluminio (ppm)','Indice PQ']},
-  {titulo:'Contaminantes (ppm)', claves:['Silicio (ppm)']},
-  {titulo:'Salud - aceite', claves:['Hollin','Oxidacion','Nitracion','Sulfatacion']},
+  {titulo:'Desgaste (ppm)', claves:['Hierro (ppm)','Plomo (ppm)','Cobre (ppm)','Aluminio (ppm)','Cromo (ppm)','Estaño (ppm)']},
+  {titulo:'Contaminantes (ppm)', claves:['Potasio (ppm)','Sodio (ppm)','Silicio (ppm)']},
+  {titulo:'Salud - aceite', claves:['Hollin','TBN (mg KOH/g)','Indice PQ','Oxidacion','Nitracion','Sulfatacion']},
   {titulo:'Salud - viscosidad', claves:['V40','V100']}
 ];
 function unidadDe(clave){ const m=clave.match(/\(([^)]+)\)/); return m?m[1]:''; }
@@ -1108,16 +1108,21 @@ function fichaSOS(id){
     .sort((a,b)=>String(a.f_muestreo).localeCompare(String(b.f_muestreo)));
   const filaDato=(l,v)=>`<tr><td class="dim" style="font-size:14px">${esc(l)}</td><td style="font-size:14.5px;font-weight:600">${esc(v||'—')}</td></tr>`;
   const params=Object.entries(p.analisis||{});
-  document.body.insertAdjacentHTML('beforeend',`<div class="modal" id="mficha"><div class="mc" style="width:97vw;max-width:1500px;height:95vh;max-height:95vh">
-    <div class="mh"><h3 style="font-size:19px">Ficha SOS — Análisis de aceite de equipo pesado</h3>
+  const colorEstado=p.estado_std==='CRITICO'?'#F9DEDF':p.estado_std==='PRECAUCION'?'#FFF8DE':'#DDF2DF';
+  document.body.insertAdjacentHTML('beforeend',`<div class="modal" id="mficha"><div class="mc" style="width:97vw;max-width:1600px;height:95vh;max-height:95vh;display:flex;flex-direction:column">
+    <div class="mh" style="flex:0 0 auto">
+      <h3 style="font-size:19px">Ficha SOS — Análisis de aceite de equipo pesado</h3>
       <div class="sub" style="font-size:13px">${esc(e?e.equipo:'')} · ${esc(p.cod_sap||'')} · ${esc(p.sistema_std||p.sistema||'')} · N° muestra ${esc(p.nro_muestra||'—')} · ${esc(p.fuente||'')}</div>
       <div class="spacer"></div>
+      <button class="act" id="fvResumen">Resumen</button>
+      <button class="act" id="fvGraficos">Gráficos</button>
       ${p.link_pdf?`<a class="act" href="${esc(p.link_pdf)}" target="_blank">Ver PDF del laboratorio</a>`:''}
-      <button class="act" id="fichaCer">Cerrar</button></div>
-    <div class="mb" style="overflow-y:auto">
-      <div style="display:grid;grid-template-columns:340px 1fr;gap:16px;margin-bottom:14px">
-        <div class="campo" style="border:1px solid var(--line);border-radius:10px;padding:12px;margin:0">
-          <b style="font-size:15px;color:#1F3864">1. Datos del equipo</b>
+      <button class="act" id="fichaCer">Cerrar</button>
+    </div>
+    <div class="mb" id="vResumen" style="flex:1;min-height:0;overflow-y:auto;display:grid;grid-template-columns:29fr 68fr;gap:16px;align-content:start">
+      <div style="display:flex;flex-direction:column;gap:12px;min-height:100%">
+        <div class="campo" style="border:1px solid var(--line);border-radius:10px;padding:12px;margin:0;flex:42 1 0">
+          <b style="font-size:15px;color:#1F3864">Datos del equipo</b>
           <table class="t" style="margin-top:6px">
             ${filaDato('Cliente / Obra',p.obra)}
             ${filaDato('Equipo',e?e.equipo:'')}
@@ -1129,36 +1134,50 @@ function fichaSOS(id){
             ${filaDato('Tipo de aceite',p.tipo_aceite)}
             ${filaDato('Sistema',p.sistema_std||p.sistema)}
           </table>
-          <div style="margin-top:14px">
-            <b style="font-size:15px;color:#1F3864">3. Interpretación general</b>
-            <div style="display:flex;align-items:center;gap:10px;margin-top:8px;padding:10px;border-radius:10px;background:${p.estado_std==='CRITICO'?'#F9DEDF':p.estado_std==='PRECAUCION'?'#FFF8DE':'#DDF2DF'}">
-              <span class="pill e-${p.estado_std||'NA'}" style="font-size:18px;padding:7px 18px;font-weight:800">${esc(p.estado_std||'SIN EVALUAR')}</span>
-            </div>
-            ${p.observacion_lab?`<div style="font-size:13.5px;color:#444;margin-top:8px">${esc(p.observacion_lab)}</div>`:''}
+        </div>
+        <div class="campo" style="border:1px solid var(--line);border-radius:10px;padding:12px;margin:0;flex:23 1 0;display:flex;flex-direction:column;justify-content:center">
+          <b style="font-size:15px;color:#1F3864">Interpretación general</b>
+          <div style="display:flex;align-items:center;justify-content:center;gap:10px;margin-top:8px;padding:14px;border-radius:10px;background:${colorEstado}">
+            <span class="pill e-${p.estado_std||'NA'}" style="font-size:20px;padding:9px 22px;font-weight:800">${esc(p.estado_std||'SIN EVALUAR')}</span>
           </div>
         </div>
-        <div class="campo" style="border:1px solid var(--line);border-radius:10px;padding:12px;margin:0">
-          <b style="font-size:15px;color:#1F3864">2. Resultados del análisis</b>
-          <table class="t" style="margin-top:6px"><thead><tr><th>Parámetro</th><th class="c">Resultado</th><th class="c">Unidad</th><th class="c">Límite</th><th class="c">Estado</th></tr></thead>
-          <tbody>${params.length?params.map(([k,v])=>{
-            const lim=limiteDe(k); const num=typeof v==='number'?v:null;
-            const punto = lim==null?'<span class="dim">—</span>' : (num!=null&&num<=lim?'<span style="color:#0C7A16">●</span>':'<span style="color:#D3141A">●</span>');
-            return `<tr><td>${esc(k.replace(/\s*\([^)]*\)/,''))}</td><td class="c mono">${esc(String(v))}</td><td class="c dim">${esc(unidadDe(k))}</td><td class="c dim">${lim??'—'}</td><td class="c">${punto}</td></tr>`;
-          }).join(''):'<tr><td colspan="5" class="dim" style="text-align:center;padding:10px">Sin parámetros de análisis registrados para esta muestra.</td></tr>'}
-          </tbody></table>
+        <div class="campo" style="border:1px solid var(--line);border-radius:10px;padding:12px;margin:0;flex:20 1 0;overflow-y:auto">
+          <b style="font-size:15px;color:#1F3864">Recomendación</b>
+          <div style="font-size:13.5px;color:#444;margin-top:8px">${p.observacion_lab?esc(p.observacion_lab):'<span class="dim">El laboratorio no incluyó una recomendación para esta muestra.</span>'}</div>
         </div>
       </div>
-      <div class="campo" style="border-top:2px solid var(--line);padding-top:12px;margin:0">
-        <b style="font-size:15px;color:#1F3864">5. Gráficos y tendencias</b>
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:8px">
-          ${FICHA_GRUPOS.map(g=>svgLineasGrupo(g.titulo,g.claves,historial)).join('')}
-        </div>
+      <div class="campo" style="border:1px solid var(--line);border-radius:10px;padding:12px;margin:0;overflow-y:auto">
+        <b style="font-size:15px;color:#1F3864">Resultados del análisis</b>
+        <table class="t" style="margin-top:6px"><thead><tr><th>Parámetro</th><th class="c">Resultado</th><th class="c">Unidad</th><th class="c">Límite</th><th class="c">Estado</th></tr></thead>
+        <tbody>${params.length?params.map(([k,v])=>{
+          const lim=limiteDe(k); const num=typeof v==='number'?v:null;
+          const punto = lim==null?'<span class="dim">—</span>' : (num!=null&&num<=lim?'<span style="color:#0C7A16">●</span>':'<span style="color:#D3141A">●</span>');
+          return `<tr><td>${esc(k.replace(/\s*\([^)]*\)/,''))}</td><td class="c mono">${esc(String(v))}</td><td class="c dim">${esc(unidadDe(k))}</td><td class="c dim">${lim??'—'}</td><td class="c">${punto}</td></tr>`;
+        }).join(''):'<tr><td colspan="5" class="dim" style="text-align:center;padding:10px">Sin parámetros de análisis registrados para esta muestra.</td></tr>'}
+        </tbody></table>
+      </div>
+    </div>
+    <div class="mb" id="vGraficos" style="flex:1;min-height:0;overflow-y:auto;display:none">
+      <b style="font-size:15px;color:#1F3864">Gráficos y tendencias</b>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:8px">
+        ${FICHA_GRUPOS.map(g=>svgLineasGrupo(g.titulo,g.claves,historial)).join('')}
       </div>
     </div>
   </div></div>`);
   const cerrar=()=>{const m=document.getElementById('mficha');if(m)m.remove();};
   document.getElementById('fichaCer').onclick=cerrar;
   document.getElementById('mficha').addEventListener('click',ev=>{if(ev.target.id==='mficha')cerrar();});
+  const vResumen=document.getElementById('vResumen'), vGraficos=document.getElementById('vGraficos');
+  const fvResumen=document.getElementById('fvResumen'), fvGraficos=document.getElementById('fvGraficos');
+  function irA(v){
+    vResumen.style.display=v==='resumen'?'grid':'none';
+    vGraficos.style.display=v==='graficos'?'block':'none';
+    fvResumen.classList.toggle('primary',v==='resumen');
+    fvGraficos.classList.toggle('primary',v==='graficos');
+  }
+  fvResumen.onclick=()=>irA('resumen');
+  fvGraficos.onclick=()=>irA('graficos');
+  irA('resumen');
 }
 
 
