@@ -53,6 +53,9 @@
     position:sticky;top:0;z-index:8;background:var(--bg);padding:10px 0}
   .cards2{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:9px;margin:10px 0}
   .c{background:#fff;border:1px solid var(--line);border-radius:11px;padding:9px 12px}
+  .c.cf{cursor:pointer;transition:box-shadow .1s,border-color .1s}
+  .c.cf:hover{box-shadow:0 0 0 2px #DDE0E3}
+  .c.cf.on{box-shadow:0 0 0 2px var(--amber);background:#FFFBE8}
   .c .l{font-size:10px;font-weight:800;color:var(--muted);text-transform:uppercase;letter-spacing:.4px}
   .c .v{font-size:22px;font-weight:800;color:#1F3864;line-height:1.15;margin-top:2px}
   .c .v .ratio{font-size:14px;color:#98a2ad;font-weight:700}
@@ -121,7 +124,7 @@
 
   /* ── ESTILO OFICIAL GLLR: encabezado de 2 filas (banda + columna pastel) ── */
   table.of{width:100%;border-collapse:collapse;font-size:11.5px;background:#fff;table-layout:fixed}
-  table.of thead{position:sticky;top:0;z-index:6}
+  table.of thead{position:sticky;top:0;z-index:6;background:#fff}
   table.of tr.bands th{background:#fff;padding:3px 3px 4px;border:none;border-bottom:1px solid var(--line);text-align:center}
   table.of .bnd{display:block;border-radius:7px;padding:4px 8px;font-size:10.5px;font-weight:700;letter-spacing:.02em}
   table.of .bnd.azul{background:linear-gradient(180deg,#7B87C0 0%,#4254A5 48%,#334281 100%);border:1px solid #293466;color:#fff;text-shadow:0 1px 1px rgba(0,0,0,.3)}
@@ -202,11 +205,11 @@
   <input type="search" id="fBusca" placeholder="Equipo, frasco, n&deg; muestra&hellip;" style="width:250px">
   <input type="date" id="fDesde"><input type="date" id="fHasta">
   <button class="act" id="btnTodoHist" title="Quitar el filtro de fecha y ver todo el historial">Ver todo</button>
-  <select id="fObra"><option value="">Todas las obras</option></select>
+  <select id="fObra"><option value="">Obra</option></select>
   <select id="fEstado"><option value="">Todos los estados</option><option value="CRITICO">Cr&iacute;tico</option><option value="PRECAUCION">Precauci&oacute;n</option><option value="NORMAL">Normal</option></select>
-  <select id="fSistema"><option value="">Todos los sistemas</option></select>
-  <select id="fFuente"><option value="">Los 3 laboratorios</option><option>FESA</option><option>LUBTEC</option><option>MARCO PERUANA</option></select>
-  <span class="chip" id="chN">&mdash;</span>
+  <select id="fSistema"><option value="">Sistemas</option></select>
+  <select id="fFuente"><option value="">Laboratorio</option><option>FESA</option><option>LUBTEC</option><option>MARCO PERUANA</option></select>
+  <span class="chip hide" id="chN">&mdash;</span>
   <button class="act" id="btnLimpiarSOS">&#10005; Borrar filtros</button>
   <button class="act" id="btnDeshacer" title="Ctrl+Z" disabled>&#8630; Deshacer</button>
   <div class="spacer"></div>
@@ -273,6 +276,8 @@ function mant(e){
 /* ═══════════════════ SOS · MUESTREO DE ACEITES ═══════════════════ */
 let datos=[], DIDX=new Map(), perfil=null;
 let MUESTRAS=[], RES=[], ALE=[], EQE=new Map(), EQS=new Map(), EQLE=[], EQLS=[];
+let LIMITES=[]; // {id,grupo,parametro,limite,orden}
+function limiteDe(parametro){ const l=LIMITES.find(x=>x.parametro===parametro); return l?l.limite:null; }
 let SIST=[], EQT=new Map(), EQLT=[], FRASCOS=[], ALTITUD=new Map();
 const FAMILIAS_SIN_SOS=['4_IMPL. EQ.','6_VEH T/PER','7_EQ PLANTA'];
 const RANGO_PM=[['PM4',8],['PM3',4],['PM2',2],['PM1',1]]; // de mayor a menor
@@ -883,10 +888,10 @@ function verVista(v){
   btnNuevo.classList.toggle('hide',v!=='plan');
   btnDup.classList.toggle('hide',v!=='plan');
   btnXls.classList.toggle('hide',v==='fra');
-  [fBusca,fDesde,fHasta,fEstado,fSistema,fFuente,chN].forEach(el=>el.classList.toggle('hide',v==='fra'));
+  [fBusca,fDesde,fHasta,fEstado,fSistema,fFuente].forEach(el=>el.classList.toggle('hide',v==='fra'));
   fPeriodo.classList.toggle('hide',v!=='fra');
   btnTodoHist.classList.toggle('hide',v==='fra');
-  fEstado.classList.toggle('hide',v==='fra');
+  fEstado.classList.toggle('hide',v==='fra'||v==='plan');
   fSistema.classList.toggle('hide',v==='fra');
   fFuente.classList.toggle('hide',v==='fra'||v==='ale');
   cerrarColMenuG();
@@ -902,15 +907,27 @@ function pintar(){
 }
 
 /* ───────── PLANILLA ───────── */
+let filtroCardPlan=null;
 function filtrarPlan(){
   const q=nrm(fBusca.value), o=fObra.value, d=fDesde.value, h=fHasta.value;
+  const si=fSistema.value, fu=fFuente.value, es=fEstado.value;
   return MUESTRAS.filter(p=>{
     const f=p.f_muestreo||'';
     if(d&&f&&f<d)return false;
     if(h&&f&&f>h)return false;
     if(o&&String(p.obra||'')!==o)return false;
+    if(si&&p.sistema_std!==si)return false;
+    if(fu&&p.fuente!==fu)return false;
+    if(es&&p.estado_std!==es)return false;
+    if(filtroCardPlan==='CRITICO'&&p.estado_std!=='CRITICO')return false;
+    if(filtroCardPlan==='PRECAUCION'&&p.estado_std!=='PRECAUCION')return false;
+    if(filtroCardPlan==='sinuni'&&!(p.sistema&&!p.sistema_std))return false;
+    if(filtroCardPlan==='conres'&&!(p.estado_std||p.fuente))return false;
     if(!pasaColFiltros('plan',p))return false;
-    if(q&&!nrm(`${p.cod_sap} ${p.nro_frasco||''} ${p.sistema||''} ${p.nro_planilla||''} ${p.nro_muestra||''} ${claveMuestra(p.cod_sap,p.sistema_std||p.sistema,p.f_muestreo)||''}`).includes(q))return false;
+    if(q){
+      const e=getE(p.maestro_id);
+      if(!nrm(`${p.cod_sap} ${p.nro_frasco||''} ${p.sistema||''} ${p.nro_planilla||''} ${p.nro_muestra||''} ${p.obra||''} ${e?e.equipo:''} ${p.estado_std||''} ${claveMuestra(p.cod_sap,p.sistema_std||p.sistema,p.f_muestreo)||''}`).includes(q))return false;
+    }
     return true;
   });
 }
@@ -927,21 +944,40 @@ function estatusMuestra(p){
   if(p.f_envio)return {txt:'En laboratorio',cls:'st-mid',title:''};
   return {txt:'Pendiente de envío',cls:'st-low',title:''};
 }
+function cardF(l,v,s,cls,filtro,on){
+  return `<div class="c cf${on?' on':''}" data-filtro="${filtro}"><div class="l">${l}</div><div class="v ${cls||''}">${v}</div><div class="s">${s}</div></div>`;
+}
 function pintarPlan(){
+  MUESTRAS.forEach(p=>{p._estatus=estatusMuestra(p).txt;}); // recalcular para que el filtro de columna vea los 3 valores
   const L=filtrarPlan().sort((a,b)=>String(b.f_muestreo||'').localeCompare(String(a.f_muestreo||''))
     ||String(a.cod_sap||'').localeCompare(String(b.cod_sap||'')));
-  chN.textContent=L.length+' muestra(s)';
-  const conRes=L.filter(p=>p.estado_std||p.fuente).length;
-  const criticos=L.filter(p=>p.estado_std==='CRITICO').length;
+  const base=MUESTRAS.filter(p=>{ // para los conteos de las tarjetas, sin el propio filtroCardPlan (si no, al activar uno los demás se ven en 0)
+    const o=fObra.value,d=fDesde.value,h=fHasta.value,si=fSistema.value,fu=fFuente.value,es=fEstado.value;
+    const f=p.f_muestreo||'';
+    if(d&&f&&f<d)return false; if(h&&f&&f>h)return false;
+    if(o&&String(p.obra||'')!==o)return false;
+    if(si&&p.sistema_std!==si)return false; if(fu&&p.fuente!==fu)return false; if(es&&p.estado_std!==es)return false;
+    return true;
+  });
+  const conRes=base.filter(p=>p.estado_std||p.fuente).length;
+  const criticos=base.filter(p=>p.estado_std==='CRITICO').length;
+  const precau=base.filter(p=>p.estado_std==='PRECAUCION').length;
+  const sinUni=base.filter(p=>p.sistema&&!p.sistema_std).length;
   const eqVista=new Set(L.map(p=>p.cod_sap)).size, eqTotal=new Set(MUESTRAS.map(p=>p.cod_sap)).size;
   cards.innerHTML=card('Muestras',`${L.length} <span class="ratio">/ ${MUESTRAS.length}</span>`,`${eqVista} equipos <span class="ratio">/ ${eqTotal} equipos</span>`)
-    +card('Con resultado',conRes,L.length-conRes+' pendientes de laboratorio')
-    +card('Críticos',criticos,'requieren acción','bad')
-    +card('Sin sistema uniformado',L.filter(p=>p.sistema&&!p.sistema_std).length,'revisar equivalencias');
+    +cardF('Con resultado',conRes,base.length-conRes+' pendientes de laboratorio','','conres',filtroCardPlan==='conres')
+    +cardF('Críticos',criticos,'requieren acción','bad','CRITICO',filtroCardPlan==='CRITICO')
+    +cardF('Precaución',precau,'a vigilar','warn','PRECAUCION',filtroCardPlan==='PRECAUCION')
+    +cardF('Sin sistema uniformado',sinUni,'revisar equivalencias','','sinuni',filtroCardPlan==='sinuni');
+  document.querySelectorAll('.c.cf').forEach(c=>c.onclick=()=>{
+    const f=c.dataset.filtro;
+    filtroCardPlan = filtroCardPlan===f?null:f;
+    pintarPlan();
+  });
   if(!L.length){boxPlan.innerHTML='<div class="vacio">Sin muestras registradas con estos filtros.</div>';return;}
   const total=L.length;
   boxPlan.innerHTML=`<table class="of"><colgroup>
-      <col style="width:30px">
+      <col style="width:42px">
       <col style="width:${anchoP('nro_planilla',88)}px"><col style="width:${anchoP('obra',72)}px"><col style="width:92px">
       <col style="width:${anchoP('marca',80)}px"><col style="width:${anchoP('modelo',66)}px"><col style="width:${anchoP('serie',58)}px">
       <col style="width:150px"><col style="width:100px"><col style="width:42px"><col style="width:60px">
@@ -964,7 +1000,7 @@ function pintarPlan(){
       <th class="amarillo">${cabColG('plan','sistema','Sistema')}</th><th class="amarillo">${cabColG('plan','tipo_aceite','Tipo de aceite')}</th><th class="amarillo c">Gal.</th><th class="amarillo c">Horómetro</th>
       <th class="amarillo c">Hrs. aceite</th><th class="amarillo c">Cant. agreg.</th><th class="amarillo c">F. muestreo</th><th class="amarillo c">F. envío</th>
       <th class="amarillo c">${cabColG('plan','tipo','Tipo')}</th><th class="amarillo c">${cabColG('plan','nro_frasco','N° Frasco')}</th>
-      <th class="plomo">${cabColapsable('observacion','Observación',false)}</th>
+      <th class="plomo">${cabColapsable('observacion','OBS.',false)}</th>
       <th class="verde c">${cabColG('plan','_estatus','Estatus')}</th><th class="verde c">${cabColG('plan','estado_std','Estado')}</th><th class="verde c">Ficha</th>
     </tr>
     </thead><tbody>
@@ -993,11 +1029,11 @@ function pintarPlan(){
         <td class="desc"${COL_COLAPSADAS.observacion?'':' data-campo="observacion"'}>${celdaColapsable('observacion',esc(p.observacion||''))}</td>
         <td class="c"><span class="badgeB ${st.cls}" title="${esc(st.title)}">${st.txt}</span></td>
         <td class="c">${p.estado_std?`<span class="pill e-${p.estado_std}">${esc(p.estado_std)}</span>`:'<span class="dim">—</span>'}</td>
-        <td class="c">${(p.estado_std||p.fuente)?`<button class="mini" data-ficha="${p.id}" title="Ver Ficha GLLR">📄</button>`:''}</td></tr>`;}).join('')}
+        <td class="c">${(p.estado_std||p.fuente)?`<button class="mini" data-ficha="${p.id}" title="Ver Ficha SOS">📄</button>`:''}</td></tr>`;}).join('')}
     </tbody></table>`;
   boxPlan.querySelectorAll('[data-del]').forEach(b=>b.onclick=ev=>{ev.stopPropagation();borrarFilaG('plan','sos_muestras',()=>MUESTRAS,b.dataset.del);});
   boxPlan.querySelectorAll('[data-cc]').forEach(b=>b.onclick=ev=>{ev.stopPropagation();COL_COLAPSADAS[b.dataset.cc]=!COL_COLAPSADAS[b.dataset.cc];pintarPlan();});
-  boxPlan.querySelectorAll('[data-ficha]').forEach(b=>b.onclick=ev=>{ev.stopPropagation();fichaGLLR(b.dataset.ficha);});
+  boxPlan.querySelectorAll('[data-ficha]').forEach(b=>b.onclick=ev=>{ev.stopPropagation();fichaSOS(b.dataset.ficha);});
   boxPlan.querySelectorAll('td[data-campo]').forEach(td=>td.ondblclick=ev=>{
     ev.stopPropagation();
     editarCeldaG({td, tabla:'sos_muestras', vista:'plan', arrGetter:()=>MUESTRAS, id:td.closest('tr').dataset.pid,
@@ -1018,63 +1054,105 @@ const FICHA_GRUPOS=[
   {titulo:'Salud - aceite', claves:['Hollin','Oxidacion','Nitracion','Sulfatacion']},
   {titulo:'Salud - viscosidad', claves:['V40','V100']}
 ];
-function svgBarrasGrupo(titulo,claves,historial){
+function unidadDe(clave){ const m=clave.match(/\(([^)]+)\)/); return m?m[1]:''; }
+function svgLineasGrupo(titulo,claves,historial){
   const colores=['#4254A5','#D3141A','#0CA318','#9E7F0B','#6C6C6C','#7B87C0'];
-  const fechas=historial.map(h=>fmtDate(h.f_muestreo));
-  const series=claves.map((k,i)=>({nombre:k.replace(/\s*\(ppm\)/i,''),color:colores[i%colores.length],
+  const etiquetasX=historial.map(h=>`${fmtDate(h.f_muestreo)}|${h.horometro!=null?f0(h.horometro)+'h':'—'}`);
+  const series=claves.map((k,i)=>({nombre:k.replace(/\s*\([^)]*\)/i,''),color:colores[i%colores.length],limite:limiteDe(k),
     valores:historial.map(h=>{const v=h.analisis&&h.analisis[k]; return typeof v==='number'?v:null;})}));
   const activas=series.filter(s=>s.valores.some(v=>v!=null));
-  if(!activas.length)return `<div class="campo" style="border:1px solid var(--line);border-radius:8px;padding:16px;text-align:center;color:#98a2ad">
-    <b style="font-size:11.5px;color:#1a1d21">${esc(titulo)}</b><br><span style="font-size:11px">Sin datos de este grupo</span></div>`;
-  const W=380,H=180,padL=30,padB=26,padT=8,padR=8;
-  const max=Math.max(1,...activas.flatMap(s=>s.valores.filter(v=>v!=null)))*1.15;
-  const n=fechas.length;
-  const grupoW=(W-padL-padR)/Math.max(1,n);
-  const barW=Math.max(2,grupoW/(activas.length+1)-2);
-  let svg=`<svg viewBox="0 0 ${W} ${H}" width="100%" style="max-width:420px;display:block">`;
+  if(!activas.length)return `<div class="campo" style="border:1px solid var(--line);border-radius:10px;padding:24px;text-align:center;color:#98a2ad">
+    <b style="font-size:20px;color:#1a1d21">${esc(titulo)}</b><br><span style="font-size:16px">Sin datos de este grupo</span></div>`;
+  const W=700,H=320,padL=54,padB=54,padT=20,padR=20;
+  const n=etiquetasX.length;
+  const limMax=Math.max(0,...activas.map(s=>s.limite||0));
+  const max=Math.max(1,limMax,...activas.flatMap(s=>s.valores.filter(v=>v!=null)))*1.15;
+  const xAt=ix=>n<=1?padL+(W-padL-padR)/2:padL+ix*(W-padL-padR)/(n-1);
+  const yAt=v=>padT+(H-padT-padB)*(1-v/max);
+  let svg=`<svg viewBox="0 0 ${W} ${H}" width="100%" style="max-width:660px;display:block">`;
   for(let gl=0;gl<=4;gl++){
     const y=padT+(H-padT-padB)*(1-gl/4);
     svg+=`<line x1="${padL}" y1="${y}" x2="${W-padR}" y2="${y}" stroke="#eef0f2"/>`;
-    svg+=`<text x="${padL-4}" y="${y+3}" font-size="7" text-anchor="end" fill="#98a2ad">${f1(max*gl/4)}</text>`;
+    svg+=`<text x="${padL-6}" y="${y+5}" font-size="13" text-anchor="end" fill="#98a2ad">${f1(max*gl/4)}</text>`;
   }
-  historial.forEach((h,ix)=>{
-    activas.forEach((s,si)=>{
-      const v=s.valores[ix]; if(v==null)return;
-      const x=padL+ix*grupoW+si*(barW+2)+2;
-      const bh=(H-padT-padB)*(v/max);
-      const y=H-padB-bh;
-      svg+=`<rect x="${x}" y="${y}" width="${barW}" height="${bh}" fill="${s.color}" rx="1"><title>${esc(s.nombre)}: ${v} (${fechas[ix]})</title></rect>`;
+  etiquetasX.forEach((et,ix)=>{
+    const [fe,ho]=et.split('|'); const x=xAt(ix);
+    svg+=`<text x="${x}" y="${H-padB+22}" font-size="12.5" text-anchor="middle" fill="#6b747d">${esc(fe)}</text>`;
+    svg+=`<text x="${x}" y="${H-padB+38}" font-size="12" text-anchor="middle" fill="#98a2ad">${esc(ho)}</text>`;
+  });
+  activas.forEach(s=>{
+    if(s.limite){
+      const y=yAt(s.limite);
+      svg+=`<line x1="${padL}" y1="${y}" x2="${W-padR}" y2="${y}" stroke="${s.color}" stroke-width="1.5" stroke-dasharray="5,4" opacity=".55"/>`;
+    }
+    const pts=s.valores.map((v,ix)=>v==null?null:[xAt(ix),yAt(v)]).filter(Boolean);
+    if(pts.length>1)svg+=`<polyline points="${pts.map(p=>p.join(',')).join(' ')}" fill="none" stroke="${s.color}" stroke-width="2.5"/>`;
+    s.valores.forEach((v,ix)=>{
+      if(v==null)return;
+      svg+=`<circle cx="${xAt(ix)}" cy="${yAt(v)}" r="4.5" fill="${s.color}"><title>${esc(s.nombre)}: ${v}</title></circle>`;
     });
-    const xc=padL+ix*grupoW+grupoW/2;
-    svg+=`<text x="${xc}" y="${H-padB+11}" font-size="6.5" text-anchor="middle" fill="#6b747d">${esc(fechas[ix])}</text>`;
   });
   svg+='</svg>';
-  const leyenda=activas.map(s=>`<span style="display:inline-flex;align-items:center;gap:3px;margin-right:8px;font-size:10px;color:#444">
-    <span style="width:8px;height:8px;background:${s.color};display:inline-block;border-radius:2px"></span>${esc(s.nombre)}</span>`).join('');
-  return `<div class="campo" style="border:1px solid var(--line);border-radius:8px;padding:8px">
-    <b style="font-size:11.5px">${esc(titulo)}</b>
-    <div style="margin:4px 0">${leyenda}</div>${svg}
+  const leyenda=activas.map(s=>`<span style="display:inline-flex;align-items:center;gap:5px;margin-right:16px;font-size:15px;color:#333">
+    <span style="width:13px;height:13px;background:${s.color};display:inline-block;border-radius:3px"></span>${esc(s.nombre)}${s.limite?` <span class="dim" style="font-size:12px">(límite ${s.limite})</span>`:''}</span>`).join('');
+  return `<div class="campo" style="border:1px solid var(--line);border-radius:10px;padding:14px">
+    <b style="font-size:19px">${esc(titulo)}</b>
+    <div style="margin:8px 0">${leyenda}</div>${svg}
   </div>`;
 }
-function fichaGLLR(id){
+function fichaSOS(id){
   const p=MUESTRAS.find(x=>String(x.id)===String(id)); if(!p)return;
   if(!p.estado_std&&!p.fuente){alert('Esta muestra todavía no tiene resultado de laboratorio.');return;}
   const e=getE(p.maestro_id);
   const historial=MUESTRAS.filter(x=>nrm(x.cod_sap)===nrm(p.cod_sap)&&nrm(x.sistema_std||x.sistema||'')===nrm(p.sistema_std||p.sistema||'')&&x.analisis&&x.f_muestreo)
     .sort((a,b)=>String(a.f_muestreo).localeCompare(String(b.f_muestreo)));
-  document.body.insertAdjacentHTML('beforeend',`<div class="modal" id="mficha"><div class="mc" style="width:min(920px,97vw)">
-    <div class="mh"><h3>Ficha GLLR — Muestreo de aceite</h3>
-      <div class="sub">${esc(e?e.equipo:'')} · ${esc(p.cod_sap||'')} · ${esc(p.sistema_std||p.sistema||'')} · ${fmtDate(p.f_muestreo)} · N° muestra ${esc(p.nro_muestra||'—')} · ${esc(p.fuente||'')}</div>
+  const filaDato=(l,v)=>`<tr><td class="dim" style="font-size:14px">${esc(l)}</td><td style="font-size:14.5px;font-weight:600">${esc(v||'—')}</td></tr>`;
+  const params=Object.entries(p.analisis||{});
+  document.body.insertAdjacentHTML('beforeend',`<div class="modal" id="mficha"><div class="mc" style="width:97vw;max-width:1500px;height:95vh;max-height:95vh">
+    <div class="mh"><h3 style="font-size:19px">Ficha SOS — Análisis de aceite de equipo pesado</h3>
+      <div class="sub" style="font-size:13px">${esc(e?e.equipo:'')} · ${esc(p.cod_sap||'')} · ${esc(p.sistema_std||p.sistema||'')} · N° muestra ${esc(p.nro_muestra||'—')} · ${esc(p.fuente||'')}</div>
       <div class="spacer"></div>
       ${p.link_pdf?`<a class="act" href="${esc(p.link_pdf)}" target="_blank">Ver PDF del laboratorio</a>`:''}
       <button class="act" id="fichaCer">Cerrar</button></div>
-    <div class="mb">
-      <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px">
-        <span class="pill e-${p.estado_std||'NA'}" style="font-size:13px;padding:4px 12px">${esc(p.estado_std||'Sin evaluar')}</span>
-        ${p.observacion_lab?`<span class="dim" style="font-size:12px">${esc(p.observacion_lab)}</span>`:''}
+    <div class="mb" style="overflow-y:auto">
+      <div style="display:grid;grid-template-columns:340px 1fr;gap:16px;margin-bottom:14px">
+        <div class="campo" style="border:1px solid var(--line);border-radius:10px;padding:12px;margin:0">
+          <b style="font-size:15px;color:#1F3864">1. Datos del equipo</b>
+          <table class="t" style="margin-top:6px">
+            ${filaDato('Cliente / Obra',p.obra)}
+            ${filaDato('Equipo',e?e.equipo:'')}
+            ${filaDato('Marca / Modelo',[p.marca,p.modelo].filter(Boolean).join(' / '))}
+            ${filaDato('Serie',p.serie)}
+            ${filaDato('Horómetro',p.horometro!=null?f0(p.horometro)+' h':'')}
+            ${filaDato('Fecha de muestreo',fmtDate(p.f_muestreo))}
+            ${filaDato('Fecha de envío',fmtDate(p.f_envio))}
+            ${filaDato('Tipo de aceite',p.tipo_aceite)}
+            ${filaDato('Sistema',p.sistema_std||p.sistema)}
+          </table>
+          <div style="margin-top:14px">
+            <b style="font-size:15px;color:#1F3864">3. Interpretación general</b>
+            <div style="display:flex;align-items:center;gap:10px;margin-top:8px;padding:10px;border-radius:10px;background:${p.estado_std==='CRITICO'?'#F9DEDF':p.estado_std==='PRECAUCION'?'#FFF8DE':'#DDF2DF'}">
+              <span class="pill e-${p.estado_std||'NA'}" style="font-size:18px;padding:7px 18px;font-weight:800">${esc(p.estado_std||'SIN EVALUAR')}</span>
+            </div>
+            ${p.observacion_lab?`<div style="font-size:13.5px;color:#444;margin-top:8px">${esc(p.observacion_lab)}</div>`:''}
+          </div>
+        </div>
+        <div class="campo" style="border:1px solid var(--line);border-radius:10px;padding:12px;margin:0">
+          <b style="font-size:15px;color:#1F3864">2. Resultados del análisis</b>
+          <table class="t" style="margin-top:6px"><thead><tr><th>Parámetro</th><th class="c">Resultado</th><th class="c">Unidad</th><th class="c">Límite</th><th class="c">Estado</th></tr></thead>
+          <tbody>${params.length?params.map(([k,v])=>{
+            const lim=limiteDe(k); const num=typeof v==='number'?v:null;
+            const punto = lim==null?'<span class="dim">—</span>' : (num!=null&&num<=lim?'<span style="color:#0C7A16">●</span>':'<span style="color:#D3141A">●</span>');
+            return `<tr><td>${esc(k.replace(/\s*\([^)]*\)/,''))}</td><td class="c mono">${esc(String(v))}</td><td class="c dim">${esc(unidadDe(k))}</td><td class="c dim">${lim??'—'}</td><td class="c">${punto}</td></tr>`;
+          }).join(''):'<tr><td colspan="5" class="dim" style="text-align:center;padding:10px">Sin parámetros de análisis registrados para esta muestra.</td></tr>'}
+          </tbody></table>
+        </div>
       </div>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
-        ${FICHA_GRUPOS.map(g=>svgBarrasGrupo(g.titulo,g.claves,historial)).join('')}
+      <div class="campo" style="border-top:2px solid var(--line);padding-top:12px;margin:0">
+        <b style="font-size:15px;color:#1F3864">5. Gráficos y tendencias</b>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:8px">
+          ${FICHA_GRUPOS.map(g=>svgLineasGrupo(g.titulo,g.claves,historial)).join('')}
+        </div>
       </div>
     </div>
   </div></div>`);
@@ -1771,6 +1849,11 @@ function eqAbrir(){
           <datalist id="tipl">${tipos.map(t=>`<option>${esc(t)}</option>`).join('')}</datalist>
           <button class="act primary" id="t_add">Agregar</button></div>`:''}
       </div>
+      <div class="campo"><b>Límites por parámetro (Ficha SOS)</b>
+        <div class="hint">Define el límite máximo aceptable de cada parámetro que se usa en los gráficos de la Ficha SOS. ${admin?'Doble clic sobre el límite para editarlo.':''} Vacío = todavía no hay ese dato.</div>
+        <table class="t"><thead><tr><th>Grupo</th><th>Parámetro</th><th class="c">Límite</th></tr></thead>
+        <tbody id="eqTL"></tbody></table>
+      </div>
       ${admin?'':'<div class="hint">Solo los administradores pueden modificar estas tablas.</div>'}
     </div></div></div>`);
   eqPintarTablas();
@@ -1821,19 +1904,22 @@ function eqEditar(td,tabla,lista,recomponer,id,campo,tipo,opciones){
     editor=document.createElement('select');
     opciones.forEach(o=>{const op=document.createElement('option'); op.value=o; op.textContent=o; if(nrm(row[campo]||'')===nrm(o))op.selected=true; editor.appendChild(op);});
   }else{
-    editor=document.createElement('input'); editor.type='text'; editor.value=row[campo]||'';
+    editor=document.createElement('input'); editor.type=tipo==='num'?'number':'text'; if(tipo==='num')editor.step='any';
+    editor.value=row[campo]??'';
   }
   editor.className='ed'; editor.style.width='100%'; editor.style.boxSizing='border-box';
   td.innerHTML=''; td.appendChild(editor); editor.focus(); if(editor.select)editor.select();
+  const vacioPermitido=campo==='laboratorio'||campo==='limite';
   let resuelto=false;
   async function confirmar(){
     if(resuelto)return; resuelto=true;
-    const nuevo=editor.value.trim();
-    if(campo!=='laboratorio'&&!nuevo){ td.innerHTML=original; return; }
-    if(nuevo===(row[campo]||'')){ eqPintarTablas(); return; }
-    const {error}=await sb.from(tabla).update({[campo]:nuevo||null}).eq('id',id);
+    const crudo=editor.value.trim();
+    if(!vacioPermitido&&!crudo){ td.innerHTML=original; return; }
+    const nuevo=tipo==='num'?(crudo===''?null:+crudo):(crudo||null);
+    if(nuevo===(row[campo]??null)){ eqPintarTablas(); return; }
+    const {error}=await sb.from(tabla).update({[campo]:nuevo}).eq('id',id);
     if(error){ alert('No se pudo guardar: '+error.message); td.innerHTML=original; return; }
-    row[campo]=nuevo||null;
+    row[campo]=nuevo;
     recomponer();
     eqPintarTablas();
     if(tabla==='sos_eq_estado'||tabla==='sos_eq_sistema')reNormalizar();
@@ -1864,6 +1950,13 @@ function eqPintarTablas(){
       if(i>=0){EQT.delete(nrm(EQLT[i].texto));EQLT.splice(i,1);}
       eqPintarTablas(); if(vista==='fra')pintarFra();});
     tt.querySelectorAll('[data-eqc]').forEach(td=>td.ondblclick=()=>eqEditar(td,'sos_eq_tipo',EQLT,reconstruirEQT,td.dataset.eqid,td.dataset.eqc,'text'));
+  }
+  const tl=document.getElementById('eqTL');
+  if(tl){
+    tl.innerHTML=LIMITES.slice().sort((a,b)=>(a.orden||0)-(b.orden||0))
+      .map(x=>`<tr><td class="dim">${esc(x.grupo)}</td><td>${esc(x.parametro.replace(/\s*\([^)]*\)/,''))}</td>
+        <td class="c"${admin?` data-eqc="limite" data-eqid="${x.id}" data-eqtipo="num"${ttl}`:''}>${x.limite??'<span class="dim">—</span>'}</td></tr>`).join('');
+    tl.querySelectorAll('[data-eqc]').forEach(td=>td.ondblclick=()=>eqEditar(td,'sos_limites',LIMITES,()=>{},td.dataset.eqid,td.dataset.eqc,'num'));
   }
   te.innerHTML=EQLE.slice().sort((a,b)=>a.estandar.localeCompare(b.estandar)||a.texto.localeCompare(b.texto))
     .map(x=>`<tr>
@@ -1937,16 +2030,20 @@ async function traerTodo(tabla,orden,asc){
 }
 async function cargarTodo(){
   pie.textContent='Cargando…';
-  const [pl,al]=await Promise.all([
+  const [pl,al,li]=await Promise.all([
     traerTodo('sos_muestras','f_muestreo',false),
-    traerTodo('sos_alertas')
+    traerTodo('sos_alertas'),
+    sb.from('sos_limites').select('*').order('orden')
   ]);
   if(pl.error){pie.textContent='No se pudo cargar: '+pl.error.message;return;}
-  MUESTRAS=pl.data||[]; ALE=al.data||[];
+  MUESTRAS=pl.data||[]; ALE=al.data||[]; LIMITES=li.data||[];
+  const obraSel=fObra.value, sisSel=fSistema.value;
   const obras=[...new Set(MUESTRAS.map(p=>p.obra).filter(Boolean))].sort();
-  fObra.innerHTML='<option value="">Todas las obras</option>'+obras.map(o=>`<option>${esc(o)}</option>`).join('');
+  fObra.innerHTML='<option value="">Obra</option>'+obras.map(o=>`<option>${esc(o)}</option>`).join('');
+  fObra.value=obraSel;
   const siss=[...new Set(MUESTRAS.map(r=>r.sistema_std).filter(Boolean))].sort();
-  fSistema.innerHTML='<option value="">Todos los sistemas</option>'+siss.map(s=>`<option>${esc(s)}</option>`).join('');
+  fSistema.innerHTML='<option value="">Sistemas</option>'+siss.map(s=>`<option>${esc(s)}</option>`).join('');
+  fSistema.value=sisSel;
   pie.textContent=`${MUESTRAS.length} muestra(s) · ${MUESTRAS.filter(m=>m.estado_std).length} con resultado · ${ALE.length} en seguimiento.`;
   pintar();
 }
