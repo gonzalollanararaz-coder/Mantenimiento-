@@ -197,7 +197,7 @@
 </head>
 <body>
 <header id="topbar">
-  <div class="brand-min"><h1>SOS &mdash; Muestreo de Aceites</h1><p>Unidad de Equipos &middot; UDE &middot; 210926-2</p></div>
+  <div class="brand-min"><h1>SOS &mdash; Muestreo de Aceites</h1><p>Unidad de Equipos &middot; UDE &middot; 210926-3</p></div>
   <nav id="navPrin"></nav>
   <div class="sp2"></div>
   <span class="who" id="who"></span>
@@ -207,7 +207,7 @@
   <button id="tab_fra" class="on">&#128230; Frascos</button>
   <button id="tab_plan">Muestras</button>
   <button id="tab_ale">Seguimiento de alertas</button>
-  <span style="margin-left:auto;font-size:10px;color:#9aa4ad;letter-spacing:.5px;padding-right:4px">v210926-2</span>
+  <span style="margin-left:auto;font-size:10px;color:#9aa4ad;letter-spacing:.5px;padding-right:4px">v210926-3</span>
 </div>
 <div class="toolbar">
   <input type="month" id="fPeriodo" title="Mes de muestreo a calcular">
@@ -217,7 +217,7 @@
   <select id="fObra"><option value="">Obra</option></select>
   <select id="fEstado"><option value="">Todos los estados</option><option value="CRITICO">Cr&iacute;tico</option><option value="PRECAUCION">Precauci&oacute;n</option><option value="NORMAL">Normal</option></select>
   <select id="fSistema"><option value="">Sistemas</option></select>
-  <select id="fFuente"><option value="">Laboratorio</option><option>FESA</option><option>LUBTEC</option><option>MARCO PERUANA</option><option>CAT S·O·S (Ferreyros)</option></select>
+  <select id="fFuente"><option value="">Laboratorio</option><option>Ferreyros</option><option>LUBTEC</option><option>MARCO PERUANA</option></select>
   <span class="chip hide" id="chN">&mdash;</span>
   <button class="act" id="btnLimpiarSOS">&#10005; Borrar filtros</button>
   <button class="act" id="btnDeshacer" title="Ctrl+Z" disabled>&#8630; Deshacer</button>
@@ -1562,12 +1562,12 @@ btnDup.onclick=buscarDuplicadosPlanilla;
 async function subirResultados(filas,nom,hoja){
   // el laboratorio se deduce del nombre de la hoja o del archivo
   const t=nrm(hoja+' '+nom);
-  let fuente = /FESA/.test(t)?'FESA' : /LUBTEC/.test(t)?'LUBTEC' : /MARCO/.test(t)?'MARCO PERUANA' : null;
-  if(!fuente&&leerHoja(filas,['No. de control de laboratorio','ID de equipo','Compartimento']))fuente='CAT S·O·S (Ferreyros)';
+  let fuente = /FESA/.test(t)?'Ferreyros' : /LUBTEC/.test(t)?'LUBTEC' : /MARCO/.test(t)?'MARCO PERUANA' : null;
+  if(!fuente&&leerHoja(filas,['No. de control de laboratorio','ID de equipo','Compartimento']))fuente='Ferreyros';
   if(!fuente){
-    fuente=prompt('¿De qué laboratorio es este archivo?\n\nEscribe: FESA, LUBTEC, MARCO o FERREYROS','FESA');
+    fuente=prompt('¿De qué laboratorio es este archivo?\n\nEscribe: Ferreyros, LUBTEC o MARCO','Ferreyros');
     if(!fuente)return;
-    fuente=nrm(fuente).startsWith('MARCO')?'MARCO PERUANA':nrm(fuente).startsWith('FERREYROS')?'CAT S·O·S (Ferreyros)':nrm(fuente);
+    fuente=nrm(fuente).startsWith('MARCO')?'MARCO PERUANA':nrm(fuente).startsWith('FERREYROS')||nrm(fuente).startsWith('FESA')?'Ferreyros':nrm(fuente);
   }
   const regs=(leerResultados(filas,fuente)||[]).filter(Boolean);
   if(!regs||!regs.length){alert('No se reconoció el formato.\n\nDebe tener las columnas N° MUESTRA, EQUIPO, COMPONENTE, FECHA y ESTADO (o el formato nativo de Ferreyros).');return;}
