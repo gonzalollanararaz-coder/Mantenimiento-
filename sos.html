@@ -197,7 +197,7 @@
 </head>
 <body>
 <header id="topbar">
-  <div class="brand-min"><h1>SOS &mdash; Muestreo de Aceites</h1><p>Unidad de Equipos &middot; UDE &middot; 210926-1</p></div>
+  <div class="brand-min"><h1>SOS &mdash; Muestreo de Aceites</h1><p>Unidad de Equipos &middot; UDE &middot; 210926-2</p></div>
   <nav id="navPrin"></nav>
   <div class="sp2"></div>
   <span class="who" id="who"></span>
@@ -207,7 +207,7 @@
   <button id="tab_fra" class="on">&#128230; Frascos</button>
   <button id="tab_plan">Muestras</button>
   <button id="tab_ale">Seguimiento de alertas</button>
-  <span style="margin-left:auto;font-size:10px;color:#9aa4ad;letter-spacing:.5px;padding-right:4px">v210926-1</span>
+  <span style="margin-left:auto;font-size:10px;color:#9aa4ad;letter-spacing:.5px;padding-right:4px">v210926-2</span>
 </div>
 <div class="toolbar">
   <input type="month" id="fPeriodo" title="Mes de muestreo a calcular">
@@ -1634,11 +1634,11 @@ function revisarNuevasPlanillas(lista){
       <div class="spacer"></div><button class="act" id="npCer">Cerrar sin crear</button></div>
     <div class="mb">
       ${lista.map((x,i)=>{
-        const c=x.candidato, r=x.resultado;
+        const c=x.candidato;
         return `<div class="campo" style="border:1px solid var(--line);border-radius:8px">
           <label style="display:flex;align-items:center;gap:8px;font-size:12.5px;color:#1F3864">
             <input type="checkbox" class="npChk" data-i="${i}" checked>
-            <b>N° muestra ${esc(r.nro_muestra)} · ${esc(x.fuente)} · ${fmtDate(c.f_muestreo)}</b>
+            <b>N° muestra ${esc(x.nro_muestra)} · ${esc(x.fuente)} · ${fmtDate(c.f_muestreo)}</b>
             ${!x.maestro_id?' <span class="b-mid">código de equipo no reconocido</span>':''}
           </label>
           <div class="form" style="margin-top:6px">
