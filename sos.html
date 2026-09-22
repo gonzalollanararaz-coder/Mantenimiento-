@@ -197,7 +197,7 @@
 </head>
 <body>
 <header id="topbar">
-  <div class="brand-min"><h1>SOS &mdash; Muestreo de Aceites</h1><p>Unidad de Equipos &middot; UDE &middot; 210926-3</p></div>
+  <div class="brand-min"><h1>SOS &mdash; Muestreo de Aceites</h1><p>Unidad de Equipos &middot; UDE &middot; 210926-4</p></div>
   <nav id="navPrin"></nav>
   <div class="sp2"></div>
   <span class="who" id="who"></span>
@@ -207,7 +207,7 @@
   <button id="tab_fra" class="on">&#128230; Frascos</button>
   <button id="tab_plan">Muestras</button>
   <button id="tab_ale">Seguimiento de alertas</button>
-  <span style="margin-left:auto;font-size:10px;color:#9aa4ad;letter-spacing:.5px;padding-right:4px">v210926-3</span>
+  <span style="margin-left:auto;font-size:10px;color:#9aa4ad;letter-spacing:.5px;padding-right:4px">v210926-4</span>
 </div>
 <div class="toolbar">
   <input type="month" id="fPeriodo" title="Mes de muestreo a calcular">
@@ -455,19 +455,27 @@ const ANALISIS_ALIAS={
 
 function leerResultados(filas,fuente){
   const m=leerHoja(filas,['N° MUESTRA','EQUIPO','COMPONENTE','FECHA','ESTADO'])
-        ||leerHoja(filas,['No. de control de laboratorio','ID de equipo','Compartimento','Estado']);
+        ||leerHoja(filas,['No. de control de laboratorio','ID de equipo','Compartimento','Estado'])
+        ||leerHoja(filas,['Nro de Muestra','Equipo','Compartimiento','CONDICIÓN SOS']);
   if(!m)return null;
   const out=[]; const filasConError=[];
   for(let i=m.fila+1;i<filas.length;i++){
     try{
       const f=filas[i]||[];
-      const nro=String(val(f,m.cols,'N° MUESTRA','Nro Muestra','N MUESTRA','No. de control de laboratorio')??'').trim();
+      const nro=String(val(f,m.cols,'N° MUESTRA','Nro Muestra','N MUESTRA','No. de control de laboratorio','Nro de Muestra')??'').trim();
       if(!nro)continue;
-      const sap=String(val(f,m.cols,'EQUIPO','ID de equipo')??'').trim();
+      // el código SAP limpio, si el formato lo trae aparte (Ferreyros/MARCO nativo);
+      // si no, se toma de la celda "Equipo" — en MARCO nativo esa celda viene unida
+      // ("ECV148 - # G540B8x4 (serie...)"), así que se toma solo lo que está antes del " - "
+      let sap=String(val(f,m.cols,'Código-Equipo','ID de equipo')??'').trim();
+      if(!sap){
+        const equipoTxt=String(val(f,m.cols,'EQUIPO','Equipo')??'').trim();
+        sap=equipoTxt.split(/\s+-\s+/)[0].trim();
+      }
       const serieEq=String(val(f,m.cols,'No. de serie del equipo')??'').trim();
-      const comp=String(val(f,m.cols,'COMPONENTE','Compartimento')??'').trim();
-      const est=String(val(f,m.cols,'ESTADO')??'').trim();
-      // primero por Cód. SAP; si no calza (formato Ferreyros trae su propio código de equipo),
+      const comp=String(val(f,m.cols,'COMPONENTE','Compartimento','Compartimiento')??'').trim();
+      const est=String(val(f,m.cols,'ESTADO','CONDICIÓN SOS')??'').trim();
+      // primero por Cód. SAP; si no calza (algunos formatos traen su propio código de equipo),
       // se cruza por el N° de serie del equipo, que es único
       let e=datos.find(x=>nrm(x.cod_sap)===nrm(sap));
       if(!e&&serieEq)e=datos.find(x=>x.serie_placa&&nrm(x.serie_placa)===nrm(serieEq));
@@ -478,7 +486,7 @@ function leerResultados(filas,fuente){
         if(n!=null)an[k]=n; else if(v!=null&&String(v).trim()&&String(v).trim()!=='-')an[k]=String(v).trim();
       });
       const fmuestreo=aFecha(val(f,m.cols,'FECHA','Fecha de muestreo','Fecha de Toma de Muestra'));
-      const horom=aNum(val(f,m.cols,'HORAS','Horometro','Horómetro','Hrs equipo','Horas'));
+      const horom=aNum(val(f,m.cols,'HORAS','Horometro','Horómetro','Hrs equipo','Horas','Horometro actual'));
       // -- candidato para crear la fila de Planilla, si el resultado no logra enlazarse a una ya existente --
       let tipoAceite=String(val(f,m.cols,'Aceite lubricante','Producto Usado')??'').trim();
       if(!tipoAceite){
@@ -488,14 +496,23 @@ function leerResultados(filas,fuente){
       }
       let tipoCambio=null;
       const fluidoCambiado=String(val(f,m.cols,'Fluido Cambiado')??'').trim();
+      const accion=String(val(f,m.cols,'Accion a tomar')??'').trim();
       if(fluidoCambiado)tipoCambio=/^[SY]/i.test(fluidoCambiado)?'Cambio':'Muestra';
+      else if(/CAMBIO/i.test(accion))tipoCambio='Cambio';
+      else if(/MUESTRA/i.test(accion))tipoCambio='Muestra';
+      // observación del laboratorio: si trae Comentarios Y Recomendaciones por separado, se juntan los dos
+      const coment=String(val(f,m.cols,'Comentarios')??'').trim();
+      const recom=String(val(f,m.cols,'Recomendaciones')??'').trim();
+      let obsLab;
+      if(coment&&recom)obsLab=`Comentarios: ${coment}\n\nRecomendaciones: ${recom}`;
+      else obsLab=coment||recom||String(val(f,m.cols,'Interpretacion','Observación del reporte')??'').trim()||null;
       const candidato={
         obra:e?e.cod_proyec:null,
         marca:e?e.marca:null, modelo:e?e.modelo:null, serie:e?e.serie_placa:null,
         sistema:comp||null, tipo_aceite:tipoAceite||null,
         galones:aNum(val(f,m.cols,'Volumen relleno')),
         horometro:horom, horas_aceite:aNum(val(f,m.cols,'Hrs aceite','Horas del Aceite','Estimacion de horas del fluido')),
-        cant_agregado:0,
+        cant_agregado:aNum(val(f,m.cols,'Agregar en Galones'))??0,
         f_muestreo:fmuestreo,
         f_envio:aFecha(val(f,m.cols,'Fecha de reporte','Fecha de laboratorio','Fecha de recibo de la muestra','Fecha del reporte')),
         tipo:tipoCambio
@@ -509,7 +526,7 @@ function leerResultados(filas,fuente){
         fecha:fmuestreo,
         horometro:horom,
         estado:est||null, estado_std:estadoStd(est),
-        observacion:String(val(f,m.cols,'Interpretacion','Recomendaciones','Comentarios','Observación del reporte')??'').trim()||null,
+        observacion:obsLab,
         link_pdf:String(val(f,m.cols,'Link al reporte PDF (OneDrive)','Link PDF')??'').trim()||null,
         analisis:Object.keys(an).length?an:null,
         candidato
@@ -1352,11 +1369,13 @@ const card=(l,v,s,cls)=>`<div class="c"><div class="l">${l}</div><div class="v $
 /* Reconoce el archivo por sus columnas, no por el nombre */
 function detectarTipo(filas,nombre,hoja){
   const t=nrm(nombre+' '+hoja);
-  if(/INGRESO|FESA|LUBTEC|MARCO/.test(t))return leerHoja(filas,['N° MUESTRA','EQUIPO','COMPONENTE'])?'res':null;
+  if(/INGRESO|FESA|LUBTEC|MARCO/.test(t))
+    return (leerHoja(filas,['N° MUESTRA','EQUIPO','COMPONENTE'])||leerHoja(filas,['Nro de Muestra','Equipo','Compartimiento','CONDICIÓN SOS']))?'res':null;
   if(/PLANILLA/.test(t))return leerHoja(filas,['N° Frasco','Sistema'])?'plan':null;
   // sin pistas en el nombre: se mira el contenido
   if(leerHoja(filas,['N° MUESTRA','EQUIPO','COMPONENTE','ESTADO']))return 'res';
   if(leerHoja(filas,['No. de control de laboratorio','ID de equipo','Compartimento','Estado']))return 'res';
+  if(leerHoja(filas,['Nro de Muestra','Equipo','Compartimiento','CONDICIÓN SOS']))return 'res';
   if(leerHoja(filas,['N° Frasco','Sistema','Muestreo']))return 'plan';
   return null;
 }
@@ -1564,6 +1583,7 @@ async function subirResultados(filas,nom,hoja){
   const t=nrm(hoja+' '+nom);
   let fuente = /FESA/.test(t)?'Ferreyros' : /LUBTEC/.test(t)?'LUBTEC' : /MARCO/.test(t)?'MARCO PERUANA' : null;
   if(!fuente&&leerHoja(filas,['No. de control de laboratorio','ID de equipo','Compartimento']))fuente='Ferreyros';
+  if(!fuente&&leerHoja(filas,['Nro de Muestra','Equipo','Compartimiento','CONDICIÓN SOS']))fuente='MARCO PERUANA';
   if(!fuente){
     fuente=prompt('¿De qué laboratorio es este archivo?\n\nEscribe: Ferreyros, LUBTEC o MARCO','Ferreyros');
     if(!fuente)return;
