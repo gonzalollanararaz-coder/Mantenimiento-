@@ -207,7 +207,7 @@
 </head>
 <body>
 <header id="topbar">
-  <div class="brand-min"><h1>SOS &mdash; Muestreo de Aceites</h1><p>Unidad de Equipos &middot; UDE &middot; 210926-5</p></div>
+  <div class="brand-min"><h1>SOS &mdash; Muestreo de Aceites</h1><p>Unidad de Equipos &middot; UDE &middot; 210926-6</p></div>
   <nav id="navPrin"></nav>
   <div class="sp2"></div>
   <span class="who" id="who"></span>
@@ -217,7 +217,7 @@
   <button id="tab_fra" class="on">&#128230; Frascos</button>
   <button id="tab_plan">Muestras</button>
   <button id="tab_ale">Seguimiento de alertas</button>
-  <span style="margin-left:auto;font-size:10px;color:#9aa4ad;letter-spacing:.5px;padding-right:4px">v210926-5</span>
+  <span style="margin-left:auto;font-size:10px;color:#9aa4ad;letter-spacing:.5px;padding-right:4px">v210926-6</span>
 </div>
 <div class="toolbar">
   <input type="month" id="fPeriodo" title="Mes de muestreo a calcular">
@@ -1176,8 +1176,14 @@ function fichaSOS(id){
     .sort((a,b)=>String(a.f_muestreo).localeCompare(String(b.f_muestreo)));
   const filaDato=(l,v)=>`<tr><td class="dim" style="font-size:11.5px;padding:3px 4px">${esc(l)}</td><td style="font-size:12px;font-weight:600;padding:3px 4px">${esc(v||'—')}</td></tr>`;
   const params=Object.entries(p.analisis||{});
-  const ESTATUS_ICONO={NORMAL:{color:'#0CA318',bg:'#DDF2DF',icono:'✓'},PRECAUCION:{color:'#C7A00D',bg:'#FFF8DE',icono:'⚠'},CRITICO:{color:'#D3141A',bg:'#F9DEDF',icono:'✕'}};
-  const est=ESTATUS_ICONO[p.estado_std]||{color:'#6C6C6C',bg:'#EFEFEF',icono:'?'};
+  function iconoEstatus(estadoStd){
+    if(estadoStd==='NORMAL')return `<svg viewBox="0 0 24 24" width="30" height="30" fill="none" stroke="#0CA318" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M7 12l3 3 7-7" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
+    if(estadoStd==='PRECAUCION')return `<svg viewBox="0 0 24 24" width="30" height="30" fill="none" stroke="#C7A00D" stroke-width="2"><path d="M12 3l10 18H2z" stroke-linejoin="round"/><line x1="12" y1="9.5" x2="12" y2="14" stroke-linecap="round"/><circle cx="12" cy="16.8" r=".9" fill="#C7A00D" stroke="none"/></svg>`;
+    if(estadoStd==='CRITICO')return `<svg viewBox="0 0 24 24" width="30" height="30" fill="none" stroke="#D3141A" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="8" y1="8" x2="16" y2="16" stroke-linecap="round"/><line x1="16" y1="8" x2="8" y2="16" stroke-linecap="round"/></svg>`;
+    return `<svg viewBox="0 0 24 24" width="30" height="30" fill="none" stroke="#6C6C6C" stroke-width="2"><circle cx="12" cy="12" r="10"/><text x="12" y="16" font-size="12" text-anchor="middle" fill="#6C6C6C" stroke="none">?</text></svg>`;
+  }
+  const ESTATUS_COLOR={NORMAL:{color:'#0CA318',bg:'#DDF2DF'},PRECAUCION:{color:'#C7A00D',bg:'#FFF8DE'},CRITICO:{color:'#D3141A',bg:'#F9DEDF'}};
+  const est=ESTATUS_COLOR[p.estado_std]||{color:'#6C6C6C',bg:'#EFEFEF'};
   const chip=(cls,txt)=>`<span class="bnd ${cls}" style="display:inline-block;font-size:11px;padding:4px 10px">${esc(txt)}</span>`;
   const caja=(x,y,w,h,html)=>`<div style="position:absolute;left:${x}%;top:${y}%;width:${w}%;height:${h}%;box-sizing:border-box;padding:4px">
     <div class="campo" style="border:1px solid var(--line);border-radius:10px;padding:10px;margin:0;height:100%;box-sizing:border-box;overflow:hidden;display:flex;flex-direction:column">${html}</div></div>`;
@@ -1196,21 +1202,15 @@ function fichaSOS(id){
     </div>
     <div id="vResumen" style="position:relative;flex:1;min-height:0">
 
-      ${caja(1,1,47,7,`<div style="display:flex;align-items:center;height:100%;overflow:hidden">
+      ${caja(1,1,80,6,`<div style="display:flex;align-items:center;height:100%;overflow:hidden">
         <b style="font-size:15px;color:#1F3864;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">ANÁLISIS DE ACEITE DE EQUIPO PESADO</b></div>`)}
 
-      ${caja(49,1,31,7,`<div style="display:flex;align-items:center;justify-content:center;gap:10px;height:100%;background:${est.bg};border-radius:8px">
-        <span style="width:34px;height:34px;border-radius:50%;background:${est.color};color:#fff;display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:800;flex:0 0 auto">${est.icono}</span>
-        <b style="font-size:15px;color:${est.color}">${esc(p.estado_std||'SIN EVALUAR')}</b>
-        ${p.estado?`<span class="dim" style="font-size:10.5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(p.estado)}</span>`:''}
-      </div>`)}
-
-      ${caja(80,1,10,7,`<div id="fichaLogoBox" style="display:flex;align-items:center;justify-content:center;height:100%">
+      ${caja(82,1,14,6,`<div id="fichaLogoBox" style="display:flex;align-items:center;justify-content:center;height:100%">
         <img id="fichaLogo" alt="" style="display:none;max-width:100%;max-height:100%;object-fit:contain">
         <span id="fichaLogoFb" style="font-size:9px;color:#98a2ad;border:1px dashed #c7ccd1;border-radius:6px;padding:4px 6px">LOGO</span>
       </div>`)}
 
-      ${caja(1,8,24,35,`${chip('azul','DATOS DEL EQUIPO')}
+      ${caja(1,7,24,28,`${chip('azul','DATOS DEL EQUIPO')}
         <table class="t" style="margin-top:6px;overflow-y:auto">
           ${filaDato('Cliente / Obra',p.obra)}
           ${filaDato('Equipo',e?e.equipo:'')}
@@ -1223,17 +1223,25 @@ function fichaSOS(id){
           ${filaDato('Sistema',p.sistema_std||p.sistema)}
         </table>`)}
 
-      ${caja(1,44,24,32,`${chip('plomo','ANÁLISIS Y RECOMENDACIONES')}
+      ${caja(1,36,24,10,`<div style="display:flex;align-items:center;justify-content:center;gap:10px;height:100%;background:${est.bg};border-radius:8px">
+        ${iconoEstatus(p.estado_std)}
+        <div style="display:flex;flex-direction:column">
+          <b style="font-size:15px;color:${est.color};line-height:1.1">${esc(p.estado_std||'SIN EVALUAR')}</b>
+          ${p.estado?`<span class="dim" style="font-size:10px">${esc(p.estado)}</span>`:''}
+        </div>
+      </div>`)}
+
+      ${caja(1,47,24,35,`${chip('plomo','ANÁLISIS Y RECOMENDACIONES')}
         <div style="font-size:10.5px;line-height:1.4;color:#444;margin-top:6px;overflow-y:auto;flex:1;white-space:pre-wrap">${p.observacion_lab?esc(p.observacion_lab):'<span class="dim">El laboratorio no incluyó comentarios ni recomendaciones para esta muestra.</span>'}</div>`)}
 
-      ${caja(26,8,65,67,`${chip('verde','GRÁFICOS Y TENDENCIAS')}
+      ${caja(26,7,71,75,`${chip('verde','GRÁFICOS Y TENDENCIAS')}
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:8px;overflow-y:auto;flex:1">
           ${gruposFicha().map(g=>svgLineasGrupo(g.titulo,g.claves,historial)).join('')}
         </div>`)}
 
     </div>
     <div id="vGraficos" style="position:relative;flex:1;min-height:0;display:none">
-      ${caja(1,1,89,94,`${chip('amarillo','RESULTADOS DEL ANÁLISIS')}
+      ${caja(1,1,98,53,`${chip('amarillo','RESULTADOS DEL ANÁLISIS')}
         <div style="overflow:auto;flex:1;margin-top:8px">
         <table class="t"><thead><tr><th>Parámetro</th><th class="c">Resultado</th><th class="c">Unidad</th><th class="c">Límite</th><th class="c">Estado</th></tr></thead>
         <tbody>${params.length?params.map(([k,v])=>{
