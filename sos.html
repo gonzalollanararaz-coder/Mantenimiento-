@@ -456,62 +456,73 @@ function leerResultados(filas,fuente){
   const m=leerHoja(filas,['N° MUESTRA','EQUIPO','COMPONENTE','FECHA','ESTADO'])
         ||leerHoja(filas,['No. de control de laboratorio','ID de equipo','Compartimento','Estado']);
   if(!m)return null;
-  const out=[];
+  const out=[]; const filasConError=[];
   for(let i=m.fila+1;i<filas.length;i++){
-    const f=filas[i]||[];
-    const nro=String(val(f,m.cols,'N° MUESTRA','Nro Muestra','N MUESTRA','No. de control de laboratorio')??'').trim();
-    if(!nro)continue;
-    const sap=String(val(f,m.cols,'EQUIPO','ID de equipo')??'').trim();
-    const serieEq=String(val(f,m.cols,'No. de serie del equipo')??'').trim();
-    const comp=String(val(f,m.cols,'COMPONENTE','Compartimento')??'').trim();
-    const est=String(val(f,m.cols,'ESTADO')??'').trim();
-    // primero por Cód. SAP; si no calza (formato Ferreyros trae su propio código de equipo),
-    // se cruza por el N° de serie del equipo, que es único
-    let e=datos.find(x=>nrm(x.cod_sap)===nrm(sap));
-    if(!e&&serieEq)e=datos.find(x=>x.serie_placa&&nrm(x.serie_placa)===nrm(serieEq));
-    const an={};
-    ANALISIS.forEach(k=>{
-      const v=val(f,m.cols,k,...(ANALISIS_ALIAS[k]||[]));
-      const n=aNum(v);
-      if(n!=null)an[k]=n; else if(v!=null&&String(v).trim()&&String(v).trim()!=='-')an[k]=String(v).trim();
-    });
-    const fmuestreo=aFecha(val(f,m.cols,'FECHA','Fecha de muestreo','Fecha de Toma de Muestra'));
-    const horom=aNum(val(f,m.cols,'HORAS','Horometro','Horómetro','Hrs equipo','Horas'));
-    // -- candidato para crear la fila de Planilla, si el resultado no logra enlazarse a una ya existente --
-    let tipoAceite=String(val(f,m.cols,'Aceite lubricante','Producto Usado')??'').trim();
-    if(!tipoAceite){
-      const marca=String(val(f,m.cols,'Fluid Brand')??'').trim();
-      const peso=String(val(f,m.cols,'Fluid Weight')??'').trim();
-      tipoAceite=[marca,peso].filter(x=>x&&x!=='.').join(' ').trim();
+    try{
+      const f=filas[i]||[];
+      const nro=String(val(f,m.cols,'N° MUESTRA','Nro Muestra','N MUESTRA','No. de control de laboratorio')??'').trim();
+      if(!nro)continue;
+      const sap=String(val(f,m.cols,'EQUIPO','ID de equipo')??'').trim();
+      const serieEq=String(val(f,m.cols,'No. de serie del equipo')??'').trim();
+      const comp=String(val(f,m.cols,'COMPONENTE','Compartimento')??'').trim();
+      const est=String(val(f,m.cols,'ESTADO')??'').trim();
+      // primero por Cód. SAP; si no calza (formato Ferreyros trae su propio código de equipo),
+      // se cruza por el N° de serie del equipo, que es único
+      let e=datos.find(x=>nrm(x.cod_sap)===nrm(sap));
+      if(!e&&serieEq)e=datos.find(x=>x.serie_placa&&nrm(x.serie_placa)===nrm(serieEq));
+      const an={};
+      ANALISIS.forEach(k=>{
+        const v=val(f,m.cols,k,...(ANALISIS_ALIAS[k]||[]));
+        const n=aNum(v);
+        if(n!=null)an[k]=n; else if(v!=null&&String(v).trim()&&String(v).trim()!=='-')an[k]=String(v).trim();
+      });
+      const fmuestreo=aFecha(val(f,m.cols,'FECHA','Fecha de muestreo','Fecha de Toma de Muestra'));
+      const horom=aNum(val(f,m.cols,'HORAS','Horometro','Horómetro','Hrs equipo','Horas'));
+      // -- candidato para crear la fila de Planilla, si el resultado no logra enlazarse a una ya existente --
+      let tipoAceite=String(val(f,m.cols,'Aceite lubricante','Producto Usado')??'').trim();
+      if(!tipoAceite){
+        const marca=String(val(f,m.cols,'Fluid Brand')??'').trim();
+        const peso=String(val(f,m.cols,'Fluid Weight')??'').trim();
+        tipoAceite=[marca,peso].filter(x=>x&&x!=='.').join(' ').trim();
+      }
+      let tipoCambio=null;
+      const fluidoCambiado=String(val(f,m.cols,'Fluido Cambiado')??'').trim();
+      if(fluidoCambiado)tipoCambio=/^[SY]/i.test(fluidoCambiado)?'Cambio':'Muestra';
+      const candidato={
+        obra:e?e.cod_proyec:null,
+        marca:e?e.marca:null, modelo:e?e.modelo:null, serie:e?e.serie_placa:null,
+        sistema:comp||null, tipo_aceite:tipoAceite||null,
+        galones:aNum(val(f,m.cols,'Volumen relleno')),
+        horometro:horom, horas_aceite:aNum(val(f,m.cols,'Hrs aceite','Horas del Aceite','Estimacion de horas del fluido')),
+        cant_agregado:0,
+        f_muestreo:fmuestreo,
+        f_envio:aFecha(val(f,m.cols,'Fecha de reporte','Fecha de laboratorio','Fecha de recibo de la muestra','Fecha del reporte')),
+        tipo:tipoCambio
+      };
+      out.push({
+        fuente, nro_muestra:nro,
+        cod_frasco:String(val(f,m.cols,'CÓDIGO FRASCO (si aplica)','No. de Etiqueta','Codigo Frasco')??'').trim()||null,
+        cod_sap:e?e.cod_sap:(sap||null), maestro_id:e?e.id:null,
+        obra:String(val(f,m.cols,'OBRA','Nombre del Cliente','Cuenta')??'').trim()||(e?e.cod_proyec:null),
+        componente:comp||null, sistema_std:sistemaStd(comp),
+        fecha:fmuestreo,
+        horometro:horom,
+        estado:est||null, estado_std:estadoStd(est),
+        observacion:String(val(f,m.cols,'Interpretacion','Recomendaciones','Comentarios','Observación del reporte')??'').trim()||null,
+        link_pdf:String(val(f,m.cols,'Link al reporte PDF (OneDrive)','Link PDF')??'').trim()||null,
+        analisis:Object.keys(an).length?an:null,
+        candidato
+      });
+    }catch(err){
+      filasConError.push({fila:i+1,msg:err.message});
     }
-    let tipoCambio=null;
-    const fluidoCambiado=String(val(f,m.cols,'Fluido Cambiado')??'').trim();
-    if(fluidoCambiado)tipoCambio=/^[SY]/i.test(fluidoCambiado)?'Cambio':'Muestra';
-    const candidato={
-      obra:e?e.cod_proyec:null,
-      marca:e?e.marca:null, modelo:e?e.modelo:null, serie:e?e.serie_placa:null,
-      sistema:comp||null, tipo_aceite:tipoAceite||null,
-      galones:aNum(val(f,m.cols,'Volumen relleno')),
-      horometro:horom, horas_aceite:aNum(val(f,m.cols,'Hrs aceite','Horas del Aceite','Estimacion de horas del fluido')),
-      cant_agregado:0,
-      f_muestreo:fmuestreo,
-      f_envio:aFecha(val(f,m.cols,'Fecha de reporte','Fecha de laboratorio','Fecha de recibo de la muestra','Fecha del reporte')),
-      tipo:tipoCambio
-    };
-    out.push({
-      fuente, nro_muestra:nro,
-      cod_frasco:String(val(f,m.cols,'CÓDIGO FRASCO (si aplica)','No. de Etiqueta','Codigo Frasco')??'').trim()||null,
-      cod_sap:e?e.cod_sap:(sap||null), maestro_id:e?e.id:null,
-      obra:String(val(f,m.cols,'OBRA','Nombre del Cliente','Cuenta')??'').trim()||(e?e.cod_proyec:null),
-      componente:comp||null, sistema_std:sistemaStd(comp),
-      fecha:fmuestreo,
-      horometro:horom,
-      estado:est||null, estado_std:estadoStd(est),
-      observacion:String(val(f,m.cols,'Interpretacion','Recomendaciones','Comentarios','Observación del reporte')??'').trim()||null,
-      link_pdf:String(val(f,m.cols,'Link al reporte PDF (OneDrive)','Link PDF')??'').trim()||null,
-      analisis:Object.keys(an).length?an:null,
-      candidato
-    });
+  }
+  if(filasConError.length){
+    console.warn('Filas con error al leer el archivo de laboratorio:',filasConError);
+    alert(`${filasConError.length} fila(s) del archivo no se pudieron leer y se omitieron:\n`
+      +filasConError.slice(0,6).map(x=>`· fila ${x.fila}: ${x.msg}`).join('\n')
+      +(filasConError.length>6?`\n… y ${filasConError.length-6} más.`:'')
+      +'\n\nEl resto del archivo se sigue procesando normalmente.');
   }
   return out;
 }
@@ -1557,7 +1568,7 @@ async function subirResultados(filas,nom,hoja){
     if(!fuente)return;
     fuente=nrm(fuente).startsWith('MARCO')?'MARCO PERUANA':nrm(fuente).startsWith('FERREYROS')?'CAT S·O·S (Ferreyros)':nrm(fuente);
   }
-  const regs=leerResultados(filas,fuente);
+  const regs=(leerResultados(filas,fuente)||[]).filter(Boolean);
   if(!regs||!regs.length){alert('No se reconoció el formato.\n\nDebe tener las columnas N° MUESTRA, EQUIPO, COMPONENTE, FECHA y ESTADO (o el formato nativo de Ferreyros).');return;}
   // ya registrado = misma fuente + mismo N° de muestra ya tiene resultado en Muestras
   const yaHay=new Set(MUESTRAS.filter(m=>m.fuente).map(m=>m.fuente+'|'+nrm(m.nro_muestra)));
