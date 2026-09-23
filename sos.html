@@ -207,7 +207,7 @@
 </head>
 <body>
 <header id="topbar">
-  <div class="brand-min"><h1>SOS &mdash; Muestreo de Aceites</h1><p>Unidad de Equipos &middot; UDE &middot; 210926-6</p></div>
+  <div class="brand-min"><h1>SOS &mdash; Muestreo de Aceites</h1><p>Unidad de Equipos &middot; UDE &middot; 210926-7</p></div>
   <nav id="navPrin"></nav>
   <div class="sp2"></div>
   <span class="who" id="who"></span>
@@ -217,7 +217,7 @@
   <button id="tab_fra" class="on">&#128230; Frascos</button>
   <button id="tab_plan">Muestras</button>
   <button id="tab_ale">Seguimiento de alertas</button>
-  <span style="margin-left:auto;font-size:10px;color:#9aa4ad;letter-spacing:.5px;padding-right:4px">v210926-6</span>
+  <span style="margin-left:auto;font-size:10px;color:#9aa4ad;letter-spacing:.5px;padding-right:4px">v210926-7</span>
 </div>
 <div class="toolbar">
   <input type="month" id="fPeriodo" title="Mes de muestreo a calcular">
@@ -1645,19 +1645,37 @@ async function subirResultados(filas,nom,hoja){
   });
   const conMuestra=nuevos.filter(r=>r.muestraExistente);
   const sinMuestra=nuevos.filter(r=>!r.muestraExistente);
+  // filas que YA tenían resultado, pero el archivo trae texto/análisis distinto (correcciones del laboratorio o del lector)
+  const yaConResultado=regs.filter(r=>yaHay.has(fuente+'|'+nrm(r.nro_muestra)));
+  const conCambiosRes=[];
+  yaConResultado.forEach(r=>{
+    const existente=MUESTRAS.find(m=>m.fuente===fuente&&nrm(m.nro_muestra)===nrm(r.nro_muestra));
+    if(!existente)return;
+    const cambios=[];
+    if(r.observacion&&r.observacion!==(existente.observacion_lab||null))
+      cambios.push({campo:'observacion_lab',etiqueta:'Análisis y recomendaciones',antes:existente.observacion_lab,despues:r.observacion});
+    if(r.estado&&r.estado!==(existente.estado||null))
+      cambios.push({campo:'estado',etiqueta:'Estado (texto original)',antes:existente.estado,despues:r.estado});
+    if(r.estado_std&&r.estado_std!==(existente.estado_std||null))
+      cambios.push({campo:'estado_std',etiqueta:'Estado',antes:existente.estado_std,despues:r.estado_std});
+    if(r.analisis&&JSON.stringify(r.analisis)!==JSON.stringify(existente.analisis||{}))
+      cambios.push({campo:'analisis',etiqueta:'Parámetros de análisis',antes:existente.analisis?Object.keys(existente.analisis).length+' valores guardados':'(sin datos)',
+        despues:Object.keys(r.analisis).length+' valores en el archivo',valorReal:r.analisis});
+    if(cambios.length)conCambiosRes.push({existente,entrante:r,cambios});
+  });
   const sinEst=[...new Set(regs.filter(r=>r.estado&&!r.estado_std).map(r=>r.estado))];
   const sinSis=[...new Set(regs.filter(r=>r.componente&&!r.sistema_std).map(r=>r.componente))];
   let msg=`${nom}  ·  laboratorio: ${fuente}\n\n`
     +`Resultados leídos: ${regs.length}\n`
     +`Nuevos para agregar: ${nuevos.length}\n`
-    +`Ya registrados (se omiten): ${regs.length-nuevos.length}\n`
+    +`Ya registrados, sin cambios: ${yaConResultado.length-conCambiosRes.length}\n`
+    +(conCambiosRes.length?`Ya registrados, con datos distintos (te los mostraré para revisar): ${conCambiosRes.length}\n`:'')
     +`Enlazados con una muestra ya registrada: ${conMuestra.length} de ${nuevos.length}\n`
     +(sinMuestra.length?`Sin enlazar (te los mostraré para armar su fila): ${sinMuestra.length}\n`:'');
   if(sinEst.length)msg+=`\n⚠ Estados sin equivalencia (quedarán sin uniformar):\n  ${sinEst.slice(0,6).join(', ')}${sinEst.length>6?'…':''}\n`;
   if(sinSis.length)msg+=`\n⚠ Sistemas sin equivalencia:\n  ${sinSis.slice(0,6).join(', ')}${sinSis.length>6?'…':''}\n`;
-  msg+='\n¿Guardar?';
+  msg+='\n¿Continuar?';
   if(!confirm(msg))return;
-  if(!nuevos.length)return;
   let ok=0; const fallidas=[];
   for(const r of conMuestra){
     const patch={
@@ -1674,9 +1692,10 @@ async function subirResultados(filas,nom,hoja){
     const detalle=fallidas.slice(0,8).map(x=>`· ${x.r.cod_sap||'—'} / ${x.r.componente||'—'} / ${x.r.fecha||'—'} → ${x.msg}`).join('\n');
     alert(`Se enlazaron ${ok} de ${conMuestra.length}.\n\n${fallidas.length} fila(s) rechazadas:\n${detalle}`);
   }
-  await cargarTodo();
+  if(ok)await cargarTodo();
   pie.textContent=`${ok} resultado(s) enlazados con muestras existentes.`;
   if(sinMuestra.length)revisarNuevasPlanillas(sinMuestra);
+  if(conCambiosRes.length)revisarCambiosResultados(conCambiosRes);
   if(sinEst.length||sinSis.length){
     // se nombra exactamente qué falta y se ofrece resolverlo al momento
     const det=(sinEst.length?`Estados sin equivalencia (${sinEst.length}):\n   ${sinEst.join('\n   ')}\n\n`:'')
@@ -1689,6 +1708,51 @@ async function subirResultados(filas,nom,hoja){
       +`(al guardarlas, los datos ya cargados se corrigen solos)`);
     if(abrir)eqAbrir();
   }
+}
+function revisarCambiosResultados(lista){
+  document.body.insertAdjacentHTML('beforeend',`<div class="modal" id="mrevr"><div class="mc" style="width:min(760px,96vw)">
+    <div class="mh"><h3>Resultados ya guardados, con datos distintos en el archivo</h3>
+      <div class="sub">${lista.length} muestra(s) ya tenían resultado, pero el archivo trae información distinta. Revisa y confirma cuáles actualizar.</div>
+      <div class="spacer"></div><button class="act" id="revrCer">Cerrar sin aplicar</button></div>
+    <div class="mb">
+      ${lista.map((g,i)=>{
+        const m=g.existente;
+        return `<div class="campo" style="border:1px solid var(--line);border-radius:8px">
+          <label style="display:flex;align-items:center;gap:8px;font-size:12.5px;color:#1F3864">
+            <input type="checkbox" class="revrChk" data-i="${i}" checked>
+            <b>${esc(m.cod_sap||'')} · ${esc(m.sistema_std||m.sistema||'')} · N° muestra ${esc(m.nro_muestra||'')}</b>
+          </label>
+          <table class="t" style="margin-top:6px"><thead><tr><th>Campo</th><th>Valor actual</th><th>Valor nuevo</th></tr></thead>
+          <tbody>${g.cambios.map(c=>`<tr><td style="width:150px">${esc(c.etiqueta)}</td>
+            <td style="max-width:260px;white-space:pre-wrap;font-size:11px">${esc(String(c.antes??'—'))}</td>
+            <td style="max-width:260px;white-space:pre-wrap;font-size:11px"><b>${esc(String(c.despues??'—'))}</b></td></tr>`).join('')}</tbody></table>
+        </div>`;
+      }).join('')}
+    </div>
+    <div style="display:flex;gap:8px;justify-content:flex-end;padding:12px 16px;border-top:1px solid var(--line)">
+      <button class="act" id="revrNo">Cancelar</button><button class="act primary" id="revrOk">Actualizar seleccionados</button></div>
+  </div></div>`);
+  const cerrar=()=>{const el=document.getElementById('mrevr');if(el)el.remove();};
+  document.getElementById('revrCer').onclick=cerrar;
+  document.getElementById('revrNo').onclick=cerrar;
+  document.getElementById('mrevr').addEventListener('click',ev=>{if(ev.target.id==='mrevr')cerrar();});
+  document.getElementById('revrOk').onclick=async()=>{
+    const idxSel=[...document.querySelectorAll('.revrChk:checked')].map(c=>+c.dataset.i);
+    if(!idxSel.length){cerrar();return;}
+    let ok=0; const fallidas=[];
+    for(const i of idxSel){
+      const g=lista[i];
+      const patch={}; g.cambios.forEach(c=>patch[c.campo]='valorReal'in c?c.valorReal:c.despues);
+      const {data,error}=await sb.from('sos_muestras').update(patch).eq('id',g.existente.id).select().single();
+      if(error){fallidas.push({g,msg:error.message});continue;}
+      Object.assign(g.existente,data); ok++;
+    }
+    cerrar();
+    if(fallidas.length)alert(`Se actualizaron ${ok} de ${idxSel.length}.\n\n${fallidas.length} no se pudieron guardar:\n`
+      +fallidas.slice(0,6).map(x=>`· ${x.g.existente.cod_sap||'—'} → ${x.msg}`).join('\n'));
+    pie.textContent=`${ok} resultado(s) actualizados con datos del archivo.`;
+    pintar();
+  };
 }
 function revisarNuevasPlanillas(lista){
   const eqs=datos.filter(e=>!esDesmovM(e)).sort((a,b)=>String(a.cod_sap||'').localeCompare(String(b.cod_sap||'')));
