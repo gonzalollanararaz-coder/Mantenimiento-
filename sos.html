@@ -96,6 +96,8 @@
   .e-CRITICO{background:#fee2e2;color:#b91c1c}
   .e-NA{background:#eef0f2;color:#6b747d}
   .b-bad{color:#dc2626;font-weight:800}.b-mid{color:#B45309;font-weight:700}
+  .spin{width:13px;height:13px;border:2px solid #d8dde2;border-top-color:#4254A5;border-radius:50%;animation:girar .7s linear infinite;flex:0 0 auto}
+  @keyframes girar{to{transform:rotate(360deg)}}
   .mini{border:none;background:#eef0f2;border-radius:6px;padding:2px 7px;cursor:pointer;font-size:12px}
   .vacio{padding:44px;text-align:center;color:#98a2ad}
   .hint{font-size:10.5px;color:var(--muted);margin-top:6px;line-height:1.5}
@@ -207,7 +209,7 @@
 </head>
 <body>
 <header id="topbar">
-  <div class="brand-min"><h1>SOS &mdash; Muestreo de Aceites</h1><p>Unidad de Equipos &middot; UDE &middot; 210926-7</p></div>
+  <div class="brand-min"><h1>SOS &mdash; Muestreo de Aceites</h1><p>Unidad de Equipos &middot; UDE &middot; 210926-8</p></div>
   <nav id="navPrin"></nav>
   <div class="sp2"></div>
   <span class="who" id="who"></span>
@@ -217,7 +219,7 @@
   <button id="tab_fra" class="on">&#128230; Frascos</button>
   <button id="tab_plan">Muestras</button>
   <button id="tab_ale">Seguimiento de alertas</button>
-  <span style="margin-left:auto;font-size:10px;color:#9aa4ad;letter-spacing:.5px;padding-right:4px">v210926-7</span>
+  <span style="margin-left:auto;font-size:10px;color:#9aa4ad;letter-spacing:.5px;padding-right:4px">v210926-8</span>
 </div>
 <div class="toolbar">
   <input type="month" id="fPeriodo" title="Mes de muestreo a calcular">
@@ -234,6 +236,7 @@
   <div class="spacer"></div>
   <button class="act primary" id="btnNuevo">+ Muestra</button>
   <button class="act" id="btnDup" title="Buscar filas con el mismo equipo, sistema y fecha">&#128269; Duplicados</button>
+  <button class="act" id="btnIASemana">&#129302; Resumen semanal</button>
   <button class="act" id="btnSubir" title="Planilla de envío o resultados de laboratorio: se reconoce solo">&#11014; Subir archivo</button>
   <button class="act" id="btnXls">&#8681; Excel</button>
   <button class="act" id="btnEq">&#9878; Equivalencias</button>
@@ -295,6 +298,33 @@ function mant(e){
 /* ═══════════════════ SOS · MUESTREO DE ACEITES ═══════════════════ */
 let datos=[], DIDX=new Map(), perfil=null;
 let MUESTRAS=[], RES=[], ALE=[], EQE=new Map(), EQS=new Map(), EQLE=[], EQLS=[];
+/* ═══════════════ IA (vía Edge Function de Supabase, la clave nunca viaja al navegador) ═══════════════ */
+async function llamarIA(prompt){
+  const resp=await fetch(`${CFG.url}/functions/v1/analizar-ia`,{
+    method:'POST',
+    headers:{'Content-Type':'application/json','Authorization':'Bearer '+CFG.key,'apikey':CFG.key},
+    body:JSON.stringify({prompt})
+  });
+  const data=await resp.json().catch(()=>({}));
+  if(!resp.ok||data.error)throw new Error(data.error||'No se pudo contactar al servicio de IA.');
+  return data.texto||'';
+}
+function modalIA(titulo,generar){
+  document.body.insertAdjacentHTML('beforeend',`<div class="modal" id="mia"><div class="mc" style="width:min(640px,94vw)">
+    <div class="mh"><h3>${esc(titulo)}</h3><div class="spacer"></div><button class="act" id="miaCer">Cerrar</button></div>
+    <div class="mb" id="miaBody" style="font-size:13.5px;line-height:1.65">
+      <div style="display:flex;align-items:center;gap:8px;color:#6b747d"><span class="spin"></span> Consultando a la IA…</div>
+    </div>
+  </div></div>`);
+  const cerrar=()=>{const m=document.getElementById('mia');if(m)m.remove();};
+  document.getElementById('miaCer').onclick=cerrar;
+  document.getElementById('mia').addEventListener('click',ev=>{if(ev.target.id==='mia')cerrar();});
+  generar().then(texto=>{
+    const b=document.getElementById('miaBody'); if(b)b.innerHTML=esc(texto).replace(/\n/g,'<br>');
+  }).catch(err=>{
+    const b=document.getElementById('miaBody'); if(b)b.innerHTML=`<span class="b-bad">No se pudo obtener el análisis: ${esc(err.message)}</span>`;
+  });
+}
 let LIMITES=[]; // {id,grupo,parametro,limite,orden}
 function limiteDe(parametro){ const l=LIMITES.find(x=>x.parametro===parametro); return l?l.limite:null; }
 let SIST=[], EQT=new Map(), EQLT=[], FRASCOS=[], ALTITUD=new Map();
@@ -954,6 +984,7 @@ function verVista(v){
   btnSubir.classList.toggle('hide',v==='ale'||v==='fra');
   btnNuevo.classList.toggle('hide',v!=='plan');
   btnDup.classList.toggle('hide',v!=='plan');
+  btnIASemana.classList.toggle('hide',v!=='plan');
   btnXls.classList.toggle('hide',v==='fra');
   [fBusca,fDesde,fHasta,fEstado,fSistema,fFuente].forEach(el=>el.classList.toggle('hide',v==='fra'));
   fPeriodo.classList.toggle('hide',v!=='fra');
@@ -1197,6 +1228,7 @@ function fichaSOS(id){
       <button class="act" id="fvResumen">Resumen</button>
       <button class="act" id="fvGraficos">Resultados del análisis</button>
       <button class="act" id="fichaImp">🖨 Imprimir</button>
+      <button class="act" id="fichaIA">🤖 Analizar con IA</button>
       ${p.link_pdf?`<a class="act" href="${esc(p.link_pdf)}" target="_blank">Ver PDF del laboratorio</a>`:''}
       <button class="act" id="fichaCer">Cerrar</button>
     </div>
@@ -1284,6 +1316,24 @@ function fichaSOS(id){
   window.addEventListener('afterprint',()=>{
     const m=document.getElementById('mficha'); if(m)m.classList.remove('imprimiendo');
   });
+  document.getElementById('fichaIA').onclick=()=>{
+    modalIA('Análisis con IA — segunda mirada',async()=>{
+      const datosAct=`Parámetros de esta muestra: ${params.length?params.map(([k,v])=>`${k.replace(/\s*\([^)]*\)/,'')}: ${v}`).join(', '):'sin datos de análisis'}.`;
+      const datosHist=historial.length?`Historial del mismo equipo y sistema (${historial.length} muestra(s), de más antigua a más reciente): `
+        +historial.slice(-6).map(h=>`[${fmtDate(h.f_muestreo)}${h.horometro!=null?', '+f0(h.horometro)+'h':''}] `
+          +Object.entries(h.analisis||{}).map(([k,v])=>`${k.replace(/\s*\([^)]*\)/,'')}:${v}`).join(' ')).join(' | ')
+        :'sin muestras anteriores registradas.';
+      const prompt=`Eres un asistente que ayuda a un técnico de mantenimiento de flota pesada (Unidad de Equipos) a interpretar un análisis de aceite (SOS). No reemplazas al laboratorio, das una segunda mirada.
+
+Equipo: ${e?e.equipo:'—'} (Cód. SAP ${p.cod_sap||'—'}), sistema: ${p.sistema_std||p.sistema||'—'}, horómetro: ${p.horometro!=null?f0(p.horometro)+'h':'—'}.
+Estado asignado por el laboratorio: ${p.estado_std||'sin evaluar'}.
+${datosAct}
+${datosHist}
+
+Escribe en español, en un párrafo breve (máximo 6 líneas), una interpretación práctica de lo que podría estar pasando (mirando la tendencia, no solo el valor actual) y una recomendación concreta. No repitas los números tal cual, interprétalos.`;
+      return llamarIA(prompt);
+    });
+  };
   // logo real de la página (mismo mecanismo que usa Equipos): prueba nombres comunes
   (function(){
     const nombres=['logo.png','logo.jpg','logo.jpeg','logo.svg','logo.webp','LOGO.png','LOGO.jpg','Logo.png'];
@@ -1621,6 +1671,25 @@ function buscarDuplicadosPlanilla(){
   };
 }
 btnDup.onclick=buscarDuplicadosPlanilla;
+btnIASemana.onclick=()=>{
+  modalIA('Resumen semanal — IA',async()=>{
+    const criticos=MUESTRAS.filter(m=>m.estado_std==='CRITICO');
+    const precau=MUESTRAS.filter(m=>m.estado_std==='PRECAUCION');
+    if(!criticos.length&&!precau.length)return 'No hay equipos en estado Crítico ni Precaución en este momento — nada que priorizar esta semana.';
+    const lista=[...criticos,...precau].map(m=>{
+      const e=getE(m.maestro_id);
+      return `- ${e?e.equipo:(m.cod_sap||'equipo sin identificar')} (${m.cod_sap||'—'}, ${m.sistema_std||m.sistema||'—'}): estado ${m.estado_std}, obra ${m.obra||'—'}, muestreo ${fmtDate(m.f_muestreo)}`
+        +(m.observacion_lab?`, nota del laboratorio: ${m.observacion_lab.slice(0,160)}`:'');
+    }).join('\n');
+    const prompt=`Eres un asistente que ayuda a un jefe de mantenimiento de flota pesada (Unidad de Equipos) a priorizar su semana de trabajo.
+
+Lista de equipos con muestras de aceite en estado Crítico o Precaución:
+${lista}
+
+Escribe en español una lista priorizada (los Críticos primero) de qué equipos requieren atención esta semana y por qué, en frases cortas y directas. Agrupa por tipo de problema si ayuda a leerlo más rápido. Máximo 12 líneas en total.`;
+    return llamarIA(prompt);
+  });
+};
 
 async function subirResultados(filas,nom,hoja){
   // el laboratorio se deduce del nombre de la hoja o del archivo
