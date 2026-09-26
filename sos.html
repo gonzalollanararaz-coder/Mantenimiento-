@@ -214,14 +214,13 @@
     #mficha{position:absolute;inset:0;background:#fff;padding:0}
     #mficha .mc{width:100%;height:auto;max-width:none;max-height:none;box-shadow:none;border-radius:0}
     #mficha .mh button,#mficha .mh a{display:none}
-    #mficha.imprimiendo #vResumen{display:block!important;page-break-after:always;height:180mm}
-    #mficha.imprimiendo #vGraficos{display:block!important;height:180mm}
+    #mficha.imprimiendo #vResumen{display:block!important;height:180mm}
   }
 </style>
 </head>
 <body>
 <header id="topbar">
-  <div class="brand-min"><h1>SOS &mdash; Muestreo de Aceites</h1><p>Unidad de Equipos &middot; UDE &middot; 210926-9</p></div>
+  <div class="brand-min"><h1>SOS &mdash; Muestreo de Aceites</h1><p>Unidad de Equipos &middot; UDE &middot; 210926-10</p></div>
   <nav id="navPrin"></nav>
   <div class="sp2"></div>
   <span class="who" id="who"></span>
@@ -231,7 +230,7 @@
   <button id="tab_fra" class="on">&#128230; Frascos</button>
   <button id="tab_plan">Muestras</button>
   <button id="tab_ale">Seguimiento de alertas</button>
-  <span style="margin-left:auto;font-size:10px;color:#9aa4ad;letter-spacing:.5px;padding-right:4px">v210926-9</span>
+  <span style="margin-left:auto;font-size:10px;color:#9aa4ad;letter-spacing:.5px;padding-right:4px">v210926-10</span>
 </div>
 <div class="toolbar">
   <div class="grupo-wrap">
@@ -1250,15 +1249,28 @@ function fichaSOS(id){
   const chip=(cls,txt)=>`<span class="bnd ${cls}" style="display:inline-block;font-size:11px;padding:4px 10px">${esc(txt)}</span>`;
   const caja=(x,y,w,h,html)=>`<div style="position:absolute;left:${x}%;top:${y}%;width:${w}%;height:${h}%;box-sizing:border-box;padding:4px">
     <div class="campo" style="border:1px solid var(--line);border-radius:10px;padding:10px;margin:0;height:100%;box-sizing:border-box;overflow:hidden;display:flex;flex-direction:column">${html}</div></div>`;
-  // histórico de todos los parámetros encontrados en las muestras del mismo equipo+sistema, con fecha y horómetro
-  const paramsHist=[...new Set(historial.flatMap(h=>Object.keys(h.analisis||{})))];
+  // comparativa con historial: últimas 4 muestras del mismo equipo+sistema, con tendencia y estado por parámetro
+  const ultimas=historial.slice(-4);
+  const paramsComp=[...new Set(ultimas.flatMap(h=>Object.keys(h.analisis||{})))];
+  function tendencia(k){
+    const vals=ultimas.map(h=>h.analisis&&typeof h.analisis[k]==='number'?h.analisis[k]:null).filter(v=>v!=null);
+    if(vals.length<2)return '<span class="dim">—</span>';
+    const pri=vals[0], ult=vals[vals.length-1];
+    if(ult<pri)return '<span style="color:#0C7A16">&#8595; Disminuye</span>';
+    if(ult>pri)return '<span style="color:#D3141A">&#8593; Aumenta</span>';
+    return '<span class="dim">&#8594; Estable</span>';
+  }
+  function estadoParam(k){
+    const ult=[...ultimas].reverse().find(h=>h.analisis&&h.analisis[k]!=null);
+    const lim=limiteDe(k); const v=ult?ult.analisis[k]:null; const num=typeof v==='number'?v:null;
+    if(lim==null||num==null)return '<span class="dim">—</span>';
+    return num<=lim?'<span style="color:#0C7A16">●</span>':'<span style="color:#D3141A">●</span>';
+  }
   document.body.insertAdjacentHTML('beforeend',`<div class="modal" id="mficha"><div class="mc" style="width:97vw;max-width:1600px;height:95vh;max-height:95vh;display:flex;flex-direction:column">
     <div class="mh" style="flex:0 0 auto">
       <h3 style="font-size:15px">Ficha SOS</h3>
       <div class="sub" style="font-size:12px">${esc(e?e.equipo:'')} · ${esc(p.cod_sap||'')} · ${esc(p.sistema_std||p.sistema||'')} · N° muestra ${esc(p.nro_muestra||'—')} · ${esc(p.fuente||'')}</div>
       <div class="spacer"></div>
-      <button class="act" id="fvResumen">Resumen</button>
-      <button class="act" id="fvGraficos">Resultados del análisis</button>
       <button class="act" id="fichaImp">🖨 Imprimir</button>
       <button class="act" id="fichaIA">🤖 Analizar con IA</button>
       ${p.link_pdf?`<a class="act" href="${esc(p.link_pdf)}" target="_blank">Ver PDF del laboratorio</a>`:''}
@@ -1266,15 +1278,20 @@ function fichaSOS(id){
     </div>
     <div id="vResumen" style="position:relative;flex:1;min-height:0">
 
-      ${caja(1,1,80,6,`<div style="display:flex;align-items:center;height:100%;overflow:hidden">
-        <b style="font-size:15px;color:#1F3864;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">ANÁLISIS DE ACEITE DE EQUIPO PESADO</b></div>`)}
-
-      ${caja(82,1,14,6,`<div id="fichaLogoBox" style="display:flex;align-items:center;justify-content:center;height:100%">
+      ${caja(3,0,4,8,`<div id="fichaLogoBox" style="display:flex;align-items:center;justify-content:center;height:100%">
         <img id="fichaLogo" alt="" style="display:none;max-width:100%;max-height:100%;object-fit:contain">
-        <span id="fichaLogoFb" style="font-size:9px;color:#98a2ad;border:1px dashed #c7ccd1;border-radius:6px;padding:4px 6px">LOGO</span>
+        <span id="fichaLogoFb" style="font-size:8px;color:#98a2ad;border:1px dashed #c7ccd1;border-radius:6px;padding:3px 5px">LOGO</span>
       </div>`)}
 
-      ${caja(1,7,24,28,`${chip('azul','DATOS DEL EQUIPO')}
+      ${caja(9,0.5,66,7,`<div style="display:flex;align-items:center;height:100%;overflow:hidden">
+        <b style="font-size:15px;color:#1F3864;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">ANÁLISIS DE ACEITE DE EQUIPO PESADO - Reporte de Resultados</b></div>`)}
+
+      ${caja(76,0.5,23,7,`<div style="display:flex;align-items:center;justify-content:center;gap:8px;height:100%;background:${est.bg};border-radius:8px">
+        ${iconoEstatus(p.estado_std)}
+        <b style="font-size:14px;color:${est.color};line-height:1.1">${esc(p.estado_std||'SIN EVALUAR')}</b>
+      </div>`)}
+
+      ${caja(1,8,22,28,`${chip('azul','DATOS DEL EQUIPO')}
         <table class="t" style="margin-top:6px;overflow-y:auto">
           ${filaDato('Cliente / Obra',p.obra)}
           ${filaDato('Equipo',e?e.equipo:'')}
@@ -1287,60 +1304,42 @@ function fichaSOS(id){
           ${filaDato('Sistema',p.sistema_std||p.sistema)}
         </table>`)}
 
-      ${caja(1,36,24,10,`<div style="display:flex;align-items:center;justify-content:center;gap:10px;height:100%;background:${est.bg};border-radius:8px">
-        ${iconoEstatus(p.estado_std)}
-        <div style="display:flex;flex-direction:column">
-          <b style="font-size:15px;color:${est.color};line-height:1.1">${esc(p.estado_std||'SIN EVALUAR')}</b>
-          ${p.estado?`<span class="dim" style="font-size:10px">${esc(p.estado)}</span>`:''}
-        </div>
-      </div>`)}
-
-      ${caja(1,47,24,35,`${chip('plomo','ANÁLISIS Y RECOMENDACIONES')}
-        <div style="font-size:10.5px;line-height:1.4;color:#444;margin-top:6px;overflow-y:auto;flex:1;white-space:pre-wrap">${p.observacion_lab?esc(p.observacion_lab):'<span class="dim">El laboratorio no incluyó comentarios ni recomendaciones para esta muestra.</span>'}</div>`)}
-
-      ${caja(26,7,71,75,`${chip('verde','GRÁFICOS Y TENDENCIAS')}
+      ${caja(23,8,52,66,`${chip('verde','GRÁFICOS Y TENDENCIAS')}
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:8px;overflow-y:auto;flex:1">
           ${gruposFicha().map(g=>svgLineasGrupo(g.titulo,g.claves,historial)).join('')}
         </div>`)}
 
-    </div>
-    <div id="vGraficos" style="position:relative;flex:1;min-height:0;display:none">
-      ${caja(1,1,98,53,`${chip('amarillo','RESULTADOS DEL ANÁLISIS')}
-        <div style="overflow:auto;flex:1;margin-top:8px">
-        <table class="t"><thead><tr><th>Parámetro</th><th class="c">Resultado</th><th class="c">Unidad</th><th class="c">Límite</th><th class="c">Estado</th></tr></thead>
+      ${caja(1,37,22,37,`${chip('plomo','ANÁLISIS Y RECOMENDACIONES')}
+        <div style="font-size:10.5px;line-height:1.4;color:#444;margin-top:6px;overflow-y:auto;flex:1;white-space:pre-wrap">${p.observacion_lab?esc(p.observacion_lab):'<span class="dim">El laboratorio no incluyó comentarios ni recomendaciones para esta muestra.</span>'}</div>`)}
+
+      ${caja(76,8,23,66,`${chip('amarillo','RESULTADOS DEL ANÁLISIS')}
+        <div style="overflow:auto;flex:1;margin-top:6px">
+        <table class="t"><thead><tr><th>Parámetro</th><th class="c">Result.</th><th class="c">Lím.</th><th class="c">Edo.</th></tr></thead>
         <tbody>${params.length?params.map(([k,v])=>{
           const lim=limiteDe(k); const num=typeof v==='number'?v:null;
           const punto = lim==null?'<span class="dim">—</span>' : (num!=null&&num<=lim?'<span style="color:#0C7A16">●</span>':'<span style="color:#D3141A">●</span>');
-          return `<tr><td>${esc(k.replace(/\s*\([^)]*\)/,''))}</td><td class="c mono">${esc(String(v))}</td><td class="c dim">${esc(unidadDe(k))}</td><td class="c dim">${lim??'—'}</td><td class="c">${punto}</td></tr>`;
-        }).join(''):'<tr><td colspan="5" class="dim" style="text-align:center;padding:10px">Sin parámetros de análisis registrados para esta muestra.</td></tr>'}
+          return `<tr><td style="font-size:10.5px">${esc(k.replace(/\s*\([^)]*\)/,''))}</td><td class="c mono" style="font-size:10.5px">${esc(String(v))}</td><td class="c dim" style="font-size:10.5px">${lim??'—'}</td><td class="c">${punto}</td></tr>`;
+        }).join(''):'<tr><td colspan="4" class="dim" style="text-align:center;padding:10px">Sin datos.</td></tr>'}
         </tbody></table>
-        ${paramsHist.length?`<div style="margin-top:16px">
-          <b style="font-size:12.5px;color:#1F3864">Histórico — ${esc(e?e.equipo:'')} · ${esc(p.sistema_std||p.sistema||'')}</b>
-          <table class="t" style="margin-top:6px"><thead><tr><th>Parámetro</th>
-            ${historial.map(h=>`<th class="c">${fmtDate(h.f_muestreo)}<br><span class="dim" style="font-weight:400">${h.horometro!=null?f0(h.horometro)+' h':'—'}</span></th>`).join('')}
-          </tr></thead><tbody>
-            ${paramsHist.map(k=>`<tr><td>${esc(k.replace(/\s*\([^)]*\)/,''))}</td>
-              ${historial.map(h=>`<td class="c mono">${h.analisis&&h.analisis[k]!=null?esc(String(h.analisis[k])):'<span class="dim">—</span>'}</td>`).join('')}
-            </tr>`).join('')}
-          </tbody></table>
-        </div>`:''}
         </div>`)}
+
+      ${caja(1,75,98,24,`${chip('azul','COMPARATIVA CON HISTORIAL')}
+        <div style="overflow:auto;flex:1;margin-top:6px">
+        <table class="t"><thead><tr><th>Parámetro</th>
+          ${ultimas.map(h=>`<th class="c">${fmtDate(h.f_muestreo)}</th>`).join('')}
+          <th class="c">Tendencia</th><th class="c">Estado</th></tr></thead>
+        <tbody>${paramsComp.length?paramsComp.map(k=>`<tr><td>${esc(k.replace(/\s*\([^)]*\)/,''))}</td>
+          ${ultimas.map(h=>`<td class="c mono">${h.analisis&&h.analisis[k]!=null?esc(String(h.analisis[k])):'<span class="dim">—</span>'}</td>`).join('')}
+          <td class="c">${tendencia(k)}</td><td class="c">${estadoParam(k)}</td></tr>`).join(''):
+          '<tr><td colspan="7" class="dim" style="text-align:center;padding:10px">Sin historial suficiente para comparar.</td></tr>'}
+        </tbody></table>
+        </div>`)}
+
     </div>
   </div></div>`);
   const cerrar=()=>{const m=document.getElementById('mficha');if(m)m.remove();};
   document.getElementById('fichaCer').onclick=cerrar;
   document.getElementById('mficha').addEventListener('click',ev=>{if(ev.target.id==='mficha')cerrar();});
-  const vResumen=document.getElementById('vResumen'), vGraficos=document.getElementById('vGraficos');
-  const fvResumen=document.getElementById('fvResumen'), fvGraficos=document.getElementById('fvGraficos');
-  function irA(v){
-    vResumen.style.display=v==='resumen'?'block':'none';
-    vGraficos.style.display=v==='graficos'?'block':'none';
-    fvResumen.classList.toggle('primary',v==='resumen');
-    fvGraficos.classList.toggle('primary',v==='graficos');
-  }
-  fvResumen.onclick=()=>irA('resumen');
-  fvGraficos.onclick=()=>irA('graficos');
-  irA('resumen');
   document.getElementById('fichaImp').onclick=()=>{
     document.getElementById('mficha').classList.add('imprimiendo');
     window.print();
