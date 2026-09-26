@@ -46,6 +46,18 @@
     font-weight:500;font-size:12.5px;color:var(--ink);cursor:pointer;display:inline-flex;align-items:center;gap:6px;white-space:nowrap}
   .act:hover{border-color:#C9CDD2;filter:none}
   .act.primary{background:linear-gradient(180deg,#FFE98A,#FFD84A);border-color:#DCB61C;color:#5C4708;font-weight:600}
+  /* agrupación de la barra: filtros / edición / acciones */
+  .grupo-wrap{display:flex;flex-direction:column;gap:2px;align-items:stretch}
+  .rotulo{font-size:9px;font-weight:800;color:#98a2ad;text-transform:uppercase;letter-spacing:.5px}
+  .grupo{display:flex;flex-wrap:nowrap;gap:6px;align-items:center;border-radius:9px;padding:5px 7px}
+  .grupo.filtros{background:#F0F2F8}
+  .grupo.filtros .act,.grupo.filtros input,.grupo.filtros select{background:#fff}
+  .grupo.deshacer{background:#FFF5E0}
+  .grupo.deshacer .act{background:#fff;border-color:#F0D48A;color:#8A6300}
+  .grupo.acciones{background:#EAF5EC}
+  .grupo.acciones .act{background:#fff}
+  .grupo.acciones .act.util{color:#4254A5;border-color:#C7CDEB}
+  .toolbar-sep{width:1px;align-self:stretch;background:#D8DDE2;margin:14px 0 2px}
   .act.bad,.act.clear{background:linear-gradient(180deg,#FBE6E6,#F5CFCF);border-color:#DFA0A0;color:#8E2020;font-weight:600}
   .chip{background:#FBFBFB;border:1px solid #E0E3E6;border-radius:9px;height:34px;padding:0 13px;font-size:12.5px;font-weight:500;color:#9AA0A6;display:inline-flex;align-items:center}
   footer{padding:6px 16px;color:var(--muted);font-size:12px;text-align:center;flex-shrink:0}
@@ -209,7 +221,7 @@
 </head>
 <body>
 <header id="topbar">
-  <div class="brand-min"><h1>SOS &mdash; Muestreo de Aceites</h1><p>Unidad de Equipos &middot; UDE &middot; 210926-8</p></div>
+  <div class="brand-min"><h1>SOS &mdash; Muestreo de Aceites</h1><p>Unidad de Equipos &middot; UDE &middot; 210926-9</p></div>
   <nav id="navPrin"></nav>
   <div class="sp2"></div>
   <span class="who" id="who"></span>
@@ -219,28 +231,48 @@
   <button id="tab_fra" class="on">&#128230; Frascos</button>
   <button id="tab_plan">Muestras</button>
   <button id="tab_ale">Seguimiento de alertas</button>
-  <span style="margin-left:auto;font-size:10px;color:#9aa4ad;letter-spacing:.5px;padding-right:4px">v210926-8</span>
+  <span style="margin-left:auto;font-size:10px;color:#9aa4ad;letter-spacing:.5px;padding-right:4px">v210926-9</span>
 </div>
 <div class="toolbar">
-  <input type="month" id="fPeriodo" title="Mes de muestreo a calcular">
-  <input type="search" id="fBusca" placeholder="Equipo, frasco, n&deg; muestra&hellip;" style="width:250px">
-  <input type="date" id="fDesde"><input type="date" id="fHasta">
-  <button class="act" id="btnTodoHist" title="Quitar el filtro de fecha y ver todo el historial">Ver todo</button>
-  <select id="fObra"><option value="">Obra</option></select>
-  <select id="fEstado"><option value="">Todos los estados</option><option value="CRITICO">Cr&iacute;tico</option><option value="PRECAUCION">Precauci&oacute;n</option><option value="NORMAL">Normal</option></select>
-  <select id="fSistema"><option value="">Sistemas</option></select>
-  <select id="fFuente"><option value="">Laboratorio</option><option>Ferreyros</option><option>LUBTEC</option><option>MARCO PERUANA</option></select>
-  <span class="chip hide" id="chN">&mdash;</span>
-  <button class="act" id="btnLimpiarSOS">&#10005; Borrar filtros</button>
-  <button class="act" id="btnDeshacer" title="Ctrl+Z" disabled>&#8630; Deshacer</button>
+  <div class="grupo-wrap">
+    <span class="rotulo">Filtros</span>
+    <div class="grupo filtros">
+      <input type="month" id="fPeriodo" title="Mes de muestreo a calcular">
+      <input type="search" id="fBusca" placeholder="Equipo, frasco, n&deg; muestra&hellip;" style="width:220px">
+      <input type="date" id="fDesde"><input type="date" id="fHasta">
+      <button class="act" id="btnTodoHist" title="Quitar el filtro de fecha y ver todo el historial">Ver todo</button>
+      <select id="fObra"><option value="">Obra</option></select>
+      <select id="fEstado"><option value="">Todos los estados</option><option value="CRITICO">Cr&iacute;tico</option><option value="PRECAUCION">Precauci&oacute;n</option><option value="NORMAL">Normal</option></select>
+      <select id="fSistema"><option value="">Sistemas</option></select>
+      <select id="fFuente"><option value="">Laboratorio</option><option>Ferreyros</option><option>LUBTEC</option><option>MARCO PERUANA</option></select>
+      <span class="chip hide" id="chN">&mdash;</span>
+      <button class="act" id="btnLimpiarSOS">&#10005; Borrar filtros</button>
+    </div>
+  </div>
+
+  <div class="toolbar-sep"></div>
+
+  <div class="grupo-wrap">
+    <span class="rotulo">Edici&oacute;n</span>
+    <div class="grupo deshacer">
+      <button class="act" id="btnDeshacer" title="Ctrl+Z" disabled>&#8630; Deshacer</button>
+    </div>
+  </div>
+
   <div class="spacer"></div>
-  <button class="act primary" id="btnNuevo">+ Muestra</button>
-  <button class="act" id="btnDup" title="Buscar filas con el mismo equipo, sistema y fecha">&#128269; Duplicados</button>
-  <button class="act" id="btnIASemana">&#129302; Resumen semanal</button>
-  <button class="act" id="btnSubir" title="Planilla de envío o resultados de laboratorio: se reconoce solo">&#11014; Subir archivo</button>
-  <button class="act" id="btnXls">&#8681; Excel</button>
-  <button class="act" id="btnEq">&#9878; Equivalencias</button>
-  <button class="act" id="btnRec">&#8635;</button>
+
+  <div class="grupo-wrap">
+    <span class="rotulo">Acciones</span>
+    <div class="grupo acciones">
+      <button class="act primary" id="btnNuevo">+ Muestra</button>
+      <button class="act util" id="btnDup" title="Buscar filas con el mismo equipo, sistema y fecha">&#128269; Duplicados</button>
+      <button class="act util" id="btnIASemana">&#129302; Resumen semanal</button>
+      <button class="act util" id="btnSubir" title="Planilla de envío o resultados de laboratorio: se reconoce solo">&#11014; Subir archivo</button>
+      <button class="act util" id="btnXls">&#8681; Excel</button>
+      <button class="act util" id="btnEq">&#9878; Equivalencias</button>
+      <button class="act util" id="btnRec">&#8635;</button>
+    </div>
+  </div>
 </div>
 <div id="wrap">
   <div class="cards" id="cards"></div>
