@@ -220,7 +220,7 @@
 </head>
 <body>
 <header id="topbar">
-  <div class="brand-min"><h1>SOS &mdash; Muestreo de Aceites</h1><p>Unidad de Equipos &middot; UDE &middot; 210926-10</p></div>
+  <div class="brand-min"><h1>SOS &mdash; Muestreo de Aceites</h1><p>Unidad de Equipos &middot; UDE &middot; 210926-11</p></div>
   <nav id="navPrin"></nav>
   <div class="sp2"></div>
   <span class="who" id="who"></span>
@@ -230,7 +230,7 @@
   <button id="tab_fra" class="on">&#128230; Frascos</button>
   <button id="tab_plan">Muestras</button>
   <button id="tab_ale">Seguimiento de alertas</button>
-  <span style="margin-left:auto;font-size:10px;color:#9aa4ad;letter-spacing:.5px;padding-right:4px">v210926-10</span>
+  <span style="margin-left:auto;font-size:10px;color:#9aa4ad;letter-spacing:.5px;padding-right:4px">v210926-11</span>
 </div>
 <div class="toolbar">
   <div class="grupo-wrap">
@@ -469,17 +469,25 @@ const val=(f,cols,...nombres)=>{
 const PLAN_COLS=['Obra','N° de Planilla','Item','N° Frasco','Código del Equipo','Marca','Modelo','Serie',
   'Sistema','Tipo de Aceite','Horometro','Muestreo','Envio'];
 function leerPlanilla(filas){
-  const m=leerHoja(filas,['N° Frasco','Sistema','Obra','Horometro','Item']);
+  const m=leerHoja(filas,['N° Frasco','Sistema','Obra','Horometro','Item'])
+        ||leerHoja(filas,['Marca','Modelo','Serie','Sistema']);
   if(!m)return null;
   const out=[];
   for(let i=m.fila+1;i<filas.length;i++){
     const f=filas[i]||[];
-    const sap=String(val(f,m.cols,'Código SAP\ndel Equipo','Código SAP del Equipo','Código del Equipo','Codigo del Equipo','Código\ndel Equipo','EQUIPO')??'').trim();
+    const sap=String(val(f,m.cols,'Código SAP\ndel Equipo','Código SAP del Equipo','Código del Equipo','Codigo del Equipo','Código\ndel Equipo','EQUIPO','CODIGO')??'').trim();
     const sis=String(val(f,m.cols,'Sistema')??'').trim();
     if(!sap&&!sis)continue;
     const e=datos.find(x=>nrm(x.cod_sap)===nrm(sap));
+    // el Tipo (Cambio/Muestra) puede compartir el mismo título "TIPO" que la columna de Tipo de aceite en algunos
+    // formatos (dos columnas distintas, mismo nombre) — por eso, si el rótulo específico no aparece, se busca
+    // directamente el texto "CAMBIO" o "MUESTRA" en cualquier celda de la fila, que no se confunde con un producto
+    let tipoCambio=String(val(f,m.cols,'Tipo:\n[Cambio]\n[Muestra]')??'').trim();
+    if(!tipoCambio){
+      for(const v of f){ const t=nrm(v); if(t==='CAMBIO'){tipoCambio='Cambio';break;} if(t==='MUESTRA'){tipoCambio='Muestra';break;} }
+    }
     out.push({
-      obra:String(val(f,m.cols,'Obra')??'').trim()||null,
+      obra:String(val(f,m.cols,'Obra')??'').trim()||(e?e.cod_proyec:null),
       nro_planilla:String(val(f,m.cols,'N° de Planilla','Nro de Planilla')??'').trim()||null,
       nro_frasco:String(val(f,m.cols,'N° Frasco','Nro Frasco')??'').trim()||null,
       cod_sap:sap||null, maestro_id:e?e.id:null,
@@ -487,15 +495,15 @@ function leerPlanilla(filas){
       modelo:String(val(f,m.cols,'Modelo')??'').trim()||(e?e.modelo:null),
       serie:String(val(f,m.cols,'Serie')??'').trim()||(e?e.serie_placa:null),
       sistema:sis||null, sistema_std:sistemaStd(sis),
-      tipo_aceite:String(val(f,m.cols,'Tipo de Aceite')??'').trim()||null,
-      galones:aNum(val(f,m.cols,'Cnt.\n(Galones)','Cnt. (Galones)','Galones')),
+      tipo_aceite:String(val(f,m.cols,'Tipo de Aceite','TIPO')??'').trim()||null,
+      galones:aNum(val(f,m.cols,'Cnt.\n(Galones)','Cnt. (Galones)','Galones','CANT. GLNS.')),
       horometro:aNum(val(f,m.cols,'Horometro','Horómetro')),
-      horas_aceite:aNum(val(f,m.cols,'Horas\ndel aceite','Horas del aceite')),
-      cant_agregado:aNum(val(f,m.cols,'Cant.\nAgregado','Cant. Agregado'))??0,
-      f_muestreo:aFecha(val(f,m.cols,'Fecha\nMuestreo','Muestreo')),
+      horas_aceite:aNum(val(f,m.cols,'Horas\ndel aceite','Horas del aceite','HORAS')),
+      cant_agregado:aNum(val(f,m.cols,'Cant.\nAgregado','Cant. Agregado','CANT.'))??0,
+      f_muestreo:aFecha(val(f,m.cols,'Fecha\nMuestreo','Muestreo','FECHA')),
       f_envio:aFecha(val(f,m.cols,'Fecha\nEnvio','Fecha\nEnvío','Envio','Envío')),
-      tipo:String(val(f,m.cols,'Tipo:\n[Cambio]\n[Muestra]','Tipo')??'').trim()||null,
-      observacion:String(val(f,m.cols,'Observacion:','Observación')??'').trim()||null
+      tipo:tipoCambio||null,
+      observacion:String(val(f,m.cols,'Observacion:','Observación','OBSERVACIONES:')??'').trim()||null
     });
   }
   const anio2026='2026-01-01';
@@ -1496,12 +1504,13 @@ function detectarTipo(filas,nombre,hoja){
   const t=nrm(nombre+' '+hoja);
   if(/INGRESO|FESA|LUBTEC|MARCO/.test(t))
     return (leerHoja(filas,['N° MUESTRA','EQUIPO','COMPONENTE'])||leerHoja(filas,['Nro de Muestra','Equipo','Compartimiento','CONDICIÓN SOS']))?'res':null;
-  if(/PLANILLA/.test(t))return leerHoja(filas,['N° Frasco','Sistema'])?'plan':null;
+  if(/PLANILLA/.test(t))return (leerHoja(filas,['N° Frasco','Sistema'])||leerHoja(filas,['Marca','Modelo','Serie','Sistema']))?'plan':null;
   // sin pistas en el nombre: se mira el contenido
   if(leerHoja(filas,['N° MUESTRA','EQUIPO','COMPONENTE','ESTADO']))return 'res';
   if(leerHoja(filas,['No. de control de laboratorio','ID de equipo','Compartimento','Estado']))return 'res';
   if(leerHoja(filas,['Nro de Muestra','Equipo','Compartimiento','CONDICIÓN SOS']))return 'res';
   if(leerHoja(filas,['N° Frasco','Sistema','Muestreo']))return 'plan';
+  if(leerHoja(filas,['Marca','Modelo','Serie','Sistema','Horometro']))return 'plan';
   return null;
 }
 
@@ -1512,15 +1521,23 @@ btnSubir.onclick=()=>{
     pie.textContent='Leyendo '+f.name+'…';
     try{
       const wb=XLSX.read(await f.arrayBuffer(),{type:'array',cellDates:true});
-      const hoja=wb.Sheets[wb.SheetNames[0]];
-      const filas=XLSX.utils.sheet_to_json(hoja,{header:1,raw:true,defval:''});
-      // se reconoce solo si es una planilla de envío o un ingreso de laboratorio,
-      // sin importar en qué vista estés
-      const tipo=detectarTipo(filas,f.name,wb.SheetNames[0]);
-      if(tipo==='plan'){ verVista('plan'); await subirPlanilla(filas,f.name); }
-      else if(tipo==='res'){ verVista('plan'); await subirResultados(filas,f.name,wb.SheetNames[0]); }
-      else alert('No se reconoció el formato del archivo.\n\n'
-        +'Se esperaba una PLANILLA DE MUESTRAS (con N° Frasco, Código del Equipo, Sistema, Muestreo)\n'
+      // se procesan TODAS las hojas del archivo (algunos formatos traen una hoja distinta por fecha o por lote);
+      // cada hoja se reconoce sola, sin importar en qué vista estés
+      let procesadas=0; const sinReconocer=[];
+      for(const nombreHoja of wb.SheetNames){
+        const hoja=wb.Sheets[nombreHoja];
+        const filas=XLSX.utils.sheet_to_json(hoja,{header:1,raw:true,defval:''});
+        const tipo=detectarTipo(filas,f.name,nombreHoja);
+        if(tipo==='plan'){
+          const regs=leerPlanilla(filas);
+          if(!regs||!regs.length)continue; // hoja reconocida pero sin filas (ej. plantilla vacía): se omite sin avisar
+          verVista('plan'); await subirPlanilla(filas,wb.SheetNames.length>1?`${f.name} · ${nombreHoja}`:f.name); procesadas++;
+        }else if(tipo==='res'){
+          verVista('plan'); await subirResultados(filas,wb.SheetNames.length>1?`${f.name} · ${nombreHoja}`:f.name,nombreHoja); procesadas++;
+        }else sinReconocer.push(nombreHoja);
+      }
+      if(!procesadas)alert('No se reconoció el formato de ninguna hoja del archivo.\n\n'
+        +'Se esperaba una PLANILLA DE MUESTRAS (con N° Frasco, o con Marca/Modelo/Serie y Sistema)\n'
         +'o un archivo de laboratorio (con N° MUESTRA, EQUIPO, COMPONENTE, FECHA, ESTADO).');
     }catch(err){ alert('No se pudo leer el archivo: '+err.message); }
     pie.textContent='';
