@@ -218,16 +218,22 @@
     @page{size:portrait;margin:10mm}
     body *{visibility:hidden}
     #mficha, #mficha *{visibility:visible}
-    #mficha{position:absolute;inset:0;background:#fff;padding:0}
-    #mficha .mc{width:100%;height:auto;max-width:none;max-height:none;box-shadow:none;border-radius:0}
+    #mficha{position:static;background:#fff;padding:0;height:auto;overflow:visible}
+    #mficha .mc{width:100%;height:auto;max-width:none;max-height:none;box-shadow:none;border-radius:0;display:block}
     #mficha .mh button,#mficha .mh a{display:none}
-    #mficha.imprimiendo #vResumen{display:block!important;height:270mm}
+    #mficha.imprimiendo #vResumen{display:block!important;height:auto!important;position:static!important}
+    /* en pantalla cada sección de la Ficha SOS se ubica con posición absoluta en % (para el diseño ancho);
+       para imprimir se apilan una debajo de otra en orden normal, así el navegador reparte solo en 2 o más hojas */
+    #mficha.imprimiendo #vResumen > div{position:static!important;left:auto!important;top:auto!important;
+      width:100%!important;height:auto!important;padding:0!important;margin-bottom:3mm;page-break-inside:avoid}
+    #mficha.imprimiendo #vResumen > div > .campo{height:auto!important}
+    #mficha.imprimiendo #vResumen *{overflow:visible!important}
   }
 </style>
 </head>
 <body>
 <header id="topbar">
-  <div class="brand-min"><h1>SOS &mdash; Muestreo de Aceites</h1><p>Unidad de Equipos &middot; UDE &middot; 210926-14</p></div>
+  <div class="brand-min"><h1>SOS &mdash; Muestreo de Aceites</h1><p>Unidad de Equipos &middot; UDE &middot; 210926-15</p></div>
   <nav id="navPrin"></nav>
   <div class="sp2"></div>
   <span class="who" id="who"></span>
@@ -237,7 +243,7 @@
   <button id="tab_fra" class="on">&#128230; Frascos</button>
   <button id="tab_plan">Muestras</button>
   <button id="tab_ale">Seguimiento de alertas</button>
-  <span style="margin-left:auto;font-size:10px;color:#9aa4ad;letter-spacing:.5px;padding-right:4px">v210926-14</span>
+  <span style="margin-left:auto;font-size:10px;color:#9aa4ad;letter-spacing:.5px;padding-right:4px">v210926-15</span>
 </div>
 <div class="toolbar">
   <div class="grupo-wrap">

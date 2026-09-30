@@ -234,8 +234,8 @@
   .inf-bnd.plomo{background:linear-gradient(180deg,#ADADAD 0%,#8A8A8A 48%,#6C6C6C 100%)}
   .inf-bnd.rojo{background:linear-gradient(180deg,#E05A5F 0%,#D3141A 48%,#A51014 100%)}
   .inf-t{width:100%;border-collapse:collapse;font-size:11.5px}
-  .inf-t th{background:#F4F6F8;color:var(--muted);font-size:9.5px;text-transform:uppercase;font-weight:700;padding:6px 8px;text-align:left;border-bottom:2px solid var(--line)}
-  .inf-t td{padding:6px 8px;border-bottom:1px solid #f0f1f3}
+  .inf-t th{background:#F4F6F8;color:var(--muted);font-size:9.5px;text-transform:uppercase;font-weight:700;padding:6px 8px;text-align:center;border-bottom:2px solid var(--line)}
+  .inf-t td{padding:6px 8px;border-bottom:1px solid #f0f1f3;text-align:center}
   .inf-t td.c{text-align:center}
   .inf-t td.k{color:var(--muted);width:32%}
   .inf-res4{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
@@ -255,9 +255,12 @@
   @media print{
     body *{visibility:hidden}
     #infWrap, #infWrap *{visibility:visible}
-    #infWrap{position:absolute;inset:0;background:#fff;padding:0;display:block}
-    #infCard{width:100%;max-height:none;box-shadow:none;border-radius:0}
+    #infWrap{position:static;background:#fff;padding:0;display:block;height:auto;overflow:visible}
+    #infCard{width:100%;max-height:none;box-shadow:none;border-radius:0;height:auto;display:block}
+    #infCard .hbody{overflow:visible;height:auto}
     #infCard .hhead button{display:none}
+    .inf-bnd{page-break-after:avoid}
+    .inf-t, .campo{page-break-inside:avoid}
   }
   @page{margin:12mm}
   #horCard h4{font-size:12px;color:#15803d;margin:12px 0 5px;font-weight:800}
@@ -1232,6 +1235,25 @@ function reindexDatos(){DIDX=new Map(datos.map(e=>[String(e.id),e]));}
 function getE(id){return DIDX.get(String(id))||datos.find(x=>String(x.id)===String(id));}
 
 /* ═══════════════ INFORME COMPLETO DE EQUIPO (consolida PM-S, Combustible, Pendientes y SOS) ═══════════════ */
+function pmsTipoPMIdx(marca,modelo,hrkm){
+  const h=Number(hrkm)||0; if(!h)return'';
+  const M=String(marca||'').toUpperCase(), MO=String(modelo||'').toUpperCase();
+  const es=(v,n)=>n>0&&h%n===0;
+  if(M.includes('MERCEDES')&&MO.includes('SPRINTER')){
+    if(es(h,90000))return'PM4'; if(es(h,60000))return'PM3'; if(es(h,5000))return'PM1'; return'';
+  }
+  if(M.includes('MERCEDES')&&MO.includes('AROCS')){
+    if(es(h,6000))return'PM4'; if(es(h,3000))return'PM3'; if(es(h,2000))return'PM2'; if(es(h,1000))return'PM1'; return'';
+  }
+  if(M.includes('VOLVO')){
+    if(es(h,6000))return'PM4'; if(es(h,3000))return'PM3'; if(es(h,1500))return'PM2'; if(es(h,500))return'PM1'; return'';
+  }
+  if(M.includes('TOYOTA')||M.includes('HINO')){
+    if(es(h,4000))return'PM4'; if(es(h,10000))return'PM2'; if(es(h,5000))return'PM1'; return'';
+  }
+  if(es(h,2000))return'PM4'; if(es(h,1000))return'PM3'; if(es(h,500))return'PM2'; if(es(h,250))return'PM1';
+  return'';
+}
 function pmEstadoSimpleIdx(r){
   const lleno=String(r.om??'').trim()!==''&&r.hrkm_ejec!=null&&String(r.hrkm_ejec).trim()!==''&&String(r.fecha_ejec??'').trim()!=='';
   if(lleno)return 'EJECUTADO';
@@ -1411,19 +1433,15 @@ async function abrirInformeEquipo(id){
     </div>
 
     ${chip('verde','3. MANTENIMIENTO (PM-S)')}
-    ${pms.length?`<table class="inf-t"><thead><tr><th>Tipo</th><th class="c">HR/KM ejecución</th><th class="c">Fecha ejec.</th><th>N° OM</th><th class="c">Estado</th></tr></thead>
-      <tbody>${pms.slice(0,10).map(r=>`<tr><td>${esc(r.tipo_pm||'—')}</td><td class="c">${r.hrkm_ejec!=null?fmtNum(r.hrkm_ejec):'—'}</td><td class="c">${fmtDate(r.fecha_ejec)||'—'}</td><td>${esc(r.om||'—')}</td>
-        <td class="c">${esc(pmEstadoSimpleIdx(r))}</td></tr>`).join('')}</tbody></table>
-      ${desvios.length?`<div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;align-items:start;margin-top:12px">
-        <div class="campo" style="border:1px solid var(--line);border-radius:9px;padding:10px;margin:0">
-          <b style="font-size:11px;color:#4254A5;display:block;margin-bottom:4px">Precisión de Servicio (SA) — promedio del equipo</b>
-          ${svgGaugeSA(promedioSA)}
-        </div>
-        <div class="campo" style="border:1px solid var(--line);border-radius:9px;padding:10px;margin:0">
-          <b style="font-size:11px;color:#4254A5;display:block;margin-bottom:4px">Gráfico de control — desvío por mantenimiento (%)</b>
-          ${svgControlSA(desvios)}
-        </div>
-      </div>`:'<div class="inf-dim" style="font-size:10.5px;margin-top:8px">Sin suficientes mantenimientos con HR/KM programado y ejecutado para calcular la Precisión de Servicio.</div>'}`
+    ${pms.length?`<div style="display:grid;grid-template-columns:1.4fr 1fr;gap:16px;align-items:start">
+      <table class="inf-t"><thead><tr><th>Tipo</th><th>HR/KM ejecución</th><th>Fecha ejec.</th><th>N° OM</th><th>Estado</th></tr></thead>
+        <tbody>${pms.slice(0,10).map(r=>`<tr><td>${esc(r.tipo_pm||pmsTipoPMIdx(e.marca,e.modelo,r.hrkm_ejec)||'—')}</td><td>${r.hrkm_ejec!=null?fmtNum(r.hrkm_ejec):'—'}</td><td>${fmtDate(r.fecha_ejec)||'—'}</td><td>${esc(r.om||'—')}</td>
+          <td>${esc(pmEstadoSimpleIdx(r))}</td></tr>`).join('')}</tbody></table>
+      ${desvios.length?`<div class="campo" style="border:1px solid var(--line);border-radius:9px;padding:10px;margin:0">
+        <b style="font-size:11px;color:#4254A5;display:block;margin-bottom:4px">Gráfico de control — desvío por mantenimiento (%)</b>
+        ${svgControlSA(desvios)}
+      </div>`:'<div class="inf-dim" style="font-size:10.5px">Sin suficientes mantenimientos con HR/KM programado y ejecutado para calcular el desvío.</div>'}
+    </div>`
       :'<div class="inf-dim" style="padding:6px 0">Sin mantenimientos programados registrados.</div>'}
 
     ${chip('amarillo','4. COMBUSTIBLE')}
