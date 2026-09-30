@@ -233,7 +233,7 @@
 </head>
 <body>
 <header id="topbar">
-  <div class="brand-min"><h1>SOS &mdash; Muestreo de Aceites</h1><p>Unidad de Equipos &middot; UDE &middot; 210926-15</p></div>
+  <div class="brand-min"><h1>SOS &mdash; Muestreo de Aceites</h1><p>Unidad de Equipos &middot; UDE &middot; 210926-16</p></div>
   <nav id="navPrin"></nav>
   <div class="sp2"></div>
   <span class="who" id="who"></span>
@@ -243,7 +243,7 @@
   <button id="tab_fra" class="on">&#128230; Frascos</button>
   <button id="tab_plan">Muestras</button>
   <button id="tab_ale">Seguimiento de alertas</button>
-  <span style="margin-left:auto;font-size:10px;color:#9aa4ad;letter-spacing:.5px;padding-right:4px">v210926-15</span>
+  <span style="margin-left:auto;font-size:10px;color:#9aa4ad;letter-spacing:.5px;padding-right:4px">v210926-16</span>
 </div>
 <div class="toolbar">
   <div class="grupo-wrap">
@@ -432,7 +432,10 @@ function sistemaStd(txt){
    Sirve para enlazar el resultado del laboratorio con su fila de la planilla. */
 function claveMuestra(sap,sistema,fecha){
   if(!sap||!fecha)return null;
-  const s=nrm(sistema||'').replace(/[^A-Z0-9]/g,'').slice(0,5)||'XXXXX';
+  // antes se recortaba a 5 caracteres, pero varios sistemas comparten el mismo inicio
+  // (ej. "MANDO FINAL RH" y "MANDO FINAL LH"), lo que enlazaba el resultado equivocado.
+  // ahora se usa el nombre completo, sin recortar.
+  const s=nrm(sistema||'').replace(/[^A-Z0-9]/g,'')||'XXXXX';
   const [a,m,d]=String(fecha).slice(0,10).split('-');
   if(!a||!m||!d)return null;
   return `${nrm(sap)}_${s}_${m}.${d}.${a.slice(2)}`;
