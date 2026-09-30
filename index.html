@@ -252,7 +252,9 @@
   .inf-pill.ambar{background:#FFF8DE;color:#8A6300}
   .inf-pill.rojo{background:#F9DEDF;color:#D3141A}
   .inf-pill.gris{background:#EFEFEF;color:#6C6C6C}
+  #infObs:empty:before{content:'Escribe aquí cualquier observación adicional para este informe…';color:#98a2ad}
   @media print{
+    body{background:#fff!important}
     body *{visibility:hidden}
     #infWrap, #infWrap *{visibility:visible}
     #infWrap{position:static;background:#fff;padding:0;display:block;height:auto;overflow:visible}
@@ -1459,7 +1461,7 @@ async function abrirInformeEquipo(id){
       <table class="inf-t"><thead><tr><th>Mes</th><th class="c">Gal. consumidos</th><th class="c">Rendimiento</th><th class="c">Vs. promedio</th></tr></thead>
         <tbody>${filasComb.length?filasComb.map(f=>`<tr><td>${f.m.slice(5)}/${f.m.slice(0,4)}</td><td class="c">${fmtNum(f.gl)}</td><td class="c">${fmtRend(f.rend)}</td>
           <td class="c" style="color:${f.vsCls==='verde'?'#0C7A16':f.vsCls==='ambar'?'#8A6300':'#6C6C6C'}">${f.vsTxt}</td></tr>`).join(''):'<tr><td colspan="4" class="inf-dim c">Sin datos suficientes.</td></tr>'}</tbody></table>
-      <div>${graficoComb}</div>
+      <div class="campo" style="border:1px solid var(--line);border-radius:9px;padding:10px;margin:0">${graficoComb}</div>
     </div>
     ${filasComb.length?'<div class="inf-dim" style="font-size:10px;margin-top:4px">"Vs. promedio" compara cada mes contra el promedio histórico de este mismo equipo (no contra el resto de la flota).</div>':''}
 
@@ -1481,6 +1483,9 @@ async function abrirInformeEquipo(id){
       <tbody>${pend.slice(0,10).map(x=>`<tr><td>${esc(x.falla||'—')}</td><td class="c">${esc(x.prioridad||'—')}</td><td class="c">${esc(x.estado||'—')}</td>
         <td class="c">${fmtDate(x.fecha_compromiso)||'—'}</td><td class="c">${fmtDate(x.fecha_cierre)||'—'}</td></tr>`).join('')}</tbody></table>`
       :'<div class="inf-dim" style="padding:6px 0">Sin fallas reportadas registradas.</div>'}
+
+    ${chip('plomo','7. OBSERVACIONES')}
+    <div id="infObs" contenteditable="true" style="border:1px dashed #c7ccd1;border-radius:9px;padding:10px 12px;min-height:60px;font-size:12px;color:#333;outline:none"></div>
   `;
 
   // -- Análisis con IA, por cada sistema en Crítico/Precaución (se piden en paralelo, sin bloquear el resto del informe) --
