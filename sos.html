@@ -227,7 +227,7 @@
 </head>
 <body>
 <header id="topbar">
-  <div class="brand-min"><h1>SOS &mdash; Muestreo de Aceites</h1><p>Unidad de Equipos &middot; UDE &middot; 210926-12</p></div>
+  <div class="brand-min"><h1>SOS &mdash; Muestreo de Aceites</h1><p>Unidad de Equipos &middot; UDE &middot; 210926-13</p></div>
   <nav id="navPrin"></nav>
   <div class="sp2"></div>
   <span class="who" id="who"></span>
@@ -237,7 +237,7 @@
   <button id="tab_fra" class="on">&#128230; Frascos</button>
   <button id="tab_plan">Muestras</button>
   <button id="tab_ale">Seguimiento de alertas</button>
-  <span style="margin-left:auto;font-size:10px;color:#9aa4ad;letter-spacing:.5px;padding-right:4px">v210926-12</span>
+  <span style="margin-left:auto;font-size:10px;color:#9aa4ad;letter-spacing:.5px;padding-right:4px">v210926-13</span>
 </div>
 <div class="toolbar">
   <div class="grupo-wrap">
@@ -1288,7 +1288,6 @@ function fichaSOS(id){
       <div class="spacer"></div>
       <button class="act" id="fichaImp">🖨 Imprimir</button>
       <button class="act" id="fichaIA">🤖 Analizar con IA</button>
-      <button class="act" id="fichaInforme">📊 Informe completo</button>
       ${p.link_pdf?`<a class="act" href="${esc(p.link_pdf)}" target="_blank">Ver PDF del laboratorio</a>`:''}
       <button class="act" id="fichaCer">Cerrar</button>
     </div>
@@ -1381,7 +1380,6 @@ Escribe en español, en un párrafo breve (máximo 6 líneas), una interpretaci�
       return llamarIA(prompt);
     });
   };
-  document.getElementById('fichaInforme').onclick=()=>abrirInformeCompleto(p.cod_sap,e);
   // logo real de la página (mismo mecanismo que usa Equipos): prueba nombres comunes
   (function(){
     const nombres=['logo.png','logo.jpg','logo.jpeg','logo.svg','logo.webp','LOGO.png','LOGO.jpg','Logo.png'];
@@ -1394,132 +1392,6 @@ Escribe en español, en un párrafo breve (máximo 6 líneas), una interpretaci�
     }
     probar();
   })();
-}
-
-/* ═══════════════ INFORME COMPLETO DE EQUIPO (consolida PM-S, Combustible, Pendientes y SOS) ═══════════════ */
-function pmEstadoSimple(r){
-  const lleno=String(r.om??'').trim()!==''&&r.hrkm_ejec!=null&&String(r.hrkm_ejec).trim()!==''&&String(r.fecha_ejec??'').trim()!=='';
-  if(lleno)return 'EJECUTADO';
-  if(r.estado)return r.estado;
-  if(r.fecha_prog&&r.fecha_prog<new Date().toISOString().slice(0,10))return 'PENDIENTE';
-  return 'PROGRAMADO';
-}
-async function abrirInformeCompleto(cod_sap,e){
-  if(!cod_sap){alert('Esta muestra no tiene un Cód. SAP identificado, no se puede armar el informe.');return;}
-  document.body.insertAdjacentHTML('beforeend',`<div class="modal" id="minf"><div class="mc" style="width:min(920px,97vw);height:92vh;max-height:92vh;display:flex;flex-direction:column">
-    <div class="mh" style="flex:0 0 auto"><h3>Informe completo — ${esc(cod_sap)}</h3>
-      <div class="sub">${esc(e?e.equipo:'')}</div><div class="spacer"></div>
-      <button class="act" id="infImp">🖨 Imprimir</button>
-      <button class="act" id="infCer">Cerrar</button></div>
-    <div class="mb" id="infBody" style="overflow-y:auto;font-size:12.5px">
-      <div style="display:flex;align-items:center;gap:8px;color:#6b747d;padding:20px"><span class="spin"></span> Reuniendo información de PM-S, Combustible, Pendientes y SOS…</div>
-    </div>
-  </div></div>`);
-  const cerrar=()=>{const m=document.getElementById('minf');if(m)m.remove();};
-  document.getElementById('infCer').onclick=cerrar;
-  document.getElementById('minf').addEventListener('click',ev=>{if(ev.target.id==='minf')cerrar();});
-  document.getElementById('infImp').onclick=()=>window.print();
-
-  const [rpm,rcomb,rpend]=await Promise.all([
-    sb.from('pm_prog').select('*').eq('cod_sap',cod_sap).order('fecha_prog',{ascending:false}),
-    sb.from('combustible').select('*').eq('cod_sap',cod_sap).order('fecha',{ascending:false}),
-    sb.from('pendientes').select('*').eq('equipo_sap',cod_sap).order('fecha_compromiso',{ascending:false})
-  ]);
-  const body=document.getElementById('infBody'); if(!body)return;
-  if(rpm.error||rcomb.error||rpend.error){
-    body.innerHTML=`<div class="b-bad" style="padding:16px">No se pudo traer toda la información: ${esc(rpm.error?.message||rcomb.error?.message||rpend.error?.message||'error desconocido')}</div>`;
-    return;
-  }
-  const pms=rpm.data||[], comb=rcomb.data||[], pend=rpend.data||[];
-  const muestrasEq=MUESTRAS.filter(m=>nrm(m.cod_sap)===nrm(cod_sap));
-
-  const chip=(cls,txt)=>`<span class="bnd ${cls}" style="display:inline-block;font-size:11px;padding:5px 12px;margin:18px 0 8px">${esc(txt)}</span>`;
-  const filaDato=(l,v)=>`<tr><td class="dim" style="width:34%">${esc(l)}</td><td style="font-weight:600">${esc(v||'—')}</td></tr>`;
-
-  // -- resumen ejecutivo --
-  const pmProx=pms.filter(r=>pmEstadoSimple(r)!=='EJECUTADO').sort((a,b)=>String(a.fecha_prog||'').localeCompare(String(b.fecha_prog||'')))[0];
-  const pendUrg=pend.filter(x=>x.estado!=='Completado'&&x.prioridad==='Urgente').length;
-  const pendActivos=pend.filter(x=>x.estado!=='Completado').length;
-  const sosCrit=muestrasEq.filter(m=>m.estado_std==='CRITICO').length;
-  const sosPrec=muestrasEq.filter(m=>m.estado_std==='PRECAUCION').length;
-  const hoyISO=new Date().toISOString().slice(0,10);
-  const combMes=comb.filter(d=>String(d.fecha).slice(0,7)===hoyISO.slice(0,7)).reduce((s,d)=>s+(+d.galones||0),0);
-
-  const resumen=(l,v,cls)=>`<div class="rescard ${cls}"><div class="l">${esc(l)}</div><div class="v">${esc(v)}</div></div>`;
-
-  // -- combustible: consumo por mes (últimos 6) --
-  const porMes={};
-  comb.forEach(d=>{const m=String(d.fecha).slice(0,7); if(!m)return; porMes[m]=(porMes[m]||0)+(+d.galones||0);});
-  const mesesComb=Object.keys(porMes).sort().slice(-6);
-  function graficoCombustible(){
-    if(!mesesComb.length)return '<div class="dim" style="padding:10px">Sin despachos registrados.</div>';
-    const W=560,H=170,padL=40,padB=26,padT=10,padR=10;
-    const max=Math.max(1,...mesesComb.map(m=>porMes[m]))*1.15;
-    const bw=(W-padL-padR)/mesesComb.length;
-    let svg=`<svg viewBox="0 0 ${W} ${H}" width="100%" style="max-width:520px">`;
-    mesesComb.forEach((m,i)=>{
-      const v=porMes[m]; const h=(H-padT-padB)*(v/max); const x=padL+i*bw+bw*0.15; const y=H-padB-h;
-      svg+=`<rect x="${x}" y="${y}" width="${bw*0.7}" height="${h}" fill="#C7A00D" rx="2"><title>${m}: ${v.toFixed(0)} gal</title></rect>`;
-      svg+=`<text x="${x+bw*0.35}" y="${H-padB+16}" font-size="10" text-anchor="middle" fill="#6b747d">${m.slice(5)}/${m.slice(2,4)}</text>`;
-      svg+=`<text x="${x+bw*0.35}" y="${y-4}" font-size="9.5" text-anchor="middle" fill="#8A6300">${v.toFixed(0)}</text>`;
-    });
-    svg+='</svg>';
-    return svg;
-  }
-
-  // -- SOS: resumen por sistema + un gráfico de tendencia del sistema con más historial --
-  const sistemas=[...new Set(muestrasEq.map(m=>m.sistema_std||m.sistema).filter(Boolean))];
-  const filasSos=sistemas.map(s=>{
-    const ms=muestrasEq.filter(m=>(m.sistema_std||m.sistema)===s&&m.f_muestreo).sort((a,b)=>String(b.f_muestreo).localeCompare(String(a.f_muestreo)));
-    return {sistema:s,ultima:ms[0],historial:ms};
-  }).sort((a,b)=>b.historial.length-a.historial.length);
-  const sisConMasHist=filasSos[0];
-
-  body.innerHTML=`
-    ${chip('azul','1. DATOS GENERALES DEL EQUIPO')}
-    <table class="t"><tbody>
-      ${filaDato('Código SAP',e?.cod_sap||cod_sap)}
-      ${filaDato('Equipo',e?.equipo)}
-      ${filaDato('Marca / Modelo',[e?.marca,e?.modelo].filter(Boolean).join(' / '))}
-      ${filaDato('Serie',e?.serie_placa)}
-      ${filaDato('Obra / Proyecto',e?.cod_proyec)}
-      ${filaDato('Estado operativo',e?.status)}
-    </tbody></table>
-
-    ${chip('plomo','2. RESUMEN EJECUTIVO')}
-    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px">
-      ${resumen('Próximo PM',pmProx?(pmProx.tipo_pm||'PM')+' · '+fmtDate(pmProx.fecha_prog):'—',pmProx&&pmProx.fecha_prog<hoyISO?'rojo':'verde')}
-      ${resumen('Combustible (mes)',combMes?f0(combMes)+' gal':'—','gris')}
-      ${resumen('Pendientes activos',pendActivos+(pendUrg?` (${pendUrg} urg.)`:''),pendUrg?'rojo':(pendActivos?'ambar':'verde'))}
-      ${resumen('SOS aceite',sosCrit?sosCrit+' crítico(s)':(sosPrec?sosPrec+' precaución':'Normal'),sosCrit?'rojo':(sosPrec?'ambar':'verde'))}
-    </div>
-
-    ${chip('verde','3. MANTENIMIENTO (PM-S)')}
-    ${pms.length?`<table class="t"><thead><tr><th>Tipo</th><th class="c">Fecha prog.</th><th class="c">Fecha ejec.</th><th>N° OM</th><th class="c">Estado</th></tr></thead>
-      <tbody>${pms.slice(0,10).map(r=>`<tr><td>${esc(r.tipo_pm||'—')}</td><td class="c">${fmtDate(r.fecha_prog)}</td><td class="c">${fmtDate(r.fecha_ejec)||'—'}</td><td>${esc(r.om||'—')}</td>
-        <td class="c">${esc(pmEstadoSimple(r))}</td></tr>`).join('')}</tbody></table>`
-      :'<div class="dim" style="padding:6px 0">Sin mantenimientos programados registrados.</div>'}
-
-    ${chip('amarillo','4. COMBUSTIBLE')}
-    <div style="display:grid;grid-template-columns:1.2fr 1fr;gap:16px;align-items:start">
-      <div>${graficoCombustible()}</div>
-      <table class="t"><thead><tr><th class="c">Fecha</th><th class="c">Galones</th></tr></thead>
-        <tbody>${comb.length?comb.slice(0,8).map(d=>`<tr><td class="c">${fmtDate(d.fecha)}</td><td class="c">${d.galones??'—'}</td></tr>`).join(''):'<tr><td colspan="2" class="dim c">Sin despachos registrados.</td></tr>'}</tbody></table>
-    </div>
-
-    ${chip('rojo','5. PENDIENTES')}
-    ${pend.length?`<table class="t"><thead><tr><th>Falla reportada</th><th class="c">Prioridad</th><th class="c">Estado</th><th class="c">F. compromiso</th><th class="c">F. cierre</th></tr></thead>
-      <tbody>${pend.slice(0,10).map(x=>`<tr><td>${esc(x.falla||'—')}</td><td class="c">${esc(x.prioridad||'—')}</td><td class="c">${esc(x.estado||'—')}</td>
-        <td class="c">${fmtDate(x.fecha_compromiso)||'—'}</td><td class="c">${fmtDate(x.fecha_cierre)||'—'}</td></tr>`).join('')}</tbody></table>`
-      :'<div class="dim" style="padding:6px 0">Sin fallas reportadas registradas.</div>'}
-
-    ${chip('azul','6. MUESTREO DE ACEITE (SOS)')}
-    ${filasSos.length?`<table class="t"><thead><tr><th>Sistema</th><th class="c">Última muestra</th><th class="c">Horómetro</th><th class="c">Estado</th><th>Laboratorio</th></tr></thead>
-      <tbody>${filasSos.map(x=>`<tr><td>${esc(x.sistema)}</td><td class="c">${fmtDate(x.ultima?.f_muestreo)||'—'}</td><td class="c">${x.ultima?.horometro!=null?f0(x.ultima.horometro)+'h':'—'}</td>
-        <td class="c">${esc(x.ultima?.estado_std||'—')}</td><td>${esc(x.ultima?.fuente||'—')}</td></tr>`).join('')}</tbody></table>
-      ${sisConMasHist&&sisConMasHist.historial.length>1?`<div style="margin-top:10px">${svgLineasGrupo('Desgaste — '+sisConMasHist.sistema,gruposFicha()[0].claves,sisConMasHist.historial)}</div>`:''}`
-      :'<div class="dim" style="padding:6px 0">Sin muestras de aceite registradas para este equipo.</div>'}
-  `;
 }
 
 /* ───────── SEGUIMIENTO DE ALERTAS ───────── */

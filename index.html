@@ -1239,6 +1239,41 @@ function pmEstadoSimpleIdx(r){
   if(r.fecha_prog&&r.fecha_prog<new Date().toISOString().slice(0,10))return 'PENDIENTE';
   return 'PROGRAMADO';
 }
+/* ── Precisión de Servicio (SA): velocímetro + gráfico de control (mismas fórmulas de PM-S, para un solo equipo) ── */
+const SA_DC={verde:'#0CA318',rojo:'#D3141A',ambar:'#C7A00D',naranja:'#ED7D31',azul2:'#4254A5',cielo:'#DEEBF7'};
+function svgGaugeSA(pct){
+  const W=260,H=180,cx=130,cy=138,rE=98,rI=56;
+  const ang=v=>Math.PI*(1-(Math.max(-10,Math.min(10,v))+10)/20);
+  const P=(v,r)=>[cx+r*Math.cos(ang(v)),cy-r*Math.sin(ang(v))];
+  const banda=(a,b,col)=>{const[x1,y1]=P(a,rE),[x2,y2]=P(b,rE),[x3,y3]=P(b,rI),[x4,y4]=P(a,rI);
+    return `<path d="M${x1},${y1} A${rE},${rE} 0 0 1 ${x2},${y2} L${x3},${y3} A${rI},${rI} 0 0 0 ${x4},${y4} Z" fill="${col}"/>`;};
+  let g=banda(-10,-8,SA_DC.rojo)+banda(-8,-6,SA_DC.naranja)+banda(-6,-3,SA_DC.ambar)
+       +banda(-3,3,SA_DC.verde)+banda(3,6,SA_DC.ambar)+banda(6,8,SA_DC.naranja)+banda(8,10,SA_DC.rojo);
+  g+=`<text x="${cx}" y="24" text-anchor="middle" font-size="11" font-weight="700" fill="#404040">0 %</text>`;
+  g+=`<text x="12" y="${cy+11}" font-size="10" font-weight="700" fill="#404040">-10%</text>`;
+  g+=`<text x="${W-12}" y="${cy+11}" text-anchor="end" font-size="10" font-weight="700" fill="#404040">10%</text>`;
+  if(pct!=null){const[nx,ny]=P(pct,rE-6); g+=`<line x1="${cx}" y1="${cy}" x2="${nx}" y2="${ny}" stroke="#1a1a1a" stroke-width="2.4" stroke-linecap="round"/>`;}
+  g+=`<path d="M${cx-22},${cy} A22,22 0 0 1 ${cx+22},${cy} Z" fill="none" stroke="#7F7F7F" stroke-width="8"/>`;
+  g+=`<text x="${cx}" y="${cy+30}" text-anchor="middle" font-size="17" font-weight="700" fill="#1a1a1a">${pct==null?'—':pct.toFixed(1)+' %'}</text>`;
+  return `<svg viewBox="0 0 ${W} ${H}" width="100%" style="max-width:260px">${g}</svg>`;
+}
+function svgControlSA(pts){
+  const W=300,H=180,L=32,R=10,T=10,B=26,n=pts.length;
+  const lim=Math.max(20,Math.ceil(Math.max(...pts.map(p=>Math.abs(p.pct)))/5)*5);
+  const y=v=>T+(lim-v)/(2*lim)*(H-T-B);
+  const x=i=>n===1?(L+(W-L-R)/2):L+i*(W-L-R)/(n-1);
+  let g=`<rect x="${L}" y="${y(10)}" width="${W-L-R}" height="${y(-10)-y(10)}" fill="${SA_DC.cielo}" opacity=".5"/>`;
+  g+=`<line x1="${L}" y1="${y(0)}" x2="${W-R}" y2="${y(0)}" stroke="#000" stroke-width="1"/>`;
+  g+=`<line x1="${L}" y1="${y(10)}" x2="${W-R}" y2="${y(10)}" stroke="${SA_DC.rojo}" stroke-width="1" stroke-dasharray="3 3"/>`;
+  g+=`<line x1="${L}" y1="${y(-10)}" x2="${W-R}" y2="${y(-10)}" stroke="${SA_DC.verde}" stroke-width="1" stroke-dasharray="3 3"/>`;
+  const pl=pts.map((p,i)=>x(i)+','+y(p.pct)).join(' ');
+  g+=`<polyline fill="none" stroke="${SA_DC.azul2}" stroke-width="1.6" points="${pl}"/>`;
+  pts.forEach((p,i)=>{const fuera=Math.abs(p.pct)>10;
+    g+=`<circle cx="${x(i)}" cy="${y(p.pct)}" r="3.2" fill="${fuera?SA_DC.rojo:SA_DC.azul2}"><title>${p.fecha}: ${p.pct.toFixed(1)}%</title></circle>`;});
+  g+=`<text x="${L-4}" y="${y(10)+3}" text-anchor="end" font-size="8" fill="#6b747d">+10%</text>`;
+  g+=`<text x="${L-4}" y="${y(-10)+3}" text-anchor="end" font-size="8" fill="#6b747d">-10%</text>`;
+  return `<svg viewBox="0 0 ${W} ${H}" width="100%" style="max-width:300px">${g}</svg>`;
+}
 async function llamarIAIdx(prompt){
   const resp=await fetch(`${SUPABASE_URL}/functions/v1/analizar-ia`,{
     method:'POST',
@@ -1279,6 +1314,12 @@ async function abrirInformeEquipo(id){
     return;
   }
   const pms=rpm.data||[], comb=rcomb.data||[], pend=rpend.data||[], sos=rsos.data||[];
+  // -- 3. Precisión de Servicio (SA): desvío = (HR/KM ejec - HR/KM prog) / frecuencia del equipo, por cada PM ejecutado --
+  const freqSA=+e.frecuencia||0;
+  const desvios=pms.filter(r=>r.hrkm_ejec!=null&&r.hrkm_prog!=null&&freqSA)
+    .map(r=>({fecha:fmtDate(r.fecha_ejec||r.fecha_prog)||'',pct:(+r.hrkm_ejec-+r.hrkm_prog)/freqSA*100,f:r.fecha_ejec||r.fecha_prog||''}))
+    .sort((a,b)=>String(a.f).localeCompare(String(b.f)));
+  const promedioSA=desvios.length?desvios.reduce((a,p)=>a+p.pct,0)/desvios.length:null;
   const filaDato=(l,v)=>`<tr><td class="k">${esc(l)}</td><td style="font-weight:600">${esc(v||'—')}</td></tr>`;
   const chip=(cls,txt)=>`<span class="inf-bnd ${cls}">${esc(txt)}</span>`;
   const resumen=(l,v,cls)=>`<div class="inf-res ${cls}"><div class="l">${esc(l)}</div><div class="v">${esc(v)}</div></div>`;
@@ -1372,7 +1413,17 @@ async function abrirInformeEquipo(id){
     ${chip('verde','3. MANTENIMIENTO (PM-S)')}
     ${pms.length?`<table class="inf-t"><thead><tr><th>Tipo</th><th class="c">HR/KM ejecución</th><th class="c">Fecha ejec.</th><th>N° OM</th><th class="c">Estado</th></tr></thead>
       <tbody>${pms.slice(0,10).map(r=>`<tr><td>${esc(r.tipo_pm||'—')}</td><td class="c">${r.hrkm_ejec!=null?fmtNum(r.hrkm_ejec):'—'}</td><td class="c">${fmtDate(r.fecha_ejec)||'—'}</td><td>${esc(r.om||'—')}</td>
-        <td class="c">${esc(pmEstadoSimpleIdx(r))}</td></tr>`).join('')}</tbody></table>`
+        <td class="c">${esc(pmEstadoSimpleIdx(r))}</td></tr>`).join('')}</tbody></table>
+      ${desvios.length?`<div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;align-items:start;margin-top:12px">
+        <div class="campo" style="border:1px solid var(--line);border-radius:9px;padding:10px;margin:0">
+          <b style="font-size:11px;color:#4254A5;display:block;margin-bottom:4px">Precisión de Servicio (SA) — promedio del equipo</b>
+          ${svgGaugeSA(promedioSA)}
+        </div>
+        <div class="campo" style="border:1px solid var(--line);border-radius:9px;padding:10px;margin:0">
+          <b style="font-size:11px;color:#4254A5;display:block;margin-bottom:4px">Gráfico de control — desvío por mantenimiento (%)</b>
+          ${svgControlSA(desvios)}
+        </div>
+      </div>`:'<div class="inf-dim" style="font-size:10.5px;margin-top:8px">Sin suficientes mantenimientos con HR/KM programado y ejecutado para calcular la Precisión de Servicio.</div>'}`
       :'<div class="inf-dim" style="padding:6px 0">Sin mantenimientos programados registrados.</div>'}
 
     ${chip('amarillo','4. COMBUSTIBLE')}
