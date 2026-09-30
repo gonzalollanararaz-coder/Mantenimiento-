@@ -1280,7 +1280,7 @@ function svgGaugeSA(pct){
   return `<svg viewBox="0 0 ${W} ${H}" width="100%" style="max-width:260px">${g}</svg>`;
 }
 function svgControlSA(pts){
-  const W=300,H=180,L=32,R=10,T=10,B=26,n=pts.length;
+  const W=340,H=200,L=34,R=10,T=14,B=42,n=pts.length;
   const lim=Math.max(20,Math.ceil(Math.max(...pts.map(p=>Math.abs(p.pct)))/5)*5);
   const y=v=>T+(lim-v)/(2*lim)*(H-T-B);
   const x=i=>n===1?(L+(W-L-R)/2):L+i*(W-L-R)/(n-1);
@@ -1290,11 +1290,16 @@ function svgControlSA(pts){
   g+=`<line x1="${L}" y1="${y(-10)}" x2="${W-R}" y2="${y(-10)}" stroke="${SA_DC.verde}" stroke-width="1" stroke-dasharray="3 3"/>`;
   const pl=pts.map((p,i)=>x(i)+','+y(p.pct)).join(' ');
   g+=`<polyline fill="none" stroke="${SA_DC.azul2}" stroke-width="1.6" points="${pl}"/>`;
-  pts.forEach((p,i)=>{const fuera=Math.abs(p.pct)>10;
-    g+=`<circle cx="${x(i)}" cy="${y(p.pct)}" r="3.2" fill="${fuera?SA_DC.rojo:SA_DC.azul2}"><title>${p.fecha}: ${p.pct.toFixed(1)}%</title></circle>`;});
+  pts.forEach((p,i)=>{
+    const fuera=Math.abs(p.pct)>10;
+    g+=`<circle cx="${x(i)}" cy="${y(p.pct)}" r="3.2" fill="${fuera?SA_DC.rojo:SA_DC.azul2}"><title>${p.fecha} · ${fmtNum(p.horom)} · ${p.pct.toFixed(1)}%</title></circle>`;
+    g+=`<text x="${x(i)}" y="${y(p.pct)+(p.pct>=0?-7:13)}" text-anchor="middle" font-size="7" font-weight="700" fill="${fuera?SA_DC.rojo:'#1F3864'}">${p.pct.toFixed(0)}%</text>`;
+    g+=`<text x="${x(i)}" y="${H-B+13}" text-anchor="middle" font-size="7.5" fill="#404040">${fmtNum(p.horom)}</text>`;
+  });
+  g+=`<text x="${(L+W-R)/2}" y="${H-3}" text-anchor="middle" font-size="7.5" fill="#808080">HORÓMETRO</text>`;
   g+=`<text x="${L-4}" y="${y(10)+3}" text-anchor="end" font-size="8" fill="#6b747d">+10%</text>`;
   g+=`<text x="${L-4}" y="${y(-10)+3}" text-anchor="end" font-size="8" fill="#6b747d">-10%</text>`;
-  return `<svg viewBox="0 0 ${W} ${H}" width="100%" style="max-width:300px">${g}</svg>`;
+  return `<svg viewBox="0 0 ${W} ${H}" width="100%" style="max-width:340px">${g}</svg>`;
 }
 async function llamarIAIdx(prompt){
   const resp=await fetch(`${SUPABASE_URL}/functions/v1/analizar-ia`,{
@@ -1336,11 +1341,16 @@ async function abrirInformeEquipo(id){
     return;
   }
   const pms=rpm.data||[], comb=rcomb.data||[], pend=rpend.data||[], sos=rsos.data||[];
-  // -- 3. Precisión de Servicio (SA): desvío = (HR/KM ejec - HR/KM prog) / frecuencia del equipo, por cada PM ejecutado --
+  // -- 3. Precisión de Servicio (SA): desvío = (HR/KM ejec - HR/KM de referencia) / frecuencia del equipo.
+  //    El "HR/KM de referencia" es el programado propio si existe; si no está guardado (pasa seguido en los
+  //    datos reales), se reconstruye redondeando el HR/KM ejecutado a la frecuencia del equipo — igual idea
+  //    que usa PM-S para no dejar el desvío (ni el Tipo de PM) en blanco solo porque falta ese dato puntual. --
   const freqSA=+e.frecuencia||0;
-  const desvios=pms.filter(r=>r.hrkm_ejec!=null&&r.hrkm_prog!=null&&freqSA)
-    .map(r=>({fecha:fmtDate(r.fecha_ejec||r.fecha_prog)||'',pct:(+r.hrkm_ejec-+r.hrkm_prog)/freqSA*100,f:r.fecha_ejec||r.fecha_prog||''}))
-    .sort((a,b)=>String(a.f).localeCompare(String(b.f)));
+  const desviosAll=pms.filter(r=>r.hrkm_ejec!=null&&freqSA).map(r=>{
+    const hp=r.hrkm_prog!=null&&r.hrkm_prog!==''?+r.hrkm_prog:roundToFreq(+r.hrkm_ejec,freqSA);
+    return {fecha:fmtDate(r.fecha_ejec||r.fecha_prog)||'',horom:+r.hrkm_ejec,pct:(+r.hrkm_ejec-hp)/freqSA*100,f:r.fecha_ejec||r.fecha_prog||''};
+  }).sort((a,b)=>String(a.f).localeCompare(String(b.f)));
+  const desvios=desviosAll.slice(-8); // al menos los últimos 8 mantenimientos
   const promedioSA=desvios.length?desvios.reduce((a,p)=>a+p.pct,0)/desvios.length:null;
   const filaDato=(l,v)=>`<tr><td class="k">${esc(l)}</td><td style="font-weight:600">${esc(v||'—')}</td></tr>`;
   const chip=(cls,txt)=>`<span class="inf-bnd ${cls}">${esc(txt)}</span>`;
@@ -1435,7 +1445,7 @@ async function abrirInformeEquipo(id){
     ${chip('verde','3. MANTENIMIENTO (PM-S)')}
     ${pms.length?`<div style="display:grid;grid-template-columns:1.4fr 1fr;gap:16px;align-items:start">
       <table class="inf-t"><thead><tr><th>Tipo</th><th>HR/KM ejecución</th><th>Fecha ejec.</th><th>N° OM</th><th>Estado</th></tr></thead>
-        <tbody>${pms.slice(0,10).map(r=>`<tr><td>${esc(r.tipo_pm||pmsTipoPMIdx(e.marca,e.modelo,r.hrkm_ejec)||'—')}</td><td>${r.hrkm_ejec!=null?fmtNum(r.hrkm_ejec):'—'}</td><td>${fmtDate(r.fecha_ejec)||'—'}</td><td>${esc(r.om||'—')}</td>
+        <tbody>${pms.slice(0,10).map(r=>`<tr><td>${esc(r.tipo_pm||pmsTipoPMIdx(e.marca,e.modelo,r.hrkm_ejec!=null&&freqSA?roundToFreq(+r.hrkm_ejec,freqSA):null)||'—')}</td><td>${r.hrkm_ejec!=null?fmtNum(r.hrkm_ejec):'—'}</td><td>${fmtDate(r.fecha_ejec)||'—'}</td><td>${esc(r.om||'—')}</td>
           <td>${esc(pmEstadoSimpleIdx(r))}</td></tr>`).join('')}</tbody></table>
       ${desvios.length?`<div class="campo" style="border:1px solid var(--line);border-radius:9px;padding:10px;margin:0">
         <b style="font-size:11px;color:#4254A5;display:block;margin-bottom:4px">Gráfico de control — desvío por mantenimiento (%)</b>
