@@ -263,7 +263,7 @@
 </head>
 <body>
 <header id="topbar">
-  <div class="brand-min"><h1>SOS &mdash; Muestreo de Aceites</h1><p>Unidad de Equipos &middot; UDE &middot; 031026-2</p></div>
+  <div class="brand-min"><h1>SOS &mdash; Muestreo de Aceites</h1><p>Unidad de Equipos &middot; UDE &middot; 031026-3</p></div>
   <nav id="navPrin"></nav>
   <div class="sp2"></div>
   <span class="who" id="who"></span>
@@ -273,7 +273,7 @@
   <button id="tab_fra" class="on">&#128230; Frascos</button>
   <button id="tab_plan">Muestras</button>
   <button id="tab_ale">Seguimiento de alertas</button>
-  <span style="margin-left:auto;font-size:10px;color:#9aa4ad;letter-spacing:.5px;padding-right:4px">v031026-2</span>
+  <span style="margin-left:auto;font-size:10px;color:#9aa4ad;letter-spacing:.5px;padding-right:4px">v031026-3</span>
 </div>
 <div class="toolbar">
   <div class="grupo-wrap">
@@ -1487,8 +1487,10 @@ ${datosHist}
 Escribe en español, en un párrafo breve (máximo 6 líneas), una interpretación práctica de lo que podría estar pasando (mirando la tendencia, no solo el valor actual) y una recomendación concreta. No repitas los números tal cual, interprétalos.`;
       const texto=(await llamarIA(prompt)).trim();
       // queda guardado de forma permanente en ACCIONES CORRECTIVAS
-      await guardarAcciones(p,texto);
       const a=document.getElementById('fAcc'); if(a){ a.innerText=texto; encajarTexto(a); }
+      // si no se puede guardar, igual se muestra el texto (no se pierde el análisis)
+      try{ await guardarAcciones(p,texto); }
+      catch(err){ return texto+'\n\n⚠ No se pudo guardar en ACCIONES CORRECTIVAS: '+err.message; }
       return texto+'\n\n✔ Guardado en ACCIONES CORRECTIVAS de la ficha.';
     });
   };
