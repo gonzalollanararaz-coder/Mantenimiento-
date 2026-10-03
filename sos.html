@@ -243,7 +243,7 @@
   <button id="tab_fra" class="on">&#128230; Frascos</button>
   <button id="tab_plan">Muestras</button>
   <button id="tab_ale">Seguimiento de alertas</button>
-  <span style="margin-left:auto;font-size:10px;color:#9aa4ad;letter-spacing:.5px;padding-right:4px">v210926-16</span>
+  <span style="margin-left:auto;font-size:10px;color:#9aa4ad;letter-spacing:.5px;padding-right:4px">v031026-1</span>
 </div>
 <div class="toolbar">
   <div class="grupo-wrap">
@@ -428,7 +428,7 @@ function sistemaStd(txt){
 
 /* Clave única de una muestra: EQUIPO_SISTEMA_FECHA
    ejemplo: ECV109_MOTOR_02.24.26
-   El sistema se recorta a 5 caracteres y la fecha va MM.DD.AA.
+   El sistema va completo (ya no se recorta) y la fecha va MM.DD.AA.
    Sirve para enlazar el resultado del laboratorio con su fila de la planilla. */
 function claveMuestra(sap,sistema,fecha){
   if(!sap||!fecha)return null;
@@ -647,7 +647,9 @@ function enlazarPlanilla(r){
   // 1) por clave EQUIPO_SISTEMA_FECHA
   const k=claveMuestra(r.cod_sap,r.sistema_std||r.componente,r.fecha);
   if(k){
-    const p=MUESTRAS.find(x=>claveMuestra(x.cod_sap,x.sistema_std||x.sistema,x.f_muestreo)===k);
+    // si varias filas comparten la clave, se prefiere la que todavía no tiene resultado
+    const ps=MUESTRAS.filter(x=>claveMuestra(x.cod_sap,x.sistema_std||x.sistema,x.f_muestreo)===k);
+    const p=ps.find(x=>!x.fuente&&!x.estado_std)||ps[0];
     if(p)return p;
   }
   if(r.cod_frasco){
@@ -1767,6 +1769,10 @@ async function subirResultados(filas,nom,hoja){
   }
   const regs=(leerResultados(filas,fuente)||[]).filter(Boolean);
   if(!regs||!regs.length){alert('No se reconoció el formato.\n\nDebe tener las columnas N° MUESTRA, EQUIPO, COMPONENTE, FECHA y ESTADO (o el formato nativo de Ferreyros).');return;}
+  // 0) resultados ya guardados pero en la fila de OTRO sistema (el archivo dice cuál es el correcto):
+  //    se ofrecen mover o intercambiar antes de seguir, así los pasos siguientes ya ven las filas en su sitio
+  const malUb=detectarMalUbicados(regs,fuente);
+  if(malUb.length)await revisarMalUbicados(malUb);
   // ya registrado = misma fuente + mismo N° de muestra ya tiene resultado en Muestras
   const yaHay=new Set(MUESTRAS.filter(m=>m.fuente).map(m=>m.fuente+'|'+nrm(m.nro_muestra)));
   const nuevos=regs.filter(r=>!yaHay.has(fuente+'|'+nrm(r.nro_muestra)));
@@ -1774,9 +1780,15 @@ async function subirResultados(filas,nom,hoja){
   nuevos.forEach(r=>{
     const p=enlazarPlanilla(r);
     r.muestraExistente=(p&&!p.estado_std&&!p.fuente)?p:null;
+    // conflicto: su fila (mismo equipo + sistema + fecha) ya está ocupada por OTRO resultado.
+    // antes esto terminaba creando una fila duplicada; ahora se pregunta qué hacer.
+    if(p&&!r.muestraExistente&&p.fuente
+       &&claveMuestra(p.cod_sap,p.sistema_std||p.sistema,p.f_muestreo)===claveMuestra(r.cod_sap,r.sistema_std||r.componente,r.fecha))
+      r.conflicto=p;
   });
   const conMuestra=nuevos.filter(r=>r.muestraExistente);
-  const sinMuestra=nuevos.filter(r=>!r.muestraExistente);
+  const conflictos=nuevos.filter(r=>r.conflicto);
+  const sinMuestra=nuevos.filter(r=>!r.muestraExistente&&!r.conflicto);
   // filas que YA tenían resultado, pero el archivo trae texto/análisis distinto (correcciones del laboratorio o del lector)
   const yaConResultado=regs.filter(r=>yaHay.has(fuente+'|'+nrm(r.nro_muestra)));
   const conCambiosRes=[];
@@ -1803,6 +1815,7 @@ async function subirResultados(filas,nom,hoja){
     +`Ya registrados, sin cambios: ${yaConResultado.length-conCambiosRes.length}\n`
     +(conCambiosRes.length?`Ya registrados, con datos distintos (te los mostraré para revisar): ${conCambiosRes.length}\n`:'')
     +`Enlazados con una muestra ya registrada: ${conMuestra.length} de ${nuevos.length}\n`
+    +(conflictos.length?`En conflicto (su fila ya tiene otro resultado — te los mostraré para decidir): ${conflictos.length}\n`:'')
     +(sinMuestra.length?`Sin enlazar (te los mostraré para armar su fila): ${sinMuestra.length}\n`:'');
   if(sinEst.length)msg+=`\n⚠ Estados sin equivalencia (quedarán sin uniformar):\n  ${sinEst.slice(0,6).join(', ')}${sinEst.length>6?'…':''}\n`;
   if(sinSis.length)msg+=`\n⚠ Sistemas sin equivalencia:\n  ${sinSis.slice(0,6).join(', ')}${sinSis.length>6?'…':''}\n`;
@@ -1826,6 +1839,11 @@ async function subirResultados(filas,nom,hoja){
   }
   if(ok)await cargarTodo();
   pie.textContent=`${ok} resultado(s) enlazados con muestras existentes.`;
+  // primero los conflictos; los que se decidan como "crear fila nueva" se suman a la revisión de filas nuevas
+  if(conflictos.length){
+    const extra=await revisarConflictos(conflictos,regs);
+    sinMuestra.push(...extra);
+  }
   if(sinMuestra.length)revisarNuevasPlanillas(sinMuestra);
   if(conCambiosRes.length)revisarCambiosResultados(conCambiosRes);
   if(sinEst.length||sinSis.length){
@@ -1841,6 +1859,169 @@ async function subirResultados(filas,nom,hoja){
     if(abrir)eqAbrir();
   }
 }
+/* ═══════ Resultados mal ubicados y conflictos al subir un archivo ═══════
+   Un resultado nunca debe crear una fila duplicada solo porque su fila
+   correcta está ocupada por otro número: se muestra el problema y se
+   resuelve moviendo / intercambiando resultados dentro de la misma toma
+   (mismo equipo + misma fecha de muestreo). */
+const CAMPOS_RES=['fuente','nro_muestra','estado','estado_std','observacion_lab','link_pdf','analisis'];
+const RES_VACIO=Object.fromEntries(CAMPOS_RES.map(c=>[c,null]));
+const stdDe=m=>m.sistema_std||sistemaStd(m.sistema)||nrm(m.sistema);
+const filaVacia=m=>!m.fuente&&!m.estado_std&&!m.nro_muestra;
+const resDe=m=>Object.fromEntries(CAMPOS_RES.map(c=>[c,m[c]??null]));
+const mismaToma=(a,b)=>nrm(a.cod_sap)===nrm(b.cod_sap)&&String(a.f_muestreo||'').slice(0,10)===String(b.f_muestreo||'').slice(0,10);
+const getM=id=>MUESTRAS.find(x=>String(x.id)===String(id));
+async function guardarRes(id,patch){
+  const {data,error}=await sb.from('sos_muestras').update(patch).eq('id',id).select().single();
+  if(error)throw error;
+  const m=getM(id); if(m)Object.assign(m,data);
+  return data;
+}
+const alertasDe=id=>ALE.filter(a=>String(a.resultado_id)===String(id)).map(a=>a.id);
+async function reasignarAlertas(ids,toId){
+  if(!ids.length)return;
+  const {error}=await sb.from('sos_alertas').update({resultado_id:toId}).in('id',ids);
+  if(error)throw error;
+  ALE.forEach(a=>{ if(ids.includes(a.id))a.resultado_id=toId; });
+}
+/* Intercambia los datos de laboratorio entre dos filas (si B está vacía, equivale
+   a mover el resultado de A a B). Primero se vacía A para no repetir el N° de
+   muestra ni un instante; si algo falla a mitad, se intenta dejar todo como estaba. */
+async function intercambiarRes(A,B){
+  const ra=resDe(A), rb=resDe(B), alA=alertasDe(A.id), alB=alertasDe(B.id);
+  await guardarRes(A.id,RES_VACIO);
+  try{ await guardarRes(B.id,ra); }
+  catch(e){ await guardarRes(A.id,ra).catch(()=>{}); throw e; }
+  try{ await guardarRes(A.id,rb); }
+  catch(e){ await guardarRes(B.id,rb).catch(()=>{}); await guardarRes(A.id,ra).catch(()=>{}); throw e; }
+  await reasignarAlertas(alA,B.id);
+  await reasignarAlertas(alB,A.id);
+}
+function modalPromesa(id,html){
+  document.body.insertAdjacentHTML('beforeend',html);
+  return document.getElementById(id);
+}
+
+/* Resultado ya guardado en la fila de un sistema, pero el archivo del laboratorio
+   dice que es de otro sistema que existe en la misma toma. */
+function detectarMalUbicados(regs,fuente){
+  const out=[], vistos=new Set();
+  regs.forEach(r=>{
+    if(!r.sistema_std)return;
+    const P=MUESTRAS.find(m=>m.fuente===fuente&&nrm(m.nro_muestra)===nrm(r.nro_muestra));
+    if(!P||stdDe(P)===r.sistema_std)return;
+    const T=MUESTRAS.filter(m=>m.id!==P.id&&mismaToma(m,P)&&stdDe(m)===r.sistema_std);
+    if(T.length!==1)return;                      // ninguna o varias candidatas: no se adivina
+    const k=[P.id,T[0].id].sort().join('|');
+    if(vistos.has(k))return; vistos.add(k);      // un intercambio A<->B se muestra una sola vez
+    out.push({r,P,T:T[0]});
+  });
+  return out;
+}
+function revisarMalUbicados(lista){
+  return new Promise(resolve=>{
+    const el=modalPromesa('mmal',`<div class="modal" id="mmal"><div class="mc" style="width:min(820px,96vw)">
+      <div class="mh"><h3>Resultados guardados en el sistema equivocado</h3>
+        <div class="sub">Según este archivo, ${lista.length} resultado(s) están en la fila de otro sistema de la misma toma. Marca cuáles corregir.</div>
+        <div class="spacer"></div></div>
+      <div class="mb">
+        <table class="t"><thead><tr><th></th><th>Equipo · fecha</th><th>N° muestra</th><th>El laboratorio dice</th><th>Hoy está en</th><th>Acción</th></tr></thead>
+        <tbody>${lista.map((x,i)=>{
+          const vaciaT=filaVacia(x.T);
+          return `<tr><td><input type="checkbox" class="malChk" data-i="${i}" checked></td>
+            <td>${esc(x.P.cod_sap)} · ${fmtDate(String(x.P.f_muestreo).slice(0,10))}</td>
+            <td class="mono"><b>${esc(x.r.nro_muestra)}</b></td>
+            <td>${esc(x.r.componente||x.r.sistema_std)}</td>
+            <td>${esc(x.P.sistema||'')}</td>
+            <td>${vaciaT?`Mover a <b>${esc(x.T.sistema||'')}</b> (vacía)`
+                       :`Intercambiar con <b>${esc(x.T.sistema||'')}</b> (tiene ${esc(x.T.nro_muestra||'—')})`}</td></tr>`;
+        }).join('')}</tbody></table>
+      </div>
+      <div style="display:flex;gap:8px;justify-content:flex-end;padding:12px 16px;border-top:1px solid var(--line)">
+        <button class="act" id="malNo">Dejar como está</button><button class="act primary" id="malOk">Corregir marcados</button></div>
+    </div></div>`);
+    const cerrar=()=>{ el.remove(); resolve(); };
+    document.getElementById('malNo').onclick=cerrar;
+    document.getElementById('malOk').onclick=async()=>{
+      const sel=[...el.querySelectorAll('.malChk:checked')].map(c=>lista[+c.dataset.i]);
+      let ok=0; const fallas=[];
+      for(const x of sel){
+        const P=getM(x.P.id), T=getM(x.T.id);
+        // se revisa de nuevo por si una corrección anterior ya movió algo
+        if(!P||!T||nrm(P.nro_muestra)!==nrm(x.r.nro_muestra)){ fallas.push(`${x.r.nro_muestra}: ya no está en la fila esperada`); continue; }
+        try{ await intercambiarRes(P,T); ok++; }
+        catch(e){ fallas.push(`${x.r.nro_muestra}: ${e.message}`); }
+      }
+      if(fallas.length)alert(`Se corrigieron ${ok} de ${sel.length}.\n\n`+fallas.slice(0,8).join('\n'));
+      pie.textContent=`${ok} resultado(s) reubicados en su sistema correcto.`;
+      pintar(); cerrar();
+    };
+  });
+}
+
+/* Resultado nuevo cuya fila (mismo equipo + sistema + fecha) ya tiene OTRO resultado.
+   Devuelve los que el usuario decide crear como fila nueva. */
+function revisarConflictos(lista,regs){
+  return new Promise(resolve=>{
+    const casos=lista.map(r=>{
+      const P=getM(r.conflicto.id)||r.conflicto;     // la versión recién recargada, si existe
+      const vacias=MUESTRAS.filter(m=>m.id!==P.id&&mismaToma(m,P)&&filaVacia(m));
+      // ¿a qué sistema pertenece el resultado que hoy ocupa la fila? si viene en este
+      // mismo archivo, el laboratorio lo dice; si no, se sugiere por descarte
+      const regX=regs.find(x=>nrm(x.nro_muestra)===nrm(P.nro_muestra));
+      let sug=null, porque='';
+      if(regX&&regX.sistema_std){ sug=vacias.find(s=>stdDe(s)===regX.sistema_std)||null; if(sug)porque='según el archivo'; }
+      if(!sug&&vacias.length===1){ sug=vacias[0]; porque='por descarte'; }
+      return {r,P,vacias,sug,porque};
+    });
+    const el=modalPromesa('mconf',`<div class="modal" id="mconf"><div class="mc" style="width:min(880px,96vw)">
+      <div class="mh"><h3>Resultados en conflicto</h3>
+        <div class="sub">${casos.length} resultado(s) del archivo corresponden a una fila que ya tiene otro N° de muestra. Elige qué hacer con cada uno.</div>
+        <div class="spacer"></div></div>
+      <div class="mb">
+        <table class="t"><thead><tr><th>Equipo · fecha</th><th>Sistema</th><th>Llega</th><th>La fila ya tiene</th><th>Qué hacer</th></tr></thead>
+        <tbody>${casos.map((c,i)=>`<tr>
+          <td>${esc(c.P.cod_sap)} · ${fmtDate(String(c.P.f_muestreo).slice(0,10))}</td>
+          <td>${esc(c.P.sistema||'')}</td>
+          <td class="mono"><b>${esc(c.r.nro_muestra)}</b></td>
+          <td class="mono">${esc(c.P.nro_muestra||'—')}</td>
+          <td><select class="confSel" data-i="${i}" style="max-width:340px">
+            ${c.vacias.map(s=>`<option value="mover:${s.id}" ${c.sug&&c.sug.id===s.id?'selected':''}>
+              Cargar ${esc(c.r.nro_muestra)} aquí y pasar ${esc(c.P.nro_muestra||'')} a ${esc(s.sistema||'')}${c.sug&&c.sug.id===s.id?` (sugerido ${c.porque})`:''}</option>`).join('')}
+            <option value="nada" ${c.sug?'':'selected'}>No cargar ${esc(c.r.nro_muestra)} por ahora</option>
+            <option value="nueva">Crear una fila nueva para ${esc(c.r.nro_muestra)}</option>
+          </select></td></tr>`).join('')}</tbody></table>
+        <div style="font-size:11px;color:var(--muted);margin-top:8px">"Crear una fila nueva" solo si de verdad se tomó otra muestra de ese sistema ese día: si no, queda duplicado.</div>
+      </div>
+      <div style="display:flex;gap:8px;justify-content:flex-end;padding:12px 16px;border-top:1px solid var(--line)">
+        <button class="act" id="confNo">Cerrar sin cambios</button><button class="act primary" id="confOk">Aplicar</button></div>
+    </div></div>`);
+    document.getElementById('confNo').onclick=()=>{ el.remove(); resolve([]); };
+    document.getElementById('confOk').onclick=async()=>{
+      const extra=[]; let ok=0; const fallas=[];
+      for(const s of el.querySelectorAll('.confSel')){
+        const c=casos[+s.dataset.i], v=s.value;
+        if(v==='nada')continue;
+        if(v==='nueva'){ extra.push(c.r); continue; }
+        const P=getM(c.P.id), S=getM(v.split(':')[1]);
+        if(!P||!S||!filaVacia(S)){ fallas.push(`${c.r.nro_muestra}: la fila destino ya no está vacía`); continue; }
+        try{
+          await intercambiarRes(P,S);                 // el resultado anterior pasa a la fila vacía
+          await guardarRes(P.id,{                     // y la fila recibe el que llega en el archivo
+            fuente:c.r.fuente, nro_muestra:c.r.nro_muestra, estado:c.r.estado, estado_std:c.r.estado_std,
+            observacion_lab:c.r.observacion, link_pdf:c.r.link_pdf, analisis:c.r.analisis,
+            nro_frasco:P.nro_frasco||c.r.cod_frasco||null, horometro:P.horometro??c.r.horometro
+          });
+          ok++;
+        }catch(e){ fallas.push(`${c.r.nro_muestra}: ${e.message}`); }
+      }
+      if(fallas.length)alert(`Se resolvieron ${ok} conflicto(s).\n\nNo se pudieron aplicar:\n`+fallas.slice(0,8).join('\n'));
+      if(ok)pie.textContent=`${ok} conflicto(s) resueltos sin crear filas duplicadas.`;
+      pintar(); el.remove(); resolve(extra);
+    };
+  });
+}
+
 function revisarCambiosResultados(lista){
   document.body.insertAdjacentHTML('beforeend',`<div class="modal" id="mrevr"><div class="mc" style="width:min(760px,96vw)">
     <div class="mh"><h3>Resultados ya guardados, con datos distintos en el archivo</h3>
