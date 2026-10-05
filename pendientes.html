@@ -108,7 +108,7 @@
 </head>
 <body>
 <header>
-  <div><h1>Pendientes — UDE</h1><p>Unidad de Equipos · UDE · 261005-1</p></div>
+  <div><h1>Pendientes — UDE</h1><p>Unidad de Equipos · UDE · 261005-2</p></div>
   <div class="sp"></div>
   <span class="who" id="who"></span>
   <button id="volverBtn">← Equipos</button>
@@ -344,7 +344,6 @@ function pintar(){
   pie.textContent=`${L.length} pendiente(s) mostrados de ${DATA.length} en total.`;
   if(!L.length){ tbody.innerHTML='<tr><td colspan="12" class="vacio">Sin pendientes con estos filtros.</td></tr>'; return; }
   tbody.innerHTML=L.map((d,i)=>{
-    const v=vencido(d.fecha_compromiso,d.estado);
     return `<tr data-id="${d.id}">
       <td class="frz">${i+1}</td>
       <td data-campo="estatus"><span class="badgeB" style="color:${COLOR_ESTATUS[d.estatus]||'#8E959C'}">${ICONO_ESTATUS[d.estatus]||''} ${esc(d.estatus)}</span></td>
@@ -354,7 +353,7 @@ function pintar(){
       <td${d.falla&&d.falla.length>55?` title="${esc(d.falla)}"`:''}>${esc(d.falla||'')}</td>
       <td data-campo="responsable_id">${d.responsable?esc(abreviarNombre(d.responsable)):'<span style="color:#B45309;font-weight:600">Sin asignar</span>'}</td>
       <td data-campo="prioridad"><span class="badgeB" style="color:${COLOR_PRIO[d.prioridad]||'#8E959C'}">${ICONO_PRIO[d.prioridad]||''} ${esc((d.prioridad||'').toUpperCase())}</span></td>
-      <td data-campo="fecha_compromiso" class="mono ${v?'venc':''}">${fechaCorta(d.fecha_compromiso)}${v?' ⚠':''}</td>
+      <td data-campo="fecha_compromiso" class="mono">${fechaCorta(d.fecha_compromiso)}</td>
       <td data-campo="estado"><span class="badgeB" style="color:${COLOR_ESTADO[d.estado]||'#8E959C'}">${ICONO_ESTADO[d.estado]||''} ${esc(d.estado)}</span></td>
       <td data-campo="fecha_cierre" class="mono">${fechaCorta(d.fecha_cierre)||'—'}</td>
       <td data-campo="comentario"${d.comentario&&d.comentario.length>55?` title="${esc(d.comentario)}"`:''} style="color:var(--muted)">${esc(d.comentario||'')}</td>
