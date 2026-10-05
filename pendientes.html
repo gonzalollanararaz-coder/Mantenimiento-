@@ -108,7 +108,7 @@
 </head>
 <body>
 <header>
-  <div><h1>Pendientes — UDE</h1><p>Unidad de Equipos · UDE · 260917-3</p></div>
+  <div><h1>Pendientes — UDE</h1><p>Unidad de Equipos · UDE · 261005-1</p></div>
   <div class="sp"></div>
   <span class="who" id="who"></span>
   <button id="volverBtn">← Equipos</button>
@@ -298,7 +298,7 @@ function pintarHead(){
     <th class="azul">${cabCol('falla','Falla reportada',true)}</th>
     <th class="amarillo">${cabCol('responsable','Responsable',true)}</th>
     <th class="amarillo">${cabCol('prioridad','Prioridad',true)}</th>
-    <th class="amarillo">F. compromiso</th>
+    <th class="amarillo">F. inicio</th>
     <th class="amarillo">${cabCol('estado','Estado',true)}</th>
     <th class="verde">F. cierre</th>
     <th class="plomo">Comentario / Observación</th>
@@ -456,7 +456,7 @@ function abrirForm(id){
       <label class="full">Falla reportada<textarea id="pFalla"></textarea></label>
       <label>Responsable<select id="pResp"></select></label>
       <label>Estado<select id="pEstado"><option>Pendiente</option><option>En proceso</option><option>Completado</option></select></label>
-      <label>F. compromiso<input id="pFcomp" type="date"></label>
+      <label>F. inicio<input id="pFcomp" type="date"></label>
       <label>F. cierre<input id="pFcierre" type="date"></label>
       <label class="full">Comentario / Observación<textarea id="pCom"></textarea></label>
     </div>
