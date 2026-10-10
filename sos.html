@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
 <meta charset="utf-8">
-<meta name="gllr-version" content="V.101026-3" data-pagina="SOS">
+<meta name="gllr-version" content="V.101026-4" data-pagina="SOS">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>SOS &mdash; Muestreo de Aceites</title>
 <link rel="icon" href="favicon.ico" sizes="any">
@@ -92,6 +92,47 @@
   table.t tbody tr{height:26px}
   /* la vista de alertas lleva campos editables: ahí no se recorta */
   #boxAle table.t td{overflow:visible;max-width:none;white-space:normal}
+  /* ── DASHBOARD ── */
+  .dfiltros{display:flex;gap:10px;align-items:center;margin:2px 0 10px;flex-wrap:wrap}
+  .dfiltros select{border:1px solid var(--line);border-radius:9px;height:34px;padding:0 12px;font-size:12.5px;background:#fff}
+  .dnota{margin-left:auto;font-size:12px;color:var(--muted)}
+  .dgrid{display:grid;grid-template-columns:repeat(12,1fr);gap:12px}
+  .dcard{background:#fff;border:1px solid var(--line);border-radius:14px;padding:12px 14px;display:flex;flex-direction:column;gap:10px;min-width:0}
+  .dcard.c4{grid-column:span 4}.dcard.c5{grid-column:span 5}.dcard.c7{grid-column:span 7}.dcard.c12{grid-column:span 12}
+  @media(max-width:1100px){.dcard.c4,.dcard.c5,.dcard.c7{grid-column:span 12}}
+  .dbnd{display:flex;align-items:center;gap:8px;border-radius:8px;padding:5px 10px;font-weight:700;font-size:12px;letter-spacing:.03em;color:#fff;text-shadow:0 1px 1px rgba(0,0,0,.25)}
+  .dbnd .n{background:rgba(255,255,255,.25);border-radius:999px;width:20px;height:20px;display:inline-flex;align-items:center;justify-content:center;font-size:11px}
+  .dbnd.azul{background:linear-gradient(180deg,#7B87C0 0%,#4254A5 48%,#334281 100%)}
+  .dbnd.verde{background:linear-gradient(180deg,#55BF5D 0%,#0CA318 48%,#097F13 100%)}
+  .dbnd.amarillo{background:linear-gradient(180deg,#FFDC58 0%,#FFCD11 48%,#C7A00D 100%);color:#3B2E00;text-shadow:none}
+  .dbnd.rojo{background:linear-gradient(180deg,#E05A5F 0%,#D3141A 48%,#A51014 100%)}
+  .dbnd.plomo{background:linear-gradient(180deg,#ADADAD 0%,#8A8A8A 48%,#6C6C6C 100%)}
+  .dpreg{font-size:12.5px;color:var(--muted);margin-top:-4px}
+  .dfila{display:flex;gap:10px;flex-wrap:wrap}.dfila.col{flex-direction:column}
+  .dtile{flex:1;min-width:110px;border-radius:12px;padding:9px 11px;background:#F7F8FA;border:1px solid var(--line)}
+  .dtile .l{font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.3px;display:flex;align-items:center;gap:5px}
+  .dtile .v{font-size:30px;font-weight:800;line-height:1.1;margin-top:3px;color:#1F3864}
+  .dtile .s{font-size:11px;color:var(--muted)}
+  .dtile.ok{background:#DCF5E3;border-color:#b8e7c6}.dtile.ok .v{color:#0F7A33}
+  .dtile.warn{background:#FFF6D6;border-color:#EFDC94}.dtile.warn .v{color:#8A6A00}
+  .dtile.bad{background:#FDE4E4;border-color:#F5BDBD}.dtile.bad .v{color:#B91C1C}
+  .dico{width:16px;height:16px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-size:10px;color:#fff;font-weight:800}
+  .dico.ok{background:#16A34A}.dico.warn{background:#E0B000}.dico.bad{background:#DC2626}
+  .danillo{display:flex;align-items:center;gap:16px}.danillo .txt{font-size:13px;color:#444;line-height:1.5}.danillo .txt b{font-size:15px}
+  .dfr{display:grid;grid-template-columns:80px 1fr 70px;gap:8px;align-items:center;font-size:12.5px}
+  .dfr .bar{display:flex;height:16px;border-radius:5px;overflow:hidden;background:#eef1f4;gap:2px}
+  .dfr .bar i{display:block;height:100%}
+  .dfr .t{text-align:right;color:var(--muted);font-variant-numeric:tabular-nums}
+  .dley{display:flex;gap:14px;font-size:11.5px;color:var(--muted);flex-wrap:wrap}
+  .dley span{display:inline-flex;align-items:center;gap:5px}.dley i{width:12px;height:12px;border-radius:3px;display:inline-block}
+  .dflujo{display:flex;align-items:stretch}
+  .dpaso{flex:1;text-align:center;padding:10px 6px;border-radius:12px;border:1px solid var(--line)}
+  .dpaso .v{font-size:30px;font-weight:800;line-height:1.1}.dpaso .l{font-size:12px;font-weight:700;color:#444}.dpaso .s{font-size:11px;color:var(--muted)}
+  .dpaso.bad{background:#FDE4E4;border-color:#F5BDBD}.dpaso.bad .v{color:#B91C1C}
+  .dpaso.warn{background:#FFF6D6;border-color:#EFDC94}.dpaso.warn .v{color:#8A6A00}
+  .dpaso.ok{background:#DCF5E3;border-color:#b8e7c6}.dpaso.ok .v{color:#0F7A33}
+  .dflecha{display:flex;align-items:center;color:#b5bcc4;font-size:22px;padding:0 6px}
+  #dTip{position:fixed;pointer-events:none;background:#1c232b;color:#fff;font-size:12px;padding:6px 9px;border-radius:7px;display:none;z-index:99}
   .ale-prec{display:flex;align-items:center;gap:10px;font-size:12px;color:var(--muted);margin:0 0 8px}
   .ale-prec b{color:var(--ink)}
   table.of tr.mesrow td{background:#EEF1F8;color:#1F3864;font-weight:700;font-size:11.5px;padding:4px 8px;border-top:2px solid #cbd5e1;position:static}
@@ -277,6 +318,7 @@
   <button id="tab_fra">&#128230; Frascos</button>
   <button id="tab_plan" class="on">Muestras</button>
   <button id="tab_ale">Seguimiento de alertas</button>
+  <button id="tab_dash">&#128202; Dashboard</button>
   
 </div>
 <div class="toolbar">
@@ -328,6 +370,12 @@
   <div class="cards" id="cards"></div>
   <div id="boxFra"></div>
   <div id="boxPlan" class="hide"></div>
+  <div id="boxDash" class="hide">
+    <div class="dfiltros"><select id="dMes"></select><select id="dObra"></select>
+      <span class="dnota">🟢 bien · 🟡 atención · 🔴 problema</span></div>
+    <div id="boxDashIn"></div>
+  </div>
+  <div id="dTip"></div>
   <div id="boxAle" class="hide"></div>
 </div>
 <footer id="pie">Cargando&hellip;</footer>
@@ -1069,9 +1117,12 @@ function editarCeldaG(cfg){
 /* ═══════════════ VISTAS ═══════════════ */
 function verVista(v){
   vista=v;
-  ['fra','plan','ale'].forEach(k=>{
+  ['fra','plan','ale','dash'].forEach(k=>{
     document.getElementById('tab_'+k).classList.toggle('on',k===v);
   });
+  document.querySelector('.toolbar').classList.toggle('hide',v==='dash');
+  cards.classList.toggle('hide',v==='dash');
+  boxDash.classList.toggle('hide',v!=='dash');
   boxFra.classList.toggle('hide',v!=='fra');
   boxPlan.classList.toggle('hide',v!=='plan');
   boxAle.classList.toggle('hide',v!=='ale');
@@ -1090,11 +1141,12 @@ function verVista(v){
   btnDeshacer.disabled=!ULTIMA[v];
   pintar();
 }
-['fra','plan','ale'].forEach(k=>document.getElementById('tab_'+k).onclick=()=>verVista(k));
+['fra','plan','ale','dash'].forEach(k=>document.getElementById('tab_'+k).onclick=()=>verVista(k));
 
 function pintar(){
   if(vista==='fra')pintarFra();
   else if(vista==='plan')pintarPlan();
+  else if(vista==='dash')pintarDash();
   else pintarAle();
 }
 
@@ -1501,6 +1553,186 @@ Escribe en español, en un párrafo breve (máximo 6 líneas), una interpretaci�
       return texto+'\n\n✔ Guardado en RECOMENDACIONES de la ficha.';
     });
   };
+}
+
+/* ═══════════════ DASHBOARD SOS ═══════════════
+   Cinco preguntas simples, con el semáforo de siempre (verde / amarillo / rojo).
+   Todo sale de lo que SOS ya tiene: Maestro de Equipos + Plan de muestreo (programación),
+   Muestras, Frascos y Seguimiento de alertas. Filtros propios: Mes y Obra. */
+const DASH_META=90;          // % de cumplimiento esperado
+const DASH_TOL=0.10;         // tolerancia de horómetro: ±10% de la frecuencia
+const MESES_D=['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Setiembre','Octubre','Noviembre','Diciembre'];
+let dashIni=false;
+
+/* ¿la muestra se tomó dentro de tolerancia? (horómetro cerca de un múltiplo de la frecuencia del equipo) */
+function aTiempo(m){
+  const e=getE(m.maestro_id), F=e?+e.frecuencia||0:0, h=+m.horometro;
+  if(!F||!isFinite(h)||!m.horometro)return true;            // sin datos para evaluar: no se castiga
+  const k=Math.round(h/F)*F;
+  return Math.abs(h-k)<=F*DASH_TOL;
+}
+/* muestras PENDIENTES según la programación (equipo + sistema), con su fecha prevista.
+   Se descartan las que ya tienen una muestra reciente del mismo equipo y sistema. */
+function pendientesSOS(obra){
+  const out=[], H=hoy0();
+  datos.forEach(e=>{
+    if(esDesmovM(e)||sinSOS(e))return;
+    if(obra&&e.cod_proyec!==obra)return;
+    const freq=+e.frecuencia||0; if(!freq)return;
+    const c=mant(e); if(!c.fproxDate)return;
+    const pm=nivelPM(Math.round(c.proximo/freq)*freq,freq), tipo=tipoDe(e);
+    const sis=tipo?SIST.filter(s=>nrm(s.tipo_equipo)===nrm(tipo)&&rangoIncluye(pm,s.pm)).map(s=>s.sistema):[];
+    (sis.length?sis:['(sistema sin definir)']).forEach(s=>{
+      const std=sistemaStd(s)||nrm(s);
+      const lim=new Date(c.fproxDate.getTime()-30*86400000).toISOString().slice(0,10);
+      const hecha=MUESTRAS.some(m=>nrm(m.cod_sap)===nrm(e.cod_sap)&&(m.sistema_std||nrm(m.sistema))===std&&String(m.f_muestreo||'')>=lim);
+      if(!hecha)out.push({e,sistema:s,fecha:c.fproxDate,vencida:c.fproxDate<H});
+    });
+  });
+  return out;
+}
+function pintarDash(){
+  if(!dashIni){
+    dashIni=true;
+    const hoy=new Date(), ops=[];
+    for(let i=0;i<12;i++){const d=new Date(hoy.getFullYear(),hoy.getMonth()-i,1);
+      ops.push(`<option value="${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}">${MESES_D[d.getMonth()]} ${d.getFullYear()}</option>`);}
+    dMes.innerHTML=ops.join('');
+    const obras=[...new Set(datos.filter(e=>!esDesmovM(e)).map(e=>e.cod_proyec).filter(Boolean))].sort();
+    dObra.innerHTML='<option value="">Todas las obras</option>'+obras.map(o=>`<option>${esc(o)}</option>`).join('');
+    dMes.onchange=dObra.onchange=pintarDash;
+  }
+  const mes=dMes.value, obra=dObra.value, hoy=hoy0(), hoyS=isoDe(new Date());
+  const esMesActual=mes===hoyS.slice(0,7);
+  const deObra=m=>!obra||String(m.obra||'')===obra;
+  const delMes=MUESTRAS.filter(m=>String(m.f_muestreo||'').slice(0,7)===mes&&deObra(m));
+
+  // 1) cumplimiento: programadas = tomadas en el mes + las que faltan (solo se conocen en el mes en curso)
+  const pend=esMesActual?pendientesSOS(obra).filter(p=>isoDe(p.fecha)<=hoyS.slice(0,7)+'-31'):[];
+  const tol=delMes.filter(aTiempo).length, fuera=delMes.length-tol, faltan=pend.length;
+  const prog=delMes.length+faltan, pct=prog?Math.round(tol/prog*100):0;
+  const colPct=pct>=DASH_META?'#16A34A':pct>=DASH_META-20?'#E0B000':'#DC2626';
+  const msgPct=!prog?'Sin muestras programadas':pct>=DASH_META?'🟢 cumplimos':pct>=DASH_META-20?'🟡 nos falta poco':'🔴 vamos atrasados';
+
+  // 2) esta semana (lunes a domingo actual)
+  const lun=new Date(hoy); lun.setDate(hoy.getDate()-((hoy.getDay()+6)%7));
+  const dom=new Date(lun.getTime()+6*86400000), en7=new Date(hoy.getTime()+7*86400000);
+  const semHechas=MUESTRAS.filter(m=>deObra(m)&&m.f_muestreo>=isoDe(lun)&&m.f_muestreo<=isoDe(dom)&&aTiempo(m)).length;
+  const pendAll=pendientesSOS(obra);
+  const porVencer=pendAll.filter(p=>p.fecha>=hoy&&p.fecha<=en7).length;
+  const vencidas=pendAll.filter(p=>p.vencida).length;
+
+  // 3) frascos: en almacén UDE (disponibles sin enviar) y por obra (enviados sin usar / usados)
+  const obraFr=f=>{ if(f.proyecto_actual)return f.proyecto_actual;
+    const m=MUESTRAS.find(x=>String(x.id)===String(f.planilla_id)); return m?m.obra:null; };
+  const almacen=FRASCOS.filter(f=>f.estado==='Disponible').length;
+  const porObra=new Map();
+  FRASCOS.forEach(f=>{ if(f.estado==='Disponible')return; const o=obraFr(f)||'(sin obra)';
+    if(obra&&o!==obra)return;
+    if(!porObra.has(o))porObra.set(o,{disp:0,usad:0});
+    if(f.estado==='Usado')porObra.get(o).usad++; else porObra.get(o).disp++; });
+  const filasFr=[...porObra.entries()].sort((a,b)=>a[0].localeCompare(b[0]));
+  const maxF=Math.max(1,...filasFr.map(([,v])=>v.disp+v.usad));
+  const totDisp=filasFr.reduce((a,[,v])=>a+v.disp,0), totUsad=filasFr.reduce((a,[,v])=>a+v.usad,0);
+
+  // 4) salud del aceite (resultados del mes) + alertas de los últimos 6 meses
+  const conRes=delMes.filter(m=>m.estado_std);
+  const nN=conRes.filter(m=>m.estado_std==='NORMAL').length, nP=conRes.filter(m=>m.estado_std==='PRECAUCION').length,
+        nC=conRes.filter(m=>m.estado_std==='CRITICO').length;
+  const sinAtender=conRes.filter(m=>m.estado_std==='CRITICO'&&!ale(m).om_sap&&ale(m).estado_seg!=='Descartado'&&ale(m).estado_seg!=='Cerrado').length;
+  const meses=[];
+  { const [y,mo]=mes.split('-').map(Number);
+    for(let i=5;i>=0;i--){const d=new Date(y,mo-1-i,1), k=`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;
+      const ms=MUESTRAS.filter(m=>String(m.f_muestreo||'').slice(0,7)===k&&deObra(m));
+      meses.push({k,lab:MESES_D[d.getMonth()].slice(0,3)+' '+String(d.getFullYear()).slice(2),
+        c:ms.filter(m=>m.estado_std==='CRITICO').length,p:ms.filter(m=>m.estado_std==='PRECAUCION').length});} }
+
+  // 5) seguimiento: alertas (crítico / precaución) de los últimos 12 meses hasta el mes elegido
+  const fin=mes+'-31', ini=(()=>{const [y,mo]=mes.split('-').map(Number);const d=new Date(y,mo-12,1);return isoDe(d);})();
+  const alertas=MUESTRAS.filter(m=>(m.estado_std==='CRITICO'||m.estado_std==='PRECAUCION')&&deObra(m)
+    &&m.f_muestreo>=ini&&m.f_muestreo<=fin&&ale(m).estado_seg!=='Descartado');
+  const segN=s=>alertas.filter(m=>(ale(m).estado_seg||'OM abierta')===s).length;
+
+  const tile=(cls,ico,l,v,s)=>`<div class="dtile ${cls}"><div class="l">${ico?`<span class="dico ${cls}">${ico}</span>`:''}${l}</div><div class="v">${v}</div><div class="s">${s}</div></div>`;
+  const r=46,cc=2*Math.PI*r,off=cc*(1-Math.min(pct,100)/100);
+  const anillo=`<svg width="120" height="120" viewBox="0 0 120 120" role="img" aria-label="${pct}% de cumplimiento">
+    <circle cx="60" cy="60" r="${r}" fill="none" stroke="#eef1f4" stroke-width="13"/>
+    ${prog?`<circle cx="60" cy="60" r="${r}" fill="none" stroke="${colPct}" stroke-width="13" stroke-linecap="round" stroke-dasharray="${cc}" stroke-dashoffset="${off}" transform="rotate(-90 60 60)"/>`:''}
+    <text x="60" y="66" text-anchor="middle" font-size="26" font-weight="800" fill="#1F3864">${prog?pct+'%':'—'}</text></svg>`;
+  // barras por mes
+  const W=760,Hh=190,L=26,B=24,T=12,mx=Math.max(4,...meses.map(x=>x.c+x.p))*1.18,bw=58;
+  const X=i=>L+12+i*((W-L-24)/meses.length), Y=v=>T+(Hh-T-B)*(1-v/mx);
+  let svg=`<svg viewBox="0 0 ${W} ${Hh}" width="100%" style="display:block">`;
+  [0,.5,1].map(f=>Math.round(mx/1.18*f)).forEach(v=>{svg+=`<line x1="${L}" x2="${W}" y1="${Y(v)}" y2="${Y(v)}" stroke="#eef1f4"/><text x="${L-5}" y="${Y(v)+4}" font-size="10" text-anchor="end" fill="#8a939c">${v}</text>`;});
+  meses.forEach((m,i)=>{const yc=Y(m.c),yp=Y(m.c+m.p),sel=m.k===mes;
+    if(m.c)svg+=`<rect x="${X(i)}" y="${yc}" width="${bw}" height="${Y(0)-yc}" fill="#DC2626"/>`;
+    if(m.p)svg+=`<rect x="${X(i)}" y="${yp}" width="${bw}" height="${Math.max(0,yc-yp-(m.c?2:0))}" fill="#E0B000" rx="4"/>`;
+    svg+=`<text x="${X(i)+bw/2}" y="${yp-4}" font-size="11" text-anchor="middle" fill="#444" font-weight="700">${m.c+m.p}</text>`;
+    svg+=`<text x="${X(i)+bw/2}" y="${Hh-7}" font-size="11" text-anchor="middle" fill="${sel?'#1F3864':'#6b747d'}" font-weight="${sel?800:400}">${m.lab}</text>`;
+    svg+=`<rect class="dhit" data-t="${m.lab}: ${m.c} crítico(s) · ${m.p} en precaución" x="${X(i)-6}" y="${T}" width="${bw+12}" height="${Hh-T-B}" fill="transparent"/>`;});
+  svg+='</svg>';
+
+  boxDashIn.innerHTML=`<div class="dgrid">
+    <div class="dcard c7">
+      <div class="dbnd azul"><span class="n">1</span>CUMPLIMIENTO DEL MES</div>
+      <div class="dpreg">¿Tomamos las muestras que tocaban en ${MESES_D[+mes.slice(5)-1].toLowerCase()}?</div>
+      <div class="danillo">${anillo}<div class="txt"><b>${tol} de ${prog}</b> muestras tomadas a tiempo<br>Meta: ${DASH_META}% · ${msgPct}
+        ${esMesActual?'':'<br><span style="color:#98a2ad;font-size:11.5px">En meses pasados solo se cuentan las muestras tomadas.</span>'}</div></div>
+      <div class="dfila">
+        ${tile('','','Programadas',prog,esMesActual?'este mes':'tomadas en el mes')}
+        ${tile('ok','✓','A tiempo',tol,'dentro de tolerancia (±10%)')}
+        ${tile('warn','!','Fuera de tolerancia',fuera,'hechas, pero tarde o adelantadas')}
+        ${tile('bad','✕','Faltan',esMesActual?faltan:'—',esMesActual?'todavía sin tomar':'solo en el mes en curso')}
+      </div>
+    </div>
+    <div class="dcard c5">
+      <div class="dbnd amarillo"><span class="n">2</span>ESTA SEMANA</div>
+      <div class="dpreg">¿Qué muestras hay que tomar ya?</div>
+      <div class="dfila col">
+        ${tile('ok','✓','Tomadas a tiempo',semHechas,'esta semana')}
+        ${tile('warn','!','Por vencer',porVencer,'tocan en los próximos 7 días')}
+        ${tile('bad','✕','Vencidas',vencidas,'ya pasó su fecha y no se tomaron')}
+      </div>
+    </div>
+    <div class="dcard c5">
+      <div class="dbnd verde"><span class="n">3</span>FRASCOS</div>
+      <div class="dpreg">¿Cuántos frascos hay en cada obra?</div>
+      <div class="dfila">${tile('','','En obra, sin usar',totDisp,obra?obra:'en todas las obras')}${tile('','','Usados',totUsad,'ya con muestra')}
+        ${obra?'':tile('','','En almacén UDE',almacen,'por enviar')}</div>
+      ${filasFr.length?filasFr.map(([o,v])=>`<div class="dfr"><b>${esc(o)}</b><div class="bar dhit" data-t="${esc(o)}: ${v.disp} sin usar · ${v.usad} usados">
+        <i style="width:${v.disp/maxF*100}%;background:#4254A5"></i><i style="width:${v.usad/maxF*100}%;background:#C9CED6"></i></div>
+        <span class="t">${v.disp} / ${v.usad}</span></div>`).join(''):'<div class="dpreg">Sin frascos enviados a obra.</div>'}
+      <div class="dley"><span><i style="background:#4254A5"></i>Sin usar</span><span><i style="background:#C9CED6"></i>Usados</span></div>
+    </div>
+    <div class="dcard c7">
+      <div class="dbnd rojo"><span class="n">4</span>SALUD DEL ACEITE</div>
+      <div class="dpreg">¿Cómo salieron los resultados del laboratorio en ${MESES_D[+mes.slice(5)-1].toLowerCase()}?</div>
+      <div class="dfila">
+        ${tile('ok','✓','Normal',nN,conRes.length?Math.round(nN/conRes.length*100)+'% de los resultados':'sin resultados')}
+        ${tile('warn','!','Precaución',nP,'vigilar en el próximo muestreo')}
+        ${tile('bad','✕','Crítico',nC,'requieren acción')}
+        ${tile('bad','⏱','Críticos sin atender',sinAtender,'sin OM todavía')}
+      </div>
+      <div style="font-size:12px;font-weight:700;color:#444">Alertas por mes</div>${svg}
+      <div class="dley"><span><i style="background:#DC2626"></i>Críticos</span><span><i style="background:#E0B000"></i>Precaución</span></div>
+    </div>
+    <div class="dcard c12">
+      <div class="dbnd plomo"><span class="n">5</span>SEGUIMIENTO DE ALERTAS</div>
+      <div class="dpreg">¿En qué va la atención de las alertas? <span style="color:#98a2ad">(críticas y en precaución, últimos 12 meses)</span></div>
+      <div class="dflujo">
+        <div class="dpaso bad"><div class="l">🔴 OM abierta</div><div class="v">${segN('OM abierta')}</div><div class="s">esperan ser atendidas</div></div>
+        <div class="dflecha">➜</div>
+        <div class="dpaso warn"><div class="l">🟡 En ejecución</div><div class="v">${segN('En ejecución')}</div><div class="s">el trabajo está en curso</div></div>
+        <div class="dflecha">➜</div>
+        <div class="dpaso ok"><div class="l">🟢 Cerrado</div><div class="v">${segN('Cerrado')}</div><div class="s">ya atendidas</div></div>
+      </div>
+    </div>
+  </div>`;
+  const tt=document.getElementById('dTip');
+  boxDashIn.querySelectorAll('.dhit').forEach(el=>{
+    el.addEventListener('mousemove',ev=>{tt.textContent=el.dataset.t;tt.style.display='block';tt.style.left=ev.clientX+12+'px';tt.style.top=ev.clientY+12+'px';});
+    el.addEventListener('mouseleave',()=>tt.style.display='none');
+  });
 }
 
 /* ───────── SEGUIMIENTO DE ALERTAS ───────── */
