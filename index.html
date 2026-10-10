@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8">
-<meta name="gllr-version" content="V.101026-1" data-pagina="Equipos">
+<meta name="gllr-version" content="V.101026-2" data-pagina="Equipos">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Control de Mantenimiento — UDE</title>
 <link rel="icon" href="favicon.ico" sizes="any">
@@ -1314,6 +1314,60 @@ async function llamarIAIdx(prompt){
   if(!resp.ok||data.error)throw new Error(data.error||'No se pudo contactar al servicio de IA.');
   return data.texto||'';
 }
+/* Familia de equipos y rango de referencia de consumo: mismas reglas que la pestaña Combustible */
+const nrmIdx=s=>String(s??'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toUpperCase().replace(/\s+/g,' ').trim();
+const FAM_REGLAS_IDX=[
+  [/RETRO\s*EXCAVADORA/,           'RETROEXCAVADORA'],
+  [/EXCAVADORA.*(RUEDA|LLANTA)/,   'EXCAVADORA SOBRE RUEDAS'],
+  [/EXCAVADORA/,                   'EXCAVADORA'],
+  [/MINI\s*CARGADOR/,              'MINICARGADOR'],
+  [/CARGADOR/,                     'CARGADOR FRONTAL'],
+  [/TRACTOR/,                      'TRACTOR SOBRE ORUGAS'],
+  [/MOTONIVELADORA/,               'MOTONIVELADORA'],
+  [/RODILLO/,                      'RODILLO'],
+  [/TORRE|LUMINARIA/,              'TORRE DE ILUMINACION'],
+  [/GRUPO\s*ELECTROGENO|GENERADOR/,'GRUPO ELECTROGENO'],
+  [/MOTOSOLDADORA/,                'MOTOSOLDADORA'],
+  [/COMPRESOR/,                    'COMPRESORA'],
+  [/MARTILLO/,                     'MARTILLO HIDRAULICO'],
+  [/CHANCADORA/,                   'CHANCADORA'],
+  [/PLANTA/,                       'PLANTA'],
+  [/CISTERNA.*COMBUSTIBLE/,        'CISTERNA DE COMBUSTIBLE'],
+  [/CISTERNA/,                     'CISTERNA DE AGUA'],
+  [/VOLQUETE/,                     'VOLQUETE'],
+  [/CAMABAJA|CAMA\s*BAJA|TRACTO/,  'TRACTO CAMABAJA'],
+  [/GRUA/,                         'CAMION GRUA'],
+  [/LUBRICADOR/,                   'CAMION LUBRICADOR'],
+  [/BARANDA/,                      'CAMION BARANDA'],
+  [/CAMIONETA|PICK\s*UP|HILUX/,    'CAMIONETA'],
+  [/SPRINTER|MINIVAN|FURGONETA/,   'MINIVAN'],
+  [/OMNIBUS|MICROBUS|MINI\s*BUS|BUS/,'OMNIBUS'],
+  [/AUTO\s*HORMIGONERA|MIXER/,     'AUTOHORMIGONERA'],
+  [/MONTACARGA/,                   'MONTACARGAS'],
+  [/CAMION/,                       'CAMION']
+];
+function familiaDeIdx(e){
+  let s=nrmIdx(e&&e.equipo);
+  if(!s)return '—';
+  s=s.replace(/\b[A-Z]{2,4}-?\d{2,}\b/g,' ')      // placas y códigos: CFL-931, VCC351
+     .replace(/\b\d+\s*-?\s*JJC\b/g,' ')          // 179-JJC
+     .replace(/\bTSF\d\+?\b/g,' ')                // TSF3+
+     .replace(/\bN[°º]?\s*\d+\b/g,' ')
+     .replace(/\s+/g,' ').trim();
+  for(const [re,nom] of FAM_REGLAS_IDX) if(re.test(s))return nom;
+  return s.replace(/\s*\d+\s*$/,'').trim()||'—';
+}
+function benchDeIdx(e,tipo,BENCH){
+  if(!e)return null;
+  const fa=familiaDeIdx(e), ma=nrmIdx(e.marca), mo=nrmIdx(e.modelo);
+  const cand=BENCH.filter(b=>b.contador===tipo
+    && nrmIdx(b.tipo_equipo)===nrmIdx(fa)
+    && (!b.marca ||nrmIdx(b.marca)===ma)
+    && (!b.modelo||nrmIdx(b.modelo)===mo||nrmIdx(mo).startsWith(nrmIdx(b.modelo).split(' ')[0])));
+  if(!cand.length)return null;
+  cand.sort((x,y)=>((y.marca?1:0)+(y.modelo?1:0))-((x.marca?1:0)+(x.modelo?1:0)));
+  return cand[0];
+}
 async function abrirInformeEquipo(id){
   const e=getE(id);
   if(!e){alert('No se encontró el equipo.');return;}
@@ -1332,11 +1386,12 @@ async function abrirInformeEquipo(id){
   document.getElementById('infImp').onclick=()=>window.print();
 
   const cod_sap=e.cod_sap;
-  const [rpm,rcomb,rpend,rsos]=await Promise.all([
+  const [rpm,rcomb,rpend,rsos,rbm]=await Promise.all([
     sb.from('pm_prog').select('*').eq('cod_sap',cod_sap).order('fecha_ejec',{ascending:false}),
     sb.from('combustible').select('*').eq('cod_sap',cod_sap).order('fecha',{ascending:false}),
     sb.from('pendientes').select('*').eq('equipo_sap',cod_sap).order('fecha_compromiso',{ascending:false}),
-    sb.from('sos_muestras').select('*').eq('cod_sap',cod_sap).order('f_muestreo',{ascending:false})
+    sb.from('sos_muestras').select('*').eq('cod_sap',cod_sap).order('f_muestreo',{ascending:false}),
+    sb.from('benchmark').select('*')
   ]);
   const body=document.getElementById('infBody'); if(!body)return;
   if(rpm.error||rcomb.error||rpend.error||rsos.error){
@@ -1403,18 +1458,31 @@ async function abrirInformeEquipo(id){
     return {m,gl,rend,vsTxt,vsCls};
   });
   let graficoComb='<div class="inf-dim" style="padding:10px">Sin tramos calculables (hacen falta al menos 2 despachos con contador).</div>';
+  // líneas de control: rango de referencia (tabla benchmark) si el equipo lo tiene; si no, el promedio histórico
+  const bmC=benchDeIdx(e,tipoCont,rbm.data||[]);
   if(filasComb.length){
     const W=380,H=150,padL=32,padB=22,padT=14,padR=12;
-    const vals=filasComb.map(f=>f.rend), max=Math.max(...vals)*1.15, min=Math.min(0,Math.min(...vals)*0.9);
+    const vals=filasComb.map(f=>f.rend).concat(bmC?[bmC.minimo,bmC.maximo]:(promGlobal?[promGlobal]:[]));
+    const max=Math.max(...vals)*1.15, min=Math.min(0,Math.min(...vals)*0.9);
     const xAt=i=>filasComb.length<=1?padL+(W-padL-padR)/2:padL+i*(W-padL-padR)/(filasComb.length-1);
     const yAt=v=>padT+(H-padT-padB)*(1-(v-min)/(max-min||1));
     let svg=`<svg viewBox="0 0 ${W} ${H}" width="100%" style="max-width:340px">`;
+    const xL=padL, xR=W-padR, lin=(v,col,txt,dy)=>`<line x1="${xL}" y1="${yAt(v)}" x2="${xR}" y2="${yAt(v)}" stroke="${col}" stroke-width="1.3" stroke-dasharray="5 4"/>`
+      +`<text x="${xR}" y="${yAt(v)+dy}" font-size="9" text-anchor="end" fill="${col}">${txt}</text>`;
+    if(bmC){
+      svg+=`<rect x="${xL}" y="${yAt(bmC.maximo)}" width="${xR-xL}" height="${Math.abs(yAt(bmC.minimo)-yAt(bmC.maximo))}" fill="#16A34A" opacity=".10"/>`;
+      svg+=lin(bmC.maximo,'#dc2626','máx '+fmtRend(bmC.maximo),-3)+lin(bmC.minimo,'#15803d','mín '+fmtRend(bmC.minimo),11);
+    }else if(promGlobal){
+      svg+=lin(promGlobal,'#6b747d','promedio '+fmtRend(promGlobal),-3);
+    }
     filasComb.forEach((f,i)=>svg+=`<text x="${xAt(i)}" y="${H-padB+15}" font-size="9.5" text-anchor="middle" fill="#6b747d">${f.m.slice(5)}/${f.m.slice(2,4)}</text>`);
     const pts=filasComb.map((f,i)=>[xAt(i),yAt(f.rend)]);
     svg+=`<polyline points="${pts.map(p=>p.join(',')).join(' ')}" fill="none" stroke="#C7A00D" stroke-width="2.5"/>`;
     filasComb.forEach((f,i)=>svg+=`<circle cx="${pts[i][0]}" cy="${pts[i][1]}" r="4" fill="#C7A00D"><title>${f.m}: ${fmtRend(f.rend)}</title></circle>`);
     svg+='</svg>';
-    graficoComb=`<div class="inf-dim" style="font-size:10.5px;font-weight:700;margin-bottom:4px">Rendimiento — últimos ${filasComb.length} meses</div>${svg}`;
+    graficoComb=`<div class="inf-dim" style="font-size:10.5px;font-weight:700;margin-bottom:4px">Rendimiento — últimos ${filasComb.length} meses</div>${svg}`
+      +`<div class="inf-dim" style="font-size:10px;margin-top:2px">${bmC?`Franja verde: rango de referencia ${fmtRend(bmC.minimo)} – ${fmtRend(bmC.maximo)}${bmC.marca||bmC.modelo?' ('+[bmC.marca,bmC.modelo].filter(Boolean).join(' ')+')':''}.`
+        :(promGlobal?'Sin rango de referencia: la línea gris es el promedio histórico del equipo.':'')}</div>`;
   }
 
   // -- 5. SOS: última muestra de cada sistema --
