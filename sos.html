@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
 <meta charset="utf-8">
-<meta name="gllr-version" content="V.101026-5" data-pagina="SOS">
+<meta name="gllr-version" content="V.101026-6" data-pagina="SOS">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>SOS &mdash; Muestreo de Aceites</title>
 <link rel="icon" href="favicon.ico" sizes="any">
@@ -110,6 +110,8 @@
   .dtile.h .v{font-size:26px;margin:0 0 0 10px;min-width:38px;text-align:right}
   .dtile.h .dico{width:22px;height:22px;font-size:12px;flex:0 0 auto}
   .dcard.d5 .dpila{flex:0 0 auto;justify-content:flex-start}
+  .dagr{display:flex;gap:8px;align-items:center;flex-wrap:wrap;background:#F7F8FA;border:1px solid var(--line);border-radius:10px;padding:8px 10px;margin-bottom:10px;font-size:12.5px}
+  .dagr input{border:1px solid var(--line);border-radius:8px;height:30px;padding:0 9px;font-size:12.5px}
   .dbaja{text-align:center;color:#b5bcc4;font-size:14px;line-height:1;margin:-4px 0}
   .danillo .meta{font-size:11.5px;color:#98a2ad;margin-top:2px}
   .dbnd{display:flex;align-items:center;gap:8px;border-radius:8px;padding:5px 10px;font-weight:700;font-size:12px;letter-spacing:.03em;color:#fff;text-shadow:0 1px 1px rgba(0,0,0,.25)}
@@ -1584,6 +1586,31 @@ const DASH_META=90;          // % de cumplimiento esperado
 const DASH_TOL=0.10;         // tolerancia de horómetro: ±10% de la frecuencia
 const MESES_D=['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Setiembre','Octubre','Noviembre','Diciembre'];
 let dashIni=false, DASH_DET=null;
+/* Ajustes manuales de la programación (tabla sos_prog_ajustes):
+   tipo 'anular'  -> esa muestra o ese equipo+sistema NO cuenta en el mes
+   tipo 'agregar' -> un mantenimiento que el cálculo no vio y SÍ debe contarse */
+let AJ=[], ajEstado=null;          // ajEstado: null = sin cargar · 'ok' · 'falta' (no existe la tabla)
+async function cargarAjustes(){
+  const {data,error}=await sb.from('sos_prog_ajustes').select('*');
+  ajEstado=error?'falta':'ok'; AJ=(data||[]).slice();
+}
+const stdSis=s=>sistemaStd(s)||nrm(s);
+const keyP=(sap,sis)=>'p:'+nrm(sap)+'|'+stdSis(sis);
+function ajustesMes(mes){
+  const A=AJ.filter(a=>a.mes===mes);
+  const anul=new Map();
+  A.filter(a=>a.tipo==='anular').forEach(a=>anul.set(a.muestra_id?'m:'+a.muestra_id:keyP(a.cod_sap,a.sistema),a));
+  return {anul,agr:A.filter(a=>a.tipo==='agregar')};
+}
+/* agregados a mano que todavía no tienen su muestra en el mes */
+function agregadosPend(mes,obra,tomadas){
+  const hoy=hoy0();
+  return ajustesMes(mes).agr.filter(a=>!obra||a.obra===obra)
+    .filter(a=>!tomadas.some(m=>nrm(m.cod_sap)===nrm(a.cod_sap)&&(m.sistema_std||nrm(m.sistema))===stdSis(a.sistema)))
+    .map(a=>{const e=datos.find(x=>nrm(x.cod_sap)===nrm(a.cod_sap))||{cod_sap:a.cod_sap,equipo:'',cod_proyec:a.obra};
+      const f=a.fecha?new Date(a.fecha+'T00:00:00'):new Date(mes+'-15T00:00:00');
+      return {e,sistema:a.sistema,pm:'Agregado a mano',hrPM:null,fecha:f,vencida:f<hoy,manual:true,aj:a};});
+}
 
 /* ¿la muestra se tomó dentro de tolerancia? (horómetro cerca de un múltiplo de la frecuencia del equipo) */
 function aTiempo(m){
@@ -1616,6 +1643,7 @@ function programaSOS(obra){
   return out;
 }
 function pintarDash(){
+  if(ajEstado===null){ cargarAjustes().then(pintarDash); return; }
   if(!dashIni){
     dashIni=true;
     const hoy=new Date(), ops=[];
@@ -1631,23 +1659,30 @@ function pintarDash(){
   const esMesActual=mes===hoyS.slice(0,7);
   const deObra=m=>!obra||String(m.obra||'')===obra;
   const delMes=MUESTRAS.filter(m=>String(m.f_muestreo||'').slice(0,7)===mes&&deObra(m));
-  const delMesSOS=delMes.filter(conSOS);
+  const AJM=ajustesMes(mes);
+  const tomadasMes=delMes.filter(conSOS);
+  const delMesSOS=tomadasMes.filter(m=>!AJM.anul.has('m:'+m.id));          // sin las anuladas a mano
 
-  // 1) cumplimiento: programadas = tomadas en el mes + las que faltan (solo se conocen en el mes en curso)
+  // 1) cumplimiento: programadas = tomadas en el mes + las que faltan (el cálculo solo las conoce
+  //    en el mes en curso) + las agregadas a mano; menos las anuladas a mano
   const prgAll=programaSOS(obra);
-  const pend=esMesActual?prgAll.filter(p=>isoDe(p.fecha)<=mes+'-31'):[];
+  const prgMes=esMesActual?prgAll.filter(p=>isoDe(p.fecha)<=mes+'-31'):[];
+  const pend=prgMes.filter(p=>!AJM.anul.has(keyP(p.e.cod_sap,p.sistema))).concat(agregadosPend(mes,obra,delMesSOS));
   const tol=delMesSOS.filter(aTiempo).length, fuera=delMesSOS.length-tol, faltan=pend.length;
   const prog=delMesSOS.length+faltan, pct=prog?Math.round(tol/prog*100):0;
   const colPct=pct>=DASH_META?'#16A34A':pct>=DASH_META-20?'#E0B000':'#DC2626';
   const msgPct=!prog?'No había muestras que tomar.':pct>=DASH_META?'🟢 ¡Bien! Llegamos a la meta.':pct>=DASH_META-20?'🟡 Casi: nos falta poco.':'🔴 Vamos atrasados.';
-  DASH_DET={mes,mesNom,tomadas:delMesSOS,pend,esMesActual};
+  DASH_DET={mes,mesNom,obra,tomadas:tomadasMes,pend,anulPend:prgMes.filter(p=>AJM.anul.has(keyP(p.e.cod_sap,p.sistema))),AJM,esMesActual};
 
   // 2) esta semana (lunes a domingo)
   const lun=new Date(hoy); lun.setDate(hoy.getDate()-((hoy.getDay()+6)%7));
   const dom=new Date(lun.getTime()+6*86400000), en7=new Date(hoy.getTime()+7*86400000);
   const semHechas=MUESTRAS.filter(m=>deObra(m)&&conSOS(m)&&m.f_muestreo>=isoDe(lun)&&m.f_muestreo<=isoDe(dom)).length;
-  const porVencer=prgAll.filter(p=>p.fecha>=hoy&&p.fecha<=en7).length;
-  const vencidas=prgAll.filter(p=>p.vencida).length;
+  const mesAct=hoyS.slice(0,7), AJA=ajustesMes(mesAct);
+  const tomAct=MUESTRAS.filter(m=>String(m.f_muestreo||'').slice(0,7)===mesAct&&deObra(m)&&conSOS(m));
+  const prgSem=prgAll.filter(p=>!AJA.anul.has(keyP(p.e.cod_sap,p.sistema))).concat(agregadosPend(mesAct,obra,tomAct));
+  const porVencer=prgSem.filter(p=>p.fecha>=hoy&&p.fecha<=en7).length;
+  const vencidas=prgSem.filter(p=>p.vencida).length;
 
   // 3) frascos
   const obraFr=f=>{ if(f.proyecto_actual)return f.proyecto_actual;
@@ -1714,12 +1749,12 @@ function pintarDash(){
             <div style="margin-top:6px">${msgPct}</div>
             <div class="meta">La meta es ${DASH_META} de cada 100.</div>
             ${esMesActual?'':'<div class="meta">En meses pasados solo se ven las muestras que sí se tomaron.</div>'}
-            <button class="act" id="dVerProg" style="margin-top:8px;height:30px">🔎 Ver qué tocaba</button></div></div>
+            <button class="act" id="dVerProg" style="margin-top:8px;height:30px">🔎 Ver y ajustar qué tocaba</button></div></div>
         <div class="dpila">
           ${fila('','📋','Tocaban',prog,esMesActual?'muestras que había que tomar':'muestras tomadas en el mes')}
           ${fila('ok','✓','A tiempo',tol,'se tomaron cuando tocaba')}
           ${fila('warn','!','Tarde o antes',fuera,'se tomaron, pero no en su momento')}
-          ${fila('bad','✕','Faltan',esMesActual?faltan:'—',esMesActual?'todavía nadie las tomó':'solo se sabe en el mes actual')}
+          ${fila('bad','✕','Faltan',(esMesActual||faltan)?faltan:'—',(esMesActual||faltan)?'todavía nadie las tomó':'solo se sabe en el mes actual')}
         </div>
       </div>
     </div>
@@ -1777,31 +1812,86 @@ function pintarDash(){
   document.getElementById('dVerProg').onclick=verProgDash;
 }
 
-/* Detalle para verificar el cumplimiento: qué equipo y qué sistema tocaba, y si se tomó */
+/* Detalle para verificar el cumplimiento y AJUSTARLO a mano:
+   · Anular: esa muestra / ese mantenimiento no cuenta en el mes (p.ej. el cálculo pidió un sistema que no tocaba)
+   · Agregar: un mantenimiento que el cálculo no vio
+   · Restaurar: deshace una anulación o borra un agregado */
 function verProgDash(){
   const D=DASH_DET; if(!D)return;
+  const admin=perfil&&perfil.rol==='admin';
+  const AN=D.AJM.anul;
   const filas=[
-    ...D.tomadas.map(m=>{const e=getE(m.maestro_id);return {sap:m.cod_sap,eq:e?e.equipo:'',obra:m.obra||(e&&e.cod_proyec)||'',pm:'',
-      sis:m.sistema_std||m.sistema||'',f:m.f_muestreo,hr:m.horometro,est:aTiempo(m)?'ok':'warn'};}),
-    ...D.pend.map(p=>({sap:p.e.cod_sap,eq:p.e.equipo||'',obra:p.e.cod_proyec||'',pm:`${p.pm} · ${f0(p.hrPM)} h`,
-      sis:p.sistema,f:isoDe(p.fecha),hr:null,est:p.sinPlan?'plan':'bad'}))
+    ...D.tomadas.map(m=>{const e=getE(m.maestro_id), aj=AN.get('m:'+m.id);
+      return {k:'m',id:m.id,sap:m.cod_sap,eq:e?e.equipo:'',obra:m.obra||(e&&e.cod_proyec)||'',pm:'Muestra tomada',
+      sis:m.sistema_std||m.sistema||'',f:m.f_muestreo,hr:m.horometro,est:aj?'anul':(aTiempo(m)?'ok':'warn'),aj};}),
+    ...D.pend.map(p=>({k:p.manual?'agr':'p',sap:p.e.cod_sap,eq:p.e.equipo||'',obra:p.e.cod_proyec||'',
+      pm:p.manual?'➕ Agregado a mano'+(p.aj.nota?' · '+p.aj.nota:''):`${p.pm} · ${f0(p.hrPM)} h`,
+      sis:p.sistema,f:isoDe(p.fecha),hr:null,est:p.sinPlan?'plan':'bad',aj:p.aj||null})),
+    ...D.anulPend.map(p=>({k:'p',sap:p.e.cod_sap,eq:p.e.equipo||'',obra:p.e.cod_proyec||'',pm:`${p.pm} · ${f0(p.hrPM)} h`,
+      sis:p.sistema,f:isoDe(p.fecha),hr:null,est:'anul',aj:AN.get(keyP(p.e.cod_sap,p.sistema))}))
   ].sort((a,b)=>String(a.obra).localeCompare(String(b.obra))||String(a.sap).localeCompare(String(b.sap))||String(a.sis).localeCompare(String(b.sis)));
   const EST={ok:'<span class="pill e-NORMAL">✓ A tiempo</span>',warn:'<span class="pill e-PRECAUCION">! Tarde o antes</span>',
-    bad:'<span class="pill e-CRITICO">✕ Falta</span>',plan:'<span class="pill e-PRECAUCION">? Sin sistemas en el plan</span>'};
-  document.body.insertAdjacentHTML('beforeend',`<div class="modal" id="mdprog"><div class="mc" style="width:min(980px,96vw)">
-    <div class="mh"><h3>¿Qué tocaba en ${D.mesNom}?</h3><div class="sub">${filas.length} muestra(s) · solo equipos con SOS (1_EQ PESADO, 2_VEH PESADO, 3_EQ IZAJE)</div>
+    bad:'<span class="pill e-CRITICO">✕ Falta</span>',plan:'<span class="pill e-PRECAUCION">? Sin sistemas en el plan</span>',
+    anul:'<span class="pill" style="background:#eef0f2;color:#6b747d">⊘ Anulado</span>'};
+  const accion=(x,i)=>{ if(!admin)return '';
+    if(x.est==='anul'||x.k==='agr')return `<button class="act" data-rest="${i}" style="height:26px;padding:0 9px;font-size:11.5px" title="${x.k==='agr'?'Quitar este agregado':'Volver a contarlo'}">↺ ${x.k==='agr'?'Quitar':'Restaurar'}</button>`;
+    return `<button class="act" data-anul="${i}" style="height:26px;padding:0 9px;font-size:11.5px;color:#B91C1C" title="No contarlo en el cumplimiento de este mes">⊘ Anular</button>`; };
+  const eqs=datos.filter(e=>!esDesmovM(e)&&!sinSOS(e)&&(!D.obra||e.cod_proyec===D.obra)).sort((a,b)=>String(a.cod_sap).localeCompare(String(b.cod_sap)));
+  const sistemas=[...new Set([...EQS.values(),...SIST.map(s=>s.sistema)])].filter(Boolean).sort();
+  const old=document.getElementById('mdprog'); if(old)old.remove();
+  document.body.insertAdjacentHTML('beforeend',`<div class="modal" id="mdprog"><div class="mc" style="width:min(1060px,96vw)">
+    <div class="mh"><h3>¿Qué tocaba en ${D.mesNom}?</h3><div class="sub">${filas.filter(x=>x.est!=='anul').length} cuentan · ${filas.filter(x=>x.est==='anul').length} anulado(s) · solo equipos con SOS</div>
       <div class="spacer"></div><button class="act" id="mdpCer">Cerrar</button></div>
     <div class="mb">
-      <div class="hint" style="margin-bottom:8px">Las que <b>faltan</b> salen del próximo PM de cada equipo: el nivel del PM (PM1, PM2…) decide qué sistemas tocan según el
-        Plan de muestreo. Si un equipo pide sistemas que no corresponden, corrígelo en la tabla de sistemas por tipo de equipo.</div>
-      <table class="t"><thead><tr><th>Obra</th><th>Cód. SAP</th><th>Equipo</th><th>Sistema</th><th>PM que toca</th><th class="c">Fecha</th><th class="r">Horóm.</th><th class="c">Estado</th></tr></thead>
-      <tbody>${filas.map(x=>`<tr><td>${esc(x.obra)}</td><td class="mono">${esc(x.sap)}</td><td>${esc(x.eq)}</td><td>${esc(x.sis)}</td>
-        <td>${esc(x.pm||'—')}</td><td class="c">${fmtDate(x.f)}</td><td class="r mono">${x.hr!=null&&x.hr!==''?f0(x.hr):''}</td><td class="c">${EST[x.est]}</td></tr>`).join('')
-        ||'<tr><td colspan="8" class="vacio">Nada que mostrar.</td></tr>'}</tbody></table>
+      ${ajEstado==='falta'?`<div class="hint" style="color:#B91C1C;margin-bottom:8px">⚠ Para poder anular o agregar, primero hay que crear la tabla <b>sos_prog_ajustes</b> en Supabase (te pasé el SQL).</div>`:''}
+      <div class="hint" style="margin-bottom:8px">Las que <b>faltan</b> salen del próximo PM de cada equipo: el nivel del PM (PM1, PM2…) decide qué sistemas tocan según el Plan de muestreo.
+        ${admin?'Si algo no corresponde, <b>⊘ Anular</b> lo saca del cálculo de este mes; si falta un mantenimiento, agrégalo abajo. <b>↺</b> deshace.':'Solo un administrador puede anular o agregar.'}</div>
+      ${admin&&ajEstado==='ok'?`<div class="dagr">
+        <b>➕ Agregar mantenimiento</b>
+        <input id="agSap" list="agSapL" placeholder="Cód. SAP" style="width:120px"><datalist id="agSapL">${eqs.map(e=>`<option value="${esc(e.cod_sap)}">${esc(e.equipo||'')} · ${esc(e.cod_proyec||'')}</option>`).join('')}</datalist>
+        <input id="agSis" list="agSisL" placeholder="Sistema" style="width:170px"><datalist id="agSisL">${sistemas.map(s=>`<option value="${esc(s)}">`).join('')}</datalist>
+        <input id="agFec" type="date" value="${D.mes}-15" min="${D.mes}-01" max="${D.mes}-31" title="Fecha prevista">
+        <input id="agNota" placeholder="Motivo (opcional)" style="flex:1;min-width:140px">
+        <button class="act primary" id="agOk">Agregar</button></div>`:''}
+      <table class="t"><thead><tr><th>Obra</th><th>Cód. SAP</th><th>Equipo</th><th>Sistema</th><th>Origen</th><th class="c">Fecha</th><th class="r">Horóm.</th><th class="c">Estado</th>${admin?'<th class="c">Ajuste</th>':''}</tr></thead>
+      <tbody>${filas.map((x,i)=>`<tr style="${x.est==='anul'?'opacity:.55':''}"><td>${esc(x.obra)}</td><td class="mono">${esc(x.sap)}</td><td>${esc(x.eq)}</td><td>${esc(x.sis)}</td>
+        <td>${esc(x.pm||'—')}${x.est==='anul'&&x.aj&&x.aj.nota?`<br><span class="dim" style="font-size:11px">Motivo: ${esc(x.aj.nota)}</span>`:''}</td><td class="c">${fmtDate(x.f)}</td>
+        <td class="r mono">${x.hr!=null&&x.hr!==''?f0(x.hr):''}</td><td class="c">${EST[x.est]}</td>${admin?`<td class="c">${ajEstado==='ok'?accion(x,i):''}</td>`:''}</tr>`).join('')
+        ||`<tr><td colspan="${admin?9:8}" class="vacio">Nada que mostrar.</td></tr>`}</tbody></table>
     </div></div></div>`);
   const cerrar=()=>{const m=document.getElementById('mdprog');if(m)m.remove();};
   document.getElementById('mdpCer').onclick=cerrar;
   document.getElementById('mdprog').addEventListener('click',ev=>{if(ev.target.id==='mdprog')cerrar();});
+  const rehacer=()=>{ pintarDash(); verProgDash(); };
+  const quien=perfil?perfil.nombre:null;
+  document.querySelectorAll('#mdprog [data-anul]').forEach(b=>b.onclick=async()=>{
+    const x=filas[+b.dataset.anul];
+    const nota=prompt(`Anular ${x.sap} · ${x.sis} en ${D.mesNom}.\n\n¿Por qué? (opcional, p.ej. "en el PM1 no tocaba este sistema")`,'');
+    if(nota===null)return;
+    const fila={mes:D.mes,tipo:'anular',cod_sap:x.sap,sistema:x.sis,obra:x.obra||null,muestra_id:x.k==='m'?x.id:null,nota:nota.trim()||null,usuario:quien};
+    const {data,error}=await sb.from('sos_prog_ajustes').insert(fila).select().single();
+    if(error)return alert('No se pudo guardar: '+error.message);
+    AJ.push(data); rehacer();
+  });
+  document.querySelectorAll('#mdprog [data-rest]').forEach(b=>b.onclick=async()=>{
+    const x=filas[+b.dataset.rest]; if(!x.aj)return;
+    const {error}=await sb.from('sos_prog_ajustes').delete().eq('id',x.aj.id);
+    if(error)return alert('No se pudo deshacer: '+error.message);
+    AJ=AJ.filter(a=>a.id!==x.aj.id); rehacer();
+  });
+  const agOk=document.getElementById('agOk');
+  if(agOk)agOk.onclick=async()=>{
+    const sap=agSap.value.trim(), sis=agSis.value.trim(), fec=agFec.value;
+    const e=datos.find(x=>nrm(x.cod_sap)===nrm(sap));
+    if(!e)return alert('Elige un Cód. SAP de la lista.');
+    if(!sis)return alert('Indica el sistema.');
+    if(!fec||fec.slice(0,7)!==D.mes)return alert(`La fecha debe ser de ${D.mesNom}.`);
+    const fila={mes:D.mes,tipo:'agregar',cod_sap:e.cod_sap,sistema:stdSis(sis)===nrm(sis)?sis.toUpperCase():stdSis(sis),
+      obra:e.cod_proyec||null,fecha:fec,nota:agNota.value.trim()||null,usuario:quien};
+    const {data,error}=await sb.from('sos_prog_ajustes').insert(fila).select().single();
+    if(error)return alert('No se pudo guardar: '+error.message);
+    AJ.push(data); rehacer();
+  };
 }
 
 /* ───────── SEGUIMIENTO DE ALERTAS ───────── */
@@ -2989,7 +3079,7 @@ fRango.onchange=()=>{ aplicarRango(); pintar(); };
 [fBusca].forEach(x=>x.oninput=pintar);
 [fObra,fDesde,fHasta,fEstado,fSistema,fFuente].forEach(x=>x.onchange=pintar);
 fPeriodo.onchange=()=>{ if(vista==='fra')pintarFra(); };
-btnRec.onclick=()=>cargarTodo();
+btnRec.onclick=()=>{ ajEstado=null; cargarTodo(); };
 btnTodoHist.onclick=()=>{ ponerRango('todo'); pintar(); };
 [fDesde,fHasta].forEach(x=>x.addEventListener('change',()=>{ fRango.value='pers'; }));
 btnDeshacer.onclick=deshacer;
