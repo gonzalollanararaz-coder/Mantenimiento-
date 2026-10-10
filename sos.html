@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
 <meta charset="utf-8">
-<meta name="gllr-version" content="V.101026-6" data-pagina="SOS">
+<meta name="gllr-version" content="V.101026-7" data-pagina="SOS">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>SOS &mdash; Muestreo de Aceites</title>
 <link rel="icon" href="favicon.ico" sizes="any">
@@ -1709,10 +1709,8 @@ function pintarDash(){
       meses.push({k,lab:MESES_D[d.getMonth()].slice(0,3)+' '+String(d.getFullYear()).slice(2),
         c:ms.filter(m=>m.estado_std==='CRITICO').length,p:ms.filter(m=>m.estado_std==='PRECAUCION').length});} }
 
-  // 5) seguimiento (últimos 12 meses hasta el mes elegido)
-  const fin=mes+'-31', ini=(()=>{const [y,mo]=mes.split('-').map(Number);return isoDe(new Date(y,mo-12,1));})();
-  const alertas=MUESTRAS.filter(m=>(m.estado_std==='CRITICO'||m.estado_std==='PRECAUCION')&&deObra(m)
-    &&m.f_muestreo>=ini&&m.f_muestreo<=fin&&ale(m).estado_seg!=='Descartado');
+  // 5) seguimiento: alertas (crítico / precaución) del MES elegido
+  const alertas=delMes.filter(m=>(m.estado_std==='CRITICO'||m.estado_std==='PRECAUCION')&&ale(m).estado_seg!=='Descartado');
   const segN=s=>alertas.filter(m=>(ale(m).estado_seg||'OM abierta')===s).length;
 
   // fichas: vertical = número grande debajo; horizontal (h) = número a la derecha, para apilar
@@ -1793,7 +1791,7 @@ function pintarDash(){
     </div>
     <div class="dcard d5">
       <div class="dbnd plomo"><span class="n">5</span>SEGUIMIENTO DE ALERTAS</div>
-      <div class="dpreg">¿Cómo vamos arreglando los problemas?<br><span style="color:#98a2ad">críticos y precaución · últimos 12 meses</span></div>
+      <div class="dpreg">¿Cómo vamos arreglando los problemas?<br><span style="color:#98a2ad">críticos y precaución de ${mesNom}</span></div>
       <div class="dpila">
         ${fila('bad','1','OM abierta',segN('OM abierta'),'esperando que alguien lo atienda')}
         <div class="dbaja">⬇</div>
