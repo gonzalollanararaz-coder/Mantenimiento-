@@ -2,6 +2,7 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8">
+<meta name="gllr-version" content="V.101026-1" data-pagina="Equipos">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Control de Mantenimiento — UDE</title>
 <link rel="icon" href="favicon.ico" sizes="any">
@@ -611,7 +612,7 @@
     <div class="brand">
       <img id="logo" alt="" style="display:none">
       <div id="logoFb" class="logo-fb">LOGO</div>
-      <div><h1>Maestro de Equipos — Flota</h1><p>Unidad de Equipos · UDE · 260912-1</p></div>
+      <div><h1>Maestro de Equipos — Flota</h1><p>Unidad de Equipos · UDE · <span id="verGen" title="Versión general de la app">V.101026-1</span></p></div>
     </div>
     <div class="userbox"><span id="offEstado" class="off-chip"></span><span class="who" id="who"></span><button id="btnOut">Cerrar sesión</button></div>
   </header>
@@ -1423,6 +1424,13 @@ async function abrirInformeEquipo(id){
     return {sistema:s,ultima:ms[0]};
   });
   const alerta=filasSos.filter(x=>x.ultima&&(x.ultima.estado_std==='CRITICO'||x.ultima.estado_std==='PRECAUCION'));
+  // RECOMENDACIONES (IA): se copian de la Ficha SOS (columna "acciones" de sos_alertas, la misma
+  // que llena "Analizar con IA" en la ficha). Ya no se hace una consulta aparte a la IA.
+  const recIA=new Map();
+  if(alerta.length){
+    const {data:ra}=await sb.from('sos_alertas').select('resultado_id,acciones').in('resultado_id',alerta.map(x=>x.ultima.id));
+    (ra||[]).forEach(a=>{ if(a.acciones&&String(a.acciones).trim())recIA.set(String(a.resultado_id),String(a.acciones).trim()); });
+  }
 
   body.innerHTML=`
     ${chip('azul','1. DATOS GENERALES DEL EQUIPO')}
@@ -1471,15 +1479,16 @@ async function abrirInformeEquipo(id){
         <td class="c">${pillEstado(x.ultima?.estado_std)}</td><td>${esc(x.ultima?.fuente||'—')}</td></tr>`).join('')}</tbody></table>
       ${alerta.length?alerta.map(x=>`<div class="campo" style="border:1px solid var(--line);border-radius:9px;padding:10px 12px;margin-top:10px">
         <b style="font-size:11.5px;color:#1F3864">${esc(x.sistema)} — ${pillEstado(x.ultima.estado_std)}</b>
-        <div style="margin-top:6px"><b style="font-size:10.5px;color:#6C6C6C">Análisis y recomendaciones</b>
+        <div style="margin-top:6px"><b style="font-size:10.5px;color:#6C6C6C">Comentario de laboratorio</b>
           <div style="font-size:11px;color:#444;margin-top:2px;white-space:pre-wrap">${x.ultima.observacion_lab?esc(x.ultima.observacion_lab):'<span class="inf-dim">El laboratorio no incluyó comentarios ni recomendaciones.</span>'}</div></div>
-        <div style="margin-top:8px"><b style="font-size:10.5px;color:#6C6C6C">Análisis (IA)</b>
-          <div id="infIA_${esc(x.sistema).replace(/[^a-zA-Z0-9]/g,'_')}" style="font-size:11px;color:#444;margin-top:2px">Consultando a la IA…</div></div>
+        <div style="margin-top:8px"><b style="font-size:10.5px;color:#6C6C6C">RECOMENDACIONES (IA)</b>
+          <div style="font-size:11px;color:#444;margin-top:2px;white-space:pre-wrap">${recIA.get(String(x.ultima.id))?esc(recIA.get(String(x.ultima.id)))
+            :'<span class="inf-dim">Todavía no se generó. Se crea en SOS → Muestras → Ficha SOS → "Analizar con IA".</span>'}</div></div>
       </div>`).join(''):''}`
       :'<div class="inf-dim" style="padding:6px 0">Sin muestras de aceite registradas para este equipo.</div>'}
 
     ${chip('rojo','6. PENDIENTES')}
-    ${pend.length?`<table class="inf-t"><thead><tr><th>Falla reportada</th><th class="c">Prioridad</th><th class="c">Estado</th><th class="c">F. compromiso</th><th class="c">F. cierre</th></tr></thead>
+    ${pend.length?`<table class="inf-t"><thead><tr><th>Falla reportada</th><th class="c">Prioridad</th><th class="c">Estado</th><th class="c">F. inicio</th><th class="c">F. cierre</th></tr></thead>
       <tbody>${pend.slice(0,10).map(x=>`<tr><td>${esc(x.falla||'—')}</td><td class="c">${esc(x.prioridad||'—')}</td><td class="c">${esc(x.estado||'—')}</td>
         <td class="c">${fmtDate(x.fecha_compromiso)||'—'}</td><td class="c">${fmtDate(x.fecha_cierre)||'—'}</td></tr>`).join('')}</tbody></table>`
       :'<div class="inf-dim" style="padding:6px 0">Sin fallas reportadas registradas.</div>'}
@@ -1488,26 +1497,6 @@ async function abrirInformeEquipo(id){
     <div id="infObs" contenteditable="true" style="border:1px dashed #c7ccd1;border-radius:9px;padding:10px 12px;min-height:60px;font-size:12px;color:#333;outline:none"></div>
   `;
 
-  // -- Análisis con IA, por cada sistema en Crítico/Precaución (se piden en paralelo, sin bloquear el resto del informe) --
-  alerta.forEach(x=>{
-    const elId='infIA_'+x.sistema.replace(/[^a-zA-Z0-9]/g,'_');
-    const historialSis=sos.filter(m=>(m.sistema_std||m.sistema)===x.sistema&&m.analisis).sort((a,b)=>String(a.f_muestreo).localeCompare(String(b.f_muestreo))).slice(-6);
-    const datosAct=x.ultima.analisis?Object.entries(x.ultima.analisis).map(([k,v])=>`${k.replace(/\s*\([^)]*\)/,'')}: ${v}`).join(', '):'sin datos de análisis';
-    const datosHist=historialSis.length>1?historialSis.map(h=>`[${fmtDate(h.f_muestreo)}] `+Object.entries(h.analisis||{}).map(([k,v])=>`${k.replace(/\s*\([^)]*\)/,'')}:${v}`).join(' ')).join(' | '):'sin historial suficiente.';
-    const prompt=`Eres un asistente que ayuda a un técnico de mantenimiento de flota pesada (Unidad de Equipos) a interpretar un análisis de aceite (SOS). No reemplazas al laboratorio, das una segunda mirada.
-
-Equipo: ${e.equipo||'—'} (Cód. SAP ${e.cod_sap||'—'}), sistema: ${x.sistema}, horómetro: ${x.ultima.horometro!=null?fmtNum(x.ultima.horometro)+'h':'—'}.
-Estado asignado por el laboratorio: ${x.ultima.estado_std}.
-Parámetros de esta muestra: ${datosAct}.
-Historial: ${datosHist}
-
-Escribe en español, en un párrafo breve (máximo 6 líneas), una interpretación práctica y una recomendación concreta. No repitas los números tal cual, interprétalos.`;
-    llamarIAIdx(prompt).then(texto=>{
-      const el=document.getElementById(elId); if(el)el.innerHTML=esc(texto).replace(/\n/g,'<br>');
-    }).catch(err=>{
-      const el=document.getElementById(elId); if(el)el.innerHTML=`<span style="color:#b91c1c">No se pudo obtener el análisis: ${esc(err.message)}</span>`;
-    });
-  });
 }
 
 /* El id vive solo en el <tr>: no se repite en cada celda. */
@@ -2083,6 +2072,8 @@ function asegurarIframe(k){
 function mostrarPanel(t){
   document.querySelectorAll("nav button").forEach(x=>x.classList.toggle("on",x.dataset.tab===t));
   paneEq.classList.toggle("hide",t!=="eq");
+  // la versión de Equipos se oculta cuando se ve otra pestaña (esa muestra la suya en el mismo lugar)
+  {const vp=document.getElementById('verPag'); if(vp)vp.style.display=(t==='eq'||t==='users')?'':'none';}
   paneUsers.classList.toggle("hide",t!=="users");
   Object.keys(IFRAME_PAGINAS).forEach(k=>{
     const pane=document.getElementById('paneFrame_'+k); if(pane)pane.classList.toggle('hide',t!==k);
@@ -3113,5 +3104,27 @@ setInterval(()=>{ if(navigator.onLine)OFF.sincronizar(sb).then(r=>{if(r.ok)offPi
 
 init();
 </script>
+<style>.ver-pag{position:fixed;right:8px;bottom:4px;font:600 10px/1.3 -apple-system,"Segoe UI",Roboto,sans-serif;color:#8a939c;
+  background:rgba(255,255,255,.88);border:1px solid #e3e6e9;padding:1px 7px;border-radius:6px;z-index:9000;pointer-events:none;letter-spacing:.3px}
+  @media print{.ver-pag{display:none!important}}</style>
+<script>/* versión de esta pestaña (formato V.ddmmaa-#), siempre en la esquina inferior derecha */
+(function(){var m=document.querySelector('meta[name="gllr-version"]');if(!m)return;
+  var d=document.createElement('div');d.id='verPag';d.className='ver-pag';
+  d.textContent=(m.getAttribute('data-pagina')||'')+' · '+m.content;document.body.appendChild(d);})();</script>
+<script>/* Versión general = la más reciente de todas las pestañas. Se lee la etiqueta
+   gllr-version del inicio de cada archivo, así cambia sola cada vez que se sube un archivo nuevo. */
+(function(){
+  const ARCH=['index.html','pms.html','combustible.html','sos.html','pendientes.html','partes.html','campo.html'];
+  const clave=v=>{const m=/^V\.(\d{2})(\d{2})(\d{2})-(\d+)$/.exec(v||'');return m?(+m[3])*1e7+(+m[2])*1e5+(+m[1])*1e3+(+m[4]):-1;};
+  const leer=a=>fetch(a,{cache:'no-cache',headers:{Range:'bytes=0-1500'}}).then(r=>r.ok?r.text():'').then(t=>{
+      const m=/name="gllr-version" content="([^"]+)"(?: data-pagina="([^"]*)")?/.exec(t);return m?{a,v:m[1],p:m[2]||a}:null;}).catch(()=>null);
+  setTimeout(()=>Promise.all(ARCH.map(leer)).then(L=>{
+    L=L.filter(Boolean); if(!L.length)return;
+    const max=L.reduce((x,y)=>clave(y.v)>clave(x.v)?y:x);
+    const el=document.getElementById('verGen'); if(!el)return;
+    el.textContent=max.v;
+    el.title='Versión general de la app\n\n'+L.map(x=>x.p+': '+x.v).join('\n');
+  }),2500);
+})();</script>
 </body>
 </html>

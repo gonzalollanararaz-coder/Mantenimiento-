@@ -2,6 +2,7 @@
 <html lang="es">
 <head>
 <meta charset="utf-8">
+<meta name="gllr-version" content="V.101026-1" data-pagina="Pendientes">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Pendientes — UDE</title>
 <link rel="icon" href="favicon.ico">
@@ -108,7 +109,7 @@
 </head>
 <body>
 <header>
-  <div><h1>Pendientes — UDE</h1><p>Unidad de Equipos · UDE · 261005-2</p></div>
+  <div><h1>Pendientes — UDE</h1><p>Unidad de Equipos · UDE</p></div>
   <div class="sp"></div>
   <span class="who" id="who"></span>
   <button id="volverBtn">← Equipos</button>
@@ -616,5 +617,12 @@ volverBtn.onclick=volverAEquipos;
   pintar();
 })();
 </script>
+<style>.ver-pag{position:fixed;right:8px;bottom:4px;font:600 10px/1.3 -apple-system,"Segoe UI",Roboto,sans-serif;color:#8a939c;
+  background:rgba(255,255,255,.88);border:1px solid #e3e6e9;padding:1px 7px;border-radius:6px;z-index:9000;pointer-events:none;letter-spacing:.3px}
+  @media print{.ver-pag{display:none!important}}</style>
+<script>/* versión de esta pestaña (formato V.ddmmaa-#), siempre en la esquina inferior derecha */
+(function(){var m=document.querySelector('meta[name="gllr-version"]');if(!m)return;
+  var d=document.createElement('div');d.id='verPag';d.className='ver-pag';
+  d.textContent=(m.getAttribute('data-pagina')||'')+' · '+m.content;document.body.appendChild(d);})();</script>
 </body>
 </html>

@@ -2,6 +2,7 @@
 <html lang="es">
 <head>
 <meta charset="utf-8">
+<meta name="gllr-version" content="V.101026-1" data-pagina="SOS">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>SOS &mdash; Muestreo de Aceites</title>
 <link rel="icon" href="favicon.ico" sizes="any">
@@ -244,7 +245,7 @@
   .fley i{width:9px;height:9px;display:inline-block;border-radius:2px}
   #fAcc{cursor:text}
   #fAcc:focus{outline:2px solid #FFC000;outline-offset:2px;border-radius:4px}
-  #fAcc:empty:before{content:'Escribe aquí las acciones correctivas, o usa "Analizar con IA".';color:#a0a6ad}
+  #fAcc:empty:before{content:'Pulsa "Analizar con IA" o escribe aquí las recomendaciones.';color:#a0a6ad}
   @media print{
     @page{size:13.333in 7.5in;margin:0}
     html,body{height:auto!important;overflow:visible!important;display:block!important;background:#fff!important}
@@ -263,17 +264,17 @@
 </head>
 <body>
 <header id="topbar">
-  <div class="brand-min"><h1>SOS &mdash; Muestreo de Aceites</h1><p>Unidad de Equipos &middot; UDE &middot; 031026-3</p></div>
+  <div class="brand-min"><h1>SOS &mdash; Muestreo de Aceites</h1><p>Unidad de Equipos &middot; UDE</p></div>
   <nav id="navPrin"></nav>
   <div class="sp2"></div>
   <span class="who" id="who"></span>
 </header>
 <script>if(window.self!==window.top){document.getElementById('topbar').style.display='none';}</script>
 <div id="subnav">
-  <button id="tab_fra" class="on">&#128230; Frascos</button>
-  <button id="tab_plan">Muestras</button>
+  <button id="tab_fra">&#128230; Frascos</button>
+  <button id="tab_plan" class="on">Muestras</button>
   <button id="tab_ale">Seguimiento de alertas</button>
-  <span style="margin-left:auto;font-size:10px;color:#9aa4ad;letter-spacing:.5px;padding-right:4px">v031026-3</span>
+  
 </div>
 <div class="toolbar">
   <div class="grupo-wrap">
@@ -434,7 +435,7 @@ function sugerirPlanilla(proy,nuevo){
   const ultimo=nums.length?Math.max(...nums):0;
   return pref+String(nuevo?ultimo+1:(ultimo||1)).padStart(3,'0');
 }
-let vista='fra';
+let vista='plan';
 
 const nrm=s=>String(s??'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toUpperCase().replace(/\s+/g,' ').trim();
 const f0=n=>Number(n).toLocaleString('es-PE',{maximumFractionDigits:0});
@@ -1387,12 +1388,12 @@ function fichaSOS(id){
       ${img?`<img src="${img}" alt="" style="height:86px;width:auto;flex:0 0 auto;border-radius:10px">`:''}
       <div id="fEst" style="flex:1;min-width:0;text-align:center;font-size:24pt;font-weight:700;color:${est.c};line-height:1.05;white-space:nowrap">${esc(est.t)}</div>
     </div>
-    <div class="fbox" style="left:8px;top:250px;width:280px;height:222px;border-color:#E02020">
-      <div class="fbar pl">Análisis y recomendaciones</div>
+    <div class="fbox" style="left:8px;top:250px;width:280px;height:222px;border-color:#8A8A8A">
+      <div class="fbar pl">Comentario de laboratorio</div>
       <div class="ftxt" id="fObs">${p.observacion_lab?esc(p.observacion_lab):'<span style="color:#98a2ad">El laboratorio no incluyó comentarios ni recomendaciones para esta muestra.</span>'}</div>
     </div>
     <div class="fbox" style="left:7px;top:479px;width:281px;height:231px;border-color:#FFC000">
-      <div class="fbar am">Acciones correctivas</div>
+      <div class="fbar am">Recomendaciones (IA)</div>
       <div class="ftxt" id="fAcc" contenteditable="true" spellcheck="true">${esc(accTxt)}</div>
     </div>
     <div class="fbox" style="left:294px;top:129px;width:678px;height:582px;border-color:#22A33A">
@@ -1457,7 +1458,7 @@ function fichaSOS(id){
   const acc=document.getElementById('fAcc');
   acc.addEventListener('blur',async()=>{
     try{ await guardarAcciones(p,acc.innerText); encajarTexto(acc); }
-    catch(err){ alert('No se pudieron guardar las acciones correctivas: '+err.message); }
+    catch(err){ alert('No se pudieron guardar las recomendaciones: '+err.message); }
   });
 
   document.getElementById('fichaImp').onclick=()=>{
@@ -1470,7 +1471,7 @@ function fichaSOS(id){
 
   document.getElementById('fichaIA').onclick=()=>{
     const previo=acc.innerText.trim();
-    if(previo&&!confirm('Ya hay texto en ACCIONES CORRECTIVAS.\n\n¿Reemplazarlo por el análisis de la IA?'))return;
+    if(previo&&!confirm('Ya hay texto en RECOMENDACIONES (IA).\n\n¿Reemplazarlo por el análisis de la IA?'))return;
     modalIA('Análisis con IA — segunda mirada',async()=>{
       const datosAct=`Parámetros de esta muestra: ${params.length?params.map(([k,v])=>`${nomP(k)}: ${v}`).join(', '):'sin datos de análisis'}.`;
       const datosHist=historial.length?`Historial del mismo equipo y sistema (${historial.length} muestra(s), de más antigua a más reciente): `
@@ -1490,8 +1491,8 @@ Escribe en español, en un párrafo breve (máximo 6 líneas), una interpretaci�
       const a=document.getElementById('fAcc'); if(a){ a.innerText=texto; encajarTexto(a); }
       // si no se puede guardar, igual se muestra el texto (no se pierde el análisis)
       try{ await guardarAcciones(p,texto); }
-      catch(err){ return texto+'\n\n⚠ No se pudo guardar en ACCIONES CORRECTIVAS: '+err.message; }
-      return texto+'\n\n✔ Guardado en ACCIONES CORRECTIVAS de la ficha.';
+      catch(err){ return texto+'\n\n⚠ No se pudo guardar en RECOMENDACIONES (IA): '+err.message; }
+      return texto+'\n\n✔ Guardado en RECOMENDACIONES (IA) de la ficha.';
     });
   };
 }
@@ -2803,9 +2804,16 @@ function pintarNav(actual){
   const sigMes=new Date(hoy.getFullYear(),hoy.getMonth()+1,1);
   fPeriodo.value=`${sigMes.getFullYear()}-${String(sigMes.getMonth()+1).padStart(2,'0')}`;
   await cargarTodo();
-  verVista('fra');
+  verVista('plan');   // al entrar a SOS se abre Muestras
 })();
 
 </script>
+<style>.ver-pag{position:fixed;right:8px;bottom:4px;font:600 10px/1.3 -apple-system,"Segoe UI",Roboto,sans-serif;color:#8a939c;
+  background:rgba(255,255,255,.88);border:1px solid #e3e6e9;padding:1px 7px;border-radius:6px;z-index:9000;pointer-events:none;letter-spacing:.3px}
+  @media print{.ver-pag{display:none!important}}</style>
+<script>/* versión de esta pestaña (formato V.ddmmaa-#), siempre en la esquina inferior derecha */
+(function(){var m=document.querySelector('meta[name="gllr-version"]');if(!m)return;
+  var d=document.createElement('div');d.id='verPag';d.className='ver-pag';
+  d.textContent=(m.getAttribute('data-pagina')||'')+' · '+m.content;document.body.appendChild(d);})();</script>
 </body>
 </html>
