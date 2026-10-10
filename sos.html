@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
 <meta charset="utf-8">
-<meta name="gllr-version" content="V.101026-1" data-pagina="SOS">
+<meta name="gllr-version" content="V.101026-2" data-pagina="SOS">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>SOS &mdash; Muestreo de Aceites</title>
 <link rel="icon" href="favicon.ico" sizes="any">
@@ -92,6 +92,9 @@
   table.t tbody tr{height:26px}
   /* la vista de alertas lleva campos editables: ahí no se recorta */
   #boxAle table.t td{overflow:visible;max-width:none;white-space:normal}
+  .ale-prec{display:flex;align-items:center;gap:10px;font-size:12px;color:var(--muted);margin:0 0 8px}
+  .ale-prec b{color:var(--ink)}
+  table.of tr.mesrow td{background:#EEF1F8;color:#1F3864;font-weight:700;font-size:11.5px;padding:4px 8px;border-top:2px solid #cbd5e1;position:static}
   #boxAle table.t td.desc{max-width:320px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 
   .dim{color:var(--muted)}
@@ -282,8 +285,12 @@
     <div class="grupo filtros">
       <input type="month" id="fPeriodo" title="Mes de muestreo a calcular">
       <input type="search" id="fBusca" placeholder="Equipo, frasco, n&deg; muestra&hellip;" style="width:220px">
-      <input type="date" id="fDesde"><input type="date" id="fHasta">
-      <button class="act" id="btnTodoHist" title="Quitar el filtro de fecha y ver todo el historial">Ver todo</button>
+      <select id="fRango" title="Periodo (fecha de muestreo)">
+        <option value="1">Último mes</option><option value="2">Últimos 2 meses</option><option value="3">Últimos 3 meses</option>
+        <option value="6">Últimos 6 meses</option><option value="12" selected>Últimos 12 meses</option>
+        <option value="todo">Todo el historial</option><option value="pers">Personalizado…</option></select>
+      <input type="date" id="fDesde" class="hide" title="Desde"><input type="date" id="fHasta" class="hide" title="Hasta">
+      <button class="act hide" id="btnTodoHist">Ver todo</button>
       <select id="fObra"><option value="">Obra</option></select>
       <select id="fEstado"><option value="">Todos los estados</option><option value="CRITICO">Cr&iacute;tico</option><option value="PRECAUCION">Precauci&oacute;n</option><option value="NORMAL">Normal</option></select>
       <select id="fSistema"><option value="">Sistemas</option></select>
@@ -1074,12 +1081,11 @@ function verVista(v){
   btnDup.classList.toggle('hide',v!=='plan');
   btnIASemana.classList.toggle('hide',v!=='plan');
   btnXls.classList.toggle('hide',v==='fra');
-  [fBusca,fDesde,fHasta,fEstado,fSistema,fFuente].forEach(el=>el.classList.toggle('hide',v==='fra'));
+  [fBusca,fRango,fSistema].forEach(el=>el.classList.toggle('hide',v==='fra'));
+  [fDesde,fHasta].forEach(el=>el.classList.toggle('hide',v==='fra'||fRango.value!=='pers'));
   fPeriodo.classList.toggle('hide',v!=='fra');
-  btnTodoHist.classList.toggle('hide',v==='fra');
-  fEstado.classList.toggle('hide',v==='fra'||v==='plan');
-  fSistema.classList.toggle('hide',v==='fra');
-  fFuente.classList.toggle('hide',v==='fra'||v==='ale');
+  fEstado.classList.add('hide');          // en Muestras se filtra con las tarjetas; en Seguimiento, con críticos/precaución
+  fFuente.classList.toggle('hide',v==='fra');
   cerrarColMenuG();
   btnDeshacer.disabled=!ULTIMA[v];
   pintar();
@@ -1393,7 +1399,7 @@ function fichaSOS(id){
       <div class="ftxt" id="fObs">${p.observacion_lab?esc(p.observacion_lab):'<span style="color:#98a2ad">El laboratorio no incluyó comentarios ni recomendaciones para esta muestra.</span>'}</div>
     </div>
     <div class="fbox" style="left:7px;top:479px;width:281px;height:231px;border-color:#FFC000">
-      <div class="fbar am">Recomendaciones (IA)</div>
+      <div class="fbar am">Recomendaciones</div>
       <div class="ftxt" id="fAcc" contenteditable="true" spellcheck="true">${esc(accTxt)}</div>
     </div>
     <div class="fbox" style="left:294px;top:129px;width:678px;height:582px;border-color:#22A33A">
@@ -1450,7 +1456,7 @@ function fichaSOS(id){
   requestAnimationFrame(()=>{ encajar(); escalar(); });
   window.addEventListener('resize',escalar);
 
-  const cerrar=()=>{ window.removeEventListener('resize',escalar); modal.remove(); };
+  const cerrar=()=>{ window.removeEventListener('resize',escalar); modal.remove(); if(vista==='ale')pintarAle(); };
   document.getElementById('fichaCer').onclick=cerrar;
   modal.addEventListener('click',ev=>{if(ev.target.id==='mficha')cerrar();});
 
@@ -1471,7 +1477,7 @@ function fichaSOS(id){
 
   document.getElementById('fichaIA').onclick=()=>{
     const previo=acc.innerText.trim();
-    if(previo&&!confirm('Ya hay texto en RECOMENDACIONES (IA).\n\n¿Reemplazarlo por el análisis de la IA?'))return;
+    if(previo&&!confirm('Ya hay texto en RECOMENDACIONES.\n\n¿Reemplazarlo por el análisis de la IA?'))return;
     modalIA('Análisis con IA — segunda mirada',async()=>{
       const datosAct=`Parámetros de esta muestra: ${params.length?params.map(([k,v])=>`${nomP(k)}: ${v}`).join(', '):'sin datos de análisis'}.`;
       const datosHist=historial.length?`Historial del mismo equipo y sistema (${historial.length} muestra(s), de más antigua a más reciente): `
@@ -1491,58 +1497,72 @@ Escribe en español, en un párrafo breve (máximo 6 líneas), una interpretaci�
       const a=document.getElementById('fAcc'); if(a){ a.innerText=texto; encajarTexto(a); }
       // si no se puede guardar, igual se muestra el texto (no se pierde el análisis)
       try{ await guardarAcciones(p,texto); }
-      catch(err){ return texto+'\n\n⚠ No se pudo guardar en RECOMENDACIONES (IA): '+err.message; }
-      return texto+'\n\n✔ Guardado en RECOMENDACIONES (IA) de la ficha.';
+      catch(err){ return texto+'\n\n⚠ No se pudo guardar en RECOMENDACIONES: '+err.message; }
+      return texto+'\n\n✔ Guardado en RECOMENDACIONES de la ficha.';
     });
   };
 }
 
 /* ───────── SEGUIMIENTO DE ALERTAS ───────── */
+let verPrecau=false, ALE_VIS=[];   // Seguimiento: por defecto solo críticos; precaución se muestra a pedido
+const MESES_ALE=['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Setiembre','Octubre','Noviembre','Diciembre'];
 function pintarAle(){
-  // toda muestra crítica o en precaución entra al seguimiento
+  // entran al seguimiento las muestras CRÍTICAS y en PRECAUCIÓN, con TODOS los filtros de la barra
   const base=MUESTRAS.filter(r=>r.estado_std==='CRITICO'||r.estado_std==='PRECAUCION');
-  const q=nrm(fBusca.value), o=fObra.value, d=fDesde.value, h=fHasta.value, es=fEstado.value;
-  const L=base.filter(r=>{
+  const q=nrm(fBusca.value), o=fObra.value, d=fDesde.value, h=fHasta.value, si=fSistema.value, fu=fFuente.value;
+  const todos=base.filter(r=>{
     const f=r.f_muestreo||'';
     if(d&&f&&f<d)return false;
     if(h&&f&&f>h)return false;
     if(o&&String(r.obra||'')!==o)return false;
-    if(es&&r.estado_std!==es)return false;
+    if(si&&r.sistema_std!==si)return false;
+    if(fu&&r.fuente!==fu)return false;
     if(!pasaColFiltros('ale',r))return false;
-    if(q&&!nrm(`${r.cod_sap} ${r.nro_muestra} ${r.sistema_std||''}`).includes(q))return false;
+    if(q){ const e=getE(r.maestro_id), a=ale(r);
+      if(!nrm(`${r.cod_sap} ${r.nro_muestra||''} ${r.nro_frasco||''} ${r.sistema||''} ${r.sistema_std||''} ${r.obra||''} ${e?e.equipo:''} ${a.om_sap||''} ${a.acciones||''}`).includes(q))return false; }
     return true;
-  }).sort((a,b)=>{
+  });
+  const nPrec=todos.filter(r=>r.estado_std==='PRECAUCION').length;
+  // ordenado por mes (más reciente primero); dentro del mes, críticos primero y luego por fecha
+  const L=todos.filter(r=>verPrecau||r.estado_std==='CRITICO').sort((a,b)=>{
+    const ma=String(a.f_muestreo||'').slice(0,7), mb=String(b.f_muestreo||'').slice(0,7);
+    if(ma!==mb)return mb.localeCompare(ma);
     const pa=a.estado_std==='CRITICO'?0:1, pb=b.estado_std==='CRITICO'?0:1;
     return pa-pb||String(b.f_muestreo||'').localeCompare(String(a.f_muestreo||''));
   });
+  ALE_VIS=L;
   chN.textContent=L.length+' alerta(s)';
   const seg=n=>L.filter(r=>(ale(r).estado_seg||'OM abierta')===n).length;
-  cards.innerHTML=card('Alertas',L.length,L.filter(r=>r.estado_std==='CRITICO').length+' críticas','bad')
+  cards.innerHTML=card('Alertas',L.length,L.filter(r=>r.estado_std==='CRITICO').length+' críticas'+(verPrecau?` · ${nPrec} precaución`:''),'bad')
     +card('OM abierta',seg('OM abierta'),'sin atender aún','warn')
     +card('En ejecución',seg('En ejecución'),'trabajo en curso')
     +card('Cerradas',seg('Cerrado'),'atendidas','ok');
-  if(!L.length){boxAle.innerHTML='<div class="vacio">No hay muestras en estado crítico o precaución.</div>';return;}
+  const barraPrec=`<div class="ale-prec">Mostrando <b>${verPrecau?'críticos y precaución':'solo críticos'}</b>
+      <button class="act" id="btnPrecau">${verPrecau?'🙈 Ocultar precaución':'👁 Mostrar precaución'} (${nPrec})</button></div>`;
+  const ponerBtn=()=>{const b=document.getElementById('btnPrecau'); if(b)b.onclick=()=>{verPrecau=!verPrecau;pintarAle();};};
+  if(!L.length){boxAle.innerHTML=barraPrec+'<div class="vacio">No hay muestras críticas'+(verPrecau?' ni en precaución':'')+' con estos filtros.</div>';ponerBtn();return;}
   const hoy=new Date();
-  boxAle.innerHTML=`<table class="of"><colgroup>
+  let mesPrev=null;
+  boxAle.innerHTML=barraPrec+`<table class="of"><colgroup>
       <col style="width:90px"><col style="width:88px"><col style="width:110px"><col style="width:80px">
       <col style="width:70px"><col style="width:200px">
       <col style="width:90px"><col style="width:160px"><col style="width:96px"><col style="width:110px"><col style="width:56px">
       <col style="width:150px">
-      <col style="width:30px">
+      <col style="width:30px"><col style="width:44px">
     </colgroup>
     <thead>
     <tr class="bands">
       <th colspan="6" class="frz"><span class="bnd azul">IDENTIFICACIÓN</span></th>
       <th colspan="5"><span class="bnd amarillo">SEGUIMIENTO</span></th>
-      <th colspan="1"><span class="bnd plomo">REFERENCIA</span></th>
-      <th colspan="1"><span class="bnd verde">ACCIÓN</span></th>
+      <th colspan="1"><span class="bnd plomo">LINK PDF</span></th>
+      <th colspan="2"><span class="bnd verde">ACCIÓN</span></th>
     </tr>
     <tr class="cols">
       <th class="azul frz">N° Muestra</th><th class="azul">Cód. SAP</th><th class="azul">${cabColG('ale','sistema_std','Sistema')}</th><th class="azul c">${cabColG('ale','estado_std','Estado')}</th>
       <th class="azul r">Horóm.</th><th class="azul">Observación del reporte</th>
-      <th class="amarillo">N° OM SAP</th><th class="amarillo">Acciones correctivas</th><th class="amarillo c">F. indicación</th><th class="amarillo c">Seguimiento</th><th class="amarillo r">Días</th>
+      <th class="amarillo">N° OM SAP</th><th class="amarillo">Recomendaciones</th><th class="amarillo c">F. indicación</th><th class="amarillo c">Seguimiento</th><th class="amarillo r">Días</th>
       <th class="plomo">Link PDF</th>
-      <th class="verde c"></th>
+      <th class="verde c"></th><th class="verde c">Ficha</th>
     </tr>
     </thead><tbody>
     ${L.map(r=>{
@@ -1551,7 +1571,13 @@ function pintarAle(){
       if(a.f_indicacion&&(a.estado_seg||'OM abierta')!=='Cerrado'){
         dias=Math.max(0,Math.round((hoy-new Date(a.f_indicacion+'T00:00:00'))/86400000));
       }
-      return `<tr data-rid="${r.id}">
+      const mes=String(r.f_muestreo||'').slice(0,7);
+      let sep='';
+      if(mes!==mesPrev){ mesPrev=mes;
+        const n=L.filter(x=>String(x.f_muestreo||'').slice(0,7)===mes).length;
+        sep=`<tr class="mesrow"><td colspan="14">${mes?MESES_ALE[+mes.slice(5)-1]+' '+mes.slice(0,4):'Sin fecha'} · ${n} alerta(s)</td></tr>`; }
+      const lnk=a.link_pdf||r.link_pdf||'';
+      return sep+`<tr data-rid="${r.id}">
         <td class="mono frz">${esc(r.nro_muestra)}</td><td class="mono">${esc(r.cod_sap||'')}</td>
         <td>${esc(r.sistema_std||r.sistema||'')}</td>
         <td class="c"><span class="pill e-${r.estado_std}">${esc(r.estado_std)}</span></td>
@@ -1564,13 +1590,17 @@ function pintarAle(){
           ${['OM abierta','En ejecución','Cerrado'].map(o=>`<option ${((a.estado_seg||'OM abierta')===o)?'selected':''}>${o}</option>`).join('')}
         </select></td>
         <td class="r ${dias>30?'b-bad':(dias>15?'b-mid':'')}">${dias!==''?dias:''}</td>
-        <td><input class="ed lg" data-c="link_pdf" value="${esc(a.link_pdf||r.link_pdf||'')}" placeholder="enlace"></td>
+        <td><div style="display:flex;gap:4px;align-items:center">${lnk?`<a href="${esc(lnk)}" target="_blank" rel="noopener" title="Abrir el PDF del laboratorio" style="text-decoration:none">📎</a>`:''}
+          <input class="ed lg" data-c="link_pdf" value="${esc(lnk)}" placeholder="enlace" style="flex:1;min-width:0"></div></td>
         <td class="c"><button class="fx" data-delale="${a.id||''}" title="Quitar seguimiento de esta fila">✕</button></td>
+        <td class="c"><button class="mini" data-fichaale="${r.id}" title="Ver Ficha SOS">📄</button></td>
       </tr>`;}).join('')}
     </tbody></table>
     <div class="hint">Las columnas de Seguimiento son editables; se guardan al salir de la celda.
       Los días se cuentan desde la fecha de indicación y dejan de correr al cerrar.</div>`;
   boxAle.querySelectorAll('.ed').forEach(el=>el.onchange=()=>guardarAlerta(el.closest('tr').dataset.rid,el));
+  boxAle.querySelectorAll('[data-fichaale]').forEach(b=>b.onclick=ev=>{ev.stopPropagation();fichaSOS(b.dataset.fichaale);});
+  ponerBtn();
   boxAle.querySelectorAll('[data-delale]').forEach(b=>b.onclick=ev=>{
     ev.stopPropagation();
     if(!b.dataset.delale)return alert('Esta fila no tiene datos de seguimiento registrados todavía.');
@@ -1714,6 +1744,7 @@ async function subirPlanilla(filas,nom){
     if(!fDesde.value||fechas[0]<fDesde.value)fDesde.value=fechas[0];
     const ultima=fechas[fechas.length-1];
     if(!fHasta.value||ultima>fHasta.value)fHasta.value=ultima;
+    ponerRango('pers');
   }
   let ok=0; const fallidas=[];
   for(const p of nuevos){
@@ -2393,14 +2424,14 @@ btnXls.onclick=()=>{
   }else{
     nombre='Seguimiento_alertas';
     const hoy=new Date();
-    rows=MUESTRAS.filter(r=>r.estado_std==='CRITICO'||r.estado_std==='PRECAUCION').map(r=>{
+    rows=ALE_VIS.map(r=>{   // lo mismo que se ve en pantalla (con filtros, y precaución solo si está visible)
       const a=ale(r);
       let dias='';
       if(a.f_indicacion&&(a.estado_seg||'OM abierta')!=='Cerrado')
         dias=Math.max(0,Math.round((hoy-new Date(a.f_indicacion+'T00:00:00'))/86400000));
-      return {'N° Muestra':r.nro_muestra,'Código de Equipo':r.cod_sap||'','Sistema':r.sistema_std||r.sistema||'',
+      return {'Mes':String(r.f_muestreo||'').slice(0,7),'F. muestreo':r.f_muestreo||'','N° Muestra':r.nro_muestra,'Código de Equipo':r.cod_sap||'','Sistema':r.sistema_std||r.sistema||'',
         'Estado':r.estado_std,'Horómetro':r.horometro??'','Observación del laboratorio':r.observacion_lab||'',
-        'N° OM SAP':a.om_sap||'','Acciones correctivas':a.acciones||'','Fecha de indicación':a.f_indicacion||'',
+        'N° OM SAP':a.om_sap||'','Recomendaciones':a.acciones||'','Fecha de indicación':a.f_indicacion||'',
         'Estado de seguimiento':a.estado_seg||'OM abierta','Días transcurridos':dias,
         'Link al reporte PDF':a.link_pdf||r.link_pdf||''};});
   }
@@ -2643,17 +2674,29 @@ async function reNormalizar(){
 }
 btnEq.onclick=eqAbrir;
 
+/* ── Periodo: desplegable (último mes … todo el historial / personalizado) ── */
+function aplicarRango(){
+  const v=fRango.value, pers=v==='pers';
+  [fDesde,fHasta].forEach(el=>el.classList.toggle('hide',!pers||vista==='fra'));
+  if(pers)return;
+  if(v==='todo'){ fDesde.value=''; fHasta.value=''; return; }
+  const hoy=new Date(), ini=new Date(hoy.getFullYear(),hoy.getMonth()-(+v),hoy.getDate());
+  fDesde.value=isoDe(ini); fHasta.value=isoDe(hoy);
+}
+function ponerRango(v){ fRango.value=v; aplicarRango(); }
+fRango.onchange=()=>{ aplicarRango(); pintar(); };
+
 /* ═══════════════ CARGA ═══════════════ */
 [fBusca].forEach(x=>x.oninput=pintar);
 [fObra,fDesde,fHasta,fEstado,fSistema,fFuente].forEach(x=>x.onchange=pintar);
 fPeriodo.onchange=()=>{ if(vista==='fra')pintarFra(); };
 btnRec.onclick=()=>cargarTodo();
-btnTodoHist.onclick=()=>{ fDesde.value=''; fHasta.value=''; pintar(); };
+btnTodoHist.onclick=()=>{ ponerRango('todo'); pintar(); };
+[fDesde,fHasta].forEach(x=>x.addEventListener('change',()=>{ fRango.value='pers'; }));
 btnDeshacer.onclick=deshacer;
 btnLimpiarSOS.onclick=()=>{
   fBusca.value=''; fObra.value=''; fEstado.value=''; fSistema.value=''; fFuente.value='';
-  const hoy=new Date(), ini=new Date(hoy.getFullYear(),hoy.getMonth()-11,hoy.getDate());
-  fDesde.value=isoDe(ini); fHasta.value=isoDe(hoy);
+  ponerRango('12'); verPrecau=false;
   colFiltros[vista]={};
   pintar();
 };
@@ -2792,8 +2835,8 @@ function pintarNav(actual){
   EQLE=ee.data||[]; EQLS=es.data||[];
   EQLE.forEach(x=>EQE.set(nrm(x.texto),nrm(x.estandar)));
   EQLS.forEach(x=>EQS.set(nrm(x.texto),String(x.estandar).trim()));
-  const hoy=new Date(), ini=new Date(hoy.getFullYear(),hoy.getMonth()-11,hoy.getDate());
-  fDesde.value=isoDe(ini); fHasta.value=isoDe(hoy);
+  ponerRango('12');
+  const hoy=new Date();
   const [ss,st,sf,sa]=await Promise.all([
     sb.from('sos_sistemas').select('*'), sb.from('sos_eq_tipo').select('*'), traerTodo('sos_frascos','codigo'),
     sb.from('sos_altitud_obra').select('*')
