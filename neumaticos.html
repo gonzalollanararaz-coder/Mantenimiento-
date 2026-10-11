@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
 <meta charset="utf-8">
-<meta name="gllr-version" content="V.111026-1" data-pagina="Neumáticos">
+<meta name="gllr-version" content="V.111026-2" data-pagina="Neumáticos">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Neumáticos &mdash; UDE</title>
 <link rel="icon" href="favicon.ico" sizes="any">
@@ -555,35 +555,58 @@ document.addEventListener('mousemove',ev=>{const h=ev.target.closest&&ev.target.
 
 /* ═════════════ PLANTILLA (una hoja por equipo) ═════════════ */
 const COLS=['FECHA','COD SAP','HOROMETRO','KILOMETRAJE','POSICION','SERIE / N° FUEGO','MARCA','MODELO','MEDIDA','COCADA (mm)','PRESION (psi)','REPARACION (USD)','OBSERVACION'];
+const INSTR=[['PLANTILLA DE INSPECCIÓN DE NEUMÁTICOS — una hoja por equipo, una fila por llanta'],[''],
+  ['1. Cada hoja es UN equipo. El nombre de la hoja es su Cód. SAP (ej. ECV140). Para otro equipo, copia la hoja y cámbiale el nombre.'],
+  ['2. Llenar en cada fila: FECHA (dd/mm/aaaa), HOROMETRO, POSICION (1, 2, 3…) y COCADA (mm, promedio de 3 puntos de la banda).'],
+  ['3. SERIE / N° FUEGO, MARCA, MODELO y MEDIDA: llenarlos la primera vez y cuando se cambia una llanta. Si no hay serie, dejarla vacía (se sigue por posición).'],
+  ['4. PRESION (psi en frío), KILOMETRAJE, REPARACION (USD) y OBSERVACION son opcionales.'],
+  ['5. Las filas sin COCADA no se cargan. Se puede subir el mismo archivo varias veces: equipo + posición + fecha se reemplaza, no se duplica.'],
+  [''],['EJEMPLO (no copiar esta fila a la hoja del equipo):'],
+  COLS,['23/04/2026','ECV146',3555,48210,1,'TK-24-00871','TECHKING','ETDT','325/95 R24',14.5,120,'','']];
+const ANCHOS=[{wch:12},{wch:10},{wch:11},{wch:12},{wch:9},{wch:18},{wch:12},{wch:12},{wch:13},{wch:12},{wch:12},{wch:14},{wch:30}];
+function hojaEquipo(sap,n,ult){
+  const rows=[COLS];
+  for(let p=1;p<=n;p++){const u=(ult||[]).find(r=>+r.posicion===p)||{};
+    rows.push(['',sap||'',''  ,'',p,u.serie||'',u.marca||'',u.modelo||'',u.medida||'','','','','']);}
+  const ws=XLSX.utils.aoa_to_sheet(rows); ws['!cols']=ANCHOS; return ws;
+}
 btnPlant.onclick=()=>{
   const o=fObra.value;
-  let saps=[...new Set(INSP.map(r=>r.cod_sap))].filter(s=>{const e=eqDe(s);return !o||(e&&e.cod_proyec===o);}).sort();
-  const extra=prompt('Equipos para la plantilla:\n'+(saps.length?saps.join(', '):'(todavía no hay equipos con inspecciones)')
-    +'\n\n¿Agregar otros? Escribe sus Cód. SAP separados por coma (o deja vacío).','');
-  if(extra===null)return;
-  extra.split(/[,;\s]+/).map(s=>s.trim().toUpperCase()).filter(Boolean).forEach(s=>{ if(!saps.includes(s))saps.push(s); });
-  if(!saps.length)return alert('Indica al menos un Cód. SAP.');
-  const wb=XLSX.utils.book_new();
-  const ins=[['PLANTILLA DE INSPECCIÓN DE NEUMÁTICOS — una hoja por equipo, una fila por llanta'],[''],
-    ['1. Llenar FECHA (dd/mm/aaaa), HOROMETRO y COCADA (mm, promedio de 3 puntos) en cada fila.'],
-    ['2. PRESION (psi en frío) es opcional. KILOMETRAJE es opcional.'],
-    ['3. Si se cambió una llanta, escribir la SERIE / N° FUEGO nueva, su MARCA, MODELO y MEDIDA.'],
-    ['4. Si no se registra la serie, dejarla vacía: la app sigue la llanta por posición.'],
-    ['5. Motivo de retiro o daños: en OBSERVACION. Costo de reparación: en REPARACION (USD).'],
-    ['6. Se puede subir el mismo archivo varias veces: equipo + posición + fecha se reemplaza, no se duplica.']];
-  const wi=XLSX.utils.aoa_to_sheet(ins); wi['!cols']=[{wch:100}]; XLSX.utils.book_append_sheet(wb,wi,'INSTRUCCIONES');
-  saps.forEach(sap=>{
-    const R=INSP.filter(r=>nrm(r.cod_sap)===nrm(sap)), ultF=R.reduce((m,r)=>r.fecha>m?r.fecha:m,'');
-    const U=R.filter(r=>r.fecha===ultF), e=eqDe(sap), nom=nrm(e&&e.equipo);
-    const n=U.length?Math.max(...U.map(r=>+r.posicion)):(/VOLQUETE/.test(nom)?12:/CISTERNA/.test(nom)?10:6);
-    const rows=[COLS];
-    for(let p=1;p<=n;p++){const u=U.find(r=>+r.posicion===p)||{};
-      rows.push(['',sap,'','',p,u.serie||'',u.marca||'',u.modelo||'',u.medida||'','','','',''] );}
-    const ws=XLSX.utils.aoa_to_sheet(rows);
-    ws['!cols']=[{wch:12},{wch:10},{wch:11},{wch:12},{wch:9},{wch:18},{wch:12},{wch:12},{wch:13},{wch:12},{wch:12},{wch:14},{wch:30}];
-    XLSX.utils.book_append_sheet(wb,ws,String(sap).slice(0,31));
-  });
-  XLSX.writeFile(wb,`Plantilla_neumaticos_${isoDe(new Date())}.xlsx`);
+  const conHist=[...new Set(INSP.map(r=>r.cod_sap))].filter(s=>{const e=eqDe(s);return !o||(e&&e.cod_proyec===o);}).sort();
+  document.body.insertAdjacentHTML('beforeend',`<div class="modal" id="mplant"><div class="mc" style="width:min(560px,96vw)">
+    <div class="mh"><h3>Descargar plantilla</h3><div class="spacer"></div><button class="act" id="mpCer">Cerrar</button></div>
+    <div class="mb">
+      <p><b>📄 Plantilla vacía</b> — para empezar: trae las columnas a llenar y una hoja de ejemplo con 12 posiciones.
+        En obra se copia la hoja una vez por equipo y se le pone el Cód. SAP como nombre.</p>
+      <button class="act primary" id="mpVacia" style="margin:8px 0 16px">📄 Descargar plantilla vacía</button>
+      <p><b>📋 Plantilla por equipo</b> — una hoja por Cód. SAP con sus posiciones, y la serie, marca y medida de la última inspección ya escritas.</p>
+      <div style="display:flex;gap:6px;margin-top:8px;flex-wrap:wrap">
+        <input id="mpSaps" placeholder="Cód. SAP separados por coma" value="${esc(conHist.join(', '))}" style="flex:1;min-width:220px;border:1px solid var(--line);border-radius:9px;height:34px;padding:0 10px">
+        <button class="act util" id="mpEq">📋 Descargar por equipo</button></div>
+      <p class="dim" style="font-size:12px;margin-top:6px">${conHist.length?`Equipos con inspecciones${o?' en '+esc(o):''}: ${conHist.length}.`:'Todavía no hay equipos con inspecciones: escribe sus Cód. SAP.'}</p>
+    </div></div></div>`);
+  const cerrar=()=>{const m=document.getElementById('mplant');if(m)m.remove();};
+  mpCer.onclick=cerrar; document.getElementById('mplant').addEventListener('click',ev=>{if(ev.target.id==='mplant')cerrar();});
+  mpVacia.onclick=()=>{
+    const wb=XLSX.utils.book_new();
+    const wi=XLSX.utils.aoa_to_sheet(INSTR); wi['!cols']=[{wch:14},{wch:10},{wch:11},{wch:12},{wch:9},{wch:18},{wch:12},{wch:12},{wch:13},{wch:12},{wch:12},{wch:14},{wch:30}];
+    XLSX.utils.book_append_sheet(wb,wi,'INSTRUCCIONES');
+    XLSX.utils.book_append_sheet(wb,hojaEquipo('',12,null),'ECV000');
+    XLSX.writeFile(wb,'Plantilla_neumaticos_VACIA.xlsx'); cerrar();
+  };
+  mpEq.onclick=()=>{
+    const saps=[...new Set(mpSaps.value.split(/[,;\s]+/).map(s=>s.trim().toUpperCase()).filter(Boolean))];
+    if(!saps.length)return alert('Escribe al menos un Cód. SAP.');
+    const wb=XLSX.utils.book_new();
+    const wi=XLSX.utils.aoa_to_sheet(INSTR); wi['!cols']=[{wch:14}]; XLSX.utils.book_append_sheet(wb,wi,'INSTRUCCIONES');
+    saps.forEach(sap=>{
+      const R=INSP.filter(r=>nrm(r.cod_sap)===nrm(sap)), ultF=R.reduce((m,r)=>r.fecha>m?r.fecha:m,'');
+      const U=R.filter(r=>r.fecha===ultF), nom=nrm((eqDe(sap)||{}).equipo);
+      const n=U.length?Math.max(...U.map(r=>+r.posicion)):(/VOLQUETE/.test(nom)?12:/CISTERNA/.test(nom)?10:6);
+      XLSX.utils.book_append_sheet(wb,hojaEquipo(sap,n,U),String(sap).slice(0,31));
+    });
+    XLSX.writeFile(wb,`Plantilla_neumaticos_${isoDe(new Date())}.xlsx`); cerrar();
+  };
 };
 
 /* ═════════════ SUBIR INSPECCIÓN ═════════════ */
@@ -611,6 +634,7 @@ inFile.onchange=async()=>{
     A.slice(hi+1).forEach((r,i)=>{
       const coc=aNum(r[c.co]); if(coc==null)return;              // fila sin medición: se ignora
       const sap=String((c.s>=0&&r[c.s])||hn).trim().toUpperCase(), fecha=aFecha(r[c.f]), pos=aNum(r[c.p]);
+      if(/^(ECV000|PLANTILLA|HOJA\d*|SHEET\d*|EQUIPO)$/.test(sap)){avisos.push(`${hn} fila ${hi+i+2}: falta el Cód. SAP (ponlo en la columna COD SAP o como nombre de la hoja)`);return;}
       if(!fecha||!pos){avisos.push(`${hn} fila ${hi+i+2}: falta ${!fecha?'FECHA':'POSICION'}`);return;}
       regs.push({cod_sap:sap,fecha,posicion:pos,horometro:aNum(r[c.hr]),km:c.km>=0?aNum(r[c.km]):null,
         serie:c.se>=0&&String(r[c.se]).trim()?String(r[c.se]).trim().toUpperCase():null,
