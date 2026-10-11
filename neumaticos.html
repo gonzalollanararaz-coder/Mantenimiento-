@@ -1,0 +1,713 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="gllr-version" content="V.111026-1" data-pagina="Neumáticos">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Neumáticos &mdash; UDE</title>
+<link rel="icon" href="favicon.ico" sizes="any">
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#1c232b">
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+<script src="supabase.js"></script>
+<style>
+  :root{--steel:#1c232b;--amber:#FFCD11;--line:#dfe3e7;--ink:#1a1d21;--muted:#6b747d;--bg:#f4f6f8;--navy:#1F3864}
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;background:var(--bg);color:var(--ink);font-size:14px;display:flex;flex-direction:column;height:100vh;overflow:hidden}
+  .hide{display:none !important}
+  .mono{font-family:"SF Mono",ui-monospace,monospace}
+  .dim{color:var(--muted)}
+  header{background:var(--steel);color:#fff;padding:8px 16px;display:flex;align-items:center;flex-shrink:0}
+  .brand-min{width:270px;flex:0 0 270px;overflow:hidden}
+  .brand-min h1{font-size:14px;font-weight:700;white-space:nowrap}
+  .brand-min p{font-size:10px;color:#9aa4ad;text-transform:uppercase;letter-spacing:1.5px}
+  header .who{font-size:12px;color:#cdd4da}
+  header .sp2{flex:1}
+  #subnav{background:#fff;border-bottom:1px solid var(--line);padding:0 16px;display:flex;gap:4px;flex-shrink:0;overflow-x:auto}
+  #subnav button{background:none;border:none;padding:10px 14px;cursor:pointer;font:inherit;font-size:13px;font-weight:600;color:#6b747d;border-bottom:3px solid transparent;white-space:nowrap}
+  #subnav button:hover{color:var(--ink)}
+  #subnav button.on{color:var(--ink);border-bottom-color:var(--amber)}
+  .toolbar{display:flex;flex-wrap:nowrap;gap:12px;align-items:center;padding:9px 16px;background:#fff;border-bottom:1px solid var(--line);flex-shrink:0;overflow-x:auto}
+  .toolbar>*{flex:0 0 auto}
+  .toolbar input,.toolbar select{border:1px solid var(--line);border-radius:9px;height:34px;padding:0 12px;font-size:12.5px}
+  .grupo-wrap{display:flex;flex-direction:column;gap:2px}
+  .rotulo{font-size:9px;font-weight:800;color:#98a2ad;text-transform:uppercase;letter-spacing:.5px}
+  .grupo{display:flex;gap:6px;align-items:center;border-radius:9px;padding:5px 7px}
+  .grupo.filtros{background:#F0F2F8}.grupo.filtros select,.grupo.filtros input{background:#fff}
+  .grupo.acciones{background:#EAF5EC}
+  .spacer{flex:1}
+  .act{border:1px solid var(--line);background:#fff;border-radius:9px;height:34px;padding:0 13px;font:inherit;font-size:12.5px;font-weight:500;color:var(--ink);cursor:pointer;display:inline-flex;align-items:center;gap:6px;white-space:nowrap}
+  .act:hover{border-color:#C9CDD2}
+  .act.primary{background:linear-gradient(180deg,#FFE98A,#FFD84A);border-color:#DCB61C;color:#5C4708;font-weight:600}
+  .act.util{color:#4254A5;border-color:#C7CDEB}
+  .act.sm{height:26px;padding:0 9px;font-size:11.5px}
+  .act:disabled{opacity:.45;cursor:default}
+  #wrap{flex:1;overflow:auto;padding:12px 14px 30px;min-height:0}
+  footer{padding:6px 16px;color:var(--muted);font-size:12px;text-align:center;flex-shrink:0}
+  .vacio{padding:40px;text-align:center;color:#98a2ad;font-size:13px}
+  /* tarjetas estilo dashboard GLLR */
+  .row{display:flex;gap:12px;margin-bottom:12px;align-items:stretch}
+  @media(max-width:1200px){.row{flex-wrap:wrap}.row>.card{flex:1 1 100%!important}}
+  .card{background:#fff;border:1px solid var(--line);border-radius:14px;padding:12px 14px;display:flex;flex-direction:column;gap:9px;min-width:0}
+  .bnd{display:flex;align-items:center;gap:8px;border-radius:8px;padding:5px 10px;font-weight:700;font-size:12px;letter-spacing:.03em;color:#fff;text-shadow:0 1px 1px rgba(0,0,0,.25)}
+  .bnd .n{background:rgba(255,255,255,.25);border-radius:999px;width:20px;height:20px;display:inline-flex;align-items:center;justify-content:center;font-size:11px}
+  .bnd.azul{background:linear-gradient(180deg,#7B87C0 0%,#4254A5 48%,#334281 100%)}
+  .bnd.verde{background:linear-gradient(180deg,#55BF5D 0%,#0CA318 48%,#097F13 100%)}
+  .bnd.amarillo{background:linear-gradient(180deg,#FFDC58 0%,#FFCD11 48%,#C7A00D 100%);color:#3B2E00;text-shadow:none}
+  .bnd.rojo{background:linear-gradient(180deg,#E05A5F 0%,#D3141A 48%,#A51014 100%)}
+  .bnd.plomo{background:linear-gradient(180deg,#ADADAD 0%,#8A8A8A 48%,#6C6C6C 100%)}
+  .preg{font-size:12.5px;color:var(--muted);margin-top:-3px}
+  .tiles{display:flex;gap:10px;flex-wrap:wrap}.tiles.col{flex-direction:column}
+  .tile{flex:1;min-width:140px;border-radius:12px;padding:9px 12px;background:#F7F8FA;border:1px solid var(--line)}
+  .tile .l{font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.3px}
+  .tile .v{font-size:28px;font-weight:800;line-height:1.1;margin-top:2px;color:var(--navy)}
+  .tile .v small{font-size:13px;font-weight:600;color:var(--muted)}
+  .tile .s{font-size:11px;color:var(--muted)}
+  .tile.ok{background:#DCF5E3;border-color:#b8e7c6}.tile.ok .v{color:#0F7A33}
+  .tile.warn{background:#FFF6D6;border-color:#EFDC94}.tile.warn .v{color:#8A6A00}
+  .tile.bad{background:#FDE4E4;border-color:#F5BDBD}.tile.bad .v{color:#B91C1C}
+  .ley{display:flex;gap:12px;font-size:11.5px;color:var(--muted);flex-wrap:wrap}.ley span{display:inline-flex;align-items:center;gap:5px}
+  .ley i{width:12px;height:12px;border-radius:3px;display:inline-block}
+  /* tablas */
+  table.t{width:100%;border-collapse:collapse;font-size:12px;background:#fff}
+  table.t th{background:linear-gradient(180deg,#7B87C0 0%,#4254A5 60%,#334281 100%);color:#fff;font-size:9.5px;text-transform:uppercase;letter-spacing:.3px;padding:5px 6px;text-align:left;white-space:nowrap;position:sticky;top:0;z-index:2}
+  table.t th.r,table.t td.r{text-align:right}table.t th.c,table.t td.c{text-align:center}
+  table.t td{padding:4px 6px;border-bottom:1px solid #eef1f4;white-space:nowrap}
+  table.t tbody tr:hover td{background:#f7fbff}
+  table.t tr.tot td{background:#EEF1F8;font-weight:800}
+  table.t input,table.t select{border:1px solid var(--line);border-radius:6px;height:26px;padding:0 6px;font:inherit;font-size:12px;width:100%;min-width:60px}
+  .pill{border-radius:999px;padding:1px 8px;font-size:10.5px;font-weight:800;display:inline-block}
+  .p-ok{background:#DCF5E3;color:#0F7A33}.p-warn{background:#FFF6D6;color:#8A6A00}.p-bad{background:#FDE4E4;color:#B91C1C}.p-na{background:#eef0f2;color:#6b747d}
+  .mini{height:7px;border-radius:4px;background:#eef1f4;position:relative;width:80px;display:inline-block;vertical-align:middle}
+  .mini i{position:absolute;left:0;top:0;height:100%;border-radius:4px}
+  .ref{color:#98a2ad;font-size:10px;font-weight:700;margin-left:3px}
+  /* esquema por equipo */
+  .eqs{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:12px}
+  .eq{background:#fff;border:1px solid var(--line);border-radius:14px;padding:10px 12px}
+  .eq h4{font-size:13px;color:var(--navy);display:flex;justify-content:space-between;gap:6px}
+  .eq h4 span{font-size:11px;color:var(--muted);font-weight:500;text-align:right}
+  .chasis{margin:10px auto 4px;width:200px}
+  .eje{display:flex;justify-content:space-between;align-items:center;margin:9px 0;position:relative}
+  .eje:before{content:'';position:absolute;left:30px;right:30px;top:50%;height:4px;background:#c9ced6;border-radius:2px}
+  .lado{display:flex;gap:3px;position:relative}
+  .neu{width:32px;height:44px;border-radius:7px;display:flex;flex-direction:column;align-items:center;justify-content:center;font-size:10.5px;font-weight:800;color:#fff;border:2px solid rgba(0,0,0,.08)}
+  .neu small{font-size:8.5px;font-weight:600;opacity:.9}
+  .n-ok{background:#16A34A}.n-warn{background:#E0B000;color:#3B2E00}.n-bad{background:#DC2626}.n-na{background:#9aa4ad}.n-vac{background:#fff;border:2px dashed #c9ced6;color:#98a2ad}
+  .tt{position:fixed;pointer-events:none;background:#1c232b;color:#fff;font-size:12px;padding:6px 9px;border-radius:7px;display:none;z-index:99;line-height:1.5;max-width:320px}
+  .formula{background:#F7F8FA;border:1px solid var(--line);border-radius:10px;padding:9px 12px;font-size:12.5px;line-height:1.75}
+  .formula b{color:var(--navy)}
+  .agr{display:flex;gap:6px;flex-wrap:wrap;margin-top:6px}
+  .agr input{border:1px solid var(--line);border-radius:8px;height:30px;padding:0 8px;font-size:12.5px;width:120px}
+  .fx{border:none;background:transparent;color:#c2c7cd;font-size:13px;cursor:pointer;padding:0 4px}.fx:hover{color:#D3141A}
+  .modal{position:fixed;inset:0;background:rgba(15,20,26,.55);z-index:99;display:flex;align-items:flex-start;justify-content:center;padding:18px;overflow:auto}
+  .mc{background:#fff;border-radius:12px;width:min(900px,98vw);box-shadow:0 20px 60px rgba(0,0,0,.35)}
+  .mh{display:flex;align-items:center;gap:10px;padding:12px 16px;border-bottom:1px solid var(--line)}
+  .mh h3{font-size:15px;color:var(--navy)}
+  .mb{padding:12px 16px 18px;max-height:74vh;overflow:auto;font-size:13px;line-height:1.55}
+</style>
+</head>
+<body>
+<header id="topbar">
+  <div class="brand-min"><h1>Neumáticos &mdash; Control y Rendimiento</h1><p>Unidad de Equipos &middot; UDE</p></div>
+  <div class="sp2"></div>
+  <span class="who" id="who"></span>
+</header>
+<script>if(window.self!==window.top){document.getElementById('topbar').style.display='none';}</script>
+<div id="subnav">
+  <button data-v="res" class="on">&#128202; Resumen</button>
+  <button data-v="eq">&#128734; Por equipo</button>
+  <button data-v="lis">Llantas y proyección</button>
+  <button data-v="mar">Comparar marcas</button>
+  <button data-v="ins">Inspecciones</button>
+  <button data-v="par">&#9881; Parámetros</button>
+</div>
+<div class="toolbar">
+  <div class="grupo-wrap"><span class="rotulo">Filtros</span>
+    <div class="grupo filtros">
+      <select id="fObra"><option value="">Todas las obras</option></select>
+      <select id="fMedida"><option value="">Todas las medidas</option></select>
+      <input type="search" id="fBusca" placeholder="Equipo, serie, marca…" style="width:190px">
+    </div></div>
+  <div class="spacer"></div>
+  <div class="grupo-wrap"><span class="rotulo">Acciones</span>
+    <div class="grupo acciones">
+      <button class="act util" id="btnPlant" title="Excel con una hoja por equipo, con sus posiciones y llantas actuales">&#128196; Plantilla</button>
+      <button class="act primary" id="btnSubir">&#11014; Subir inspección</button>
+      <input type="file" id="inFile" accept=".xlsx,.xls" class="hide">
+      <button class="act util" id="btnXls">&#8681; Excel</button>
+      <button class="act util" id="btnRec" title="Recargar">&#8635;</button>
+    </div></div>
+</div>
+<div id="wrap">
+  <section id="v-res"></section>
+  <section id="v-eq" class="hide"></section>
+  <section id="v-lis" class="hide"></section>
+  <section id="v-mar" class="hide"></section>
+  <section id="v-ins" class="hide"></section>
+  <section id="v-par" class="hide"></section>
+</div>
+<footer id="pie">Cargando…</footer>
+<div class="tt" id="tt"></div>
+
+<script>
+const CFG=(()=>{try{return JSON.parse(localStorage.getItem('gllr_sbcfg')||'null')}catch(_){return null}})();
+if(!CFG||!CFG.url){
+  document.body.innerHTML='<div style="padding:60px;text-align:center;font-family:sans-serif"><h2 style="font-size:18px;margin-bottom:10px">Abre primero la p&aacute;gina principal</h2>'
+   +'<p style="color:#6b747d">Esta pesta&ntilde;a toma la conexi&oacute;n y la sesi&oacute;n desde el Maestro de Equipos.</p></div>';
+  throw new Error('sin configuracion');
+}
+if(!window.supabase){
+  document.body.innerHTML='<div style="padding:60px;text-align:center;font-family:sans-serif"><h2 style="font-size:18px;margin-bottom:10px">No se pudo cargar un componente necesario</h2>'
+    +'<button onclick="location.reload()" style="background:#FFCD11;border:none;border-radius:9px;padding:10px 20px;font-weight:700;cursor:pointer">Reintentar</button></div>';
+  throw new Error('window.supabase no disponible');
+}
+const sb=window.supabase.createClient(CFG.url,CFG.key);
+const esc=s=>String(s??"").replace(/&/g,"&amp;").replace(/"/g,"&quot;").replace(/</g,"&lt;");
+const nrm=s=>String(s??'').normalize('NFD').replace(/[̀-ͯ]/g,'').toUpperCase().replace(/\s+/g,' ').trim();
+const f0=n=>Number(n).toLocaleString('es-PE',{maximumFractionDigits:0});
+const f1=n=>Number(n).toLocaleString('es-PE',{minimumFractionDigits:1,maximumFractionDigits:1});
+const f2=n=>Number(n).toLocaleString('es-PE',{minimumFractionDigits:2,maximumFractionDigits:2});
+const isoDe=d=>{const z=new Date(d.getTime()-d.getTimezoneOffset()*60000);return z.toISOString().slice(0,10);};
+const fmtDate=v=>{if(!v)return'';const p=String(v).slice(0,10).split('-');return p.length===3?`${p[2]}/${p[1]}/${p[0].slice(2)}`:String(v);};
+const hoy0=()=>{const d=new Date();d.setHours(0,0,0,0);return d;};
+const nmd=s=>nrm(s).replace(/\s+/g,'');   // medidas: '325/95 R24' = '325/95R24'
+const MESES=['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Set','Oct','Nov','Dic'];
+
+let perfil=null, datos=[], INSP=[], PMAR=[], PMED=[], PPRE=[], PAR={}, LL=[], VIDAS=[], vista='res';
+const esAdmin=()=>perfil&&perfil.rol==='admin';
+const eqDe=sap=>datos.find(e=>nrm(e.cod_sap)===nrm(sap))||null;
+
+/* ═════════════ MOTOR DE CÁLCULO ═════════════
+   Cada fila de inspección = una llanta en una posición en una fecha.
+   · Si la fila trae SERIE / N° de fuego, la llanta se sigue por su serie (aunque la roten de posición o de equipo).
+   · Si no trae serie, se sigue por equipo + posición, y se detecta un cambio de llanta cuando la cocada SUBE más de 2 mm.
+   Rendimiento (h/mm) = horas trabajadas ÷ mm gastados entre la primera y la última medición de esa llanta.
+   Mientras no haya al menos 1 mm de desgaste medido, se usa el h/mm de referencia de su marca y medida. */
+function paramMarca(marca,medida){
+  return PMAR.find(p=>nrm(p.marca)===nrm(marca)&&nmd(p.medida)===nmd(medida))
+      || PMAR.find(p=>nrm(p.marca)===nrm(marca)&&!p.medida) || null;
+}
+function retiroDe(medida){ const p=PMED.find(x=>nmd(x.medida)===nmd(medida)); return p&&p.retiro_mm!=null?+p.retiro_mm:(+PAR.retiro_mm_def||8); }
+function presionDe(e,medida){
+  const nom=nrm(e&&e.equipo);
+  const c=PPRE.filter(p=>nmd(p.medida)===nmd(medida)&&(!p.tipo_equipo||nom.includes(nrm(p.tipo_equipo))));
+  c.sort((a,b)=>(b.tipo_equipo?1:0)-(a.tipo_equipo?1:0));
+  return c[0]||null;
+}
+/* posiciones direccionales (simples) y duales, según cuántas posiciones tiene el equipo */
+function esquema(n){
+  const ejes=[]; let p=1;
+  const steer=n<=4?n:(n%4===0?4:2);
+  for(let i=0;i<steer;i+=2){ejes.push([p,p+1]);p+=2;}
+  while(p<=n){ const t=Math.min(4,n-p+1); ejes.push(Array.from({length:t},(_,i)=>p+i)); p+=t; }
+  const duales=[]; ejes.forEach(e=>{ if(e.length===4){duales.push([e[0],e[1]],[e[2],e[3]]);} });
+  return {ejes,duales};
+}
+function hrDiaDe(sap){
+  const e=eqDe(sap); if(e&&+e.hr_dia>0)return +e.hr_dia;
+  const R=INSP.filter(r=>nrm(r.cod_sap)===nrm(sap)&&r.horometro!=null).sort((a,b)=>a.fecha.localeCompare(b.fecha));
+  if(R.length<2)return null;
+  const a=R[0],b=R[R.length-1], d=(new Date(b.fecha)-new Date(a.fecha))/86400000;
+  return d>=7&&b.horometro>a.horometro?(b.horometro-a.horometro)/d:null;
+}
+function calcular(){
+  const H=hoy0(), rojo=+PAR.dias_rojo||30, amar=+PAR.dias_amarillo||60;
+  // 1) agrupar por llanta (serie o equipo+posición) y partir en "vidas"
+  const porLlanta=new Map();
+  INSP.forEach(r=>{ const k=r.serie?'S:'+nrm(r.serie):'P:'+nrm(r.cod_sap)+'#'+r.posicion;
+    if(!porLlanta.has(k))porLlanta.set(k,[]); porLlanta.get(k).push(r); });
+  VIDAS=[];
+  porLlanta.forEach((rows,k)=>{
+    rows.sort((a,b)=>a.fecha.localeCompare(b.fecha)||(a.horometro||0)-(b.horometro||0));
+    let v=null;
+    rows.forEach(r=>{
+      const nueva=!v || (r.cocada!=null&&v.ult.cocada!=null&&r.cocada>v.ult.cocada+2);
+      if(nueva){ v={k,porSerie:k.startsWith('S:'),rows:[],ini:r}; VIDAS.push(v); }
+      v.rows.push(r); v.ult=r;
+    });
+  });
+  VIDAS.forEach(v=>{
+    const a=v.ini, b=v.ult;
+    v.marca=b.marca||a.marca||''; v.medida=b.medida||a.medida||''; v.serie=b.serie||a.serie||'';
+    v.desg=(a.cocada!=null&&b.cocada!=null)?a.cocada-b.cocada:null;
+    v.hrs=(a.horometro!=null&&b.horometro!=null)?b.horometro-a.horometro:null;
+    v.rendReal=(v.desg>=1&&v.hrs>0)?v.hrs/v.desg:null;
+  });
+  // promedios reales por marca+medida y por medida (para llantas aún sin desgaste medible)
+  const prom=f=>{const L=VIDAS.filter(f).map(v=>v.rendReal).filter(x=>x);return L.length?L.reduce((a,x)=>a+x,0)/L.length:null;};
+  // 2) llanta actual en cada equipo + posición = la de la última inspección de ese equipo
+  LL=[];
+  const saps=[...new Set(INSP.map(r=>nrm(r.cod_sap)))];
+  saps.forEach(sap=>{
+    const R=INSP.filter(r=>nrm(r.cod_sap)===sap);
+    const ultF=R.reduce((m,r)=>r.fecha>m?r.fecha:m,'');
+    R.filter(r=>r.fecha===ultF).forEach(r=>{
+      const v=VIDAS.find(x=>x.rows.includes(r)); if(!v)return;
+      const e=eqDe(r.cod_sap), pm=paramMarca(v.marca,v.medida), ret=retiroDe(v.medida);
+      let rend=v.rendReal, fuente='real';
+      if(!rend){ rend=(pm&&+pm.hmm_ref)||prom(x=>nrm(x.marca)===nrm(v.marca)&&nmd(x.medida)===nmd(v.medida))||prom(x=>nmd(x.medida)===nmd(v.medida)); fuente=rend?'ref':'na'; }
+      const nueva=pm&&+pm.cocada_nueva?+pm.cocada_nueva:v.ini.cocada;
+      const coc=r.cocada, hd=hrDiaDe(r.cod_sap);
+      const rest=rend&&coc!=null?Math.max(0,(coc-ret)*rend):null;
+      let fRet=null,dias=null;
+      if(rest!=null&&hd){ fRet=new Date(new Date(r.fecha+'T00:00:00').getTime()+rest/hd*86400000); dias=Math.round((fRet-H)/86400000); }
+      const vida=rend&&nueva!=null?(nueva-ret)*rend:null;
+      const precio=pm&&+pm.precio?+pm.precio:null;
+      const rep=v.rows.reduce((s,x)=>s+(+x.reparacion_usd||0),0);
+      const usd=precio&&vida>0?(precio+rep)/vida:null;
+      let est;
+      if(coc!=null&&coc<=ret)est='bad';
+      else if(dias!=null)est=dias<rojo?'bad':(dias<=amar?'warn':'ok');
+      else est=coc!=null&&coc<=ret+2?'warn':'na';
+      let pres=null;
+      if(PAR.presion_activa&&r.presion!=null){ const pp=presionDe(e,v.medida);
+        if(pp){ pres={obj:pp.presion_obj,min:pp.presion_min,max:pp.presion_max,
+          est:(pp.presion_min!=null&&r.presion<pp.presion_min)?'baja':((pp.presion_max!=null&&r.presion>pp.presion_max)?'alta':'ok')}; } }
+      LL.push({sap:r.cod_sap,e,obra:(e&&e.cod_proyec)||r.obra||'',pos:+r.posicion,serie:v.serie,porSerie:v.porSerie,marca:v.marca,medida:v.medida,
+        ini:v.ini.cocada,nueva,coc,ret,hrs:v.hrs,rend,fuente,rest,dias,fRet,vida,precio,usd,est,presion:r.presion,pres,fecha:r.fecha,hr:r.horometro,obs:r.observacion,v});
+    });
+  });
+}
+
+/* ═════════════ FILTROS ═════════════ */
+function filtrados(){
+  const o=fObra.value, m=fMedida.value, q=nrm(fBusca.value);
+  return LL.filter(l=>(!o||l.obra===o)&&(!m||nmd(l.medida)===nmd(m))
+    &&(!q||nrm(`${l.sap} ${l.e?l.e.equipo:''} ${l.serie} ${l.marca} ${l.medida}`).includes(q)));
+}
+const ESTX={ok:'✓ Bien',warn:'! Pedir',bad:'✕ Cambiar',na:'— Sin datos'};
+const tile=(c,l,v,s)=>`<div class="tile ${c}"><div class="l">${l}</div><div class="v">${v}</div><div class="s">${s}</div></div>`;
+const avg=(L,k)=>{const x=L.map(l=>l[k]).filter(v=>v!=null&&isFinite(v));return x.length?x.reduce((a,b)=>a+b,0)/x.length:null;};
+const COLM=['#4254A5','#9AA6D6','#0f766e','#C7A00D','#6b747d'];
+
+/* ═════════════ VISTA: RESUMEN ═════════════ */
+function pintarRes(){
+  const L=filtrados(), rojo=+PAR.dias_rojo||30, amar=+PAR.dias_amarillo||60;
+  if(!LL.length){ document.getElementById('v-res').innerHTML=`<div class="card"><div class="vacio">Todavía no hay inspecciones cargadas.<br><br>
+    1) Pulsa <b>📄 Plantilla</b> · 2) llénala en obra (una fila por llanta, una hoja por equipo) · 3) súbela con <b>⬆ Subir inspección</b>.</div></div>`; return; }
+  const n=s=>L.filter(l=>l.est===s).length;
+  const eqsN=new Set(L.map(l=>l.sap)).size;
+  const conR=L.filter(l=>l.rend);
+  const medidas=[...new Set(L.map(l=>l.medida).filter(Boolean))].sort();
+  const porMarca=marcasStats(L.map(l=>l.v)).filter(x=>x.usd);
+  const mejor=porMarca.slice().sort((a,b)=>a.usd-b.usd)[0];
+  // pedidos por mes (4 meses)
+  const H=hoy0(), meses=[0,1,2,3].map(i=>{const d=new Date(H.getFullYear(),H.getMonth()+i,1);return{lab:i===0?'este mes (y vencidas)':MESES[d.getMonth()]+' '+String(d.getFullYear()).slice(2),c:{}};});
+  L.forEach(l=>{ if(l.dias==null&&l.est!=='bad')return;
+    let i=0; if(l.fRet){i=(l.fRet.getFullYear()-H.getFullYear())*12+l.fRet.getMonth()-H.getMonth(); i=Math.max(0,i);}
+    if(i<4){meses[i].c[l.medida]=(meses[i].c[l.medida]||0)+1;} });
+  const W=640,Hh=170,Lx=20,B=26,T=16,mx=Math.max(1,...meses.map(m=>Object.values(m.c).reduce((a,b)=>a+b,0)))*1.2,bw=70;
+  const X=i=>Lx+30+i*((W-Lx-60)/4),Y=x=>T+(Hh-T-B)*(1-x/mx);
+  let svg=`<svg viewBox="0 0 ${W} ${Hh}" width="100%" style="display:block;max-width:${W}px">`;
+  meses.forEach((M,i)=>{let acc=0;
+    medidas.forEach((md,j)=>{const c=M.c[md]||0; if(!c)return; const y0=Y(acc),y1=Y(acc+c); acc+=c;
+      svg+=`<rect class="hit" data-t="${esc(M.lab)}: ${c} llanta(s) ${esc(md)}" x="${X(i)}" y="${y1}" width="${bw}" height="${Math.max(1,y0-y1-1)}" fill="${COLM[j%COLM.length]}" rx="3"/>`;});
+    svg+=`<text x="${X(i)+bw/2}" y="${Y(acc)-5}" text-anchor="middle" font-size="12" font-weight="700" fill="#333">${acc}</text>`;
+    svg+=`<text x="${X(i)+bw/2}" y="${Hh-8}" text-anchor="middle" font-size="11.5" fill="#555">${M.lab}</text>`;});
+  svg+='</svg>';
+  // alertas
+  const bajoMin=L.filter(l=>l.coc!=null&&l.coc<=l.ret).length;
+  const presBaja=L.filter(l=>l.pres&&l.pres.est==='baja').length, presAlta=L.filter(l=>l.pres&&l.pres.est==='alta').length;
+  const dif=[], difMm=+PAR.dif_duales_mm||3;
+  [...new Set(L.map(l=>l.sap))].forEach(sap=>{const E=L.filter(l=>l.sap===sap), nP=Math.max(...E.map(l=>l.pos));
+    esquema(nP).duales.forEach(([a,b])=>{const x=E.find(l=>l.pos===a),y=E.find(l=>l.pos===b);
+      if(x&&y&&x.coc!=null&&y.coc!=null&&Math.abs(x.coc-y.coc)>=difMm)dif.push(`${sap} ${a}-${b}`);});});
+  // cuadro resumen por equipo
+  const saps=[...new Set(L.map(l=>l.sap))].sort();
+  const T0={n:0,ok:0,w:0,b:0,p:0};
+  const filas=saps.map(sap=>{const E=L.filter(l=>l.sap===sap), e=E[0].e;
+    const ok=E.filter(l=>l.est==='ok').length,w=E.filter(l=>l.est==='warn').length,b=E.filter(l=>l.est==='bad').length;
+    T0.n+=E.length;T0.ok+=ok;T0.w+=w;T0.b+=b;
+    const conD=E.filter(l=>l.dias!=null), pe=conD.length?conD.reduce((a,l)=>l.dias<a.dias?l:a,conD[0]):null;
+    const pedir=E.filter(l=>l.est==='bad'||l.est==='warn').length; T0.p+=pedir;
+    const cmin=Math.min(...E.map(l=>l.coc).filter(x=>x!=null)), hd=hrDiaDe(sap);
+    return `<tr><td class="mono"><b>${esc(sap)}</b></td><td>${esc(e?e.equipo:'')}</td><td>${esc([...new Set(E.map(l=>l.medida))].join(' · '))}</td><td class="r">${E.length}</td>
+      <td class="c">${ok}</td><td class="c">${w}</td><td class="c" style="${b?'color:#B91C1C;font-weight:800':''}">${b}</td>
+      <td class="r">${avg(E,'coc')!=null?f1(avg(E,'coc')):'—'}</td><td class="r" style="${E.some(l=>l.coc<=l.ret)?'color:#B91C1C;font-weight:800':''}">${isFinite(cmin)?f1(cmin):'—'}</td>
+      <td class="r">${avg(E,'rend')?f0(avg(E,'rend')):'—'}</td><td class="r">${avg(E,'usd')?f2(avg(E,'usd')):'—'}</td><td class="r">${hd?f1(hd):'—'}</td>
+      <td>${pe?`pos ${pe.pos} · ${esc(pe.marca)}`:'—'}</td><td class="c">${pe&&pe.fRet?fmtDate(isoDe(pe.fRet)):'—'}</td><td class="c">${fmtDate(E[0].fecha)}</td><td class="r"><b>${pedir}</b></td></tr>`;}).join('');
+  document.getElementById('v-res').innerHTML=`
+  <div class="row">
+    <div class="card" style="flex:1.4"><div class="bnd azul"><span class="n">1</span>ESTADO DE LAS LLANTAS</div>
+      <div class="preg">¿Cuántas llantas hay que cambiar pronto?</div>
+      <div class="tiles">${tile('','En servicio',L.length,`${eqsN} equipo(s)`)}${tile('ok','Bien',n('ok'),`más de ${amar} días de vida`)}
+        ${tile('warn','Ir pidiendo',n('warn'),`cambiar en ${rojo} a ${amar} días`)}${tile('bad','Cambiar ya',n('bad'),`menos de ${rojo} días o bajo el mínimo`)}</div>
+      ${n('na')?`<div class="preg">${n('na')} llanta(s) sin datos suficientes para proyectar (falta horómetro, HR/día o una segunda medición).</div>`:''}</div>
+    <div class="card" style="flex:1"><div class="bnd verde"><span class="n">2</span>RENDIMIENTO Y COSTO</div>
+      <div class="preg">¿Cuántas horas nos da cada milímetro y cuánto cuesta cada hora?</div>
+      <div class="tiles">${tile('','Rendimiento',conR.length?`${f0(avg(conR,'rend'))} <small>h/mm</small>`:'—','promedio de las llantas filtradas')}
+        ${tile('','Costo',avg(L,'usd')?`${f2(avg(L,'usd'))} <small>USD/h</small>`:'—','promedio por llanta')}
+        ${tile('ok','Más económica',mejor?esc(mejor.marca):'—',mejor?`${f2(mejor.usd)} USD/h · ${esc(mejor.medida)}`:'falta precio en Parámetros')}</div></div>
+  </div>
+  <div class="row">
+    <div class="card" style="flex:1.4"><div class="bnd amarillo"><span class="n">3</span>LLANTAS A PEDIR</div>
+      <div class="preg">¿Cuántas llantas nuevas necesitamos y cuándo? (según la fecha estimada de retiro)</div>${svg}
+      <div class="ley">${medidas.map((m,j)=>`<span><i style="background:${COLM[j%COLM.length]}"></i>${esc(m)}</span>`).join('')}</div></div>
+    <div class="card" style="flex:1"><div class="bnd rojo"><span class="n">4</span>ALERTAS DE LA ÚLTIMA INSPECCIÓN</div>
+      <div class="preg">¿Qué hay que revisar ya?</div>
+      <div class="tiles col">${tile('bad','Bajo el mínimo de retiro',bajoMin,'retirar en la próxima parada')}
+        ${PAR.presion_activa?tile('warn','Presión fuera de rango',presBaja+presAlta,`${presBaja} baja · ${presAlta} alta (según Parámetros)`):tile('','Presión','—','control de presión desactivado en Parámetros')}
+        ${tile('warn','Duales desparejos',dif.length,`más de ${difMm} mm de diferencia: ${esc(dif.slice(0,4).join(', '))||'—'}`)}</div></div>
+  </div>
+  <div class="card"><div class="bnd azul"><span class="n">5</span>CUADRO RESUMEN POR EQUIPO</div>
+    <div class="preg">Cómo está cada equipo, cuánto rinden sus llantas y cuándo toca el próximo cambio.</div>
+    <div style="overflow:auto"><table class="t"><thead><tr><th>Cód. SAP</th><th>Equipo</th><th>Medida</th><th class="r">Llantas</th><th class="c">🟢</th><th class="c">🟡</th><th class="c">🔴</th>
+      <th class="r">Cocada prom.</th><th class="r">Cocada mín.</th><th class="r">h/mm prom.</th><th class="r">USD/h prom.</th><th class="r">HR/día</th><th>Próximo cambio</th><th class="c">Fecha</th><th class="c">Últ. inspección</th><th class="r">A pedir</th></tr></thead>
+      <tbody>${filas}<tr class="tot"><td>TOTAL</td><td></td><td></td><td class="r">${T0.n}</td><td class="c">${T0.ok}</td><td class="c">${T0.w}</td><td class="c">${T0.b}</td>
+        <td class="r">${avg(L,'coc')!=null?f1(avg(L,'coc')):'—'}</td><td></td><td class="r">${avg(L,'rend')?f0(avg(L,'rend')):'—'}</td><td class="r">${avg(L,'usd')?f2(avg(L,'usd')):'—'}</td><td></td><td></td><td></td><td></td><td class="r">${T0.p}</td></tr></tbody></table></div></div>`;
+}
+
+/* ═════════════ VISTA: POR EQUIPO ═════════════ */
+function pintarEq(){
+  const L=filtrados(); const saps=[...new Set(L.map(l=>l.sap))].sort();
+  if(!saps.length){document.getElementById('v-eq').innerHTML='<div class="card"><div class="vacio">Sin llantas con estos filtros.</div></div>';return;}
+  document.getElementById('v-eq').innerHTML=`<div class="ley" style="margin-bottom:10px"><span><i style="background:#16A34A"></i>Bien</span><span><i style="background:#E0B000"></i>Ir pidiendo</span>
+    <span><i style="background:#DC2626"></i>Cambiar ya</span><span><i style="background:#9aa4ad"></i>Sin datos</span><span>· el número es la cocada (mm) · pasa el mouse para ver el detalle</span></div>
+    <div class="eqs">${saps.map(sap=>{const E=L.filter(l=>l.sap===sap), e=E[0].e, nP=Math.max(...E.map(l=>l.pos));
+      const g=p=>E.find(l=>l.pos===p);
+      const nn=p=>{const l=g(p); if(!l)return `<div class="neu n-vac">—<small>P${p}</small></div>`;
+        const t=`Pos ${l.pos} · ${l.marca||'—'}${l.serie?' · serie '+l.serie:''}\nCocada ${l.coc!=null?f1(l.coc):'—'} mm (retiro ${l.ret} mm)\n${l.rend?f0(l.rend)+' h/mm'+(l.fuente==='ref'?' (referencia)':''):'sin rendimiento'}${l.rest!=null?'\nLe quedan ~'+f0(l.rest)+' h':''}${l.fRet?' · retiro '+fmtDate(isoDe(l.fRet)):''}${l.presion!=null?'\nPresión '+l.presion+' psi':''}`;
+        return `<div class="neu n-${l.est} hit" data-t="${esc(t)}">${l.coc!=null?f1(l.coc):'—'}<small>P${l.pos}</small></div>`;};
+      const conD=E.filter(l=>l.dias!=null), pe=conD.length?conD.reduce((a,l)=>l.dias<a.dias?l:a,conD[0]):null;
+      return `<div class="eq"><h4>${esc(sap)}<span>${esc(e?e.equipo:'')}<br>${esc([...new Set(E.map(l=>l.medida))].join(' · '))}</span></h4>
+        <div class="chasis">${esquema(nP).ejes.map(x=>{const h=Math.ceil(x.length/2);return `<div class="eje"><div class="lado">${x.slice(0,h).map(nn).join('')}</div><div class="lado">${x.slice(h).map(nn).join('')}</div></div>`;}).join('')}</div>
+        <div style="font-size:11.5px;color:var(--muted);text-align:center">Última inspección ${fmtDate(E[0].fecha)}${pe?` · próximo cambio: <b style="color:#333">pos ${pe.pos}</b> (${fmtDate(isoDe(pe.fRet))})`:''}</div></div>`;}).join('')}</div>`;
+}
+
+/* ═════════════ VISTA: LLANTAS Y PROYECCIÓN ═════════════ */
+function ordenLL(L){ const r={bad:0,warn:1,ok:2,na:3}; return L.slice().sort((a,b)=>(r[a.est]-r[b.est])||((a.dias??1e9)-(b.dias??1e9))||a.sap.localeCompare(b.sap)||a.pos-b.pos); }
+function pintarLis(){
+  const L=ordenLL(filtrados());
+  document.getElementById('v-lis').innerHTML=`<div class="card"><div class="bnd azul">LLANTAS EN SERVICIO · RENDIMIENTO Y PROYECCIÓN</div>
+    <div class="preg">Ordenadas de la más urgente a la menos urgente. <span class="ref">REF</span> = h/mm de referencia (todavía no hay desgaste medido).
+      Las llantas sin serie se siguen por posición.</div>
+    <div style="overflow:auto"><table class="t"><thead><tr><th>Cód. SAP</th><th class="c">Pos.</th><th>Serie</th><th>Marca</th><th>Medida</th><th class="r">Cocada inicial</th><th class="r">Cocada actual</th>
+      <th>Vida usada</th><th class="r">Horas</th><th class="r">h/mm</th><th class="r">Le quedan (h)</th><th class="c">Retiro estimado</th><th class="r">USD/h</th>${PAR.presion_activa?'<th class="r">Presión</th>':''}<th class="c">Últ. medición</th><th class="c">Estado</th></tr></thead>
+    <tbody>${L.map(l=>{const uso=l.nueva!=null&&l.coc!=null&&l.nueva>l.ret?Math.max(0,Math.min(1,(l.nueva-l.coc)/(l.nueva-l.ret))):null;
+      const col=l.est==='bad'?'#DC2626':l.est==='warn'?'#E0B000':l.est==='ok'?'#16A34A':'#9aa4ad';
+      return `<tr><td class="mono">${esc(l.sap)}</td><td class="c">${l.pos}</td><td class="mono">${esc(l.serie)||'<span class="dim">por posición</span>'}</td><td>${esc(l.marca)}</td><td>${esc(l.medida)}</td>
+        <td class="r">${l.ini!=null?f1(l.ini):'—'}</td><td class="r"><b>${l.coc!=null?f1(l.coc):'—'}</b></td>
+        <td>${uso!=null?`<span class="mini"><i style="width:${uso*100}%;background:${col}"></i></span> ${Math.round(uso*100)}%`:'—'}</td>
+        <td class="r">${l.hrs!=null?f0(l.hrs):'—'}</td><td class="r">${l.rend?f0(l.rend):'—'}${l.fuente==='ref'?'<span class="ref">REF</span>':''}</td>
+        <td class="r">${l.rest!=null?f0(l.rest):'—'}</td><td class="c">${l.fRet?fmtDate(isoDe(l.fRet)):'—'}</td><td class="r">${l.usd?f2(l.usd):'—'}</td>
+        ${PAR.presion_activa?`<td class="r" style="${l.pres&&l.pres.est!=='ok'?'color:#B91C1C;font-weight:700':''}">${l.presion??'—'}</td>`:''}
+        <td class="c">${fmtDate(l.fecha)}</td><td class="c"><span class="pill p-${l.est}">${ESTX[l.est]}</span></td></tr>`;}).join('')
+      ||`<tr><td colspan="16" class="vacio">Sin llantas con estos filtros.</td></tr>`}</tbody></table></div></div>`;
+}
+
+/* ═════════════ VISTA: COMPARAR MARCAS ═════════════ */
+function marcasStats(vidas){
+  const g=new Map();
+  vidas.forEach(v=>{ if(!v.marca)return; const k=nrm(v.marca)+'|'+nmd(v.medida);
+    if(!g.has(k))g.set(k,{marca:v.marca,medida:v.medida,vidas:[]}); g.get(k).vidas.push(v); });
+  return [...g.values()].map(x=>{
+    const R=x.vidas.map(v=>v.rendReal).filter(Boolean), pm=paramMarca(x.marca,x.medida), ret=retiroDe(x.medida);
+    const hmm=R.length?R.reduce((a,b)=>a+b,0)/R.length:(pm&&+pm.hmm_ref)||null;
+    const nueva=pm&&+pm.cocada_nueva?+pm.cocada_nueva:null;
+    const vida=hmm&&nueva?(nueva-ret)*hmm:null, precio=pm&&+pm.precio?+pm.precio:null;
+    return {...x,n:x.vidas.length,nReal:R.length,hmm,vida,precio,nueva,usd:precio&&vida?precio/vida:null};
+  });
+}
+function pintarMar(){
+  const m=fMedida.value, o=fObra.value;
+  const vid=VIDAS.filter(v=>(!m||nmd(v.medida)===nmd(m))&&(!o||((eqDe(v.ult.cod_sap)||{}).cod_proyec===o)));
+  const S=marcasStats(vid);
+  const barras=(key,fmt,menor)=>{const D=S.filter(x=>x[key]).sort((a,b)=>menor?a[key]-b[key]:b[key]-a[key]); if(!D.length)return '<div class="vacio">Sin datos.</div>';
+    const mx=Math.max(...D.map(d=>d[key]));
+    return D.map((d,i)=>`<div style="display:grid;grid-template-columns:150px 1fr 80px;gap:8px;align-items:center;margin:6px 0;font-size:12.5px">
+      <b>${esc(d.marca)} <span class="dim" style="font-weight:400">${esc(d.medida)}</span></b><div style="height:16px;background:#eef1f4;border-radius:5px"><div class="hit" data-t="${esc(d.marca)} ${esc(d.medida)}: ${fmt(d[key])} · ${d.nReal} llanta(s) con desgaste medido"
+      style="height:100%;width:${d[key]/mx*100}%;background:${i===0?'#16A34A':'#4254A5'};border-radius:5px"></div></div><span style="text-align:right">${fmt(d[key])}</span></div>`).join('');};
+  document.getElementById('v-mar').innerHTML=`<div class="row">
+    <div class="card" style="flex:1"><div class="bnd verde">HORAS POR MILÍMETRO (más es mejor)</div>${barras('hmm',x=>f0(x)+' h/mm',false)}</div>
+    <div class="card" style="flex:1"><div class="bnd amarillo">COSTO POR HORA USD/h (menos es mejor)</div>${barras('usd',x=>f2(x),true)}</div></div>
+    <div class="card"><div class="bnd azul">TABLA COMPARATIVA</div><div class="preg">Incluye llantas en servicio y ya retiradas. El h/mm es el promedio de las llantas con desgaste medido; si ninguna tiene, se usa el de referencia.</div>
+    <table class="t"><thead><tr><th>Marca</th><th>Medida</th><th class="r">Llantas</th><th class="r">Con desgaste medido</th><th class="r">Precio USD</th><th class="r">Cocada nueva</th><th class="r">h/mm</th><th class="r">Vida proyectada (h)</th><th class="r">USD/h</th></tr></thead>
+    <tbody>${S.sort((a,b)=>(a.usd??1e9)-(b.usd??1e9)).map(d=>`<tr><td>${esc(d.marca)}</td><td>${esc(d.medida)}</td><td class="r">${d.n}</td><td class="r">${d.nReal}</td>
+      <td class="r">${d.precio??'—'}</td><td class="r">${d.nueva!=null?d.nueva+' mm':'—'}</td><td class="r">${d.hmm?f0(d.hmm):'—'}</td><td class="r">${d.vida?f0(d.vida):'—'}</td><td class="r"><b>${d.usd?f2(d.usd):'—'}</b></td></tr>`).join('')
+      ||'<tr><td colspan="9" class="vacio">Sin datos.</td></tr>'}</tbody></table></div>`;
+}
+
+/* ═════════════ VISTA: INSPECCIONES (datos cargados) ═════════════ */
+function pintarIns(){
+  const o=fObra.value, q=nrm(fBusca.value), m=fMedida.value;
+  const R=INSP.filter(r=>{const e=eqDe(r.cod_sap);
+    return (!o||(e&&e.cod_proyec===o))&&(!m||nmd(r.medida)===nmd(m))&&(!q||nrm(`${r.cod_sap} ${e?e.equipo:''} ${r.serie||''} ${r.marca||''}`).includes(q));})
+    .sort((a,b)=>b.fecha.localeCompare(a.fecha)||a.cod_sap.localeCompare(b.cod_sap)||a.posicion-b.posicion);
+  const ad=esAdmin();
+  document.getElementById('v-ins').innerHTML=`<div class="row">
+    <div class="card" style="flex:1.6"><div class="bnd azul">INSPECCIONES CARGADAS (${R.length})</div>
+      <div class="preg">Si subes de nuevo un archivo, las filas del mismo equipo + posición + fecha se reemplazan (no se duplican).</div>
+      <div style="overflow:auto;max-height:62vh"><table class="t"><thead><tr><th class="c">Fecha</th><th>Cód. SAP</th><th class="r">Horómetro</th><th class="r">Km</th><th class="c">Pos.</th><th>Serie</th><th>Marca</th><th>Modelo</th><th>Medida</th>
+        <th class="r">Cocada</th><th class="r">Presión</th><th>Observación</th>${ad?'<th></th>':''}</tr></thead>
+      <tbody>${R.slice(0,1500).map(r=>`<tr><td class="c">${fmtDate(r.fecha)}</td><td class="mono">${esc(r.cod_sap)}</td><td class="r">${r.horometro!=null?f0(r.horometro):''}</td><td class="r">${r.km!=null?f0(r.km):''}</td>
+        <td class="c">${r.posicion}</td><td class="mono">${esc(r.serie||'')}</td><td>${esc(r.marca||'')}</td><td>${esc(r.modelo||'')}</td><td>${esc(r.medida||'')}</td>
+        <td class="r"><b>${r.cocada!=null?f1(r.cocada):''}</b></td><td class="r">${r.presion??''}</td><td>${esc(r.observacion||'')}</td>
+        ${ad?`<td class="c"><button class="fx" data-delins="${r.id}" title="Eliminar esta fila">✕</button></td>`:''}</tr>`).join('')||'<tr><td colspan="13" class="vacio">Sin inspecciones.</td></tr>'}</tbody></table></div></div>
+    <div class="card" style="flex:1"><div class="bnd verde">PLANTILLA Y CÁLCULO</div>
+      <div class="preg"><b>📄 Plantilla</b> descarga un Excel con <b>una hoja por equipo</b> y una fila por posición, con la serie, marca y medida de la última inspección.
+        En obra solo se llena FECHA, HORÓMETRO, COCADA (promedio de 3 puntos) y, si se mide, PRESIÓN. Si se cambió una llanta, se escribe la serie nueva.</div>
+      <div class="formula">
+        <b>Desgaste</b> = cocada al montar − cocada actual (mm)<br>
+        <b>Horas trabajadas</b> = horómetro actual − horómetro al montar<br>
+        <b>Rendimiento</b> = horas ÷ desgaste → <b>h/mm</b><br>
+        <b>Le quedan</b> = (cocada actual − mínimo de retiro) × h/mm<br>
+        <b>Retiro estimado</b> = fecha de la medición + horas que le quedan ÷ HR/día<br>
+        <b>Vida proyectada</b> = (cocada nueva − mínimo) × h/mm<br>
+        <b>Costo</b> = (precio + reparaciones) ÷ vida → <b>USD/h</b></div>
+      <div class="preg">Con <b>serie / N° de fuego</b> la llanta se sigue aunque la roten. Sin serie se sigue por posición, y un cambio se detecta cuando la cocada sube más de 2 mm.
+        El HR/día sale del Maestro de Equipos; si falta, se calcula con los horómetros de las inspecciones.</div></div></div>`;
+  document.querySelectorAll('[data-delins]').forEach(b=>b.onclick=async()=>{
+    if(!confirm('¿Eliminar esta fila de inspección?'))return;
+    const {error}=await sb.from('neu_inspecciones').delete().eq('id',b.dataset.delins);
+    if(error)return alert('No se pudo eliminar: '+error.message);
+    INSP=INSP.filter(r=>String(r.id)!==b.dataset.delins); recalcular();
+  });
+}
+
+/* ═════════════ VISTA: PARÁMETROS (editable por administrador) ═════════════ */
+function pintarPar(){
+  const ad=esAdmin();
+  const inp=(tabla,id,campo,val,tipo)=>ad?`<input data-tb="${tabla}" data-id="${id}" data-c="${campo}" type="${tipo||'text'}" value="${esc(val??'')}">`:esc(val??'—');
+  const del=(tabla,id)=>ad?`<td class="c"><button class="fx" data-deltb="${tabla}" data-id="${id}" title="Quitar">✕</button></td>`:'';
+  const marcasUsadas=[...new Set(INSP.map(r=>r.marca).filter(Boolean))].sort(), medidasUsadas=[...new Set(INSP.map(r=>r.medida).filter(Boolean))].sort();
+  document.getElementById('v-par').innerHTML=`
+  ${ad?'':'<div class="preg" style="margin-bottom:8px">Solo un administrador puede cambiar los parámetros.</div>'}
+  <datalist id="dlMarca">${marcasUsadas.map(x=>`<option value="${esc(x)}">`).join('')}</datalist>
+  <datalist id="dlMedida">${medidasUsadas.map(x=>`<option value="${esc(x)}">`).join('')}</datalist>
+  <div class="row">
+    <div class="card" style="flex:1.4"><div class="bnd plomo">PRECIO Y RENDIMIENTO DE REFERENCIA POR MARCA</div>
+      <div class="preg">El h/mm de referencia se usa solo mientras una llanta no tenga desgaste medido. La cocada nueva sirve para la vida proyectada y el % de vida usada.</div>
+      <table class="t"><thead><tr><th>Marca</th><th>Medida</th><th class="r">Precio USD</th><th class="r">Cocada nueva (mm)</th><th class="r">h/mm referencia</th><th class="r">Vida esperada (h)</th>${ad?'<th></th>':''}</tr></thead>
+      <tbody>${PMAR.slice().sort((a,b)=>String(a.medida).localeCompare(String(b.medida))||String(a.marca).localeCompare(String(b.marca))).map(p=>`<tr>
+        <td>${inp('neu_param_marca',p.id,'marca',p.marca)}</td><td>${inp('neu_param_marca',p.id,'medida',p.medida)}</td>
+        <td class="r">${inp('neu_param_marca',p.id,'precio',p.precio,'number')}</td><td class="r">${inp('neu_param_marca',p.id,'cocada_nueva',p.cocada_nueva,'number')}</td>
+        <td class="r">${inp('neu_param_marca',p.id,'hmm_ref',p.hmm_ref,'number')}</td>
+        <td class="r">${p.cocada_nueva&&p.hmm_ref?f0((p.cocada_nueva-retiroDe(p.medida))*p.hmm_ref):'—'}</td>${del('neu_param_marca',p.id)}</tr>`).join('')||'<tr><td colspan="7" class="dim">Sin marcas todavía.</td></tr>'}</tbody></table>
+      ${ad?`<div class="agr"><input id="nmMarca" list="dlMarca" placeholder="Marca"><input id="nmMedida" list="dlMedida" placeholder="Medida"><input id="nmPrecio" type="number" placeholder="Precio USD">
+        <input id="nmCoc" type="number" placeholder="Cocada nueva"><input id="nmHmm" type="number" placeholder="h/mm ref."><button class="act sm primary" id="nmOk">+ Agregar</button></div>`:''}</div>
+    <div class="card" style="flex:1"><div class="bnd plomo">MÍNIMO DE RETIRO POR MEDIDA</div>
+      <div class="preg">Cocada a la que se retira la llanta (límite técnico para cuidar la carcasa).</div>
+      <table class="t"><thead><tr><th>Medida</th><th class="r">Retiro (mm)</th>${ad?'<th></th>':''}</tr></thead>
+      <tbody>${PMED.map(p=>`<tr><td>${inp('neu_param_medida',p.id,'medida',p.medida)}</td><td class="r">${inp('neu_param_medida',p.id,'retiro_mm',p.retiro_mm,'number')}</td>${del('neu_param_medida',p.id)}</tr>`).join('')
+        ||'<tr><td colspan="3" class="dim">Sin medidas: se usa el valor general.</td></tr>'}</tbody></table>
+      ${ad?`<div class="agr"><input id="nmdMed" list="dlMedida" placeholder="Medida"><input id="nmdRet" type="number" placeholder="Retiro mm"><button class="act sm primary" id="nmdOk">+ Agregar</button></div>`:''}
+      <div class="bnd plomo" style="margin-top:6px">GENERAL</div>
+      <table class="t"><tbody>
+        <tr><td>Retiro por defecto (mm)</td><td class="r">${ad?`<input data-par="retiro_mm_def" type="number" value="${PAR.retiro_mm_def??8}">`:PAR.retiro_mm_def??8}</td></tr>
+        <tr><td>🔴 Cambiar ya: menos de (días)</td><td class="r">${ad?`<input data-par="dias_rojo" type="number" value="${PAR.dias_rojo??30}">`:PAR.dias_rojo??30}</td></tr>
+        <tr><td>🟡 Ir pidiendo: hasta (días)</td><td class="r">${ad?`<input data-par="dias_amarillo" type="number" value="${PAR.dias_amarillo??60}">`:PAR.dias_amarillo??60}</td></tr>
+        <tr><td>Duales desparejos desde (mm)</td><td class="r">${ad?`<input data-par="dif_duales_mm" type="number" value="${PAR.dif_duales_mm??3}">`:PAR.dif_duales_mm??3}</td></tr>
+        <tr><td>Control de presión</td><td class="r">${ad?`<select data-par="presion_activa"><option value="false" ${PAR.presion_activa?'':'selected'}>Desactivado</option><option value="true" ${PAR.presion_activa?'selected':''}>Activado</option></select>`:(PAR.presion_activa?'Activado':'Desactivado')}</td></tr>
+      </tbody></table></div>
+  </div>
+  <div class="card"><div class="bnd plomo">PRESIÓN OBJETIVO POR TIPO DE EQUIPO Y MEDIDA (psi, en frío)</div>
+    <div class="preg">Se aplica cuando el control de presión está activado. "Tipo de equipo" se busca dentro del nombre del equipo del Maestro (ej. VOLQUETE, CISTERNA); vacío = cualquier equipo con esa medida.</div>
+    <table class="t"><thead><tr><th>Tipo de equipo</th><th>Medida</th><th class="r">Objetivo</th><th class="r">Mínimo</th><th class="r">Máximo</th>${ad?'<th></th>':''}</tr></thead>
+    <tbody>${PPRE.map(p=>`<tr><td>${inp('neu_param_presion',p.id,'tipo_equipo',p.tipo_equipo)}</td><td>${inp('neu_param_presion',p.id,'medida',p.medida)}</td>
+      <td class="r">${inp('neu_param_presion',p.id,'presion_obj',p.presion_obj,'number')}</td><td class="r">${inp('neu_param_presion',p.id,'presion_min',p.presion_min,'number')}</td>
+      <td class="r">${inp('neu_param_presion',p.id,'presion_max',p.presion_max,'number')}</td>${del('neu_param_presion',p.id)}</tr>`).join('')||'<tr><td colspan="6" class="dim">Sin presiones definidas.</td></tr>'}</tbody></table>
+    ${ad?`<div class="agr"><input id="npTipo" placeholder="Tipo (ej. VOLQUETE)"><input id="npMed" list="dlMedida" placeholder="Medida"><input id="npObj" type="number" placeholder="Objetivo">
+      <input id="npMin" type="number" placeholder="Mínimo"><input id="npMax" type="number" placeholder="Máximo"><button class="act sm primary" id="npOk">+ Agregar</button></div>`:''}</div>`;
+  if(!ad)return;
+  const num=v=>v===''?null:(isNaN(+v)?v:+v);
+  document.querySelectorAll('#v-par input[data-tb]').forEach(el=>el.onchange=async()=>{
+    const v=el.type==='number'?num(el.value):(el.value.trim()||null);
+    const {error}=await sb.from(el.dataset.tb).update({[el.dataset.c]:v}).eq('id',el.dataset.id);
+    if(error)return alert('No se pudo guardar: '+error.message);
+    const arr={neu_param_marca:PMAR,neu_param_medida:PMED,neu_param_presion:PPRE}[el.dataset.tb];
+    const x=arr.find(r=>String(r.id)===el.dataset.id); if(x)x[el.dataset.c]=v; recalcular();
+  });
+  document.querySelectorAll('#v-par [data-par]').forEach(el=>el.onchange=async()=>{
+    const v=el.dataset.par==='presion_activa'?el.value==='true':num(el.value);
+    const {error}=await sb.from('neu_parametros').upsert({id:1,[el.dataset.par]:v});
+    if(error)return alert('No se pudo guardar: '+error.message);
+    PAR[el.dataset.par]=v; recalcular();
+  });
+  document.querySelectorAll('#v-par [data-deltb]').forEach(b=>b.onclick=async()=>{
+    if(!confirm('¿Quitar esta fila de parámetros?'))return;
+    const {error}=await sb.from(b.dataset.deltb).delete().eq('id',b.dataset.id);
+    if(error)return alert('No se pudo quitar: '+error.message);
+    await cargarParametros(); recalcular();
+  });
+  const agregar=async(tabla,fila)=>{const {error}=await sb.from(tabla).insert(fila); if(error)return alert('No se pudo agregar: '+error.message); await cargarParametros(); recalcular();};
+  nmOk.onclick=()=>{ if(!nmMarca.value.trim())return alert('Indica la marca.');
+    agregar('neu_param_marca',{marca:nmMarca.value.trim(),medida:nmMedida.value.trim()||null,precio:num(nmPrecio.value),cocada_nueva:num(nmCoc.value),hmm_ref:num(nmHmm.value)}); };
+  nmdOk.onclick=()=>{ if(!nmdMed.value.trim())return alert('Indica la medida.'); agregar('neu_param_medida',{medida:nmdMed.value.trim(),retiro_mm:num(nmdRet.value)}); };
+  npOk.onclick=()=>{ if(!npMed.value.trim())return alert('Indica la medida.');
+    agregar('neu_param_presion',{tipo_equipo:npTipo.value.trim()||null,medida:npMed.value.trim(),presion_obj:num(npObj.value),presion_min:num(npMin.value),presion_max:num(npMax.value)}); };
+}
+
+/* ═════════════ NAVEGACIÓN ═════════════ */
+const VISTAS={res:pintarRes,eq:pintarEq,lis:pintarLis,mar:pintarMar,ins:pintarIns,par:pintarPar};
+function pintar(){ VISTAS[vista](); }
+function recalcular(){ calcular(); pintar(); pie.textContent=`${INSP.length} medición(es) · ${LL.length} llanta(s) en servicio · ${new Set(LL.map(l=>l.sap)).size} equipo(s)`; }
+document.querySelectorAll('#subnav button').forEach(b=>b.onclick=()=>{
+  vista=b.dataset.v;
+  document.querySelectorAll('#subnav button').forEach(x=>x.classList.toggle('on',x===b));
+  Object.keys(VISTAS).forEach(k=>document.getElementById('v-'+k).classList.toggle('hide',k!==vista));
+  pintar();
+});
+[fObra,fMedida].forEach(x=>x.onchange=pintar); fBusca.oninput=pintar;
+const tt=document.getElementById('tt');
+document.addEventListener('mousemove',ev=>{const h=ev.target.closest&&ev.target.closest('.hit');
+  if(!h){tt.style.display='none';return;} tt.innerHTML=esc(h.dataset.t).replace(/\n/g,'<br>'); tt.style.display='block';
+  tt.style.left=Math.min(ev.clientX+12,innerWidth-330)+'px'; tt.style.top=ev.clientY+12+'px';});
+
+/* ═════════════ PLANTILLA (una hoja por equipo) ═════════════ */
+const COLS=['FECHA','COD SAP','HOROMETRO','KILOMETRAJE','POSICION','SERIE / N° FUEGO','MARCA','MODELO','MEDIDA','COCADA (mm)','PRESION (psi)','REPARACION (USD)','OBSERVACION'];
+btnPlant.onclick=()=>{
+  const o=fObra.value;
+  let saps=[...new Set(INSP.map(r=>r.cod_sap))].filter(s=>{const e=eqDe(s);return !o||(e&&e.cod_proyec===o);}).sort();
+  const extra=prompt('Equipos para la plantilla:\n'+(saps.length?saps.join(', '):'(todavía no hay equipos con inspecciones)')
+    +'\n\n¿Agregar otros? Escribe sus Cód. SAP separados por coma (o deja vacío).','');
+  if(extra===null)return;
+  extra.split(/[,;\s]+/).map(s=>s.trim().toUpperCase()).filter(Boolean).forEach(s=>{ if(!saps.includes(s))saps.push(s); });
+  if(!saps.length)return alert('Indica al menos un Cód. SAP.');
+  const wb=XLSX.utils.book_new();
+  const ins=[['PLANTILLA DE INSPECCIÓN DE NEUMÁTICOS — una hoja por equipo, una fila por llanta'],[''],
+    ['1. Llenar FECHA (dd/mm/aaaa), HOROMETRO y COCADA (mm, promedio de 3 puntos) en cada fila.'],
+    ['2. PRESION (psi en frío) es opcional. KILOMETRAJE es opcional.'],
+    ['3. Si se cambió una llanta, escribir la SERIE / N° FUEGO nueva, su MARCA, MODELO y MEDIDA.'],
+    ['4. Si no se registra la serie, dejarla vacía: la app sigue la llanta por posición.'],
+    ['5. Motivo de retiro o daños: en OBSERVACION. Costo de reparación: en REPARACION (USD).'],
+    ['6. Se puede subir el mismo archivo varias veces: equipo + posición + fecha se reemplaza, no se duplica.']];
+  const wi=XLSX.utils.aoa_to_sheet(ins); wi['!cols']=[{wch:100}]; XLSX.utils.book_append_sheet(wb,wi,'INSTRUCCIONES');
+  saps.forEach(sap=>{
+    const R=INSP.filter(r=>nrm(r.cod_sap)===nrm(sap)), ultF=R.reduce((m,r)=>r.fecha>m?r.fecha:m,'');
+    const U=R.filter(r=>r.fecha===ultF), e=eqDe(sap), nom=nrm(e&&e.equipo);
+    const n=U.length?Math.max(...U.map(r=>+r.posicion)):(/VOLQUETE/.test(nom)?12:/CISTERNA/.test(nom)?10:6);
+    const rows=[COLS];
+    for(let p=1;p<=n;p++){const u=U.find(r=>+r.posicion===p)||{};
+      rows.push(['',sap,'','',p,u.serie||'',u.marca||'',u.modelo||'',u.medida||'','','','',''] );}
+    const ws=XLSX.utils.aoa_to_sheet(rows);
+    ws['!cols']=[{wch:12},{wch:10},{wch:11},{wch:12},{wch:9},{wch:18},{wch:12},{wch:12},{wch:13},{wch:12},{wch:12},{wch:14},{wch:30}];
+    XLSX.utils.book_append_sheet(wb,ws,String(sap).slice(0,31));
+  });
+  XLSX.writeFile(wb,`Plantilla_neumaticos_${isoDe(new Date())}.xlsx`);
+};
+
+/* ═════════════ SUBIR INSPECCIÓN ═════════════ */
+function aFecha(v){
+  if(v==null||v==='')return null;
+  if(v instanceof Date&&!isNaN(v))return isoDe(v);
+  if(typeof v==='number'){const d=XLSX.SSF.parse_date_code(v);return d?`${d.y}-${String(d.m).padStart(2,'0')}-${String(d.d).padStart(2,'0')}`:null;}
+  const s=String(v).trim(); let m=s.match(/^(\d{1,2})[\/\-.](\d{1,2})[\/\-.](\d{2,4})$/);
+  if(m){const y=m[3].length===2?'20'+m[3]:m[3];return `${y}-${m[2].padStart(2,'0')}-${m[1].padStart(2,'0')}`;}
+  m=s.match(/^(\d{4})-(\d{2})-(\d{2})/); return m?`${m[1]}-${m[2]}-${m[3]}`:null;
+}
+const aNum=v=>{if(v==null||v==='')return null;const n=+String(v).replace(/,/g,'');return isFinite(n)?n:null;};
+btnSubir.onclick=()=>inFile.click();
+inFile.onchange=async()=>{
+  const f=inFile.files[0]; inFile.value=''; if(!f)return;
+  const wb=XLSX.read(await f.arrayBuffer(),{type:'array',cellDates:true});
+  const regs=[], avisos=[];
+  wb.SheetNames.forEach(hn=>{
+    if(/INSTRUC/i.test(hn))return;
+    const A=XLSX.utils.sheet_to_json(wb.Sheets[hn],{header:1,raw:true,defval:''});
+    const hi=A.findIndex(r=>r.some(c=>nrm(c)==='POSICION')); if(hi<0)return;
+    const H=A[hi].map(nrm), col=(...ks)=>H.findIndex(h=>ks.some(k=>h.startsWith(k)));
+    const c={f:col('FECHA'),s:col('COD SAP','CODIGO','EQUIPO'),hr:col('HOROMETRO','HR'),km:col('KILOMETRAJE','KM'),p:col('POSICION'),se:col('SERIE','N° FUEGO','NRO FUEGO'),
+      ma:col('MARCA'),mo:col('MODELO'),me:col('MEDIDA'),co:col('COCADA'),pr:col('PRESION'),rp:col('REPARACION'),ob:col('OBSERVACION')};
+    A.slice(hi+1).forEach((r,i)=>{
+      const coc=aNum(r[c.co]); if(coc==null)return;              // fila sin medición: se ignora
+      const sap=String((c.s>=0&&r[c.s])||hn).trim().toUpperCase(), fecha=aFecha(r[c.f]), pos=aNum(r[c.p]);
+      if(!fecha||!pos){avisos.push(`${hn} fila ${hi+i+2}: falta ${!fecha?'FECHA':'POSICION'}`);return;}
+      regs.push({cod_sap:sap,fecha,posicion:pos,horometro:aNum(r[c.hr]),km:c.km>=0?aNum(r[c.km]):null,
+        serie:c.se>=0&&String(r[c.se]).trim()?String(r[c.se]).trim().toUpperCase():null,
+        marca:c.ma>=0&&String(r[c.ma]).trim()?String(r[c.ma]).trim():null, modelo:c.mo>=0&&String(r[c.mo]).trim()?String(r[c.mo]).trim():null,
+        medida:c.me>=0&&String(r[c.me]).trim()?String(r[c.me]).trim().toUpperCase():null, cocada:coc,
+        presion:c.pr>=0?aNum(r[c.pr]):null, reparacion_usd:c.rp>=0?aNum(r[c.rp]):null,
+        observacion:c.ob>=0&&String(r[c.ob]).trim()?String(r[c.ob]).trim():null, registrado_por:perfil?perfil.nombre:null});
+    });
+  });
+  // marca / medida faltante: se toma de la medición anterior de esa misma llanta (serie o posición)
+  regs.forEach(r=>{ if(r.marca&&r.medida)return;
+    const prev=INSP.filter(x=>r.serie?nrm(x.serie)===nrm(r.serie):(nrm(x.cod_sap)===nrm(r.cod_sap)&&+x.posicion===+r.posicion)).sort((a,b)=>b.fecha.localeCompare(a.fecha))[0];
+    if(prev){ r.marca=r.marca||prev.marca; r.medida=r.medida||prev.medida; r.modelo=r.modelo||prev.modelo; } });
+  if(!regs.length)return alert('No se encontraron filas con COCADA.\n\nRevisa que el archivo tenga la columna POSICION en el encabezado.'+(avisos.length?'\n\n'+avisos.slice(0,6).join('\n'):''));
+  const sinEq=[...new Set(regs.map(r=>r.cod_sap).filter(s=>!eqDe(s)))];
+  const clave=r=>nrm(r.cod_sap)+'|'+r.posicion+'|'+r.fecha, ya=new Set(INSP.map(clave));
+  const nuevas=regs.filter(r=>!ya.has(clave(r))).length;
+  const fechas=[...new Set(regs.map(r=>r.fecha))].sort();
+  if(!confirm(`${f.name}\n\nMediciones leídas: ${regs.length}\nEquipos: ${new Set(regs.map(r=>r.cod_sap)).size}\nFechas: ${fechas.map(fmtDate).join(', ')}\n`
+    +`Nuevas: ${nuevas} · Reemplazan una ya cargada: ${regs.length-nuevas}\n`
+    +(sinEq.length?`\n⚠ Códigos que no están en el Maestro: ${sinEq.join(', ')}\n`:'')
+    +(avisos.length?`\n⚠ ${avisos.length} fila(s) omitidas por falta de fecha o posición.\n`:'')+'\n¿Cargar?'))return;
+  pie.textContent='Guardando…';
+  for(let i=0;i<regs.length;i+=500){
+    const {error}=await sb.from('neu_inspecciones').upsert(regs.slice(i,i+500),{onConflict:'cod_sap,posicion,fecha'});
+    if(error){alert('No se pudo guardar: '+error.message);break;}
+  }
+  await cargarTodo();
+};
+
+/* ═════════════ EXCEL ═════════════ */
+btnXls.onclick=()=>{
+  const L=ordenLL(filtrados()); if(!L.length)return alert('No hay datos para exportar.');
+  const rows=L.map(l=>({'Obra':l.obra,'Cód. SAP':l.sap,'Equipo':l.e?l.e.equipo:'','Posición':l.pos,'Serie':l.serie||'','Marca':l.marca,'Medida':l.medida,
+    'Cocada inicial':l.ini,'Cocada actual':l.coc,'Mínimo retiro':l.ret,'Horas':l.hrs,'h/mm':l.rend?+l.rend.toFixed(1):'','h/mm de referencia':l.fuente==='ref'?'Sí':'',
+    'Horas que le quedan':l.rest!=null?Math.round(l.rest):'','Retiro estimado':l.fRet?isoDe(l.fRet):'','USD/h':l.usd?+l.usd.toFixed(3):'','Presión':l.presion??'',
+    'Última medición':l.fecha,'Estado':ESTX[l.est]}));
+  const wb=XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb,XLSX.utils.json_to_sheet(rows),'Llantas');
+  XLSX.writeFile(wb,`Neumaticos_${isoDe(new Date())}.xlsx`);
+};
+
+/* ═════════════ CARGA ═════════════ */
+async function traerTodo(tabla,orden){
+  let out=[],desde=0;
+  for(;;){ let q=sb.from(tabla).select('*'); if(orden)q=q.order(orden);
+    const {data,error}=await q.range(desde,desde+999); if(error)return {data:out,error};
+    out=out.concat(data||[]); if(!data||data.length<1000)break; desde+=1000; }
+  return {data:out,error:null};
+}
+async function cargarParametros(){
+  const [a,b,c,d]=await Promise.all([sb.from('neu_param_marca').select('*'),sb.from('neu_param_medida').select('*'),
+    sb.from('neu_param_presion').select('*'),sb.from('neu_parametros').select('*').eq('id',1).maybeSingle()]);
+  PMAR=a.data||[]; PMED=b.data||[]; PPRE=c.data||[]; PAR=d.data||{};
+  return a.error||b.error||c.error||d.error;
+}
+async function cargarTodo(){
+  pie.textContent='Cargando…';
+  const [r,err]=await Promise.all([traerTodo('neu_inspecciones','fecha'),cargarParametros()]);
+  if(r.error||err){
+    document.getElementById('v-res').innerHTML=`<div class="card"><div class="vacio">No se pudieron leer las tablas de neumáticos.<br><br>
+      Si es la primera vez, hay que crearlas en Supabase con el archivo <b>neumaticos_tablas.sql</b>.<br><span class="dim">${esc((r.error||err).message)}</span></div></div>`;
+    pie.textContent='Faltan las tablas de neumáticos en Supabase.'; return;
+  }
+  INSP=r.data||[];
+  const oSel=fObra.value, mSel=fMedida.value;
+  const obras=[...new Set(INSP.map(x=>(eqDe(x.cod_sap)||{}).cod_proyec).filter(Boolean))].sort();
+  fObra.innerHTML='<option value="">Todas las obras</option>'+obras.map(o=>`<option>${esc(o)}</option>`).join(''); fObra.value=oSel;
+  const meds=[...new Set(INSP.map(x=>x.medida).filter(Boolean))].sort();
+  fMedida.innerHTML='<option value="">Todas las medidas</option>'+meds.map(o=>`<option>${esc(o)}</option>`).join(''); fMedida.value=mSel;
+  recalcular();
+}
+btnRec.onclick=cargarTodo;
+
+(async()=>{
+  const {data:{session}}=await sb.auth.getSession();
+  if(!session){document.body.innerHTML='<div style="padding:60px;text-align:center"><h2 style="font-size:18px">Sesión no iniciada</h2><p style="color:#6b747d">Ingresa en la página principal.</p></div>';return;}
+  const {data:p}=await sb.from('profiles').select('id,nombre,rol,estado,paginas').eq('id',session.user.id).single();
+  perfil=p||{};
+  who.textContent=(perfil.nombre||session.user.email)+' · '+(perfil.rol||'');
+  if('BroadcastChannel' in window){
+    const ch=new BroadcastChannel('gllr_neu');
+    ch.onmessage=ev=>{ if(ev.data&&ev.data.tipo==='ping'){ ch.postMessage({tipo:'pong'}); try{window.focus();}catch(_){} } };
+  }
+  if(perfil.estado!=='aprobado'||(perfil.rol!=='admin'&&!(Array.isArray(perfil.paginas)&&perfil.paginas.includes('neu')))){
+    document.body.innerHTML='<div style="padding:60px;text-align:center;font-family:sans-serif"><h2 style="font-size:18px;margin-bottom:10px">Sin acceso a Neumáticos</h2>'
+     +'<p style="color:#6b747d">Un administrador debe habilitarte esta pestaña desde Usuarios.</p></div>';return;}
+  const {data:m}=await sb.from('maestro').select('id,cod_sap,equipo,marca,modelo,cod_proyec,familia,status,hr_dia,hrkm_actual,fecha_lectura');
+  datos=m||[];
+  await cargarTodo();
+})();
+</script>
+<style>.ver-pag{position:fixed;right:8px;bottom:4px;font:600 10px/1.3 -apple-system,"Segoe UI",Roboto,sans-serif;color:#8a939c;
+  background:rgba(255,255,255,.88);border:1px solid #e3e6e9;padding:1px 7px;border-radius:6px;z-index:9000;pointer-events:none;letter-spacing:.3px}
+  @media print{.ver-pag{display:none!important}}</style>
+<script>/* versión de esta pestaña (formato V.ddmmaa-#), siempre en la esquina inferior derecha */
+(function(){var m=document.querySelector('meta[name="gllr-version"]');if(!m)return;
+  var d=document.createElement('div');d.id='verPag';d.className='ver-pag';
+  d.textContent=(m.getAttribute('data-pagina')||'')+' · '+m.content;document.body.appendChild(d);})();</script>
+</body>
+</html>
