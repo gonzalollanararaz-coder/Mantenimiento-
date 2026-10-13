@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
 <meta charset="utf-8">
-<meta name="gllr-version" content="V.111026-2" data-pagina="Neumáticos">
+<meta name="gllr-version" content="V.131026-1" data-pagina="Neumáticos">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Neumáticos &mdash; UDE</title>
 <link rel="icon" href="favicon.ico" sizes="any">
@@ -93,6 +93,13 @@
   .neu{width:32px;height:44px;border-radius:7px;display:flex;flex-direction:column;align-items:center;justify-content:center;font-size:10.5px;font-weight:800;color:#fff;border:2px solid rgba(0,0,0,.08)}
   .neu small{font-size:8.5px;font-weight:600;opacity:.9}
   .n-ok{background:#16A34A}.n-warn{background:#E0B000;color:#3B2E00}.n-bad{background:#DC2626}.n-na{background:#9aa4ad}.n-vac{background:#fff;border:2px dashed #c9ced6;color:#98a2ad}
+  .lisEq{border:1px solid var(--line);border-radius:12px;padding:8px 10px;margin-top:4px}
+  .lisHd{display:flex;align-items:center;gap:8px;flex-wrap:wrap;font-size:12px;color:var(--muted);margin-bottom:6px}
+  .lisHd b{font-size:14px;color:var(--navy)}.lisHd .spacer{flex:1}
+  .lisGr{display:grid;grid-template-columns:minmax(0,1fr) 250px;gap:12px;align-items:start}
+  .lisGr .eq{border-radius:12px}
+  @media(max-width:1000px){.lisGr{grid-template-columns:1fr}.lisGr .eq{max-width:280px}}
+  table.t.tc th.c,table.t.tc td.c{text-align:center}
   .tt{position:fixed;pointer-events:none;background:#1c232b;color:#fff;font-size:12px;padding:6px 9px;border-radius:7px;display:none;z-index:99;line-height:1.5;max-width:320px}
   .formula{background:#F7F8FA;border:1px solid var(--line);border-radius:10px;padding:9px 12px;font-size:12.5px;line-height:1.75}
   .formula b{color:var(--navy)}
@@ -116,7 +123,7 @@
 <div id="subnav">
   <button data-v="res" class="on">&#128202; Resumen</button>
   <button data-v="eq">&#128734; Por equipo</button>
-  <button data-v="lis">Llantas y proyección</button>
+  <button data-v="lis">Rendimiento y proyección</button>
   <button data-v="mar">Comparar marcas</button>
   <button data-v="ins">Inspecciones</button>
   <button data-v="par">&#9881; Parámetros</button>
@@ -358,41 +365,51 @@ function pintarRes(){
 }
 
 /* ═════════════ VISTA: POR EQUIPO ═════════════ */
+function diagEq(E){
+  const e=E[0].e, nP=Math.max(...E.map(l=>l.pos)), sap=E[0].sap;
+  const g=p=>E.find(l=>l.pos===p);
+  const nn=p=>{const l=g(p); if(!l)return `<div class="neu n-vac">—<small>P${p}</small></div>`;
+    const t=`Pos ${l.pos} · ${l.marca||'—'}${l.serie?' · serie '+l.serie:''}\nCocada ${l.coc!=null?f1(l.coc):'—'} mm (retiro ${l.ret} mm)\n${l.rend?f0(l.rend)+' h/mm'+(l.fuente==='ref'?' (referencia)':''):'sin rendimiento'}${l.rest!=null?'\nLe quedan ~'+f0(l.rest)+' h':''}${l.fRet?' · retiro '+fmtDate(isoDe(l.fRet)):''}${l.presion!=null?'\nPresión '+l.presion+' psi':''}`;
+    return `<div class="neu n-${l.est} hit" data-t="${esc(t)}">${l.coc!=null?f1(l.coc):'—'}<small>P${l.pos}</small></div>`;};
+  const conD=E.filter(l=>l.dias!=null), pe=conD.length?conD.reduce((a,l)=>l.dias<a.dias?l:a,conD[0]):null;
+  return `<div class="eq"><h4>${esc(sap)}<span>${esc(e?e.equipo:'')}<br>${esc([...new Set(E.map(l=>l.medida))].join(' · '))}</span></h4>
+    <div class="chasis">${esquema(nP).ejes.map(x=>{const h=Math.ceil(x.length/2);return `<div class="eje"><div class="lado">${x.slice(0,h).map(nn).join('')}</div><div class="lado">${x.slice(h).map(nn).join('')}</div></div>`;}).join('')}</div>
+    <div style="font-size:11.5px;color:var(--muted);text-align:center">Última inspección ${fmtDate(E[0].fecha)}${pe?` · próximo cambio: <b style="color:#333">pos ${pe.pos}</b> (${fmtDate(isoDe(pe.fRet))})`:''}</div></div>`;
+}
+const LEYEQ=`<div class="ley"><span><i style="background:#16A34A"></i>Bien</span><span><i style="background:#E0B000"></i>Ir pidiendo</span>
+    <span><i style="background:#DC2626"></i>Cambiar ya</span><span><i style="background:#9aa4ad"></i>Sin datos</span><span>· el número es la cocada (mm) · pasa el mouse para ver el detalle</span></div>`;
 function pintarEq(){
   const L=filtrados(); const saps=[...new Set(L.map(l=>l.sap))].sort();
   if(!saps.length){document.getElementById('v-eq').innerHTML='<div class="card"><div class="vacio">Sin llantas con estos filtros.</div></div>';return;}
-  document.getElementById('v-eq').innerHTML=`<div class="ley" style="margin-bottom:10px"><span><i style="background:#16A34A"></i>Bien</span><span><i style="background:#E0B000"></i>Ir pidiendo</span>
-    <span><i style="background:#DC2626"></i>Cambiar ya</span><span><i style="background:#9aa4ad"></i>Sin datos</span><span>· el número es la cocada (mm) · pasa el mouse para ver el detalle</span></div>
-    <div class="eqs">${saps.map(sap=>{const E=L.filter(l=>l.sap===sap), e=E[0].e, nP=Math.max(...E.map(l=>l.pos));
-      const g=p=>E.find(l=>l.pos===p);
-      const nn=p=>{const l=g(p); if(!l)return `<div class="neu n-vac">—<small>P${p}</small></div>`;
-        const t=`Pos ${l.pos} · ${l.marca||'—'}${l.serie?' · serie '+l.serie:''}\nCocada ${l.coc!=null?f1(l.coc):'—'} mm (retiro ${l.ret} mm)\n${l.rend?f0(l.rend)+' h/mm'+(l.fuente==='ref'?' (referencia)':''):'sin rendimiento'}${l.rest!=null?'\nLe quedan ~'+f0(l.rest)+' h':''}${l.fRet?' · retiro '+fmtDate(isoDe(l.fRet)):''}${l.presion!=null?'\nPresión '+l.presion+' psi':''}`;
-        return `<div class="neu n-${l.est} hit" data-t="${esc(t)}">${l.coc!=null?f1(l.coc):'—'}<small>P${l.pos}</small></div>`;};
-      const conD=E.filter(l=>l.dias!=null), pe=conD.length?conD.reduce((a,l)=>l.dias<a.dias?l:a,conD[0]):null;
-      return `<div class="eq"><h4>${esc(sap)}<span>${esc(e?e.equipo:'')}<br>${esc([...new Set(E.map(l=>l.medida))].join(' · '))}</span></h4>
-        <div class="chasis">${esquema(nP).ejes.map(x=>{const h=Math.ceil(x.length/2);return `<div class="eje"><div class="lado">${x.slice(0,h).map(nn).join('')}</div><div class="lado">${x.slice(h).map(nn).join('')}</div></div>`;}).join('')}</div>
-        <div style="font-size:11.5px;color:var(--muted);text-align:center">Última inspección ${fmtDate(E[0].fecha)}${pe?` · próximo cambio: <b style="color:#333">pos ${pe.pos}</b> (${fmtDate(isoDe(pe.fRet))})`:''}</div></div>`;}).join('')}</div>`;
+  document.getElementById('v-eq').innerHTML=`<div style="margin-bottom:10px">${LEYEQ}</div>
+    <div class="eqs">${saps.map(sap=>diagEq(L.filter(l=>l.sap===sap))).join('')}</div>`;
 }
 
-/* ═════════════ VISTA: LLANTAS Y PROYECCIÓN ═════════════ */
-function ordenLL(L){ const r={bad:0,warn:1,ok:2,na:3}; return L.slice().sort((a,b)=>(r[a.est]-r[b.est])||((a.dias??1e9)-(b.dias??1e9))||a.sap.localeCompare(b.sap)||a.pos-b.pos); }
+/* ═════════════ VISTA: RENDIMIENTO Y PROYECCIÓN ═════════════ */
+function ordenLL(L){ return L.slice().sort((a,b)=>a.sap.localeCompare(b.sap)||a.pos-b.pos); }
 function pintarLis(){
-  const L=ordenLL(filtrados());
-  document.getElementById('v-lis').innerHTML=`<div class="card"><div class="bnd azul">LLANTAS EN SERVICIO · RENDIMIENTO Y PROYECCIÓN</div>
-    <div class="preg">Ordenadas de la más urgente a la menos urgente. <span class="ref">REF</span> = h/mm de referencia (todavía no hay desgaste medido).
-      Las llantas sin serie se siguen por posición.</div>
-    <div style="overflow:auto"><table class="t"><thead><tr><th>Cód. SAP</th><th class="c">Pos.</th><th>Serie</th><th>Marca</th><th>Medida</th><th class="r">Cocada inicial</th><th class="r">Cocada actual</th>
-      <th>Vida usada</th><th class="r">Horas</th><th class="r">h/mm</th><th class="r">Le quedan (h)</th><th class="c">Retiro estimado</th><th class="r">USD/h</th>${PAR.presion_activa?'<th class="r">Presión</th>':''}<th class="c">Últ. medición</th><th class="c">Estado</th></tr></thead>
-    <tbody>${L.map(l=>{const uso=l.nueva!=null&&l.coc!=null&&l.nueva>l.ret?Math.max(0,Math.min(1,(l.nueva-l.coc)/(l.nueva-l.ret))):null;
-      const col=l.est==='bad'?'#DC2626':l.est==='warn'?'#E0B000':l.est==='ok'?'#16A34A':'#9aa4ad';
-      return `<tr><td class="mono">${esc(l.sap)}</td><td class="c">${l.pos}</td><td class="mono">${esc(l.serie)||'<span class="dim">por posición</span>'}</td><td>${esc(l.marca)}</td><td>${esc(l.medida)}</td>
-        <td class="r">${l.ini!=null?f1(l.ini):'—'}</td><td class="r"><b>${l.coc!=null?f1(l.coc):'—'}</b></td>
-        <td>${uso!=null?`<span class="mini"><i style="width:${uso*100}%;background:${col}"></i></span> ${Math.round(uso*100)}%`:'—'}</td>
-        <td class="r">${l.hrs!=null?f0(l.hrs):'—'}</td><td class="r">${l.rend?f0(l.rend):'—'}${l.fuente==='ref'?'<span class="ref">REF</span>':''}</td>
-        <td class="r">${l.rest!=null?f0(l.rest):'—'}</td><td class="c">${l.fRet?fmtDate(isoDe(l.fRet)):'—'}</td><td class="r">${l.usd?f2(l.usd):'—'}</td>
-        ${PAR.presion_activa?`<td class="r" style="${l.pres&&l.pres.est!=='ok'?'color:#B91C1C;font-weight:700':''}">${l.presion??'—'}</td>`:''}
-        <td class="c">${fmtDate(l.fecha)}</td><td class="c"><span class="pill p-${l.est}">${ESTX[l.est]}</span></td></tr>`;}).join('')
-      ||`<tr><td colspan="16" class="vacio">Sin llantas con estos filtros.</td></tr>`}</tbody></table></div></div>`;
+  const L=ordenLL(filtrados()); const saps=[...new Set(L.map(l=>l.sap))];
+  const pr=PAR.presion_activa;
+  const bloque=sap=>{const E=L.filter(l=>l.sap===sap), e=E[0].e;
+    const nB=E.filter(l=>l.est==='bad').length, nW=E.filter(l=>l.est==='warn').length;
+    return `<div class="lisEq"><div class="lisHd"><b>${esc(sap)}</b><span>${esc(e?e.equipo:'')}${E[0].obra?' · '+esc(E[0].obra):''} · ${E.length} llanta(s)</span>
+        <span class="spacer"></span>${nB?`<span class="pill p-bad">${nB} por cambiar</span>`:''}${nW?`<span class="pill p-warn">${nW} por pedir</span>`:''}${!nB&&!nW?'<span class="pill p-ok">Todo bien</span>':''}</div>
+      <div class="lisGr"><div style="overflow:auto"><table class="t tc"><thead><tr><th class="c">Pos.</th><th>Serie</th><th>Marca</th><th>Medida</th><th class="c">Cocada inicial</th><th class="c">Cocada actual</th>
+      <th class="c">Vida usada</th><th class="c">Horas</th><th class="c">h/mm</th><th class="c">Le quedan (h)</th><th class="c">Retiro estimado</th><th class="c">USD/h</th>${pr?'<th class="c">Presión</th>':''}<th class="c">Últ. medición</th><th class="c">Estado</th></tr></thead>
+      <tbody>${E.map(l=>{const uso=l.nueva!=null&&l.coc!=null&&l.nueva>l.ret?Math.max(0,Math.min(1,(l.nueva-l.coc)/(l.nueva-l.ret))):null;
+        const col=l.est==='bad'?'#DC2626':l.est==='warn'?'#E0B000':l.est==='ok'?'#16A34A':'#9aa4ad';
+        return `<tr><td class="c"><b>${l.pos}</b></td><td class="mono">${esc(l.serie)||'<span class="dim">por posición</span>'}</td><td>${esc(l.marca)}</td><td>${esc(l.medida)}</td>
+          <td class="c">${l.ini!=null?f1(l.ini):'—'}</td><td class="c"><b>${l.coc!=null?f1(l.coc):'—'}</b></td>
+          <td class="c">${uso!=null?`<span class="mini"><i style="width:${uso*100}%;background:${col}"></i></span> ${Math.round(uso*100)}%`:'—'}</td>
+          <td class="c">${l.hrs!=null?f0(l.hrs):'—'}</td><td class="c">${l.rend?f0(l.rend):'—'}${l.fuente==='ref'?'<span class="ref">REF</span>':''}</td>
+          <td class="c">${l.rest!=null?f0(l.rest):'—'}</td><td class="c">${l.fRet?fmtDate(isoDe(l.fRet)):'—'}</td><td class="c">${l.usd?f2(l.usd):'—'}</td>
+          ${pr?`<td class="c" style="${l.pres&&l.pres.est!=='ok'?'color:#B91C1C;font-weight:700':''}">${l.presion??'—'}</td>`:''}
+          <td class="c">${fmtDate(l.fecha)}</td><td class="c"><span class="pill p-${l.est}">${ESTX[l.est]}</span></td></tr>`;}).join('')}</tbody></table></div>
+      ${diagEq(E)}</div></div>`;};
+  document.getElementById('v-lis').innerHTML=`<div class="card"><div class="bnd azul">RENDIMIENTO Y PROYECCIÓN · POR EQUIPO</div>
+    <div class="preg">Un cuadro por equipo, ordenado por posición. <span class="ref">REF</span> = h/mm de referencia (todavía no hay desgaste medido).
+      Las llantas sin serie se siguen por posición.</div>${LEYEQ}
+    ${saps.length?saps.map(bloque).join(''):'<div class="vacio">Sin llantas con estos filtros.</div>'}</div>`;
 }
 
 /* ═════════════ VISTA: COMPARAR MARCAS ═════════════ */
