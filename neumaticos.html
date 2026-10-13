@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
 <meta charset="utf-8">
-<meta name="gllr-version" content="V.131026-1" data-pagina="Neumáticos">
+<meta name="gllr-version" content="V.131026-2" data-pagina="Neumáticos">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Neumáticos &mdash; UDE</title>
 <link rel="icon" href="favicon.ico" sizes="any">
@@ -210,22 +210,36 @@ function esquema(n){
   const duales=[]; ejes.forEach(e=>{ if(e.length===4){duales.push([e[0],e[1]],[e[2],e[3]]);} });
   return {ejes,duales};
 }
+/* Contador de cada equipo: 'km' si en el Maestro es Km (o si sus inspecciones solo traen kilometraje); si no, 'h'. */
+const UNI_CACHE=new Map();
+function uniDe(sap){
+  const k=nrm(sap); if(UNI_CACHE.has(k))return UNI_CACHE.get(k);
+  const e=eqDe(sap); let u;
+  if(e&&/^km/i.test(String(e.contador||'')))u='km';
+  else if(e&&/^h/i.test(String(e.contador||'')))u='h';
+  else{ const R=INSP.filter(r=>nrm(r.cod_sap)===k); u=(!R.some(r=>r.horometro!=null)&&R.some(r=>r.km!=null))?'km':'h'; }
+  UNI_CACHE.set(k,u); return u;
+}
+const cntDe=(r,u)=>{const v=u==='km'?r.km:r.horometro; return v==null||v===''?null:+v;};
+const UL=u=>u==='km'?{c:'Km',pm:'km/mm',q:'Le quedan (km)',usd:'USD/km',dia:'KM/día',u:'km'}:{c:'Horas',pm:'h/mm',q:'Le quedan (h)',usd:'USD/h',dia:'HR/día',u:'h'};
 function hrDiaDe(sap){
   const e=eqDe(sap); if(e&&+e.hr_dia>0)return +e.hr_dia;
-  const R=INSP.filter(r=>nrm(r.cod_sap)===nrm(sap)&&r.horometro!=null).sort((a,b)=>a.fecha.localeCompare(b.fecha));
+  const u=uniDe(sap);
+  const R=INSP.filter(r=>nrm(r.cod_sap)===nrm(sap)&&cntDe(r,u)!=null).sort((a,b)=>a.fecha.localeCompare(b.fecha));
   if(R.length<2)return null;
-  const a=R[0],b=R[R.length-1], d=(new Date(b.fecha)-new Date(a.fecha))/86400000;
-  return d>=7&&b.horometro>a.horometro?(b.horometro-a.horometro)/d:null;
+  const a=R[0],b=R[R.length-1], d=(new Date(b.fecha)-new Date(a.fecha))/86400000, va=cntDe(a,u), vb=cntDe(b,u);
+  return d>=7&&vb>va?(vb-va)/d:null;
 }
 function calcular(){
   const H=hoy0(), rojo=+PAR.dias_rojo||30, amar=+PAR.dias_amarillo||60;
   // 1) agrupar por llanta (serie o equipo+posición) y partir en "vidas"
+  UNI_CACHE.clear();
   const porLlanta=new Map();
   INSP.forEach(r=>{ const k=r.serie?'S:'+nrm(r.serie):'P:'+nrm(r.cod_sap)+'#'+r.posicion;
     if(!porLlanta.has(k))porLlanta.set(k,[]); porLlanta.get(k).push(r); });
   VIDAS=[];
   porLlanta.forEach((rows,k)=>{
-    rows.sort((a,b)=>a.fecha.localeCompare(b.fecha)||(a.horometro||0)-(b.horometro||0));
+    rows.sort((a,b)=>a.fecha.localeCompare(b.fecha)||(a.horometro||a.km||0)-(b.horometro||b.km||0));
     let v=null;
     rows.forEach(r=>{
       const nueva=!v || (r.cocada!=null&&v.ult.cocada!=null&&r.cocada>v.ult.cocada+2);
@@ -237,7 +251,8 @@ function calcular(){
     const a=v.ini, b=v.ult;
     v.marca=b.marca||a.marca||''; v.medida=b.medida||a.medida||''; v.serie=b.serie||a.serie||'';
     v.desg=(a.cocada!=null&&b.cocada!=null)?a.cocada-b.cocada:null;
-    v.hrs=(a.horometro!=null&&b.horometro!=null)?b.horometro-a.horometro:null;
+    v.u=uniDe(b.cod_sap); const ca=cntDe(a,v.u), cb=cntDe(b,v.u);
+    v.hrs=(ca!=null&&cb!=null)?cb-ca:null;
     v.rendReal=(v.desg>=1&&v.hrs>0)?v.hrs/v.desg:null;
   });
   // promedios reales por marca+medida y por medida (para llantas aún sin desgaste medible)
@@ -252,7 +267,7 @@ function calcular(){
       const v=VIDAS.find(x=>x.rows.includes(r)); if(!v)return;
       const e=eqDe(r.cod_sap), pm=paramMarca(v.marca,v.medida), ret=retiroDe(v.medida);
       let rend=v.rendReal, fuente='real';
-      if(!rend){ rend=(pm&&+pm.hmm_ref)||prom(x=>nrm(x.marca)===nrm(v.marca)&&nmd(x.medida)===nmd(v.medida))||prom(x=>nmd(x.medida)===nmd(v.medida)); fuente=rend?'ref':'na'; }
+      if(!rend){ rend=(v.u==='h'&&pm&&+pm.hmm_ref)||prom(x=>x.u===v.u&&nrm(x.marca)===nrm(v.marca)&&nmd(x.medida)===nmd(v.medida))||prom(x=>x.u===v.u&&nmd(x.medida)===nmd(v.medida)); fuente=rend?'ref':'na'; }
       const nueva=pm&&+pm.cocada_nueva?+pm.cocada_nueva:v.ini.cocada;
       const coc=r.cocada, hd=hrDiaDe(r.cod_sap);
       const rest=rend&&coc!=null?Math.max(0,(coc-ret)*rend):null;
@@ -270,7 +285,7 @@ function calcular(){
       if(PAR.presion_activa&&r.presion!=null){ const pp=presionDe(e,v.medida);
         if(pp){ pres={obj:pp.presion_obj,min:pp.presion_min,max:pp.presion_max,
           est:(pp.presion_min!=null&&r.presion<pp.presion_min)?'baja':((pp.presion_max!=null&&r.presion>pp.presion_max)?'alta':'ok')}; } }
-      LL.push({sap:r.cod_sap,e,obra:(e&&e.cod_proyec)||r.obra||'',pos:+r.posicion,serie:v.serie,porSerie:v.porSerie,marca:v.marca,medida:v.medida,
+      LL.push({sap:r.cod_sap,e,u:v.u,obra:(e&&e.cod_proyec)||r.obra||'',pos:+r.posicion,serie:v.serie,porSerie:v.porSerie,marca:v.marca,medida:v.medida,
         ini:v.ini.cocada,nueva,coc,ret,hrs:v.hrs,rend,fuente,rest,dias,fRet,vida,precio,usd,est,presion:r.presion,pres,fecha:r.fecha,hr:r.horometro,obs:r.observacion,v});
     });
   });
@@ -294,9 +309,9 @@ function pintarRes(){
     1) Pulsa <b>📄 Plantilla</b> · 2) llénala en obra (una fila por llanta, una hoja por equipo) · 3) súbela con <b>⬆ Subir inspección</b>.</div></div>`; return; }
   const n=s=>L.filter(l=>l.est===s).length;
   const eqsN=new Set(L.map(l=>l.sap)).size;
-  const conR=L.filter(l=>l.rend);
+  const conR=L.filter(l=>l.rend&&l.u==='h');
   const medidas=[...new Set(L.map(l=>l.medida).filter(Boolean))].sort();
-  const porMarca=marcasStats(L.map(l=>l.v)).filter(x=>x.usd);
+  const porMarca=marcasStats(L.map(l=>l.v)).filter(x=>x.usd&&x.u==='h');
   const mejor=porMarca.slice().sort((a,b)=>a.usd-b.usd)[0];
   // pedidos por mes (4 meses)
   const H=hoy0(), meses=[0,1,2,3].map(i=>{const d=new Date(H.getFullYear(),H.getMonth()+i,1);return{lab:i===0?'este mes (y vencidas)':MESES[d.getMonth()]+' '+String(d.getFullYear()).slice(2),c:{}};});
@@ -331,7 +346,7 @@ function pintarRes(){
     return `<tr><td class="mono"><b>${esc(sap)}</b></td><td>${esc(e?e.equipo:'')}</td><td>${esc([...new Set(E.map(l=>l.medida))].join(' · '))}</td><td class="r">${E.length}</td>
       <td class="c">${ok}</td><td class="c">${w}</td><td class="c" style="${b?'color:#B91C1C;font-weight:800':''}">${b}</td>
       <td class="r">${avg(E,'coc')!=null?f1(avg(E,'coc')):'—'}</td><td class="r" style="${E.some(l=>l.coc<=l.ret)?'color:#B91C1C;font-weight:800':''}">${isFinite(cmin)?f1(cmin):'—'}</td>
-      <td class="r">${avg(E,'rend')?f0(avg(E,'rend')):'—'}</td><td class="r">${avg(E,'usd')?f2(avg(E,'usd')):'—'}</td><td class="r">${hd?f1(hd):'—'}</td>
+      <td class="r">${avg(E,'rend')?f0(avg(E,'rend'))+(E[0].u==='km'?' <small>km</small>':''):'—'}</td><td class="r">${avg(E,'usd')?f2(avg(E,'usd'))+(E[0].u==='km'?' <small>/km</small>':''):'—'}</td><td class="r">${hd?f1(hd)+(E[0].u==='km'?' <small>km</small>':''):'—'}</td>
       <td>${pe?`pos ${pe.pos} · ${esc(pe.marca)}`:'—'}</td><td class="c">${pe&&pe.fRet?fmtDate(isoDe(pe.fRet)):'—'}</td><td class="c">${fmtDate(E[0].fecha)}</td><td class="r"><b>${pedir}</b></td></tr>`;}).join('');
   document.getElementById('v-res').innerHTML=`
   <div class="row">
@@ -343,7 +358,7 @@ function pintarRes(){
     <div class="card" style="flex:1"><div class="bnd verde"><span class="n">2</span>RENDIMIENTO Y COSTO</div>
       <div class="preg">¿Cuántas horas nos da cada milímetro y cuánto cuesta cada hora?</div>
       <div class="tiles">${tile('','Rendimiento',conR.length?`${f0(avg(conR,'rend'))} <small>h/mm</small>`:'—','promedio de las llantas filtradas')}
-        ${tile('','Costo',avg(L,'usd')?`${f2(avg(L,'usd'))} <small>USD/h</small>`:'—','promedio por llanta')}
+        ${tile('','Costo',avg(L.filter(l=>l.u==='h'),'usd')?`${f2(avg(L.filter(l=>l.u==='h'),'usd'))} <small>USD/h</small>`:'—','promedio por llanta')}
         ${tile('ok','Más económica',mejor?esc(mejor.marca):'—',mejor?`${f2(mejor.usd)} USD/h · ${esc(mejor.medida)}`:'falta precio en Parámetros')}</div></div>
   </div>
   <div class="row">
@@ -361,7 +376,7 @@ function pintarRes(){
     <div style="overflow:auto"><table class="t"><thead><tr><th>Cód. SAP</th><th>Equipo</th><th>Medida</th><th class="r">Llantas</th><th class="c">🟢</th><th class="c">🟡</th><th class="c">🔴</th>
       <th class="r">Cocada prom.</th><th class="r">Cocada mín.</th><th class="r">h/mm prom.</th><th class="r">USD/h prom.</th><th class="r">HR/día</th><th>Próximo cambio</th><th class="c">Fecha</th><th class="c">Últ. inspección</th><th class="r">A pedir</th></tr></thead>
       <tbody>${filas}<tr class="tot"><td>TOTAL</td><td></td><td></td><td class="r">${T0.n}</td><td class="c">${T0.ok}</td><td class="c">${T0.w}</td><td class="c">${T0.b}</td>
-        <td class="r">${avg(L,'coc')!=null?f1(avg(L,'coc')):'—'}</td><td></td><td class="r">${avg(L,'rend')?f0(avg(L,'rend')):'—'}</td><td class="r">${avg(L,'usd')?f2(avg(L,'usd')):'—'}</td><td></td><td></td><td></td><td></td><td class="r">${T0.p}</td></tr></tbody></table></div></div>`;
+        <td class="r">${avg(L,'coc')!=null?f1(avg(L,'coc')):'—'}</td><td></td><td class="r">${avg(conR,'rend')?f0(avg(conR,'rend')):'—'}</td><td class="r">${avg(L.filter(l=>l.u==='h'),'usd')?f2(avg(L.filter(l=>l.u==='h'),'usd')):'—'}</td><td></td><td></td><td></td><td></td><td class="r">${T0.p}</td></tr></tbody></table></div></div>`;
 }
 
 /* ═════════════ VISTA: POR EQUIPO ═════════════ */
@@ -369,7 +384,7 @@ function diagEq(E){
   const e=E[0].e, nP=Math.max(...E.map(l=>l.pos)), sap=E[0].sap;
   const g=p=>E.find(l=>l.pos===p);
   const nn=p=>{const l=g(p); if(!l)return `<div class="neu n-vac">—<small>P${p}</small></div>`;
-    const t=`Pos ${l.pos} · ${l.marca||'—'}${l.serie?' · serie '+l.serie:''}\nCocada ${l.coc!=null?f1(l.coc):'—'} mm (retiro ${l.ret} mm)\n${l.rend?f0(l.rend)+' h/mm'+(l.fuente==='ref'?' (referencia)':''):'sin rendimiento'}${l.rest!=null?'\nLe quedan ~'+f0(l.rest)+' h':''}${l.fRet?' · retiro '+fmtDate(isoDe(l.fRet)):''}${l.presion!=null?'\nPresión '+l.presion+' psi':''}`;
+    const t=`Pos ${l.pos} · ${l.marca||'—'}${l.serie?' · serie '+l.serie:''}\nCocada ${l.coc!=null?f1(l.coc):'—'} mm (retiro ${l.ret} mm)\n${l.rend?f0(l.rend)+' '+UL(l.u).pm+(l.fuente==='ref'?' (referencia)':''):'sin rendimiento'}${l.rest!=null?'\nLe quedan ~'+f0(l.rest)+' '+UL(l.u).u:''}${l.fRet?' · retiro '+fmtDate(isoDe(l.fRet)):''}${l.presion!=null?'\nPresión '+l.presion+' psi':''}`;
     return `<div class="neu n-${l.est} hit" data-t="${esc(t)}">${l.coc!=null?f1(l.coc):'—'}<small>P${l.pos}</small></div>`;};
   const conD=E.filter(l=>l.dias!=null), pe=conD.length?conD.reduce((a,l)=>l.dias<a.dias?l:a,conD[0]):null;
   return `<div class="eq"><h4>${esc(sap)}<span>${esc(e?e.equipo:'')}<br>${esc([...new Set(E.map(l=>l.medida))].join(' · '))}</span></h4>
@@ -391,11 +406,11 @@ function pintarLis(){
   const L=ordenLL(filtrados()); const saps=[...new Set(L.map(l=>l.sap))];
   const pr=PAR.presion_activa;
   const bloque=sap=>{const E=L.filter(l=>l.sap===sap), e=E[0].e;
-    const nB=E.filter(l=>l.est==='bad').length, nW=E.filter(l=>l.est==='warn').length;
-    return `<div class="lisEq"><div class="lisHd"><b>${esc(sap)}</b><span>${esc(e?e.equipo:'')}${E[0].obra?' · '+esc(E[0].obra):''} · ${E.length} llanta(s)</span>
+    const U=UL(E[0].u); const nB=E.filter(l=>l.est==='bad').length, nW=E.filter(l=>l.est==='warn').length;
+    return `<div class="lisEq"><div class="lisHd"><b>${esc(sap)}</b><span>${esc(e?e.equipo:'')}${E[0].obra?' · '+esc(E[0].obra):''} · ${E.length} llanta(s) · contador en ${U.u==='km'?'KM':'horas'}</span>
         <span class="spacer"></span>${nB?`<span class="pill p-bad">${nB} por cambiar</span>`:''}${nW?`<span class="pill p-warn">${nW} por pedir</span>`:''}${!nB&&!nW?'<span class="pill p-ok">Todo bien</span>':''}</div>
       <div class="lisGr"><div style="overflow:auto"><table class="t tc"><thead><tr><th class="c">Pos.</th><th>Serie</th><th>Marca</th><th>Medida</th><th class="c">Cocada inicial</th><th class="c">Cocada actual</th>
-      <th class="c">Vida usada</th><th class="c">Horas</th><th class="c">h/mm</th><th class="c">Le quedan (h)</th><th class="c">Retiro estimado</th><th class="c">USD/h</th>${pr?'<th class="c">Presión</th>':''}<th class="c">Últ. medición</th><th class="c">Estado</th></tr></thead>
+      <th class="c">Vida usada</th><th class="c">${U.c}</th><th class="c">${U.pm}</th><th class="c">${U.q}</th><th class="c">Retiro estimado</th><th class="c">${U.usd}</th>${pr?'<th class="c">Presión</th>':''}<th class="c">Últ. medición</th><th class="c">Estado</th></tr></thead>
       <tbody>${E.map(l=>{const uso=l.nueva!=null&&l.coc!=null&&l.nueva>l.ret?Math.max(0,Math.min(1,(l.nueva-l.coc)/(l.nueva-l.ret))):null;
         const col=l.est==='bad'?'#DC2626':l.est==='warn'?'#E0B000':l.est==='ok'?'#16A34A':'#9aa4ad';
         return `<tr><td class="c"><b>${l.pos}</b></td><td class="mono">${esc(l.serie)||'<span class="dim">por posición</span>'}</td><td>${esc(l.marca)}</td><td>${esc(l.medida)}</td>
@@ -415,11 +430,11 @@ function pintarLis(){
 /* ═════════════ VISTA: COMPARAR MARCAS ═════════════ */
 function marcasStats(vidas){
   const g=new Map();
-  vidas.forEach(v=>{ if(!v.marca)return; const k=nrm(v.marca)+'|'+nmd(v.medida);
-    if(!g.has(k))g.set(k,{marca:v.marca,medida:v.medida,vidas:[]}); g.get(k).vidas.push(v); });
+  vidas.forEach(v=>{ if(!v.marca)return; const k=nrm(v.marca)+'|'+nmd(v.medida)+'|'+v.u;
+    if(!g.has(k))g.set(k,{marca:v.marca,medida:v.medida,u:v.u,vidas:[]}); g.get(k).vidas.push(v); });
   return [...g.values()].map(x=>{
     const R=x.vidas.map(v=>v.rendReal).filter(Boolean), pm=paramMarca(x.marca,x.medida), ret=retiroDe(x.medida);
-    const hmm=R.length?R.reduce((a,b)=>a+b,0)/R.length:(pm&&+pm.hmm_ref)||null;
+    const hmm=R.length?R.reduce((a,b)=>a+b,0)/R.length:(x.u==='h'&&pm&&+pm.hmm_ref)||null;
     const nueva=pm&&+pm.cocada_nueva?+pm.cocada_nueva:null;
     const vida=hmm&&nueva?(nueva-ret)*hmm:null, precio=pm&&+pm.precio?+pm.precio:null;
     return {...x,n:x.vidas.length,nReal:R.length,hmm,vida,precio,nueva,usd:precio&&vida?precio/vida:null};
@@ -430,17 +445,17 @@ function pintarMar(){
   const vid=VIDAS.filter(v=>(!m||nmd(v.medida)===nmd(m))&&(!o||((eqDe(v.ult.cod_sap)||{}).cod_proyec===o)));
   const S=marcasStats(vid);
   const barras=(key,fmt,menor)=>{const D=S.filter(x=>x[key]).sort((a,b)=>menor?a[key]-b[key]:b[key]-a[key]); if(!D.length)return '<div class="vacio">Sin datos.</div>';
-    const mx=Math.max(...D.map(d=>d[key]));
+    const mxU={}; D.forEach(d=>mxU[d.u]=Math.max(mxU[d.u]||0,d[key]));
     return D.map((d,i)=>`<div style="display:grid;grid-template-columns:150px 1fr 80px;gap:8px;align-items:center;margin:6px 0;font-size:12.5px">
-      <b>${esc(d.marca)} <span class="dim" style="font-weight:400">${esc(d.medida)}</span></b><div style="height:16px;background:#eef1f4;border-radius:5px"><div class="hit" data-t="${esc(d.marca)} ${esc(d.medida)}: ${fmt(d[key])} · ${d.nReal} llanta(s) con desgaste medido"
-      style="height:100%;width:${d[key]/mx*100}%;background:${i===0?'#16A34A':'#4254A5'};border-radius:5px"></div></div><span style="text-align:right">${fmt(d[key])}</span></div>`).join('');};
+      <b>${esc(d.marca)} <span class="dim" style="font-weight:400">${esc(d.medida)}${d.u==='km'?' · km':''}</span></b><div style="height:16px;background:#eef1f4;border-radius:5px"><div class="hit" data-t="${esc(d.marca)} ${esc(d.medida)}: ${fmt(d[key],d)} · ${d.nReal} llanta(s) con desgaste medido"
+      style="height:100%;width:${d[key]/mxU[d.u]*100}%;background:${i===0?'#16A34A':'#4254A5'};border-radius:5px"></div></div><span style="text-align:right">${fmt(d[key],d)}</span></div>`).join('');};
   document.getElementById('v-mar').innerHTML=`<div class="row">
-    <div class="card" style="flex:1"><div class="bnd verde">HORAS POR MILÍMETRO (más es mejor)</div>${barras('hmm',x=>f0(x)+' h/mm',false)}</div>
-    <div class="card" style="flex:1"><div class="bnd amarillo">COSTO POR HORA USD/h (menos es mejor)</div>${barras('usd',x=>f2(x),true)}</div></div>
+    <div class="card" style="flex:1"><div class="bnd verde">RENDIMIENTO h/mm · km/mm (más es mejor)</div>${barras('hmm',(x,d)=>f0(x)+' '+UL(d.u).pm,false)}</div>
+    <div class="card" style="flex:1"><div class="bnd amarillo">COSTO USD/h · USD/km (menos es mejor)</div>${barras('usd',(x,d)=>f2(x)+(d.u==='km'?' /km':''),true)}</div></div>
     <div class="card"><div class="bnd azul">TABLA COMPARATIVA</div><div class="preg">Incluye llantas en servicio y ya retiradas. El h/mm es el promedio de las llantas con desgaste medido; si ninguna tiene, se usa el de referencia.</div>
-    <table class="t"><thead><tr><th>Marca</th><th>Medida</th><th class="r">Llantas</th><th class="r">Con desgaste medido</th><th class="r">Precio USD</th><th class="r">Cocada nueva</th><th class="r">h/mm</th><th class="r">Vida proyectada (h)</th><th class="r">USD/h</th></tr></thead>
+    <table class="t"><thead><tr><th>Marca</th><th>Medida</th><th class="r">Llantas</th><th class="r">Con desgaste medido</th><th class="r">Precio USD</th><th class="r">Cocada nueva</th><th class="r">h/mm · km/mm</th><th class="r">Vida proyectada (h · km)</th><th class="r">USD/h · USD/km</th></tr></thead>
     <tbody>${S.sort((a,b)=>(a.usd??1e9)-(b.usd??1e9)).map(d=>`<tr><td>${esc(d.marca)}</td><td>${esc(d.medida)}</td><td class="r">${d.n}</td><td class="r">${d.nReal}</td>
-      <td class="r">${d.precio??'—'}</td><td class="r">${d.nueva!=null?d.nueva+' mm':'—'}</td><td class="r">${d.hmm?f0(d.hmm):'—'}</td><td class="r">${d.vida?f0(d.vida):'—'}</td><td class="r"><b>${d.usd?f2(d.usd):'—'}</b></td></tr>`).join('')
+      <td class="r">${d.precio??'—'}</td><td class="r">${d.nueva!=null?d.nueva+' mm':'—'}</td><td class="r">${d.hmm?f0(d.hmm)+(d.u==='km'?' km':''):'—'}</td><td class="r">${d.vida?f0(d.vida)+(d.u==='km'?' km':''):'—'}</td><td class="r"><b>${d.usd?f2(d.usd)+(d.u==='km'?' /km':''):'—'}</b></td></tr>`).join('')
       ||'<tr><td colspan="9" class="vacio">Sin datos.</td></tr>'}</tbody></table></div>`;
 }
 
@@ -466,7 +481,7 @@ function pintarIns(){
       <div class="formula">
         <b>Desgaste</b> = cocada al montar − cocada actual (mm)<br>
         <b>Horas trabajadas</b> = horómetro actual − horómetro al montar<br>
-        <b>Rendimiento</b> = horas ÷ desgaste → <b>h/mm</b><br>
+        <b>Rendimiento</b> = horas (o km) ÷ desgaste → <b>h/mm</b> (o <b>km/mm</b> en equipos con contador en KM)<br>
         <b>Le quedan</b> = (cocada actual − mínimo de retiro) × h/mm<br>
         <b>Retiro estimado</b> = fecha de la medición + horas que le quedan ÷ HR/día<br>
         <b>Vida proyectada</b> = (cocada nueva − mínimo) × h/mm<br>
@@ -686,8 +701,8 @@ inFile.onchange=async()=>{
 btnXls.onclick=()=>{
   const L=ordenLL(filtrados()); if(!L.length)return alert('No hay datos para exportar.');
   const rows=L.map(l=>({'Obra':l.obra,'Cód. SAP':l.sap,'Equipo':l.e?l.e.equipo:'','Posición':l.pos,'Serie':l.serie||'','Marca':l.marca,'Medida':l.medida,
-    'Cocada inicial':l.ini,'Cocada actual':l.coc,'Mínimo retiro':l.ret,'Horas':l.hrs,'h/mm':l.rend?+l.rend.toFixed(1):'','h/mm de referencia':l.fuente==='ref'?'Sí':'',
-    'Horas que le quedan':l.rest!=null?Math.round(l.rest):'','Retiro estimado':l.fRet?isoDe(l.fRet):'','USD/h':l.usd?+l.usd.toFixed(3):'','Presión':l.presion??'',
+    'Cocada inicial':l.ini,'Cocada actual':l.coc,'Mínimo retiro':l.ret,'Contador':l.u==='km'?'KM':'HR','Horas / Km':l.hrs,'h/mm o km/mm':l.rend?+l.rend.toFixed(1):'','h/mm de referencia':l.fuente==='ref'?'Sí':'',
+    'Horas / Km que le quedan':l.rest!=null?Math.round(l.rest):'','Retiro estimado':l.fRet?isoDe(l.fRet):'','USD/h o USD/km':l.usd?+l.usd.toFixed(3):'','Presión':l.presion??'',
     'Última medición':l.fecha,'Estado':ESTX[l.est]}));
   const wb=XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb,XLSX.utils.json_to_sheet(rows),'Llantas');
   XLSX.writeFile(wb,`Neumaticos_${isoDe(new Date())}.xlsx`);
@@ -738,7 +753,7 @@ btnRec.onclick=cargarTodo;
   if(perfil.estado!=='aprobado'||(perfil.rol!=='admin'&&!(Array.isArray(perfil.paginas)&&perfil.paginas.includes('neu')))){
     document.body.innerHTML='<div style="padding:60px;text-align:center;font-family:sans-serif"><h2 style="font-size:18px;margin-bottom:10px">Sin acceso a Neumáticos</h2>'
      +'<p style="color:#6b747d">Un administrador debe habilitarte esta pestaña desde Usuarios.</p></div>';return;}
-  const {data:m}=await sb.from('maestro').select('id,cod_sap,equipo,marca,modelo,cod_proyec,familia,status,hr_dia,hrkm_actual,fecha_lectura');
+  const {data:m}=await sb.from('maestro').select('id,cod_sap,equipo,marca,modelo,cod_proyec,familia,status,contador,hr_dia,hrkm_actual,fecha_lectura');
   datos=m||[];
   await cargarTodo();
 })();

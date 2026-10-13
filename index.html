@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8">
-<meta name="gllr-version" content="V.131026-2" data-pagina="Equipos">
+<meta name="gllr-version" content="V.131026-3" data-pagina="Equipos">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Control de Mantenimiento — UDE</title>
 <link rel="icon" href="favicon.ico" sizes="any">
@@ -249,8 +249,8 @@
   .inf-res.gris{background:#EFEFEF;color:#6C6C6C}
   .inf-dim{color:var(--muted)}
   .inf-pill{display:inline-block;padding:2px 10px;font-size:10.5px;font-weight:800;border-radius:999px}
-  .inf-neuGr{display:grid;grid-template-columns:minmax(0,1fr) 200px;gap:12px;align-items:start}
-  .inf-neu{font-size:10.5px}.inf-neu th{font-size:8.5px;padding:5px 4px}.inf-neu td{padding:4px 4px;white-space:nowrap}
+  .inf-neuGr{display:grid;grid-template-columns:minmax(0,1fr) 195px;gap:16px;align-items:start}
+  .inf-neu{font-size:10.5px}.inf-neu th{font-size:8.5px;padding:5px 4px}.inf-neu td{padding:4px 3px;white-space:nowrap}.inf-neu .inf-pill{font-size:9.5px;padding:2px 6px}
   .inf-notaRet{font-size:16px;font-weight:800;color:#1F3864;margin-top:8px}
   .imini{height:7px;border-radius:4px;background:#eef1f4;position:relative;width:50px;display:inline-block;vertical-align:middle}
   .imini i{position:absolute;left:0;top:0;height:100%;border-radius:4px;-webkit-print-color-adjust:exact;print-color-adjust:exact}
@@ -1559,7 +1559,10 @@ async function abrirInformeEquipo(id){
   // -- NEUMÁTICOS: solo si hay inspecciones de este equipo dentro del periodo de esta obra.
   //    Mismo cálculo y mismo cuadro que Neumáticos → Rendimiento y proyección (con su esquema).
   const fIniO=e.fecha_ingreso?String(e.fecha_ingreso).slice(0,10):'', fFinO=e.fecha_desmov?String(e.fecha_desmov).slice(0,10):'9999';
-  const inspT=(rneu&&rneu.data||[]).filter(x=>x.fecha&&x.cocada!=null).sort((a,b)=>a.fecha.localeCompare(b.fecha)||(a.horometro||0)-(b.horometro||0));
+  const inspT=(rneu&&rneu.data||[]).filter(x=>x.fecha&&x.cocada!=null).sort((a,b)=>a.fecha.localeCompare(b.fecha)||(a.horometro||a.km||0)-(b.horometro||b.km||0));
+  // contador del equipo: KM si el maestro dice Km (o si las inspecciones solo traen kilometraje)
+  const uN=(tipoCont==='Km'||(!inspT.some(r=>r.horometro!=null)&&inspT.some(r=>r.km!=null)))?'km':'h';
+  const cnt=r=>{const v=uN==='km'?r.km:r.horometro;return v==null||v===''?null:+v;};
   const insp=inspT.filter(x=>x.fecha>=fIniO&&x.fecha<=fFinO);
   let htmlNeu='';
   if(insp.length){
@@ -1573,18 +1576,18 @@ async function abrirInformeEquipo(id){
     const VID=[];
     porLl.forEach(rows=>{let v=null; rows.forEach(r=>{ if(!v||+r.cocada>+v.ult.cocada+2){v={rows:[],ini:r};VID.push(v);} v.rows.push(r); v.ult=r; });});
     VID.forEach(v=>{const a=v.ini,b=v.ult; v.marca=b.marca||a.marca||''; v.medida=b.medida||a.medida||''; v.serie=b.serie||a.serie||'';
-      const dg=+a.cocada-+b.cocada, hr=(a.horometro!=null&&b.horometro!=null)?b.horometro-a.horometro:null;
+      const dg=+a.cocada-+b.cocada, hr=(cnt(a)!=null&&cnt(b)!=null)?cnt(b)-cnt(a):null;
       v.hrs=hr; v.rendReal=(dg>=1&&hr>0)?hr/dg:null;});
     const promV=f=>{const L=VID.filter(f).map(v=>v.rendReal).filter(x=>x);return L.length?L.reduce((a,x)=>a+x,0)/L.length:null;};
     let hd=+e.hr_dia>0?+e.hr_dia:null;
-    if(!hd){const R=inspT.filter(r=>r.horometro!=null);if(R.length>1){const a=R[0],b=R[R.length-1],d=(new Date(b.fecha)-new Date(a.fecha))/86400000;if(d>=7&&b.horometro>a.horometro)hd=(b.horometro-a.horometro)/d;}}
+    if(!hd){const R=inspT.filter(r=>cnt(r)!=null);if(R.length>1){const a=R[0],b=R[R.length-1],d=(new Date(b.fecha)-new Date(a.fecha))/86400000;if(d>=7&&cnt(b)>cnt(a))hd=(cnt(b)-cnt(a))/d;}}
     const H0=new Date();H0.setHours(0,0,0,0);
     const rojo=+PAR.dias_rojo||30, amar=+PAR.dias_amarillo||60;
     const ultF=insp[insp.length-1].fecha;
     const LLi=insp.filter(r=>r.fecha===ultF).sort((a,b)=>a.posicion-b.posicion).map(r=>{
       const v=VID.find(x=>x.rows.includes(r)), pm=pmI(v.marca,v.medida), ret=retiroI(v.medida);
       let rend=v.rendReal, fuente='real';
-      if(!rend){rend=(pm&&+pm.hmm_ref)||promV(x=>nrmI(x.marca)===nrmI(v.marca)&&nmdI(x.medida)===nmdI(v.medida))||promV(x=>nmdI(x.medida)===nmdI(v.medida));fuente=rend?'ref':'na';}
+      if(!rend){rend=(uN==='h'&&pm&&+pm.hmm_ref)||promV(x=>nrmI(x.marca)===nrmI(v.marca)&&nmdI(x.medida)===nmdI(v.medida))||promV(x=>nmdI(x.medida)===nmdI(v.medida));fuente=rend?'ref':'na';}
       const nueva=pm&&+pm.cocada_nueva?+pm.cocada_nueva:+v.ini.cocada, coc=+r.cocada;
       const rest=rend?Math.max(0,(coc-ret)*rend):null;
       let fRet=null,dias=null; if(rest!=null&&hd){fRet=new Date(new Date(r.fecha+'T00:00:00').getTime()+rest/hd*86400000);dias=Math.round((fRet-H0)/86400000);}
@@ -1605,8 +1608,8 @@ async function abrirInformeEquipo(id){
       <div class="ichasis">${ejes.map(x=>{const h=Math.ceil(x.length/2);return `<div class="ieje"><div class="ilado">${x.slice(0,h).map(nn).join('')}</div><div class="ilado">${x.slice(h).map(nn).join('')}</div></div>`;}).join('')}</div>
       <div class="inf-dim" style="font-size:10px;text-align:center">Última inspección ${fmtDate(ultF)}${pe?` · próximo cambio: <b style="color:#333">pos ${pe.pos}</b> (${fIso(pe.fRet)})`:''}</div>
       <div class="ileg"><span><i style="background:#16A34A"></i>Bien</span><span><i style="background:#E0B000"></i>Ir pidiendo</span><span><i style="background:#DC2626"></i>Cambiar ya</span></div></div>`;
-    const tabla=`<table class="inf-t inf-neu"><thead><tr><th>Pos.</th><th>Serie</th><th>Marca</th><th>Medida</th><th>Cocada inicial</th><th>Cocada actual</th><th>Horas</th><th>h/mm</th>
-      <th>Horas restantes</th><th>Vida usada</th><th>Retiro estimado</th><th>USD/h</th><th>Estado</th></tr></thead>
+    const tabla=`<table class="inf-t inf-neu"><thead><tr><th>Pos.</th><th>Serie</th><th>Marca</th><th>Medida</th><th>Cocada inicial</th><th>Cocada actual</th><th>${uN==='km'?'Km':'Horas'}</th><th>${uN==='km'?'km/mm':'h/mm'}</th>
+      <th>${uN==='km'?'Km restantes':'Horas restantes'}</th><th>Vida usada</th><th>Retiro estimado</th><th>${uN==='km'?'USD/km':'USD/h'}</th><th>Estado</th></tr></thead>
       <tbody>${LLi.map(l=>`<tr><td><b>${l.pos}</b></td><td>${esc(l.serie)||'<span class="inf-dim">—</span>'}</td><td>${esc(l.marca||'—')}</td><td>${esc(l.medida||'—')}</td>
         <td>${f1(l.ini)}</td><td><b>${f1(l.coc)}</b></td><td>${l.hrs!=null?f0(l.hrs):'—'}</td><td>${l.rend?f0(l.rend):'—'}${l.fuente==='ref'?'<span class="iref">REF</span>':''}</td>
         <td>${l.rest!=null?f0(l.rest):'—'}</td>
@@ -1618,7 +1621,7 @@ async function abrirInformeEquipo(id){
     const repUSD=insp.reduce((a,y)=>a+(+y.reparacion_usd||0),0);
     htmlNeu=`<div class="inf-neuGr"><div style="min-width:0">${tabla}</div>${diag}</div>
       <div class="inf-notaRet">${notaRet}</div>
-      <div class="inf-dim" style="font-size:10px;margin-top:2px">Inspecciones en esta obra: ${insp.length}${repUSD?` · Reparaciones: USD ${f0(repUSD)}`:''}. Serie “—” = llanta seguida por posición. REF = h/mm de referencia (todavía no hay desgaste medido).</div>`;
+      <div class="inf-dim" style="font-size:10px;margin-top:2px">Inspecciones en esta obra: ${insp.length}${repUSD?` · Reparaciones: USD ${f0(repUSD)}`:''}. Serie “—” = llanta seguida por posición. REF = ${uN==='km'?'km/mm':'h/mm'} de referencia (todavía no hay desgaste medido).${uN==='km'?' Contador en KM.':''}</div>`;
   }
   let nSec=5; const sec=t=>(++nSec)+'. '+t;
 
