@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8">
-<meta name="gllr-version" content="V.111026-1" data-pagina="Equipos">
+<meta name="gllr-version" content="V.131026-1" data-pagina="Equipos">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Control de Mantenimiento — UDE</title>
 <link rel="icon" href="favicon.ico" sizes="any">
@@ -1389,12 +1389,15 @@ async function abrirInformeEquipo(id){
   document.getElementById('infImp').onclick=()=>window.print();
 
   const cod_sap=e.cod_sap;
-  const [rpm,rcomb,rpend,rsos,rbm]=await Promise.all([
+  const [rpm,rcomb,rpend,rsos,rbm,rneu,rnmed,rnpar]=await Promise.all([
     sb.from('pm_prog').select('*').eq('cod_sap',cod_sap).order('fecha_ejec',{ascending:false}),
     sb.from('combustible').select('*').eq('cod_sap',cod_sap).order('fecha',{ascending:false}),
     sb.from('pendientes').select('*').eq('equipo_sap',cod_sap).order('fecha_compromiso',{ascending:false}),
     sb.from('sos_muestras').select('*').eq('cod_sap',cod_sap).order('f_muestreo',{ascending:false}),
-    sb.from('benchmark').select('*')
+    sb.from('benchmark').select('*'),
+    sb.from('neu_inspecciones').select('*').eq('cod_sap',cod_sap).order('fecha',{ascending:true}).then(r=>r,()=>({data:[]})),
+    sb.from('neu_param_medida').select('*').then(r=>r,()=>({data:[]})),
+    sb.from('neu_parametros').select('*').eq('id',1).maybeSingle().then(r=>r,()=>({data:null}))
   ]);
   const body=document.getElementById('infBody'); if(!body)return;
   if(rpm.error||rcomb.error||rpend.error||rsos.error){
@@ -1503,6 +1506,80 @@ async function abrirInformeEquipo(id){
     (ra||[]).forEach(a=>{ if(a.acciones&&String(a.acciones).trim())recIA.set(String(a.resultado_id),String(a.acciones).trim()); });
   }
 
+  // -- Permanencia en la obra resaltada (fila del maestro): salida − ingreso; sin salida = EN CURSO (hasta HR/KM actual y hoy)
+  const tagObra=c=>c?'<span class="inf-pill ambar" style="margin-left:6px;font-size:9.5px">EN CURSO</span>':'<span class="inf-pill verde" style="margin-left:6px;font-size:9.5px">CERRADO</span>';
+  const subObra=t=>`<div class="inf-dim" style="font-size:10px;font-weight:400">${t}</div>`;
+  const uC=tipoCont==='Km'?'km':'h', UC=tipoCont==='Km'?'KM':'HR';
+  let horasObra;
+  { const ing=e.hrkm_ingreso!=null&&e.hrkm_ingreso!==''?+e.hrkm_ingreso:null;
+    const sal=e.hrkm_salida!=null&&e.hrkm_salida!==''?+e.hrkm_salida:null;
+    const act=e.hrkm_actual!=null&&e.hrkm_actual!==''?+e.hrkm_actual:null;
+    const fin=sal!=null?sal:act, enCurso=sal==null;
+    if(ing==null)horasObra='—'+subObra(`Falta HR/KM ing. en el maestro`);
+    else if(fin==null)horasObra='—'+subObra(`Falta HR/KM sal. y HR/KM actual`);
+    else if(fin-ing<0)horasObra='—'+subObra(`Revisar: ${enCurso?UC+' actual':UC+' sal.'} ${fmtNum(fin)} es menor que ${UC} ing. ${fmtNum(ing)}`);
+    else horasObra=`${fmtNum(Math.round(fin-ing))} ${uC}${tagObra(enCurso)}`+subObra(`${enCurso?UC+' actual':UC+' sal.'} ${fmtNum(fin)} − ${UC} ing. ${fmtNum(ing)}${enCurso?' (aún sin '+UC+' sal.)':''}`);
+  }
+  let tiempoObra;
+  { const fi=e.fecha_ingreso?new Date(String(e.fecha_ingreso).slice(0,10)+'T00:00:00'):null;
+    const fdS=e.fecha_desmov?String(e.fecha_desmov).slice(0,10):null;
+    const hoyD=new Date(); hoyD.setHours(0,0,0,0);
+    const fd=fdS?new Date(fdS+'T00:00:00'):hoyD, enCurso=!fdS;
+    if(!fi||isNaN(fi))tiempoObra='—'+subObra('Falta F. ingreso en el maestro');
+    else if(fd<fi)tiempoObra='—'+subObra('Revisar: F. desmov. es anterior a F. ingreso');
+    else{
+      const dias=Math.round((fd-fi)/86400000);
+      let m=(fd.getFullYear()-fi.getFullYear())*12+(fd.getMonth()-fi.getMonth()); if(fd.getDate()<fi.getDate())m--;
+      const a=Math.floor(m/12), mm=m%12;
+      const lg=a||mm?' ('+[a?a+(a===1?' año':' años'):'',mm?mm+(mm===1?' mes':' meses'):''].filter(Boolean).join(' ')+')':'';
+      tiempoObra=`${fmtNum(dias)} días${lg}${tagObra(enCurso)}`+subObra(`${fmtDate(e.fecha_ingreso)} → ${enCurso?'hoy '+fmtDate(hoyD.toISOString().slice(0,10)):fmtDate(fdS)}`);
+    }
+  }
+  const filaHtml=(l,h)=>`<tr><td class="k">${esc(l)}</td><td style="font-weight:600">${h}</td></tr>`;
+
+  // -- NEUMÁTICOS: solo si hay inspecciones de este equipo dentro del periodo de esta obra
+  const fIniO=e.fecha_ingreso?String(e.fecha_ingreso).slice(0,10):'', fFinO=e.fecha_desmov?String(e.fecha_desmov).slice(0,10):'9999';
+  const insp=(rneu&&rneu.data||[]).filter(x=>x.fecha&&x.fecha>=fIniO&&x.fecha<=fFinO);
+  let htmlNeu='';
+  if(insp.length){
+    const nmdI=v=>String(v||'').toUpperCase().replace(/\s+/g,'');
+    const retDef=+(rnpar&&rnpar.data&&rnpar.data.retiro_mm_def)||8;
+    const retiroI=med=>{const p=(rnmed&&rnmed.data||[]).find(x=>nmdI(x.medida)===nmdI(med));return p&&p.retiro_mm!=null?+p.retiro_mm:retDef;};
+    const ultF=insp[insp.length-1].fecha;
+    const actuales=insp.filter(x=>x.fecha===ultF).sort((a,b)=>a.posicion-b.posicion);
+    const hrd=+e.hr_dia||0;
+    const filasN=actuales.map(x=>{
+      // historia de la misma llanta (por serie; si no hay, por posición), solo la vida actual (una subida de cocada > 2 mm es llanta nueva)
+      let h=insp.filter(y=>x.serie?String(y.serie||'').trim()===String(x.serie).trim():(!y.serie&&y.posicion===x.posicion));
+      for(let i=h.length-1;i>0;i--){ if(+h[i].cocada>+h[i-1].cocada+2){h=h.slice(i);break;} }
+      const ret=retiroI(x.medida), coc=+x.cocada, util=coc-ret;
+      let hmm=null; const p0=h[0];
+      if(h.length>1&&p0.horometro!=null&&x.horometro!=null&&+p0.cocada>coc) hmm=(+x.horometro-+p0.horometro)/(+p0.cocada-coc);
+      if(hmm!=null&&!(hmm>0))hmm=null;
+      const hRest=hmm!=null?Math.max(util,0)*hmm:null, dRest=hRest!=null&&hrd?hRest/hrd:null;
+      const dRojo=+(rnpar&&rnpar.data&&rnpar.data.dias_rojo)||30, dAm=+(rnpar&&rnpar.data&&rnpar.data.dias_amarillo)||60;
+      const est=util<=0?'rojo':dRest!=null?(dRest<=dRojo?'rojo':dRest<=dAm?'ambar':'verde'):(util<=3?'ambar':'verde');
+      return {x,ret,util,hmm,hRest,dRest,est};
+    });
+    const nR=filasN.filter(f=>f.est==='rojo').length, nA=filasN.filter(f=>f.est==='ambar').length;
+    const repUSD=insp.reduce((a,y)=>a+(+y.reparacion_usd||0),0);
+    const minC=Math.min(...actuales.map(x=>+x.cocada));
+    const txtEst={rojo:'Cambiar',ambar:'Programar',verde:'OK'};
+    htmlNeu=`<div class="inf-res4">
+        ${resumen('Última inspección',fmtDate(ultF),'gris')}
+        ${resumen('Llantas montadas',String(actuales.length),'gris')}
+        ${resumen('Cocada mínima',minC+' mm',nR?'rojo':(nA?'ambar':'verde'))}
+        ${resumen('Alertas',nR?nR+' por cambiar':(nA?nA+' por programar':'Ninguna'),nR?'rojo':(nA?'ambar':'verde'))}
+      </div>
+      <table class="inf-t" style="margin-top:8px"><thead><tr><th>Pos.</th><th>Serie</th><th>Marca</th><th>Medida</th><th class="c">Cocada</th><th class="c">Retiro</th><th class="c">mm útiles</th><th class="c">h/mm</th><th class="c">Horas restantes</th><th class="c">Estado</th></tr></thead>
+      <tbody>${filasN.map(f=>`<tr><td>${f.x.posicion}</td><td>${esc(f.x.serie||'—')}</td><td>${esc(f.x.marca||'—')}</td><td>${esc(f.x.medida||'—')}</td>
+        <td class="c"><b>${f.x.cocada} mm</b></td><td class="c">${f.ret} mm</td><td class="c">${Math.max(f.util,0).toFixed(1)}</td>
+        <td class="c">${f.hmm!=null?f.hmm.toFixed(0):'—'}</td><td class="c">${f.hRest!=null?fmtNum(Math.round(f.hRest))+' h'+(f.dRest!=null?` <span class="inf-dim">(~${Math.round(f.dRest)} d)</span>`:''):'—'}</td>
+        <td class="c"><span class="inf-pill ${f.est}">${txtEst[f.est]}</span></td></tr>`).join('')}</tbody></table>
+      <div class="inf-dim" style="font-size:10px;margin-top:4px">Inspecciones de esta obra: ${insp.length}${repUSD?` · Reparaciones: USD ${fmtNum(Math.round(repUSD))}`:''}. h/mm calculado con las inspecciones de la vida actual de cada llanta; "—" si aún hay una sola medición.</div>`;
+  }
+  let nSec=5; const sec=t=>(++nSec)+'. '+t;
+
   body.innerHTML=`
     ${chip('azul','1. DATOS GENERALES DEL EQUIPO')}
     <table class="inf-t"><tbody>
@@ -1513,6 +1590,8 @@ async function abrirInformeEquipo(id){
       ${filaDato('Obra / Proyecto',e.cod_proyec)}
       ${filaDato('Estado operativo',e.status)}
       ${filaDato('HR/KM actual',e.hrkm_actual!=null?fmtNum(e.hrkm_actual):'')}
+      ${filaHtml(tipoCont==='Km'?'Km totales en obra':'Horas totales en obra',horasObra)}
+      ${filaHtml('Tiempo total en obra',tiempoObra)}
     </tbody></table>
 
     ${chip('plomo','2. RESUMEN')}
@@ -1558,13 +1637,15 @@ async function abrirInformeEquipo(id){
       </div>`).join(''):''}`
       :'<div class="inf-dim" style="padding:6px 0">Sin muestras de aceite registradas para este equipo.</div>'}
 
-    ${chip('rojo','6. PENDIENTES')}
+    ${htmlNeu?chip('verde',sec('NEUMÁTICOS'))+htmlNeu:''}
+
+    ${chip('rojo',sec('PENDIENTES'))}
     ${pend.length?`<table class="inf-t"><thead><tr><th>Falla reportada</th><th class="c">Prioridad</th><th class="c">Estado</th><th class="c">F. inicio</th><th class="c">F. cierre</th></tr></thead>
       <tbody>${pend.slice(0,10).map(x=>`<tr><td>${esc(x.falla||'—')}</td><td class="c">${esc(x.prioridad||'—')}</td><td class="c">${esc(x.estado||'—')}</td>
         <td class="c">${fmtDate(x.fecha_compromiso)||'—'}</td><td class="c">${fmtDate(x.fecha_cierre)||'—'}</td></tr>`).join('')}</tbody></table>`
       :'<div class="inf-dim" style="padding:6px 0">Sin fallas reportadas registradas.</div>'}
 
-    ${chip('plomo','7. OBSERVACIONES')}
+    ${chip('plomo',sec('OBSERVACIONES'))}
     <div id="infObs" contenteditable="true" style="border:1px dashed #c7ccd1;border-radius:9px;padding:10px 12px;min-height:60px;font-size:12px;color:#333;outline:none"></div>
   `;
 
