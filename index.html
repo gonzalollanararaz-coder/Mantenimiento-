@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8">
-<meta name="gllr-version" content="V.131026-3" data-pagina="Equipos">
+<meta name="gllr-version" content="V.161026-1" data-pagina="Equipos">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Control de Mantenimiento — UDE</title>
 <link rel="icon" href="favicon.ico" sizes="any">
@@ -276,6 +276,8 @@
     body{background:#fff!important}
     body *{visibility:hidden}
     #infWrap, #infWrap *{visibility:visible}
+    /* el resto de la página no ocupa espacio: así no sale una primera hoja en blanco */
+    body.imp-inf > *:not(#infWrap){display:none!important}
     #infWrap{position:static;background:#fff;padding:0;display:block;height:auto;overflow:visible}
     #infCard{width:100%;max-height:none;box-shadow:none;border-radius:0;height:auto;display:block}
     #infCard .hbody{overflow:visible;height:auto}
@@ -1404,7 +1406,16 @@ async function abrirInformeEquipo(id){
   const cerrar=()=>{const m=document.getElementById('infWrap');if(m)m.remove();};
   document.getElementById('infCer').onclick=cerrar;
   document.getElementById('infWrap').addEventListener('click',ev=>{if(ev.target.id==='infWrap')cerrar();});
-  document.getElementById('infImp').onclick=()=>window.print();
+  // al imprimir / guardar PDF: nombre del archivo = "Informe completo - [equipo] - obra - fecha"
+  document.getElementById('infImp').onclick=()=>{
+    const t0=document.title, h=new Date(), dd=n=>String(n).padStart(2,'0');
+    document.title=['Informe completo',e.cod_sap||'',e.cod_proyec||'',`${dd(h.getDate())}-${dd(h.getMonth()+1)}-${h.getFullYear()}`].filter(Boolean).join(' - ');
+    document.body.classList.add('imp-inf');
+    const fin=()=>{document.title=t0;document.body.classList.remove('imp-inf');window.removeEventListener('afterprint',fin);};
+    window.addEventListener('afterprint',fin);
+    window.print();
+    setTimeout(()=>{ if(document.body.classList.contains('imp-inf')&&!matchMedia('print').matches)fin(); },1500);
+  };
 
   const cod_sap=e.cod_sap;
   const [rpm,rcomb,rpend,rsos,rbm,rneu,rnmed,rnmar,rnpar]=await Promise.all([
@@ -1446,8 +1457,8 @@ async function abrirInformeEquipo(id){
   const pmCls=c.est==='bad'?'rojo':c.est==='warn'?'ambar':c.est==='na'?'gris':'verde';
   const pendUrg=pend.filter(x=>x.estado!=='Completado'&&x.prioridad==='Urgente').length;
   const pendActivos=pend.filter(x=>x.estado!=='Completado').length;
-  const sosCrit=sos.filter(m=>m.estado_std==='CRITICO').length;
-  const sosPrec=sos.filter(m=>m.estado_std==='PRECAUCION').length;
+  // SOS en el resumen: se cuenta solo el ÚLTIMO resultado de cada sistema (lo mismo que muestra el punto 5)
+  let sosCrit=0, sosPrec=0;
   const hoyISO=new Date().toISOString().slice(0,10);
   const combMes=comb.filter(d=>String(d.fecha).slice(0,7)===hoyISO.slice(0,7)).reduce((s,d)=>s+(+d.galones||0),0);
 
@@ -1517,6 +1528,8 @@ async function abrirInformeEquipo(id){
     return {sistema:s,ultima:ms[0]};
   });
   const alerta=filasSos.filter(x=>x.ultima&&(x.ultima.estado_std==='CRITICO'||x.ultima.estado_std==='PRECAUCION'));
+  sosCrit=filasSos.filter(x=>x.ultima&&x.ultima.estado_std==='CRITICO').length;
+  sosPrec=filasSos.filter(x=>x.ultima&&x.ultima.estado_std==='PRECAUCION').length;
   // RECOMENDACIONES (IA): se copian de la Ficha SOS (columna "acciones" de sos_alertas, la misma
   // que llena "Analizar con IA" en la ficha). Ya no se hace una consulta aparte a la IA.
   const recIA=new Map();
@@ -1644,7 +1657,7 @@ async function abrirInformeEquipo(id){
       ${resumen('Próximo PM',pmLbl,pmCls)}
       ${resumen('Combustible (mes)',combMes?fmtNum(combMes)+' gal':'—','gris')}
       ${resumen('Pendientes activos',pendActivos+(pendUrg?` (${pendUrg} urg.)`:''),pendUrg?'rojo':(pendActivos?'ambar':'verde'))}
-      ${resumen('SOS aceite',sosCrit?sosCrit+' crítico(s)':(sosPrec?sosPrec+' precaución':'Normal'),sosCrit?'rojo':(sosPrec?'ambar':'verde'))}
+      ${resumen('SOS aceite',!filasSos.length?'—':[sosCrit?sosCrit+' crítico(s)':'',sosPrec?sosPrec+' precaución':''].filter(Boolean).join(' · ')||'Normal',sosCrit?'rojo':(sosPrec?'ambar':(filasSos.length?'verde':'gris')))}
     </div>
 
     ${chip('verde','3. MANTENIMIENTO (PM-S)')}
