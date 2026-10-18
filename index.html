@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8">
-<meta name="gllr-version" content="V.161026-1" data-pagina="Equipos">
+<meta name="gllr-version" content="V.181026-1" data-pagina="Equipos">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Control de Mantenimiento — UDE</title>
 <link rel="icon" href="favicon.ico" sizes="any">
@@ -221,6 +221,21 @@
   .hb.ok{background:#dcfce7;color:#15803d}.hb.warn{background:#fef3c7;color:#B45309}
   .hb.gris{background:#eef0f2;color:#6b747d}.hb.bad{background:#fee2e2;color:#b91c1c}
   #horCard .hbody{overflow:auto;padding:10px 16px 16px}
+  /* ── Desfase de horómetros ── */
+  .dsfB{display:inline-block;margin-left:4px;background:#E6E9F7;color:#334281;border-radius:5px;padding:0 4px;font-size:11px;font-weight:800;cursor:help}
+  .dsfB.w{background:#FDE4E4;color:#B91C1C}
+  #dsfWrap{position:fixed;inset:0;background:rgba(15,20,26,.55);z-index:9997;display:flex;align-items:flex-start;justify-content:center;padding:18px;overflow:auto}
+  #dsfCard{background:#fff;border-radius:12px;width:min(1050px,98vw);box-shadow:0 20px 60px rgba(0,0,0,.35);display:flex;flex-direction:column;max-height:calc(100vh - 36px)}
+  #dsfCard .hhead{display:flex;align-items:center;gap:10px;padding:12px 16px;border-bottom:1px solid var(--line)}
+  #dsfCard h3{font-size:15px;color:#1f3864}#dsfCard .hsub{font-size:11px;color:var(--muted);margin-top:2px}
+  #dsfCard .hbody{overflow:auto;padding:10px 16px 16px}
+  .dsfF{display:flex;gap:8px;flex-wrap:wrap;align-items:flex-end;margin-top:12px;padding:10px;background:#f6f8fa;border-radius:10px}
+  .dsfF label{display:block;font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;margin-bottom:2px}
+  .dsfF input{height:30px;border:1px solid var(--line);border-radius:7px;padding:0 7px;font:inherit;font-size:12px}
+  .dsfP{border-radius:999px;padding:1px 8px;font-size:10.5px;font-weight:800;display:inline-block;white-space:nowrap}
+  .dsfP.ok{background:#DCF5E3;color:#0F7A33}.dsfP.hm{background:#E6E9F7;color:#334281}.dsfP.na{background:#eef0f2;color:#6b747d}.dsfP.dd{background:#FFF6D6;color:#8A6A00}
+  tr.dsfDuda td{background:#FFF8E1}
+  .dsfO label{font-size:11.5px;margin-right:10px;cursor:pointer;white-space:nowrap}
   /* ── Informe completo de equipo ── */
   #infWrap{position:fixed;inset:0;background:rgba(15,20,26,.55);z-index:9998;display:flex;align-items:flex-start;justify-content:center;padding:18px;overflow:auto}
   #infCard{background:#fff;border-radius:12px;width:min(920px,98vw);box-shadow:0 20px 60px rgba(0,0,0,.35);display:flex;flex-direction:column;max-height:calc(100vh - 36px)}
@@ -677,6 +692,7 @@
       <button class="act ghost ic" id="btnHoro" title="Cargar el reporte de consumo de combustible (actualiza horómetros y alimenta la pestaña Combustible)">⛽</button>
       <button class="act ghost ic" id="btnHoroSolo" title="Cargar solo horómetros y fechas (no afecta el reporte de combustible)">⏱</button>
       <button class="act ghost ic" id="btnFormatos" title="Descargar los formatos de ejemplo">📄</button>
+      <button class="act ghost ic" id="btnDesf" title="Desfase de horómetros (equipos con reinicio o cambio de horómetro)">⟲</button>
       <span class="dd hide" id="ddCargar"><button class="act ghost dd-b">Cargar <i>▾</i></button>
         <div class="dd-m" id="mCargar"><div class="dd-c">Desde un archivo Excel</div></div></span>
       <button class="act ghost ic" id="btnExcel" title="Descargar en Excel">⬇</button>
@@ -1116,6 +1132,7 @@ async function cargar(){
     appFoot.textContent="Mostrando la última copia guardada en este equipo.";
   }
   datos=data;
+  await cargarDesfases();
   const tsList=data.map(e=>e.updated_at).filter(Boolean).sort().reverse();
   if(tsList.length)_lastPollTs=tsList[0];
   render();
@@ -1647,7 +1664,11 @@ async function abrirInformeEquipo(id){
       ${filaDato('Serie / Placa',e.serie_placa)}
       ${filaDato('Obra / Proyecto',e.cod_proyec)}
       ${filaDato('Estado operativo',e.status)}
-      ${filaDato('HR/KM actual',e.hrkm_actual!=null?fmtNum(e.hrkm_actual):'')}
+      ${(()=>{const n=dsfNota(e);
+        if(!n)return filaDato('HR/KM actual',e.hrkm_actual!=null?fmtNum(e.hrkm_actual):'');
+        return filaHtml('HR/KM actual',`${e.hrkm_actual!=null?fmtNum(e.hrkm_actual):'—'} <span class="inf-dim" style="font-weight:400">horas máquina${n.panel!=null?' · panel '+fmtNum(n.panel):''}</span>`)
+          +filaHtml('Desfase de horómetro',`<span class="inf-pill ${n.malo?'rojo':'ambar'}" style="font-size:9.5px">⟲ +${fmtNum(n.des)}</span>`
+            +`<div class="inf-dim" style="font-size:10px;font-weight:400">${n.cambios.map(esc).join('<br>')}${n.malo?'<br><b style="color:#b91c1c">Revisar: el HR/KM actual parece lectura de panel.</b>':'<br>Las horas de este informe están en horas máquina.'}</div>`);})()}
       ${filaHtml(tipoCont==='Km'?'Km totales en obra':'Horas totales en obra',horasObra)}
       ${filaHtml('Tiempo total en obra',tiempoObra)}
     </tbody></table>
@@ -1739,6 +1760,7 @@ function indexRows(){
 /* ---- helpers de visualización ---- */
 function fmtDate(v){if(!v)return"";const p=String(v).split("-");return p.length===3?`${p[2]}/${p[1]}/${p[0].slice(2)}`:String(v);}
 function dispVal(e,k,type){const v=e[k];
+  if(k==='hrkm_actual'&&v!=null&&v!==''&&desfDe(e.cod_sap).length)return Number(v).toLocaleString('es-PE')+dsfMarca(e);
   if(type==='pct')return(v==null||v==='')?"":v+"%";
   if(type==='n')return(v==null||v==='')?"":Number(v).toLocaleString('es-PE');
   if(type==='de')return v==='N.A.'?"N.A.":fmtDate(v);
@@ -2676,6 +2698,197 @@ function horRitmo(lecturas,tipo,N){
 }
 const horVal=l=>(l.corr!=null?l.corr:l.val);
 
+/* ═══════════ DESFASE DE HORÓMETROS ═══════════
+   Solo para equipos que reiniciaron o cambiaron su horómetro. Cada fila de
+   la tabla desfase_horometro dice: el día X el horómetro viejo marcaba
+   hm_dia (horas máquina) y el panel nuevo quedó en panel_dia.
+   Desfase = hm_dia − panel_dia. Todo se guarda en HORAS MÁQUINA; la
+   lectura del panel se conserva aparte (lectura_panel) cuando se carga.  */
+let DESF=[];
+async function cargarDesfases(){
+  try{ const {data,error}=await sb.from('desfase_horometro').select('*').order('fecha');
+       DESF=error?[]:(data||[]); }catch(_){ DESF=[]; }
+}
+const desfDe=sap=>{const k=horClave(sap);return k?DESF.filter(d=>horClave(d.cod_sap)===k):[];};
+const dsfHoyIso=()=>horIso(new Date());
+function desfaseEn(sap,fIso){return desfDe(sap).filter(d=>String(d.fecha)<=fIso).reduce((s,d)=>s+(+d.hm_dia-(+d.panel_dia||0)),0);}
+function hmRefEn(sap,fIso){const D=desfDe(sap).filter(d=>String(d.fecha)<=fIso);return D.length?Math.max(...D.map(d=>+d.hm_dia)):null;}
+/* lectura → horas máquina. Antes del cambio el panel viejo = horas máquina.
+   Después, una lectura menor que las horas máquina del cambio es del panel. */
+function aHM(sap,fIso,val){
+  if(val==null||!isFinite(val))return {v:val,tipo:'normal'};
+  const des=desfaseEn(sap,fIso); if(!des)return {v:val,tipo:desfDe(sap).length?'antes':'normal'};
+  const ref=hmRefEn(sap,fIso);
+  return val<ref?{v:val+des,tipo:'panel',panel:val,des}:{v:val,tipo:'hm',des};
+}
+function dsfNota(e){
+  const sap=e.cod_sap, D=desfDe(sap); if(!D.length)return null;
+  const f=e.fecha_lectura?String(e.fecha_lectura).slice(0,10):dsfHoyIso();
+  const des=desfaseEn(sap,f), ref=hmRefEn(sap,f), act=+e.hrkm_actual;
+  const cambios=D.map(d=>`Cambio ${fmtDate(String(d.fecha))}: ${fmtNum(+d.hm_dia)} → ${fmtNum(+d.panel_dia||0)} (+${fmtNum(+d.hm_dia-(+d.panel_dia||0))})${d.motivo?' · '+d.motivo:''}`);
+  const malo=isFinite(act)&&ref!=null&&act<ref;
+  return {malo,des,panel:isFinite(act)&&!malo?act-des:null,cambios,
+    texto:(malo?`⚠ El HR/KM actual (${fmtNum(act)}) es menor que las horas máquina del cambio: parece lectura de panel. Debería ser ${fmtNum(act+des)} horas máquina.\n`
+               :`Horómetro con desfase\nPanel: ${fmtNum(act-des)} · Horas máquina: ${fmtNum(act)}\n`)
+      +cambios.join('\n')+'\nLos valores se muestran en horas máquina.'};
+}
+function dsfMarca(e){const n=dsfNota(e); if(!n)return '';
+  return `<span class="dsfB${n.malo?' w':''}" title="${esc(n.texto)}">⟲</span>`;}
+
+/* ---------- ventana: tabla de desfases ---------- */
+function dsfAbrir(){
+  const ad=perfil&&perfil.rol==='admin';
+  const ya=document.getElementById('dsfWrap'); if(ya)ya.remove();
+  const filas=DESF.slice().sort((a,b)=>String(a.cod_sap).localeCompare(String(b.cod_sap))||String(a.fecha).localeCompare(String(b.fecha)));
+  const eqDeSap=sap=>datos.find(x=>horClave(x.cod_sap)===horClave(sap));
+  document.body.insertAdjacentHTML('beforeend',`<div id="dsfWrap"><div id="dsfCard">
+    <div class="hhead"><div><h3>⟲ Desfase de horómetros</h3>
+      <div class="hsub">Solo equipos con reinicio o cambio de horómetro · desfase = horas máquina − panel, el día del cambio · todo se guarda en horas máquina</div></div>
+      <div class="spacer"></div><button class="act ghost" id="dsfCer">Cerrar</button></div>
+    <div class="hbody">
+      <table class="htb"><thead><tr><th>Cód. SAP</th><th>Equipo</th><th>Obra</th><th>Fecha del cambio</th><th class="r">Horas máquina ese día</th><th class="r">Panel ese día</th><th class="r">Desfase</th><th class="r">HR actual (máquina)</th><th class="r">Panel hoy</th><th>Motivo / nota</th><th>Registró</th>${ad?'<th></th>':''}</tr></thead>
+      <tbody>${filas.map(d=>{const e=eqDeSap(d.cod_sap), n=e?dsfNota(e):null;
+        return `<tr><td class="mono"><b>${esc(d.cod_sap)}</b></td><td>${esc(e?e.equipo:'— no está en Equipos —')}</td><td>${esc(e?e.cod_proyec||'':'')}</td>
+          <td class="c">${fmtDate(String(d.fecha))}</td><td class="r">${fmtNum(+d.hm_dia)}</td><td class="r">${fmtNum(+d.panel_dia||0)}</td>
+          <td class="r"><span class="dsfP hm">+${fmtNum(+d.hm_dia-(+d.panel_dia||0))}</span></td>
+          <td class="r">${e&&e.hrkm_actual!=null?fmtNum(+e.hrkm_actual)+(n&&n.malo?' <span class="dsfB w" title="'+esc(n.texto)+'">⚠</span>':''):'—'}</td>
+          <td class="r">${n&&n.panel!=null?fmtNum(n.panel):'—'}</td>
+          <td>${esc(d.motivo||'')}</td><td class="via">${esc(d.registrado_por||'')}</td>
+          ${ad?`<td><button class="act ghost" data-dsfdel="${d.id}" style="height:24px;padding:0 8px" title="Quitar">✕</button></td>`:''}</tr>`;}).join('')
+        ||`<tr><td colspan="12" class="hvac">Ningún equipo con desfase registrado.</td></tr>`}</tbody></table>
+      ${ad?`<div class="dsfF">
+        <div><label>Cód. SAP</label><input id="dsfSap" list="dsfLst" style="width:110px" placeholder="EEX040"><datalist id="dsfLst">${[...new Set(datos.map(x=>x.cod_sap).filter(Boolean))].sort().map(c=>`<option value="${esc(c)}">`).join('')}</datalist></div>
+        <div><label>Fecha del cambio</label><input id="dsfF" type="date"></div>
+        <div><label>Horas máquina ese día</label><input id="dsfHM" type="number" style="width:130px" placeholder="horómetro viejo"></div>
+        <div><label>Panel ese día</label><input id="dsfP" type="number" value="0" style="width:90px"></div>
+        <div><label>Motivo / nota</label><input id="dsfM" style="width:220px" placeholder="Cambio de tablero"></div>
+        <button class="act primary" id="dsfOk">＋ Agregar desfase</button></div>
+        <div class="hvac" style="margin-top:6px">Si el equipo vuelve a reiniciarse, se agrega otra fila: los desfases se suman. Las lecturas ya cargadas se corrigen con la PARTE 2 de <b>desfase_horometro.sql</b>.</div>`
+      :'<div class="hvac" style="margin-top:8px">Solo un administrador puede registrar o quitar desfases.</div>'}
+    </div></div></div>`);
+  const cerrar=()=>{const w=document.getElementById('dsfWrap');if(w)w.remove();};
+  dsfCer.onclick=cerrar;
+  document.getElementById('dsfWrap').addEventListener('click',ev=>{if(ev.target.id==='dsfWrap')cerrar();});
+  document.querySelectorAll('[data-dsfdel]').forEach(b=>b.onclick=async()=>{
+    const d=DESF.find(x=>String(x.id)===b.dataset.dsfdel); if(!d)return;
+    if(!confirm(`¿Quitar el desfase de ${d.cod_sap} del ${fmtDate(String(d.fecha))}?\n\nLos datos ya guardados en horas máquina no se modifican.`))return;
+    const {error}=await sb.from('desfase_horometro').delete().eq('id',d.id);
+    if(error)return alert('No se pudo quitar: '+error.message);
+    await cargarDesfases(); render(); dsfAbrir();
+  });
+  const ok=document.getElementById('dsfOk'); if(!ok)return;
+  ok.onclick=async()=>{
+    const sap=dsfSap.value.trim().toUpperCase(), f=dsfF.value, hm=Number(dsfHM.value), pn=Number(dsfP.value||0);
+    const eqs=datos.filter(x=>horClave(x.cod_sap)===horClave(sap));
+    if(!eqs.length)return alert('Ese código no está en Equipos.');
+    if(!f)return alert('Indica la fecha del cambio.');
+    if(!(hm>pn))return alert('Las horas máquina deben ser mayores que la lectura del panel.');
+    ok.disabled=true;
+    const {error}=await sb.from('desfase_horometro').insert({cod_sap:eqs[0].cod_sap,fecha:f,hm_dia:hm,panel_dia:pn,
+      motivo:dsfM.value.trim()||null,registrado_por:perfil.nombre||perfil.email||''});
+    if(error){ok.disabled=false;
+      return alert('No se pudo guardar: '+error.message+(/does not exist|schema cache|relation/i.test(error.message)?'\n\nFalta ejecutar la PARTE 1 de desfase_horometro.sql en Supabase.':''));}
+    await cargarDesfases();
+    // el Maestro debe quedar en horas máquina: se ofrece convertir lo que quedó en panel
+    for(const e of eqs){
+      const dat={};
+      const fl=e.fecha_lectura?String(e.fecha_lectura).slice(0,10):dsfHoyIso();
+      if(e.hrkm_actual!=null&&e.hrkm_actual!==''&&fl>=f&&+e.hrkm_actual<hm){
+        const nv=+e.hrkm_actual+desfaseEn(e.cod_sap,fl);
+        if(confirm(`${e.cod_sap} (${e.cod_proyec||''}): el HR/KM actual ${fmtNum(+e.hrkm_actual)} parece del panel.\n¿Convertirlo a ${fmtNum(nv)} horas máquina?`))dat.hrkm_actual=nv;
+      }
+      const fm=e.fecha_ult_mntto?String(e.fecha_ult_mntto).slice(0,10):'';
+      if(e.hrkm_ult_mntto!=null&&e.hrkm_ult_mntto!==''&&fm&&fm>=f&&+e.hrkm_ult_mntto<hm){
+        const nv=+e.hrkm_ult_mntto+desfaseEn(e.cod_sap,fm);
+        if(confirm(`${e.cod_sap}: el HR/KM del último mantenimiento ${fmtNum(+e.hrkm_ult_mntto)} (${fmtDate(fm)}) parece del panel.\n¿Convertirlo a ${fmtNum(nv)} horas máquina?`))dat.hrkm_ult_mntto=nv;
+      }
+      if(Object.keys(dat).length){
+        const old={...e}; const r=await offEscribir(sb,'maestro','update',{id_fila:e.id,datos:dat});
+        if(r.error)alert('No se pudo actualizar '+e.cod_sap+': '+r.error.message);
+        else{ Object.keys(dat).forEach(k=>pushUndo({type:'edit',id:e.id,k,old:old[k]})); Object.assign(e,dat); delete e.__mant; }
+      }
+    }
+    OFF.guardar('maestro_full',datos);
+    render(); dsfAbrir();
+  };
+}
+btnDesf.onclick=dsfAbrir;
+
+/* ---------- al cargar un reporte: ¿panel u horas máquina? ----------
+   Para los equipos con desfase, cada lectura se reconoce como panel (se le
+   suma el desfase) o como horas máquina (queda igual), y se compara con lo
+   esperado según el Maestro (último HR/KM + HR/día × días). Si no encaja
+   con ninguna de las dos, se pregunta antes de seguir.                    */
+function horDesfase(regs,nomArchivo,seguir){
+  const af=regs.filter(u=>u.e&&desfDe(u.e.cod_sap).length);
+  if(!af.length){seguir(regs);return;}
+  const filas=[];
+  af.forEach(u=>{
+    const e=u.e, sap=e.cod_sap, km=u.tipo==='Km';
+    let base=e.hrkm_actual!=null&&e.hrkm_actual!==''?+e.hrkm_actual:null;
+    const fb=e.fecha_lectura?String(e.fecha_lectura).slice(0,10):null;
+    if(base!=null&&fb){const ref=hmRefEn(sap,fb); if(ref!=null&&base<ref)base+=desfaseEn(sap,fb);}
+    const hd=+e.hr_dia||0, t0=km?400:48, tope=HOR_TOPE[u.tipo]||24;
+    const cerca=(v,l)=>{ if(base==null||!fb)return true;
+      const dd=(l.ts-new Date(fb+'T00:00:00').getTime())/86400000;
+      if(hd){const exp=base+hd*dd;return Math.abs(v-exp)<=t0+Math.abs(dd)*hd*0.5;}
+      return dd>=0?(v>=base-t0&&v<=base+tope*dd+t0):(v<=base+t0&&v>=base-tope*Math.abs(dd)-t0); };
+    u.lecturas.forEach(l=>{
+      if(l.val==null)return;
+      const r=aHM(sap,l.fecIso,l.val), orig=l.val;
+      const fila={u,l,orig,des:r.des||0,tipo:r.tipo,
+        exp:(base!=null&&fb&&hd)?base+hd*((l.ts-new Date(fb+'T00:00:00').getTime())/86400000):null};
+      if(r.tipo==='panel'||r.tipo==='hm'){
+        const otro=r.tipo==='panel'?orig:orig+r.des;
+        if(!cerca(r.v,l)){
+          if(cerca(otro,l))fila.tipo=r.tipo==='panel'?'hm':'panel';
+          else fila.tipo='duda';
+        }
+      }
+      filas.push(fila);
+    });
+  });
+  const aplicar=(f,t)=>{ const l=f.l;
+    if(t==='panel'){l.val=f.orig+f.des; l.panel=f.orig;}
+    else if(t==='hm'){l.val=f.orig; l.panel=null;}
+    else if(t==='omit'){l.descartar=true; l.obs='omitido al cargar: horómetro dudoso (equipo con desfase)';} };
+  filas.forEach(f=>{ if(f.tipo==='panel'||f.tipo==='hm')aplicar(f,f.tipo); });
+  const P={panel:'<span class="dsfP ok">Panel ✓</span>',hm:'<span class="dsfP hm">Horas máquina ✓</span>',antes:'<span class="dsfP na">Antes del cambio</span>',duda:'<span class="dsfP dd">❓ Duda</span>'};
+  const n=t=>filas.filter(f=>f.tipo===t).length;
+  document.body.insertAdjacentHTML('beforeend',`<div id="dsfWrap"><div id="dsfCard">
+    <div class="hhead"><div><h3>⟲ Equipos con desfase de horómetro</h3>
+      <div class="hsub">${esc(nomArchivo)} · se reconoce si cada lectura es del panel o en horas máquina · todo se guarda en horas máquina</div></div>
+      <div class="spacer"></div><button class="act ghost" id="dsfCan">Cancelar</button><button class="act primary" id="dsfSig">Continuar</button></div>
+    <div class="hres" style="display:flex;gap:7px;flex-wrap:wrap;padding:9px 16px;background:#f6f8fa;border-bottom:1px solid var(--line)">
+      <span class="hb ok">${n('panel')} de panel → convertidas</span><span class="hb azul">${n('hm')} ya en horas máquina</span>
+      <span class="hb gris">${n('antes')} anteriores al cambio</span><span class="hb ${n('duda')?'warn':'gris'}">${n('duda')} duda(s) por resolver</span></div>
+    <div class="hbody"><table class="htb"><thead><tr><th>Cód. SAP</th><th>Fecha</th><th>Hora</th><th class="r">Reportado</th><th class="r">Esperado (máquina)</th><th>Reconocimiento</th><th>Detalle / decisión</th><th class="r">Se guarda (máquina)</th></tr></thead>
+    <tbody>${filas.map((f,i)=>`<tr class="${f.tipo==='duda'?'dsfDuda':''}"><td class="mono">${esc(f.u.e.cod_sap)}</td><td>${fmtDate(f.l.fecIso)}</td><td class="c">${esc(f.l.hora||'')}</td>
+      <td class="r mono"><b>${fmtNum(f.orig)}</b></td><td class="r">${f.exp!=null?'~'+fmtNum(Math.round(f.exp)):'—'}</td><td>${P[f.tipo]}</td>
+      <td>${f.tipo==='duda'?`<span class="via">No coincide con panel ni con horas máquina. ¿Qué horómetro es?</span><div class="dsfO">
+          <label><input type="radio" name="dq${i}" value="panel"> Panel (+${fmtNum(f.des)} = ${fmtNum(f.orig+f.des)})</label>
+          <label><input type="radio" name="dq${i}" value="hm"> Horas máquina</label>
+          <label><input type="radio" name="dq${i}" value="omit"> Omitir lectura</label></div>`
+        :`<span class="via">${f.tipo==='panel'?'panel + '+fmtNum(f.des):f.tipo==='hm'?'se guarda igual':'el panel viejo era igual a horas máquina'}</span>`}</td>
+      <td class="r mono" id="dqv${i}"><b>${f.tipo==='duda'?'?':fmtNum(f.l.val)}</b></td></tr>`).join('')}</tbody></table>
+    <div class="hvac" style="margin-top:6px">Esperado = último HR/KM del Maestro + HR/día × días. Después de este paso sigue la revisión normal de lecturas inconsistentes.</div></div>
+  </div></div>`);
+  const cerrar=()=>{const w=document.getElementById('dsfWrap');if(w)w.remove();};
+  const sig=document.getElementById('dsfSig');
+  const pend=()=>filas.filter((f,i)=>f.tipo==='duda'&&!document.querySelector(`#dsfWrap input[name="dq${i}"]:checked`)).length;
+  const upd=()=>{const p=pend(); sig.disabled=!!p; sig.title=p?`Resuelve ${p} duda(s) para continuar`:'';
+    filas.forEach((f,i)=>{ if(f.tipo!=='duda')return; const c=document.querySelector(`#dsfWrap input[name="dq${i}"]:checked`);
+      document.getElementById('dqv'+i).innerHTML='<b>'+(!c?'?':c.value==='panel'?fmtNum(f.orig+f.des):c.value==='hm'?fmtNum(f.orig):'omitida')+'</b>'; });};
+  document.querySelectorAll('#dsfWrap input[type=radio]').forEach(x=>x.onchange=upd); upd();
+  dsfCan.onclick=()=>{cerrar();appFoot.textContent='Carga cancelada.';};
+  sig.onclick=()=>{
+    if(pend())return;
+    filas.forEach((f,i)=>{ if(f.tipo!=='duda')return;
+      aplicar(f,document.querySelector(`#dsfWrap input[name="dq${i}"]:checked`).value); });
+    cerrar(); seguir(regs);
+  };
+}
+
 /* ═══════════ PASO 1 · cuadro de correcciones ═══════════ */
 function horCorregir(regs,nomArchivo,seguir){
   regs.forEach(u=>{if(u.e)horDetectar(u);});
@@ -2861,7 +3074,8 @@ function horPanel(R,regs,nomArchivo,modo){
         disp.push({nro_vale:l.vale||'',cod_sap:u.e.cod_sap,maestro_id:u.e.id,
           cod_proyec:u.e.cod_proyec||null,fecha:l.fecIso,hora:l.hora||'',
           contador:l.val,contador_corr:l.corr!=null?l.corr:null,
-          descartado:!!l.descartar,galones:l.gl,obs:l.obs||null});
+          descartado:!!l.descartar,galones:l.gl,obs:l.obs||null,
+          ...(l.panel!=null?{lectura_panel:l.panel}:{})});
       });
     });
     /* Los despachos ya guardados NO se pisan: si alguien corrigió un contador,
@@ -2943,7 +3157,7 @@ btnHoro.onclick=()=>{
       if(!regs.length){alert('El archivo no tiene lecturas válidas.');appFoot.textContent='';return;}
       const nom=f.name+' · '+regs.length+' equipos';
       appFoot.textContent='';
-      horCorregir(regs,nom,rs=>horPanel(horAnalizar(rs),rs,nom));
+      horDesfase(regs,nom,rd=>horCorregir(rd,nom,rs=>horPanel(horAnalizar(rs),rs,nom)));
     }catch(err){ alert('No se pudo leer el archivo: '+err.message); appFoot.textContent=''; }
   };
   inp.click();
@@ -3019,7 +3233,7 @@ btnHoroSolo.onclick=()=>{
       if(!regs.length){alert('El archivo no tiene lecturas válidas.');appFoot.textContent='';return;}
       const nom=f.name+' · '+regs.length+' equipos · solo horómetros';
       appFoot.textContent='';
-      horCorregir(regs,nom,rs=>horPanel(horAnalizar(rs),rs,nom,'horo'));
+      horDesfase(regs,nom,rd=>horCorregir(rd,nom,rs=>horPanel(horAnalizar(rs),rs,nom,'horo')));
     }catch(err){ alert('No se pudo leer el archivo: '+err.message); appFoot.textContent=''; }
   };
   inp.click();

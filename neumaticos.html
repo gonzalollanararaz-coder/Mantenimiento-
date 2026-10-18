@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
 <meta charset="utf-8">
-<meta name="gllr-version" content="V.131026-2" data-pagina="Neumáticos">
+<meta name="gllr-version" content="V.181026-1" data-pagina="Neumáticos">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Neumáticos &mdash; UDE</title>
 <link rel="icon" href="favicon.ico" sizes="any">
@@ -100,6 +100,7 @@
   .lisGr .eq{border-radius:12px}
   @media(max-width:1000px){.lisGr{grid-template-columns:1fr}.lisGr .eq{max-width:280px}}
   table.t.tc th.c,table.t.tc td.c{text-align:center}
+  .dsfB{display:inline-block;background:#E6E9F7;color:#334281;border-radius:5px;padding:0 5px;font-size:11px;font-weight:800;cursor:help}
   .tt{position:fixed;pointer-events:none;background:#1c232b;color:#fff;font-size:12px;padding:6px 9px;border-radius:7px;display:none;z-index:99;line-height:1.5;max-width:320px}
   .formula{background:#F7F8FA;border:1px solid var(--line);border-radius:10px;padding:9px 12px;font-size:12.5px;line-height:1.75}
   .formula b{color:var(--navy)}
@@ -407,7 +408,7 @@ function pintarLis(){
   const pr=PAR.presion_activa;
   const bloque=sap=>{const E=L.filter(l=>l.sap===sap), e=E[0].e;
     const U=UL(E[0].u); const nB=E.filter(l=>l.est==='bad').length, nW=E.filter(l=>l.est==='warn').length;
-    return `<div class="lisEq"><div class="lisHd"><b>${esc(sap)}</b><span>${esc(e?e.equipo:'')}${E[0].obra?' · '+esc(E[0].obra):''} · ${E.length} llanta(s) · contador en ${U.u==='km'?'KM':'horas'}</span>
+    return `<div class="lisEq"><div class="lisHd"><b>${esc(sap)}</b><span>${esc(e?e.equipo:'')}${E[0].obra?' · '+esc(E[0].obra):''} · ${E.length} llanta(s) · contador en ${U.u==='km'?'KM':'horas'}${desfDe(sap).length?` · <span class="dsfB" title="${esc('Horómetro con desfase: '+desfDe(sap).map(d=>`cambio ${fmtDate(d.fecha)} ${f0(d.hm_dia)} → ${f0(d.panel_dia||0)} (+${f0(d.hm_dia-(d.panel_dia||0))})`).join(' · ')+'. Las horas se muestran en horas máquina.')}">⟲ desfase +${f0(desfaseEn(sap,'9999'))}</span>`:''}</span>
         <span class="spacer"></span>${nB?`<span class="pill p-bad">${nB} por cambiar</span>`:''}${nW?`<span class="pill p-warn">${nW} por pedir</span>`:''}${!nB&&!nW?'<span class="pill p-ok">Todo bien</span>':''}</div>
       <div class="lisGr"><div style="overflow:auto"><table class="t tc"><thead><tr><th class="c">Pos.</th><th>Serie</th><th>Marca</th><th>Medida</th><th class="c">Cocada inicial</th><th class="c">Cocada actual</th>
       <th class="c">Vida usada</th><th class="c">${U.c}</th><th class="c">${U.pm}</th><th class="c">${U.q}</th><th class="c">Retiro estimado</th><th class="c">${U.usd}</th>${pr?'<th class="c">Presión</th>':''}<th class="c">Últ. medición</th><th class="c">Estado</th></tr></thead>
@@ -682,12 +683,14 @@ inFile.onchange=async()=>{
     if(prev){ r.marca=r.marca||prev.marca; r.medida=r.medida||prev.medida; r.modelo=r.modelo||prev.modelo; } });
   if(!regs.length)return alert('No se encontraron filas con COCADA.\n\nRevisa que el archivo tenga la columna POSICION en el encabezado.'+(avisos.length?'\n\n'+avisos.slice(0,6).join('\n'):''));
   const sinEq=[...new Set(regs.map(r=>r.cod_sap).filter(s=>!eqDe(s)))];
+  UNI_CACHE.clear(); const dsf=neuDesfase(regs);
   const clave=r=>nrm(r.cod_sap)+'|'+r.posicion+'|'+r.fecha, ya=new Set(INSP.map(clave));
   const nuevas=regs.filter(r=>!ya.has(clave(r))).length;
   const fechas=[...new Set(regs.map(r=>r.fecha))].sort();
   if(!confirm(`${f.name}\n\nMediciones leídas: ${regs.length}\nEquipos: ${new Set(regs.map(r=>r.cod_sap)).size}\nFechas: ${fechas.map(fmtDate).join(', ')}\n`
     +`Nuevas: ${nuevas} · Reemplazan una ya cargada: ${regs.length-nuevas}\n`
     +(sinEq.length?`\n⚠ Códigos que no están en el Maestro: ${sinEq.join(', ')}\n`:'')
+    +(dsf.panel||dsf.hm?`\n⟲ Equipos con desfase de horómetro: ${dsf.panel} inspección(es) de panel convertidas a horas máquina · ${dsf.hm} ya venían en horas máquina\n`:'')
     +(avisos.length?`\n⚠ ${avisos.length} fila(s) omitidas por falta de fecha o posición.\n`:'')+'\n¿Cargar?'))return;
   pie.textContent='Guardando…';
   for(let i=0;i<regs.length;i+=500){
@@ -720,7 +723,48 @@ async function cargarParametros(){
   const [a,b,c,d]=await Promise.all([sb.from('neu_param_marca').select('*'),sb.from('neu_param_medida').select('*'),
     sb.from('neu_param_presion').select('*'),sb.from('neu_parametros').select('*').eq('id',1).maybeSingle()]);
   PMAR=a.data||[]; PMED=b.data||[]; PPRE=c.data||[]; PAR=d.data||{};
+  try{ const x=await sb.from('desfase_horometro').select('*').order('fecha'); DESF=x.error?[]:(x.data||[]); }catch(_){ DESF=[]; }
   return a.error||b.error||c.error||d.error;
+}
+/* ── Desfase de horómetros (tabla de Equipos): todo se guarda en horas máquina ── */
+let DESF=[];
+const desfDe=sap=>DESF.filter(d=>nrm(d.cod_sap)===nrm(sap));
+const desfaseEn=(sap,f)=>desfDe(sap).filter(d=>String(d.fecha)<=f).reduce((s,d)=>s+(+d.hm_dia-(+d.panel_dia||0)),0);
+const hmRefEn=(sap,f)=>{const D=desfDe(sap).filter(d=>String(d.fecha)<=f);return D.length?Math.max(...D.map(d=>+d.hm_dia)):null;};
+/* Convierte las lecturas de panel a horas máquina antes de guardar. Si una
+   lectura no encaja ni como panel ni como horas máquina, se pregunta.     */
+function neuDesfase(regs){
+  const res={panel:0,hm:0,duda:0};
+  const grupos=new Map();
+  regs.forEach(r=>{ if(!desfDe(r.cod_sap).length)return;
+    const campo=uniDe(r.cod_sap)==='km'?'km':'horometro', v=r[campo]; if(v==null)return;
+    const k=nrm(r.cod_sap)+'|'+r.fecha+'|'+v; if(!grupos.has(k))grupos.set(k,{sap:r.cod_sap,fecha:r.fecha,campo,v,rows:[]}); grupos.get(k).rows.push(r); });
+  for(const g of grupos.values()){
+    const des=desfaseEn(g.sap,g.fecha); if(!des)continue;
+    const ref=hmRefEn(g.sap,g.fecha), e=eqDe(g.sap);
+    let tipo=g.v<ref?'panel':'hm';
+    // ¿encaja con lo esperado según el Maestro? (último HR/KM + HR/día × días)
+    if(e&&e.hrkm_actual!=null&&e.fecha_lectura){
+      let base=+e.hrkm_actual; const fb=String(e.fecha_lectura).slice(0,10);
+      const rb=hmRefEn(g.sap,fb); if(rb!=null&&base<rb)base+=desfaseEn(g.sap,fb);
+      const dd=(new Date(g.fecha)-new Date(fb))/86400000, hd=+e.hr_dia||0, km=g.campo==='km';
+      const tol=(km?400:48)+Math.abs(dd)*(hd?hd*0.5:(km?200:12)), exp=base+hd*dd;
+      const ok=x=>hd?Math.abs(x-exp)<=tol:(dd>=0?x>=base-tol:x<=base+tol);
+      const val=tipo==='panel'?g.v+des:g.v, otro=tipo==='panel'?g.v:g.v+des;
+      if(!ok(val)){ if(ok(otro))tipo=tipo==='panel'?'hm':'panel';
+        else{ res.duda++;
+          tipo=confirm(`${g.sap} · inspección del ${fmtDate(g.fecha)}
+Horómetro anotado: ${f0(g.v)}
+
+No coincide con lo esperado (~${f0(exp)} horas máquina).
+
+Aceptar = es del PANEL (se guarda ${f0(g.v+des)})
+Cancelar = ya está en HORAS MÁQUINA (se guarda ${f0(g.v)})`)?'panel':'hm'; } }
+    }
+    res[tipo]++;
+    if(tipo==='panel')g.rows.forEach(r=>{r.lectura_panel=g.v; r[g.campo]=g.v+des;});
+  }
+  return res;
 }
 async function cargarTodo(){
   pie.textContent='Cargando…';

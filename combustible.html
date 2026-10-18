@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
 <meta charset="utf-8">
-<meta name="gllr-version" content="V.101026-2" data-pagina="Combustible">
+<meta name="gllr-version" content="V.181026-1" data-pagina="Combustible">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Rendimiento de Combustible &mdash; UDE</title>
 <link rel="icon" href="favicon.ico" sizes="any">
@@ -985,7 +985,7 @@ function dpPintar(){
       return `<tr data-id="${d.id}">
       <td class="mono">${esc(d.cod_sap)}</td><td>${fmtDate(String(d.fecha).slice(0,10))}</td>
       <td class="c">${esc(d.hora||'')}</td><td class="c mono">${esc(d.nro_vale||'')}</td>
-      <td class="r mono">${d.contador!=null?f0(d.contador):'—'}</td>
+      <td class="r mono">${d.contador!=null?f0(d.contador):'—'}${d.lectura_panel!=null?` <span title="Equipo con desfase de horómetro: se anotó ${f0(d.lectura_panel)} en el panel y se guardó en horas máquina" style="background:#E6E9F7;color:#334281;border-radius:5px;padding:0 4px;font-size:10.5px;font-weight:800;cursor:help">⟲ panel ${f0(d.lectura_panel)}</span>`:''}</td>
       <td class="r"><input class="dpi" data-c="contador_corr" type="number" step="1" value="${d.contador_corr??''}" placeholder="—"></td>
       <td class="r"><input class="dpi ${exceso?'exc':''}" data-c="galones" type="number" step="0.1" value="${d.galones??''}"
            title="${exceso?'Supera el tanque de '+f1(tq)+' gl':(tq?'Tanque: '+f1(tq)+' gl':'')}"></td>
