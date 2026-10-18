@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
 <meta charset="utf-8">
-<meta name="gllr-version" content="V.101026-7" data-pagina="SOS">
+<meta name="gllr-version" content="V.181026-1" data-pagina="SOS">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>SOS &mdash; Muestreo de Aceites</title>
 <link rel="icon" href="favicon.ico" sizes="any">
@@ -13,6 +13,7 @@
 <meta name="theme-color" content="#1c232b">
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 <script src="supabase.js"></script>
+<script src="desfase.js"></script>
 <style>
   :root{--steel:#1c232b;--amber:#FFCD11;--line:#dfe3e7;--ink:#1a1d21;--muted:#6b747d;--bg:#f4f6f8}
   *{box-sizing:border-box;margin:0;padding:0}
@@ -636,7 +637,17 @@ function leerPlanilla(filas){
       r.observacion=`Trabaja a: ${ALTITUD.get(nrm(r.obra))} m.s.n.m.`;
     }
   });
+  sosDsf(out,'fecha','f_muestreo');
   return out;
+}
+/* Equipos con desfase de horómetro: el horómetro se guarda en horas máquina */
+const sosEqDe=sap=>datos.find(x=>nrm(x.cod_sap)===nrm(sap))||null;
+function sosDsf(filas,_,campoFecha){
+  if(!window.GLLR_DSF||!GLLR_DSF.lista.length)return;
+  const r=GLLR_DSF.convertirFilas(filas,{sap:'cod_sap',fecha:campoFecha,campo:'horometro',eqDe:sosEqDe,etiqueta:'muestra SOS'});
+  filas.forEach(x=>{ if(x.candidato&&x.candidato.horometro!=null)
+    x.candidato.horometro=GLLR_DSF.convertir(x.cod_sap,x.candidato.f_muestreo||x.fecha,x.candidato.horometro,sosEqDe(x.cod_sap),'muestra SOS').v; });
+  if(r.panel)console.info(GLLR_DSF.resumen(r));
 }
 
 /* ═══════ RESULTADOS: los 3 laboratorios a un solo formato ═══════ */
@@ -1122,7 +1133,9 @@ function editarCeldaG(cfg){
   async function confirmar(){
     if(resuelto)return; resuelto=true;
     const antes={...d};
-    const val=editor.value===''?null:(tipo==='num'?(+editor.value):editor.value);
+    let val=editor.value===''?null:(tipo==='num'?(+editor.value):editor.value);
+    if(tabla==='sos_muestras'&&campo==='horometro'&&val!=null&&window.GLLR_DSF)
+      val=GLLR_DSF.convertir(d.cod_sap,d.f_muestreo,val,sosEqDe(d.cod_sap),'muestra SOS').v;
     if(val===(d[campo]??null)){ pintar(); return; }
     const {data,error}=await sb.from(tabla).update({[campo]:val}).eq('id',id).select().single();
     if(error){ alert('No se pudo guardar: '+error.message); td.innerHTML=original; return; }
@@ -1285,7 +1298,7 @@ function pintarPlan(){
         <td data-campo="sistema">${esc(sisMostrar)}${p.sistema&&!p.sistema_std?' <b class="warn">sin equiv.</b>':''}</td>
         <td data-campo="tipo_aceite">${esc(p.tipo_aceite||'')}</td>
         <td class="c" data-campo="galones" data-tipo="num">${p.galones!=null?f1(p.galones):''}</td>
-        <td class="c mono" data-campo="horometro" data-tipo="num">${p.horometro!=null?f0(p.horometro):''}</td>
+        <td class="c mono" data-campo="horometro" data-tipo="num">${p.horometro!=null?f0(p.horometro)+(window.GLLR_DSF?GLLR_DSF.marca(p.cod_sap,p.horometro,p.f_muestreo):''):''}</td>
         <td class="c" data-campo="horas_aceite" data-tipo="num">${p.horas_aceite!=null?f0(p.horas_aceite):''}</td>
         <td class="c" data-campo="cant_agregado" data-tipo="num">${p.cant_agregado!=null?f1(p.cant_agregado):''}</td>
         <td class="c" data-campo="f_muestreo" data-tipo="fecha">${fmtDate(p.f_muestreo)}</td>
@@ -1450,7 +1463,7 @@ function fichaSOS(id){
         ${datoF('Equipo / Cód. SAP',[e?e.equipo:'',p.cod_sap].filter(Boolean).join(' · '))}
         ${datoF('Marca / Modelo',[p.marca,p.modelo].filter(Boolean).join(' / '))}
         ${datoF('Serie',p.serie)}
-        ${datoF('Horómetro',p.horometro!=null?f0(p.horometro)+' h':'')}
+        ${datoF('Horómetro',p.horometro!=null?f0(p.horometro)+' h'+(window.GLLR_DSF&&GLLR_DSF.de(p.cod_sap).length&&GLLR_DSF.en(p.cod_sap,p.f_muestreo)?' (máquina · panel '+f0(p.horometro-GLLR_DSF.en(p.cod_sap,p.f_muestreo))+')':''):'')}
         ${datoF('Componente',sistema)}
         ${datoF('Fecha muestreo',fmtDate(p.f_muestreo))}
         ${datoF('Tipo aceite',p.tipo_aceite)}
@@ -2279,6 +2292,7 @@ async function subirResultados(filas,nom,hoja){
     fuente=nrm(fuente).startsWith('MARCO')?'MARCO PERUANA':nrm(fuente).startsWith('FERREYROS')||nrm(fuente).startsWith('FESA')?'Ferreyros':nrm(fuente);
   }
   const regs=(leerResultados(filas,fuente)||[]).filter(Boolean);
+  sosDsf(regs,'fecha','fecha');
   if(!regs||!regs.length){alert('No se reconoció el formato.\n\nDebe tener las columnas N° MUESTRA, EQUIPO, COMPONENTE, FECHA y ESTADO (o el formato nativo de Ferreyros).');return;}
   // 0) resultados ya guardados pero en la fila de OTRO sistema (el archivo dice cuál es el correcto):
   //    se ofrecen mover o intercambiar antes de seguir, así los pasos siguientes ya ven las filas en su sitio
@@ -2641,7 +2655,8 @@ function revisarNuevasPlanillas(lista){
         cod_sap:x.cod_sap, maestro_id:x.maestro_id,
         marca:c.marca, modelo:c.modelo, serie:c.serie,
         sistema:c.sistema, sistema_std:sistemaStd(c.sistema)||x.sistema_std,
-        tipo_aceite:c.tipo_aceite, galones:c.galones, horometro:c.horometro,
+        tipo_aceite:c.tipo_aceite, galones:c.galones,
+        horometro:(c.horometro!=null&&window.GLLR_DSF)?GLLR_DSF.convertir(x.cod_sap,c.f_muestreo,c.horometro,sosEqDe(x.cod_sap),'muestra SOS').v:c.horometro,
         horas_aceite:c.horas_aceite, cant_agregado:c.cant_agregado??0,
         f_muestreo:c.f_muestreo, f_envio:c.f_envio, tipo:c.tipo,
         nro_muestra:x.nro_muestra, fuente:x.fuente,
@@ -2767,6 +2782,7 @@ function formPlan(id){
     };
     if(!d.maestro_id){alert('Elige el equipo.');return;}
     if(!d.f_muestreo){alert('Indica la fecha de muestreo.');return;}
+    if(d.horometro!=null&&window.GLLR_DSF)d.horometro=GLLR_DSF.convertir(d.cod_sap,d.f_muestreo,d.horometro,e,'muestra SOS').v;
     const {data:guardado,error}= id ? await sb.from('sos_muestras').update(d).eq('id',p.id).select().single()
                       : await sb.from('sos_muestras').insert(d).select().single();
     if(error)return alert('No se pudo guardar: '+error.message);
@@ -3213,8 +3229,9 @@ function pintarNav(actual){
     document.body.innerHTML='<div style="padding:60px;text-align:center;font-family:sans-serif">'
      +'<h2 style="font-size:18px;margin-bottom:10px">Sin acceso a SOS</h2>'
      +'<p style="color:#6b747d">Un administrador debe habilitarte esta pesta&ntilde;a desde Usuarios.</p></div>';return;}
-  const {data:m}=await sb.from('maestro').select('id,cod_sap,equipo,marca,modelo,serie_placa,cod_proyec,familia,status,hrkm_actual,fecha_lectura,hr_dia,hrkm_ult_mntto,frecuencia');
+  const {data:m}=await sb.from('maestro').select('id,cod_sap,equipo,marca,modelo,serie_placa,cod_proyec,familia,status,contador,hrkm_actual,fecha_lectura,hr_dia,hrkm_ult_mntto,frecuencia');
   datos=m||[]; DIDX=new Map(datos.map(e=>[String(e.id),e]));
+  await GLLR_DSF.cargar(sb);
   const [ee,es]=await Promise.all([
     sb.from('sos_eq_estado').select('*'), sb.from('sos_eq_sistema').select('*')
   ]);

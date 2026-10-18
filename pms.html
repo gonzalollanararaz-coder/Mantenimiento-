@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
 <meta charset="utf-8">
-<meta name="gllr-version" content="V.101026-1" data-pagina="PM-S">
+<meta name="gllr-version" content="V.181026-1" data-pagina="PM-S">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>PM-S — Programa de Mantenimiento Preventivo Semanal</title>
 <link rel="icon" href="favicon.ico" sizes="any">
@@ -13,6 +13,7 @@
 <meta name="theme-color" content="#1c232b">
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 <script src="supabase.js"></script>
+<script src="desfase.js"></script>
 <style>
   :root{
     --steel:#1c232b;--steel-2:#2a333d;--bg:#eef0f2;--card:#fff;--line:#d3d8dd;--ink:#1a1d21;
@@ -580,7 +581,7 @@ function mant(e){
 let DIDX=new Map();
 function reindexDatos(){DIDX=new Map(datos.map(e=>[String(e.id),e]));}
 function getE(id){return DIDX.get(String(id))||datos.find(x=>String(x.id)===String(id))||null;}
-const MAESTRO_CAMPOS="id,status,cod_proyec,familia,cod_sap,equipo,marca,modelo,serie_placa,hrkm_actual,fecha_lectura,hr_dia,hrkm_ult_mntto,fecha_ult_mntto,frecuencia";
+const MAESTRO_CAMPOS="id,status,cod_proyec,familia,cod_sap,equipo,marca,modelo,serie_placa,contador,hrkm_actual,fecha_lectura,hr_dia,hrkm_ult_mntto,fecha_ult_mntto,frecuencia";
 
 /* ═══════════════════ PM-S : programa semanal + historico acumulado ═══════════════════ */
 let pmsData=[], pmsSel=null, pmsSelCell=null, pmsVerEjec=false, pmsColFilters={}, pmsCargado=false;
@@ -808,11 +809,11 @@ function pmsRowHTML(f,di){
    +`<td class="pms-l mono">${esc(f.placa)}</td>`
    +`<td class="pms-c pms-ed" data-pmsk="tiempo_req">${esc(f.treq)}</td>`
    +`<td class="pms-c pms-ed" data-pmsk="tipo_pm">${f.tipo?`<span class="pill ${PMS_PILL[f.tipo]||'na'}">${f.tipo}</span>`:''}</td>`
-   +`<td class="pms-c mono pms-ed" data-pmsk="hrkm_prog">${f.hp!=null?Number(f.hp).toLocaleString('es-PE'):''}</td>`
+   +`<td class="pms-c mono pms-ed" data-pmsk="hrkm_prog">${f.hp!=null?Number(f.hp).toLocaleString('es-PE')+(window.GLLR_DSF?GLLR_DSF.marca(r.cod_sap,f.hp):''):''}</td>`
    +`<td class="pms-c pms-ed" data-pmsk="fecha_prog">${fmtDate(r.fecha_prog)}</td>`
    +celdas
    +`<td class="pms-c mono pms-ed" data-pmsk="om">${esc(r.om||'')}</td>`
-   +`<td class="pms-c mono pms-ed" data-pmsk="hrkm_ejec">${r.hrkm_ejec!=null?Number(r.hrkm_ejec).toLocaleString('es-PE'):''}</td>`
+   +`<td class="pms-c mono pms-ed" data-pmsk="hrkm_ejec">${r.hrkm_ejec!=null?Number(r.hrkm_ejec).toLocaleString('es-PE')+(window.GLLR_DSF?GLLR_DSF.marca(r.cod_sap,r.hrkm_ejec,r.fecha_ejec):''):''}</td>`
    +`<td class="pms-c pms-ed" data-pmsk="fecha_ejec">${fmtDate(r.fecha_ejec)}</td>`
    +`<td class="pms-c est-${f.est} pms-ed" data-pmsk="estado"${r.estado?' title="Fijado a mano"':''}>${f.est}${r.estado?' <b class="fij">·</b>':''}</td>`
    +`<td class="pms-c mono ${dfCls}">${f.desf==null?'—':f.desf.toFixed(1)+'%'}</td>`
@@ -1060,6 +1061,9 @@ async function pmsCommit(td,raw){
   if(raw===''||raw==null) val=null;
   else if(k==='om') val=String(parseInt(raw,10));
   else if(k==='hrkm_ejec'||k==='hrkm_prog') val=Number(raw);
+  // equipo con desfase de horómetro: el HR/KM de ejecución se guarda en horas máquina
+  if(k==='hrkm_ejec'&&val!=null&&isFinite(val)&&window.GLLR_DSF)
+    val=GLLR_DSF.convertir(r.cod_sap,r.fecha_ejec||null,val,getE(r.maestro_id),'PM ejecutado').v;
   else val=raw;
   if((k==='tipo_pm'||k==='tiempo_req'||k==='estado')&&val!=null) val=String(val).trim()||null;
   if((r[k]??null)===(val??null)){pmsRender();return;}
@@ -1684,6 +1688,7 @@ function pintarNav(actual){
   }catch(_){ m=await OFF.leer('maestro'); }
   if(!m){appFoot.textContent='No hay datos del maestro guardados en este equipo. Conéctate una vez para descargarlos.';return;}
   datos=m; reindexDatos();
+  if(navigator.onLine)await GLLR_DSF.cargar(sb);
 
   const H=hoy0(); pmsSemana.value=isoWeek(H); pmsAnio.value=H.getFullYear();
   await pmsCargar();

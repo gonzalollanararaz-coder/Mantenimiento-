@@ -1,7 +1,7 @@
 /* Service Worker — Maestro de Equipos UDE
    Guarda la app en el navegador para que abra sin internet.
    Los datos NO se guardan aquí: eso lo maneja IndexedDB en cada página. */
-const CACHE = 'gllr-app-v11';
+const CACHE = 'gllr-app-v12';
 const ARCHIVOS = [
   './',
   './index.html',
@@ -12,6 +12,7 @@ const ARCHIVOS = [
   './neumaticos.html',
   './pendientes.html',
   './supabase.js',
+  './desfase.js',
   'https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js'
 ];
 
