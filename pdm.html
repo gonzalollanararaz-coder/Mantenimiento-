@@ -1,0 +1,270 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="gllr-version" content="V.191026-1" data-pagina="Parte diario mecánico">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Parte diario mecánico &mdash; UDE</title>
+<link rel="icon" href="favicon.ico" sizes="any">
+<meta name="theme-color" content="#1c232b">
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+<script src="supabase.js"></script>
+<style>
+  :root{--steel:#1c232b;--amber:#FFCD11;--line:#dfe3e7;--ink:#1a1d21;--muted:#6b747d;--bg:#f4f6f8;--navy:#1F3864}
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;background:var(--bg);color:var(--ink);font-size:14px;display:flex;flex-direction:column;height:100vh;overflow:hidden}
+  .hide{display:none!important}.mono{font-family:"SF Mono",ui-monospace,monospace}.dim{color:var(--muted)}
+  header{background:var(--steel);color:#fff;padding:8px 16px;display:flex;align-items:center;flex-shrink:0}
+  header h1{font-size:14px;font-weight:700}header p{font-size:10px;color:#9aa4ad;text-transform:uppercase;letter-spacing:1.5px}
+  header .who{font-size:12px;color:#cdd4da;margin-left:auto}
+  #subnav{background:#fff;border-bottom:1px solid var(--line);padding:0 16px;display:flex;gap:4px;flex-shrink:0;overflow-x:auto}
+  #subnav button{background:none;border:none;padding:10px 14px;cursor:pointer;font:inherit;font-size:13px;font-weight:600;color:#6b747d;border-bottom:3px solid transparent;white-space:nowrap}
+  #subnav button.on{color:var(--ink);border-bottom-color:var(--amber)}
+  .toolbar{display:flex;gap:10px;align-items:flex-end;padding:9px 16px;background:#fff;border-bottom:1px solid var(--line);flex-shrink:0;overflow-x:auto;flex-wrap:wrap}
+  .toolbar label{display:flex;flex-direction:column;gap:2px;font-size:9px;font-weight:800;color:#98a2ad;text-transform:uppercase;letter-spacing:.5px}
+  .toolbar input,.toolbar select{border:1px solid var(--line);border-radius:9px;height:32px;padding:0 10px;font-size:12.5px;font-family:inherit}
+  .spacer{flex:1}
+  .act{border:1px solid var(--line);background:#fff;border-radius:9px;height:32px;padding:0 12px;font:inherit;font-size:12.5px;cursor:pointer;display:inline-flex;align-items:center;gap:6px;white-space:nowrap}
+  .act.primary{background:linear-gradient(180deg,#FFE98A,#FFD84A);border-color:#DCB61C;color:#5C4708;font-weight:600}
+  .act.util{color:#4254A5;border-color:#C7CDEB}.act.sm{height:26px;padding:0 9px;font-size:11.5px}.act.rojo{color:#B91C1C;border-color:#f3b0b0}
+  #wrap{flex:1;overflow:auto;padding:12px 14px 30px;min-height:0}
+  footer{padding:6px 16px;color:var(--muted);font-size:12px;text-align:center;flex-shrink:0}
+  .card{background:#fff;border:1px solid var(--line);border-radius:14px;padding:12px 14px;margin-bottom:12px}
+  .bnd{display:inline-block;border-radius:8px;padding:5px 11px;font-weight:700;font-size:12px;color:#fff;margin-bottom:8px;background:linear-gradient(180deg,#7B87C0 0%,#4254A5 48%,#334281 100%)}
+  .tiles{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:12px}
+  .tile{flex:1;min-width:140px;background:#fff;border:1px solid var(--line);border-radius:12px;padding:9px 12px}
+  .tile .l{font-size:10px;font-weight:800;color:var(--muted);text-transform:uppercase}.tile .v{font-size:22px;font-weight:800;color:var(--navy)}
+  table.t{width:100%;border-collapse:collapse;font-size:12px;background:#fff}
+  table.t th{background:linear-gradient(180deg,#7B87C0 0%,#4254A5 60%,#334281 100%);color:#fff;font-size:9.5px;text-transform:uppercase;letter-spacing:.3px;padding:6px;text-align:left;white-space:nowrap;position:sticky;top:0;z-index:2}
+  table.t td{padding:5px 6px;border-bottom:1px solid #eef1f4;vertical-align:top}
+  table.t tbody tr:hover td{background:#f7fbff;cursor:pointer}
+  table.t td.c,table.t th.c{text-align:center}table.t td.r,table.t th.r{text-align:right}
+  table.t input,table.t select{border:1px solid var(--line);border-radius:6px;height:26px;padding:0 6px;font:inherit;font-size:12px;width:100%}
+  .pill{border-radius:999px;padding:1px 8px;font-size:10.5px;font-weight:800;display:inline-block;white-space:nowrap}
+  .p-ok{background:#DCF5E3;color:#0F7A33}.p-w{background:#FFF6D6;color:#8A6A00}.p-b{background:#FDE4E4;color:#B91C1C}.p-a{background:#E6E9F7;color:#334281}.p-g{background:#eef0f2;color:#6b747d}
+  .vacio{padding:40px;text-align:center;color:#98a2ad}
+  .modal{position:fixed;inset:0;background:rgba(15,20,26,.55);z-index:99;display:flex;align-items:flex-start;justify-content:center;padding:18px;overflow:auto}
+  .mc{background:#fff;border-radius:12px;width:min(860px,98vw);box-shadow:0 20px 60px rgba(0,0,0,.35)}
+  .mh{display:flex;align-items:center;gap:10px;padding:12px 16px;border-bottom:1px solid var(--line)}.mh h3{font-size:15px;color:var(--navy)}
+  .mb{padding:12px 16px 18px;font-size:13px;line-height:1.55}
+  .kv{display:grid;grid-template-columns:170px 1fr;gap:4px 12px;font-size:12.5px}.kv b{color:var(--muted);font-weight:600}
+  .fotos{display:flex;gap:8px;flex-wrap:wrap;margin-top:6px}.fotos img{width:150px;height:110px;object-fit:cover;border-radius:8px;border:1px solid var(--line);cursor:zoom-in}
+  pre.wa{white-space:pre-wrap;background:#F7F8FA;border:1px solid var(--line);border-radius:10px;padding:10px;font-family:inherit;font-size:12px}
+  .agr{display:flex;gap:6px;flex-wrap:wrap;align-items:flex-end;margin-top:8px;padding:8px;background:#F7F8FA;border-radius:10px}
+  .agr label{display:flex;flex-direction:column;gap:2px;font-size:9.5px;font-weight:800;color:#98a2ad;text-transform:uppercase}
+  .agr input,.agr select{border:1px solid var(--line);border-radius:8px;height:30px;padding:0 8px;font-size:12.5px;text-transform:uppercase}
+  .grid2{display:grid;grid-template-columns:240px 1fr;gap:12px}@media(max-width:900px){.grid2{grid-template-columns:1fr}}
+  .tipos div{padding:7px 10px;border-radius:8px;cursor:pointer;font-size:12.5px;display:flex;justify-content:space-between}
+  .tipos div.on{background:#E6E9F7;color:#334281;font-weight:700}
+</style>
+</head>
+<body>
+<header id="topbar"><div><h1>Parte diario mecánico</h1><p>Unidad de Equipos &middot; UDE &middot; app REPORTE</p></div><span class="who" id="who"></span></header>
+<script>if(window.self!==window.top){document.getElementById('topbar').style.display='none';}</script>
+<div id="subnav">
+  <button data-v="reg" class="on">&#128221; Registros</button>
+  <button data-v="pen">&#128204; Pendientes</button>
+  <button data-v="col">&#128119; Colaboradores</button>
+  <button data-v="mae">&#9881; Datos maestros</button>
+</div>
+<div class="toolbar" id="tbReg">
+  <label>Obra<select id="fObra"><option value="">Todas</option></select></label>
+  <label>Desde<input type="date" id="fDesde"></label>
+  <label>Hasta<input type="date" id="fHasta"></label>
+  <label>Módulo<select id="fMod"><option value="">Todos</option><option value="MECANICO">Reporte mecánico</option><option value="LUBRICACION">Lubricación</option><option value="LLANTAS">Llantas</option><option value="GETS">GETs</option><option value="MNTTO_PREV">Mntto preventivo</option><option value="PENDIENTE">Pendiente</option></select></label>
+  <label>Equipo<input id="fEq" placeholder="Cód. SAP" style="width:110px;text-transform:uppercase"></label>
+  <label>Técnico<input id="fTec" placeholder="Código" style="width:100px;text-transform:uppercase"></label>
+  <button class="act util" id="btnBuscar">&#128269; Buscar</button>
+  <div class="spacer"></div>
+  <button class="act util" id="btnXls">&#8681; Excel</button>
+  <button class="act util" id="btnRec" title="Recargar">&#8635;</button>
+</div>
+<div id="wrap">
+  <section id="v-reg"></section>
+  <section id="v-pen" class="hide"></section>
+  <section id="v-col" class="hide"></section>
+  <section id="v-mae" class="hide"></section>
+</div>
+<footer id="pie">Cargando…</footer>
+
+<script>
+const CFG=(()=>{try{return JSON.parse(localStorage.getItem('gllr_sbcfg')||'null')}catch(_){return null}})();
+if(!CFG||!CFG.url){document.body.innerHTML='<div style="padding:60px;text-align:center;font-family:sans-serif"><h2 style="font-size:18px">Abre primero la página principal</h2></div>';throw new Error('sin configuracion');}
+const sb=window.supabase.createClient(CFG.url,CFG.key);
+const esc=s=>String(s??"").replace(/&/g,"&amp;").replace(/"/g,"&quot;").replace(/</g,"&lt;");
+const nrm=s=>String(s??'').normalize('NFD').replace(/[̀-ͯ]/g,'').toUpperCase().replace(/\s+/g,' ').trim();
+const up=s=>String(s??'').toUpperCase().replace(/\s+/g,' ').trim();
+const f0=n=>Number(n).toLocaleString('es-PE',{maximumFractionDigits:0});
+const fd=v=>{if(!v)return'';const p=String(v).slice(0,10).split('-');return p.length===3?`${p[2]}/${p[1]}/${p[0].slice(2)}`:String(v);};
+const isoDe=d=>new Date(d.getTime()-d.getTimezoneOffset()*60000).toISOString().slice(0,10);
+const MODN={MECANICO:'Reporte mecánico',LUBRICACION:'Lubricación',LLANTAS:'Llantas',GETS:'GETs',MNTTO_PREV:'Mntto preventivo',PENDIENTE:'Pendiente'};
+const codigoBase=(n,a)=>{const x=nrm(n).split(' ')[0]||'',y=nrm(a).replace(/[^A-Z]/g,'');return (x[0]||'')+y;};
+let perfil=null, EQ=[], COL=[], MAE=[], REG=[], vista='reg', tipoSel='SISTEMA', pagina=0;
+const PASO=200;
+const esAdmin=()=>perfil&&perfil.rol==='admin';
+const eqDe=c=>EQ.find(e=>e.cod_sap===c)||null;
+
+/* ── pestañas ── */
+document.querySelectorAll('#subnav button').forEach(b=>b.onclick=()=>{vista=b.dataset.v;
+  document.querySelectorAll('#subnav button').forEach(x=>x.classList.toggle('on',x===b));
+  ['reg','pen','col','mae'].forEach(k=>document.getElementById('v-'+k).classList.toggle('hide',k!==vista));
+  tbReg.classList.toggle('hide',vista!=='reg'); pintar();});
+function pintar(){({reg:pintarReg,pen:pintarPen,col:pintarCol,mae:pintarMae})[vista]();}
+
+/* ═══════════ REGISTROS ═══════════ */
+function consultaBase(){let q=sb.from('pdm_registros').select('*').eq('anulado',false);
+  if(fObra.value)q=q.eq('obra',fObra.value); if(fDesde.value)q=q.gte('fecha',fDesde.value); if(fHasta.value)q=q.lte('fecha',fHasta.value);
+  if(fMod.value)q=q.eq('modulo',fMod.value); if(fEq.value.trim())q=q.ilike('cod_sap','%'+fEq.value.trim()+'%');
+  if(fTec.value.trim())q=q.contains('tecnicos',[up(fTec.value)]);
+  return q.order('fecha',{ascending:false}).order('hora_ini',{ascending:false});}
+async function buscar(p){pagina=p||0;pie.textContent='Buscando…';
+  const {data,error}=await consultaBase().range(pagina*PASO,pagina*PASO+PASO-1);
+  if(error){v_reg_err(error);return;} REG=data||[]; pintarReg();}
+function v_reg_err(e){document.getElementById('v-reg').innerHTML=`<div class="card vacio">No se pudo leer <b>pdm_registros</b>.<br>Si es la primera vez, ejecuta <b>pdm_tablas.sql</b> en Supabase.<br><span class="dim">${esc(e.message)}</span></div>`;pie.textContent='';}
+const insTxt=r=>(r.insumos||[]).map(x=>`${x.n}${x.q!=null?' '+x.q+' '+(x.u||''):''}`).join(' · ');
+function pintarReg(){
+  const v=document.getElementById('v-reg'), L=REG;
+  const n=t=>L.filter(r=>r.modulo===t).length, inop=L.filter(r=>r.estado_equipo==='INOPERATIVO').length, eqs=new Set(L.map(r=>r.cod_sap)).size;
+  v.innerHTML=`<div class="tiles"><div class="tile"><div class="l">Registros (página)</div><div class="v">${L.length}</div></div><div class="tile"><div class="l">Equipos</div><div class="v">${eqs}</div></div>
+    <div class="tile"><div class="l">Rep. mecánico</div><div class="v">${n('MECANICO')}</div></div><div class="tile"><div class="l">Lubricación</div><div class="v">${n('LUBRICACION')}</div></div>
+    <div class="tile"><div class="l">Llantas · GETs · PM</div><div class="v">${n('LLANTAS')} · ${n('GETS')} · ${n('MNTTO_PREV')}</div></div><div class="tile"><div class="l">Inoperativos</div><div class="v" style="color:${inop?'#B91C1C':''}">${inop}</div></div></div>
+   <div class="card" style="padding:0;overflow:auto"><table class="t"><thead><tr><th>Fecha</th><th class="c">Turno</th><th class="c">Hora</th><th>Obra</th><th>Equipo</th><th class="r">HR/KM</th><th>Módulo</th><th>Sistema</th><th>Trabajo</th><th class="c">Estado</th><th>Técnicos</th><th>Insumos</th><th>Pendiente</th><th class="c">📷</th></tr></thead>
+   <tbody>${L.map((r,i)=>{const e=eqDe(r.cod_sap);return `<tr data-i="${i}"><td>${fd(r.fecha)}</td><td class="c">${esc(r.turno||'')}</td><td class="c">${esc(String(r.hora_ini||'').slice(0,5))}${r.hora_fin?'–'+esc(String(r.hora_fin).slice(0,5)):''}</td>
+     <td>${esc(r.obra||'')}</td><td class="mono"><b>${esc(r.cod_sap)}</b><br><span class="dim" style="font-family:inherit">${esc(e?e.equipo:'')}</span></td>
+     <td class="r">${r.hrkm!=null?f0(r.hrkm):''}${r.hrkm_panel!=null?`<br><span class="pill p-a" title="Lectura de panel">⟲ ${f0(r.hrkm_panel)}</span>`:''}</td>
+     <td>${esc(MODN[r.modulo]||r.modulo)}${r.especialidad?`<br><span class="dim">${esc(r.especialidad)}</span>`:''}</td><td>${esc(r.sistema||'')}</td><td>${esc(r.trabajo||'')}</td>
+     <td class="c">${r.estado_equipo?`<span class="pill ${r.estado_equipo==='INOPERATIVO'?'p-b':'p-ok'}">${esc(r.estado_equipo)}</span>`:''}</td>
+     <td class="mono">${esc((r.tecnicos||[]).join(', '))}</td><td style="max-width:220px">${esc(insTxt(r))}</td>
+     <td style="max-width:200px">${r.backlog?`<span class="pill ${r.backlog_estado==='CERRADO'?'p-g':'p-w'}">${r.backlog_estado==='CERRADO'?'cerrado':'abierto'}</span> ${esc(r.backlog)}`:''}</td><td class="c">${(r.fotos||[]).length||''}</td></tr>`;}).join('')
+     ||`<tr><td colspan="14" class="vacio">Sin registros con estos filtros.</td></tr>`}</tbody></table></div>
+   <div style="display:flex;gap:8px;justify-content:center">${pagina?`<button class="act" onclick="buscar(${pagina-1})">‹ Anteriores</button>`:''}${L.length===PASO?`<button class="act" onclick="buscar(${pagina+1})">Siguientes ›</button>`:''}</div>`;
+  v.querySelectorAll('tr[data-i]').forEach(tr=>tr.onclick=()=>detalle(REG[+tr.dataset.i]));
+  pie.textContent=`${L.length} registro(s)${pagina?' · página '+(pagina+1):''} · se consulta solo lo filtrado (${PASO} por página)`;
+}
+function firmaSVG(t){if(!t)return '<span class="dim">Sin firma</span>';
+  return `<svg viewBox="0 0 300 100" width="300" height="100" style="border:1px dashed #c9ced6;border-radius:8px;background:#fff">${t.split('|').map(tr=>`<polyline points="${esc(tr)}" fill="none" stroke="#1F3864" stroke-width="2" stroke-linecap="round"/>`).join('')}</svg>`;}
+function detTxt(r){const d=r.detalle||{};
+  if(r.modulo==='LLANTAS')return `<table class="t" style="max-width:420px;margin-top:4px"><thead><tr><th class="c">Pos.</th><th class="r">Presión psi</th><th class="r">Cocada mm</th><th class="r">Torque N·m</th></tr></thead><tbody>${(d.posiciones||[]).map(p=>`<tr><td class="c">${p.pos}</td><td class="r">${p.presion??''}</td><td class="r">${p.cocada??''}</td><td class="r">${p.torque??''}</td></tr>`).join('')}</tbody></table>`
+    +(d.cambio?`<div style="margin-top:6px"><b>Llanta nueva:</b> P${d.cambio.pos||'?'} · ${esc([d.cambio.marca,d.cambio.medida,d.cambio.diseno,d.cambio.estado,d.cambio.serie].filter(Boolean).join(' · '))}</div>`:'');
+  if(r.modulo==='GETS')return `${esc(d.implemento||'')}<br>${(d.componentes||[]).map(c=>`• ${esc(c.n)}${c.cant!=null?' × '+c.cant:''}${c.desgaste!=null?' · desgaste '+c.desgaste+'%':''}`).join('<br>')}`;
+  if(r.modulo==='MNTTO_PREV')return (d.tareas||[]).map(t=>'✔ '+esc(t)).join('<br>');
+  if(r.modulo==='LUBRICACION')return esc(d.punto||'');
+  return '';}
+async function detalle(r){const e=eqDe(r.cod_sap);
+  document.body.insertAdjacentHTML('beforeend',`<div class="modal" id="md"><div class="mc"><div class="mh"><h3>${esc(MODN[r.modulo]||r.modulo)} · ${esc(r.cod_sap)} · ${fd(r.fecha)}</h3><div class="spacer"></div>
+   ${esAdmin()?'<button class="act rojo" id="mdAnu">Anular</button>':''}<button class="act" id="mdX">Cerrar</button></div><div class="mb">
+   <div class="kv"><b>Equipo</b><span>${esc(r.cod_sap)} · ${esc(e?e.equipo+' '+(e.modelo||''):'')}</span><b>Obra · turno</b><span>${esc(r.obra||'')} · ${esc(r.turno||'')}</span>
+   <b>Hora</b><span>${esc(String(r.hora_ini||'').slice(0,5))}${r.hora_fin?' – '+esc(String(r.hora_fin).slice(0,5)):''}</span>
+   <b>HR/KM</b><span>${r.hrkm!=null?f0(r.hrkm):'—'}${r.hrkm_panel!=null?' (panel '+f0(r.hrkm_panel)+')':''}</span>
+   <b>Técnicos</b><span class="mono">${esc((r.tecnicos||[]).join(', '))} <span class="dim">· registró ${esc(r.registrado_por||'')}</span></span>
+   ${r.especialidad?`<b>Especialidad</b><span>${esc(r.especialidad)}</span>`:''}${r.estado_equipo?`<b>Estado</b><span>${esc(r.estado_equipo)}</span>`:''}
+   ${r.sistema?`<b>Sistema</b><span>${esc(r.sistema)}</span>`:''}${r.componente?`<b>Componente</b><span>${esc(r.componente)}</span>`:''}
+   ${r.descripcion?`<b>Falla</b><span>${esc(r.descripcion)}</span>`:''}${r.trabajo?`<b>Trabajo</b><span>${esc(r.trabajo)}</span>`:''}
+   ${r.tipo_parada?`<b>Tipo de parada</b><span>${esc(r.tipo_parada)}</span>`:''}${r.origen_falla?`<b>Origen</b><span>${esc(r.origen_falla)}</span>`:''}${r.frente?`<b>Frente</b><span>${esc(r.frente)}</span>`:''}
+   ${detTxt(r)?`<b>Detalle</b><span>${detTxt(r)}</span>`:''}${(r.insumos||[]).length?`<b>Insumos</b><span>${esc(insTxt(r))}</span>`:''}
+   ${r.observacion?`<b>Observación</b><span>${esc(r.observacion)}</span>`:''}${r.backlog?`<b>Pendiente</b><span>${esc(r.backlog)} <span class="pill ${r.backlog_estado==='CERRADO'?'p-g':'p-w'}">${esc(r.backlog_estado||'')}</span></span>`:''}
+   <b>Firma</b><span>${firmaSVG(r.firma)}</span><b>Fotos</b><span><div class="fotos" id="mdF">${(r.fotos||[]).length?'Cargando…':'<span class="dim">Sin fotos</span>'}</div></span>
+   <b>Registrado</b><span class="dim">${esc(new Date(r.created_at).toLocaleString('es-PE'))} · id ${esc(r.id)}</span></div></div></div></div>`);
+  const cerrar=()=>{const m=document.getElementById('md');if(m)m.remove();};
+  mdX.onclick=cerrar; md.addEventListener('click',ev=>{if(ev.target.id==='md')cerrar();});
+  if(document.getElementById('mdAnu'))mdAnu.onclick=async()=>{if(!confirm('¿Anular este registro? Deja de figurar en los listados.'))return;
+    const {error}=await sb.from('pdm_registros').update({anulado:true}).eq('id',r.id);if(error)return alert(error.message);cerrar();buscar(pagina);};
+  if((r.fotos||[]).length){const urls=await Promise.all(r.fotos.map(p=>sb.storage.from('pdm-fotos').createSignedUrl(p,3600).then(x=>x.data&&x.data.signedUrl).catch(()=>null)));
+    const box=document.getElementById('mdF');if(box)box.innerHTML=urls.map(u=>u?`<a href="${esc(u)}" target="_blank"><img src="${esc(u)}"></a>`:'<span class="dim">no disponible</span>').join('');}
+}
+btnBuscar.onclick=()=>buscar(0); btnRec.onclick=()=>{cargarListas().then(()=>buscar(pagina));};
+[fObra,fMod].forEach(s=>s.onchange=()=>buscar(0));
+[fEq,fTec,fDesde,fHasta].forEach(i=>i.addEventListener('keydown',ev=>{if(ev.key==='Enter')buscar(0);}));
+btnXls.onclick=async()=>{pie.textContent='Preparando Excel…';let out=[],d=0;
+  for(;;){const {data,error}=await consultaBase().range(d,d+999);if(error){alert(error.message);return;}out=out.concat(data||[]);if(!data||data.length<1000||out.length>=20000)break;d+=1000;}
+  const rows=out.map(r=>({'FECHA':r.fecha,'TURNO':r.turno,'HORA INICIO':String(r.hora_ini||'').slice(0,5),'HORA FIN':String(r.hora_fin||'').slice(0,5),'OBRA':r.obra,'COD SAP':r.cod_sap,
+    'EQUIPO':(eqDe(r.cod_sap)||{}).equipo||'','HR/KM':r.hrkm,'HR/KM PANEL':r.hrkm_panel,'MODULO':MODN[r.modulo]||r.modulo,'ESPECIALIDAD':r.especialidad,'ESTADO':r.estado_equipo,
+    'SISTEMA':r.sistema,'COMPONENTE':r.componente,'FALLA':r.descripcion,'TRABAJO':r.trabajo,'TIPO PARADA':r.tipo_parada,'ORIGEN':r.origen_falla,'FRENTE':r.frente,
+    'INSUMOS':insTxt(r),'DETALLE':JSON.stringify(r.detalle||{}),'OBSERVACION':r.observacion,'PENDIENTE':r.backlog,'ESTADO PENDIENTE':r.backlog_estado,
+    'TECNICOS':(r.tecnicos||[]).join(', '),'REGISTRADO POR':r.registrado_por,'FOTOS':(r.fotos||[]).length}));
+  const ws=XLSX.utils.json_to_sheet(rows),wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,ws,'PARTE DIARIO');
+  XLSX.writeFile(wb,`Parte_diario_mecanico_${fObra.value||'todas'}_${fDesde.value||''}_${fHasta.value||''}.xlsx`);pie.textContent=`${rows.length} fila(s) exportadas`;};
+
+/* ═══════════ PENDIENTES ═══════════ */
+async function pintarPen(){const v=document.getElementById('v-pen');v.innerHTML='<div class="card vacio">Cargando…</div>';
+  let q=sb.from('pdm_registros').select('id,fecha,obra,cod_sap,backlog,backlog_estado,backlog_cerrado_en,tecnicos,registrado_por,estado_equipo,modulo').not('backlog','is',null).eq('anulado',false).order('fecha',{ascending:false}).limit(500);
+  if(fObra.value)q=q.eq('obra',fObra.value);
+  const {data,error}=await q;if(error){v.innerHTML=`<div class="card vacio">${esc(error.message)}</div>`;return;}
+  const A=(data||[]).filter(x=>x.backlog_estado!=='CERRADO'),C=(data||[]).filter(x=>x.backlog_estado==='CERRADO').slice(0,50);
+  const fila=(p,ab)=>`<tr><td>${fd(p.fecha)}</td><td>${esc(p.obra||'')}</td><td class="mono"><b>${esc(p.cod_sap)}</b></td><td>${esc(p.backlog)}</td><td class="c">${p.estado_equipo==='INOPERATIVO'?'<span class="pill p-b">INOPERATIVO</span>':''}</td><td class="mono">${esc(p.registrado_por||'')}</td><td>${esc(MODN[p.modulo]||'')}</td>
+    <td class="c">${ab?`<button class="act sm" data-cerrar="${p.id}">Cerrar</button>`:fd(p.backlog_cerrado_en)}</td></tr>`;
+  v.innerHTML=`<div class="card"><span class="bnd">PENDIENTES ABIERTOS · ${A.length}</span><div style="overflow:auto"><table class="t"><thead><tr><th>Fecha</th><th>Obra</th><th>Equipo</th><th>Pendiente</th><th class="c">Estado</th><th>Registró</th><th>Origen</th><th class="c"></th></tr></thead><tbody>${A.map(p=>fila(p,true)).join('')||'<tr><td colspan="8" class="vacio">Sin pendientes abiertos.</td></tr>'}</tbody></table></div></div>
+   <div class="card"><span class="bnd" style="background:#8A8A8A">ÚLTIMOS CERRADOS</span><div style="overflow:auto"><table class="t"><thead><tr><th>Fecha</th><th>Obra</th><th>Equipo</th><th>Pendiente</th><th class="c">Estado</th><th>Registró</th><th>Origen</th><th class="c">Cerrado</th></tr></thead><tbody>${C.map(p=>fila(p,false)).join('')||'<tr><td colspan="8" class="vacio">—</td></tr>'}</tbody></table></div></div>`;
+  v.querySelectorAll('[data-cerrar]').forEach(b=>b.onclick=async()=>{const {error}=await sb.from('pdm_registros').update({backlog_estado:'CERRADO',backlog_cerrado_en:new Date().toISOString()}).eq('id',b.dataset.cerrar);if(error)return alert(error.message);pintarPen();});
+  pie.textContent=`${A.length} pendiente(s) abiertos`;}
+
+/* ═══════════ COLABORADORES ═══════════ */
+function pintarCol(){const v=document.getElementById('v-col'),ad=esAdmin();
+  v.innerHTML=`<div class="card"><span class="bnd">COLABORADORES · ${COL.length}</span>
+   <div class="dim" style="font-size:12px;margin-bottom:6px">El código que figura en los reportes es la inicial del primer nombre + el apellido paterno (GONZALO LLANA RARAZ → <b>GLLANA</b>). Si se repite, se agrega la inicial del materno.
+   Todos los colaboradores tienen habilitadas todas las áreas. Los que se registran desde la app necesitan aprobación en <b>Usuarios</b> (permiso "App REPORTE (celular)").</div>
+   <div style="overflow:auto"><table class="t"><thead><tr><th>Código</th><th>Nombres</th><th>Ap. paterno</th><th>Ap. materno</th><th>Especialidad</th><th>Obra</th><th class="c">Cuenta app</th><th class="c">Activo</th>${ad?'<th></th>':''}</tr></thead>
+   <tbody>${COL.map(c=>`<tr><td class="mono"><b>${esc(c.codigo)}</b></td>${ad?['nombres','ap_paterno','ap_materno','especialidad','obra'].map(k=>`<td><input data-col="${c.id}" data-k="${k}" value="${esc(c[k]||'')}" style="text-transform:uppercase"></td>`).join(''):
+     `<td>${esc(c.nombres)}</td><td>${esc(c.ap_paterno)}</td><td>${esc(c.ap_materno||'')}</td><td>${esc(c.especialidad||'')}</td><td>${esc(c.obra||'')}</td>`}
+     <td class="c">${c.user_id?'<span class="pill p-ok">sí</span>':'<span class="pill p-g">no</span>'}</td>
+     <td class="c">${ad?`<input type="checkbox" data-act="${c.id}" ${c.activo!==false?'checked':''} style="width:auto;height:auto">`:(c.activo!==false?'✓':'—')}</td>${ad?'<td></td>':''}</tr>`).join('')||'<tr><td colspan="9" class="vacio">Sin colaboradores.</td></tr>'}</tbody></table></div>
+   ${ad?`<div class="agr"><label>Nombres<input id="ncN"></label><label>Ap. paterno<input id="ncP"></label><label>Ap. materno<input id="ncM"></label>
+     <label>Especialidad<select id="ncE">${['MECANICO','SOLDADOR','ELECTRICISTA','LUBRICADOR','LLANTERO','SUPERVISOR'].map(x=>`<option>${x}</option>`).join('')}</select></label><label>Obra<input id="ncO" style="width:90px"></label>
+     <span class="dim" id="ncCod" style="font-size:12px;padding-bottom:7px">Código: —</span><button class="act primary" id="ncOk">+ Agregar</button></div>
+     <div class="dim" style="font-size:11.5px;margin-top:4px">Los colaboradores agregados aquí (sin cuenta) aparecen en la app para ser elegidos como técnicos por otro compañero.</div>`:''}</div>`;
+  if(!ad)return;
+  v.querySelectorAll('[data-col]').forEach(i=>i.onchange=async()=>{const val=up(i.value)||null;const {error}=await sb.from('pdm_colaboradores').update({[i.dataset.k]:val}).eq('id',i.dataset.col);if(error)alert(error.message);else{const c=COL.find(x=>String(x.id)===i.dataset.col);c[i.dataset.k]=val;i.value=val||'';}});
+  v.querySelectorAll('[data-act]').forEach(i=>i.onchange=async()=>{const {error}=await sb.from('pdm_colaboradores').update({activo:i.checked}).eq('id',i.dataset.act);if(error)alert(error.message);});
+  const prev=()=>{ncCod.textContent='Código: '+(codigoBase(ncN.value,ncP.value)||'—');};ncN.oninput=ncP.oninput=prev;
+  ncOk.onclick=async()=>{const n=up(ncN.value),p=up(ncP.value),m=up(ncM.value);if(!n||!p)return alert('Escribe nombres y apellido paterno.');
+    const base=codigoBase(n,p),usados=COL.map(c=>c.codigo);let cod=base;if(usados.includes(cod)){cod=m&&!usados.includes(base+m[0])?base+m[0]:(()=>{let i=2;while(usados.includes(base+i))i++;return base+i;})();}
+    const {data,error}=await sb.from('pdm_colaboradores').insert({nombres:n,ap_paterno:p,ap_materno:m||null,codigo:cod,especialidad:ncE.value,obra:up(ncO.value)||null}).select().single();
+    if(error)return alert(error.message);COL.push(data);COL.sort((a,b)=>a.ap_paterno.localeCompare(b.ap_paterno));pintarCol();};}
+
+/* ═══════════ DATOS MAESTROS ═══════════ */
+const TIPOS=[['ESPECIALIDAD','Especialidades'],['SISTEMA','Sistemas (por especialidad)'],['TRABAJO','Trabajos (por especialidad)'],['REPUESTO','Repuestos (por especialidad)'],['INSUMO','Insumos (lubricación / PM)'],
+  ['UNIDAD','Unidades de medida'],['TRABAJO_LUB','Trabajos de lubricación'],['PUNTO_LUB','Puntos de lubricación'],['GET','Componentes GET'],['IMPLEMENTO','Implementos'],['PM','Tipos de PM'],
+  ['TAREA_PM','Tareas de PM'],['ORIGEN','Origen de falla'],['PARADA','Tipo de parada'],['FRENTE','Frentes de trabajo'],['MARCA_LLANTA','Marcas de llanta']];
+const CON_ESP=['SISTEMA','TRABAJO','REPUESTO'], CON_UND=['REPUESTO','INSUMO'];
+function pintarMae(){const v=document.getElementById('v-mae'),ad=esAdmin();const L=MAE.filter(m=>m.tipo===tipoSel).sort((a,b)=>(a.especialidad||'').localeCompare(b.especialidad||'')||(a.orden||0)-(b.orden||0));
+  v.innerHTML=`<div class="grid2"><div class="card tipos"><span class="bnd">LISTAS DE LA APP</span>${TIPOS.map(([k,l])=>`<div class="${k===tipoSel?'on':''}" data-t="${k}"><span>${l}</span><span class="dim">${MAE.filter(m=>m.tipo===k&&m.activo!==false).length}</span></div>`).join('')}</div>
+   <div class="card"><span class="bnd">${esc((TIPOS.find(t=>t[0]===tipoSel)||[0,tipoSel])[1]).toUpperCase()}</span>
+   <div class="dim" style="font-size:12px;margin-bottom:6px">La app descarga estas listas y las guarda en el celular (funcionan sin señal). Un valor desactivado deja de aparecer en la app pero se conserva en los registros antiguos.${ad?'':' Solo un administrador puede editarlas.'}</div>
+   <table class="t"><thead><tr>${CON_ESP.includes(tipoSel)?'<th>Especialidad</th>':''}<th>Valor</th>${CON_UND.includes(tipoSel)?'<th>Unidad</th>':''}<th class="c">Orden</th><th class="c">Activo</th>${ad?'<th></th>':''}</tr></thead>
+   <tbody>${L.map(m=>`<tr>${CON_ESP.includes(tipoSel)?`<td>${esc(m.especialidad||'TODAS')}</td>`:''}<td>${ad?`<input data-m="${m.id}" data-k="valor" value="${esc(m.valor)}" style="text-transform:uppercase">`:esc(m.valor)}</td>
+     ${CON_UND.includes(tipoSel)?`<td>${ad?`<select data-m="${m.id}" data-k="unidad">${['','UND','GAL','L','LB','KG','KIT','M'].map(u=>`<option ${u===(m.unidad||'')?'selected':''}>${u}</option>`).join('')}</select>`:esc(m.unidad||'')}</td>`:''}
+     <td class="c" style="width:70px">${ad?`<input type="number" data-m="${m.id}" data-k="orden" value="${m.orden||0}">`:(m.orden||0)}</td>
+     <td class="c">${ad?`<input type="checkbox" data-ma="${m.id}" ${m.activo!==false?'checked':''} style="width:auto;height:auto">`:(m.activo!==false?'✓':'—')}</td>
+     ${ad?`<td class="c"><button class="act sm rojo" data-mx="${m.id}">✕</button></td>`:''}</tr>`).join('')||'<tr><td colspan="6" class="vacio">Sin valores.</td></tr>'}</tbody></table>
+   ${ad?`<div class="agr">${CON_ESP.includes(tipoSel)?`<label>Especialidad<select id="nmE"><option value="">TODAS</option><option>MECANICO</option><option>SOLDADOR</option><option>ELECTRICISTA</option></select></label>`:''}
+     <label>Valor<input id="nmV" style="width:260px"></label>${CON_UND.includes(tipoSel)?`<label>Unidad<select id="nmU">${['UND','GAL','L','LB','KG','KIT','M'].map(u=>`<option>${u}</option>`).join('')}</select></label>`:''}
+     <label>Orden<input id="nmO" type="number" style="width:70px" value="${(Math.max(0,...L.map(m=>m.orden||0))+1)}"></label><button class="act primary" id="nmOk">+ Agregar</button></div>`:''}</div></div>`;
+  v.querySelectorAll('[data-t]').forEach(d=>d.onclick=()=>{tipoSel=d.dataset.t;pintarMae();});
+  if(!ad)return;
+  v.querySelectorAll('[data-m]').forEach(i=>i.onchange=async()=>{let val=i.dataset.k==='orden'?+i.value:(up(i.value)||null);const {error}=await sb.from('pdm_maestros').update({[i.dataset.k]:val}).eq('id',i.dataset.m);if(error)return alert(error.message);const m=MAE.find(x=>String(x.id)===i.dataset.m);m[i.dataset.k]=val;});
+  v.querySelectorAll('[data-ma]').forEach(i=>i.onchange=async()=>{const {error}=await sb.from('pdm_maestros').update({activo:i.checked}).eq('id',i.dataset.ma);if(error)return alert(error.message);MAE.find(x=>String(x.id)===i.dataset.ma).activo=i.checked;pintarMae();});
+  v.querySelectorAll('[data-mx]').forEach(b=>b.onclick=async()=>{if(!confirm('¿Eliminar este valor? (mejor desactivarlo si ya se usó)'))return;const {error}=await sb.from('pdm_maestros').delete().eq('id',b.dataset.mx);if(error)return alert(error.message);MAE=MAE.filter(x=>String(x.id)!==b.dataset.mx);pintarMae();});
+  nmOk.onclick=async()=>{const valor=up(nmV.value);if(!valor)return;const fila={tipo:tipoSel,valor,especialidad:(window.nmE&&nmE.value)||null,unidad:(window.nmU&&nmU.value)||null,orden:+nmO.value||0};
+    const {data,error}=await sb.from('pdm_maestros').insert(fila).select().single();if(error)return alert(error.message);MAE.push(data);pintarMae();};}
+
+/* ═══════════ INICIO ═══════════ */
+async function cargarListas(){const [e,c,m]=await Promise.all([sb.from('maestro').select('cod_sap,equipo,modelo,cod_proyec').order('cod_sap'),
+    sb.from('pdm_colaboradores').select('*').order('ap_paterno'),sb.from('pdm_maestros').select('*')]);
+  EQ=e.data||[];COL=c.data||[];MAE=m.data||[];
+  const ov=fObra.value, obras=[...new Set(EQ.map(x=>x.cod_proyec).filter(Boolean))].sort();
+  fObra.innerHTML='<option value="">Todas</option>'+obras.map(o=>`<option>${esc(o)}</option>`).join('');fObra.value=ov;}
+(async()=>{
+  const {data:{session}}=await sb.auth.getSession();
+  if(!session){document.body.innerHTML='<div style="padding:60px;text-align:center"><h2 style="font-size:18px">Sesión no iniciada</h2><p style="color:#6b747d">Ingresa en la página principal.</p></div>';return;}
+  const {data:p}=await sb.from('profiles').select('id,nombre,rol,estado,paginas').eq('id',session.user.id).single();
+  perfil=p||{};who.textContent=(perfil.nombre||session.user.email)+' · '+(perfil.rol||'');
+  if(perfil.estado!=='aprobado'||(perfil.rol!=='admin'&&!(Array.isArray(perfil.paginas)&&perfil.paginas.includes('pdm')))){
+    document.body.innerHTML='<div style="padding:60px;text-align:center;font-family:sans-serif"><h2 style="font-size:18px;margin-bottom:10px">Sin acceso a Parte diario mecánico</h2><p style="color:#6b747d">Un administrador debe habilitarte esta pestaña desde Usuarios.</p></div>';return;}
+  const h=new Date(); fHasta.value=isoDe(h); fDesde.value=isoDe(new Date(h.getTime()-30*86400000));
+  await cargarListas(); await buscar(0);
+})();
+</script>
+<style>.ver-pag{position:fixed;right:8px;bottom:4px;font:600 10px/1.3 -apple-system,"Segoe UI",Roboto,sans-serif;color:#8a939c;background:rgba(255,255,255,.88);border:1px solid #e3e6e9;padding:1px 7px;border-radius:6px;z-index:9000;pointer-events:none}</style>
+<script>(function(){var m=document.querySelector('meta[name="gllr-version"]');if(!m)return;var d=document.createElement('div');d.id='verPag';d.className='ver-pag';d.textContent=(m.getAttribute('data-pagina')||'')+' · '+m.content;document.body.appendChild(d);})();</script>
+</body>
+</html>

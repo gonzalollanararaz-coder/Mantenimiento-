@@ -1,0 +1,17 @@
+{
+  "name": "REPORTE · Parte diario mecánico",
+  "short_name": "REPORTE",
+  "description": "Registro de trabajos e inspecciones de equipos desde campo (JJC · UDE)",
+  "start_url": "./campo.html",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#1c232b",
+  "theme_color": "#1c232b",
+  "lang": "es",
+  "icons": [
+    {"src": "campo-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any"},
+    {"src": "campo-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any"},
+    {"src": "campo-512-mask.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable"}
+  ]
+}

@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8">
-<meta name="gllr-version" content="V.181026-1" data-pagina="Equipos">
+<meta name="gllr-version" content="V.191026-1" data-pagina="Equipos">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Control de Mantenimiento — UDE</title>
 <link rel="icon" href="favicon.ico" sizes="any">
@@ -657,6 +657,7 @@
     <button id="tabComb" data-tab="comb">Combustible</button>
     <button id="tabSos" data-tab="sos">SOS</button>
     <button id="tabNeu" data-tab="neu">Neumáticos</button>
+    <button id="tabPdm" data-tab="pdm">Parte diario mecánico</button>
     <button id="tabPendientes" data-tab="pendientes">Pendientes</button>
     <button id="tabUsers" data-tab="users" style="display:none">Usuarios</button>
   </nav>
@@ -718,6 +719,7 @@
   <section id="paneFrame_comb" class="paneFrame hide"></section>
   <section id="paneFrame_sos" class="paneFrame hide"></section>
   <section id="paneFrame_neu" class="paneFrame hide"></section>
+  <section id="paneFrame_pdm" class="paneFrame hide"></section>
   <footer id="appFoot">Los cambios se guardan en la base de datos.</footer>
 </div>
 
@@ -995,6 +997,8 @@ const PAGINAS=[
   {k:'comb',  lab:'Combustible', arch:'combustible.html'},
   {k:'sos',   lab:'SOS',         arch:'sos.html'},
   {k:'neu',   lab:'Neumáticos',  arch:'neumaticos.html'},
+  {k:'pdm',   lab:'Parte diario mecánico', arch:'pdm.html'},
+  {k:'campo', lab:'App REPORTE (celular)', arch:'campo.html'},
   {k:'pendientes', lab:'Pendientes', arch:'pendientes.html'}
 ];
 function puedePagina(k){
@@ -2291,7 +2295,7 @@ async function programarSeleccion(){
    misma página — igual que Equipos/Usuarios ya lo hacían. Se cargan la
    primera vez que se visitan; después, cambiar de pestaña es solo
    mostrar/ocultar (nunca hay una segunda carga ni una ventana aparte). */
-const IFRAME_PAGINAS={pms:'pms.html',comb:'combustible.html',sos:'sos.html',neu:'neumaticos.html'};
+const IFRAME_PAGINAS={pms:'pms.html',comb:'combustible.html',sos:'sos.html',neu:'neumaticos.html',pdm:'pdm.html'};
 const _iframes={};
 function asegurarIframe(k){
   if(_iframes[k])return;
@@ -3538,7 +3542,7 @@ init();
 <script>/* Versión general = la más reciente de todas las pestañas. Se lee la etiqueta
    gllr-version del inicio de cada archivo, así cambia sola cada vez que se sube un archivo nuevo. */
 (function(){
-  const ARCH=['index.html','pms.html','combustible.html','sos.html','neumaticos.html','pendientes.html','partes.html','campo.html'];
+  const ARCH=['index.html','pms.html','combustible.html','sos.html','neumaticos.html','pendientes.html','partes.html','campo.html','pdm.html'];
   const clave=v=>{const m=/^V\.(\d{2})(\d{2})(\d{2})-(\d+)$/.exec(v||'');return m?(+m[3])*1e7+(+m[2])*1e5+(+m[1])*1e3+(+m[4]):-1;};
   const leer=a=>fetch(a,{cache:'no-cache',headers:{Range:'bytes=0-1500'}}).then(r=>r.ok?r.text():'').then(t=>{
       const m=/name="gllr-version" content="([^"]+)"(?: data-pagina="([^"]*)")?/.exec(t);return m?{a,v:m[1],p:m[2]||a}:null;}).catch(()=>null);
