@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
 <meta charset="utf-8">
-<meta name="gllr-version" content="V.201026-2" data-pagina="Parte diario mecánico">
+<meta name="gllr-version" content="V.211026-1" data-pagina="Parte diario mecánico">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Parte diario mecánico &mdash; UDE</title>
 <link rel="icon" href="favicon.ico" sizes="any">
@@ -228,7 +228,10 @@ function pintarCol(){const v=document.getElementById('v-col'),ad=esAdmin();
 let USR=null;
 const clGen=()=>'JJC'+Math.floor(1000+Math.random()*9000);
 function estU(u){if(u.estado==='bloqueado'||(u.bloqueado_hasta&&new Date(u.bloqueado_hasta)>new Date()))return 'bloq';if(u.estado!=='aprobado')return 'pend';return 'act';}
-async function cargarUsr(){const {data,error}=await sb.rpc('pdm_admin_usuarios');USR=error?{err:error.message}:(data||[]);
+let PAGS={};
+const tieneApp=u=>u.rol==='admin'||(PAGS[u.id]||[]).includes('campo');
+async function cargarUsr(){const [{data,error},pr]=await Promise.all([sb.rpc('pdm_admin_usuarios'),sb.from('profiles').select('id,paginas')]);USR=error?{err:error.message}:(data||[]);
+  PAGS={};(pr.data||[]).forEach(p=>PAGS[p.id]=Array.isArray(p.paginas)?p.paginas:[]);
   const n=Array.isArray(USR)?USR.filter(u=>estU(u)==='pend').length:0;const b=document.querySelector('#subnav [data-v="col"]');
   if(b)b.innerHTML='&#128119; Colaboradores'+(n?` <span class="pill p-b" title="cuentas por aprobar">${n}</span>`:'');}
 function cuentaPill(c){if(!c.user_id)return '<span class="pill p-g">no</span>';const u=Array.isArray(USR)&&USR.find(x=>x.id===c.user_id);if(!u)return '<span class="pill p-ok">sí</span>';
@@ -247,12 +250,13 @@ async function pintarAccesos(){const box=document.getElementById('accBox');if(!b
       `<button class="act sm" data-ua="pwd" data-id="${u.id}">&#128273; Clave</button> <button class="act sm" data-ua="blk" data-id="${u.id}">Bloquear</button> <button class="act sm rojo" data-ua="del" data-id="${u.id}">Eliminar</button>`;};
   box.innerHTML=`<div class="card"><span class="bnd">ACCESOS A LA APP</span>
    <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:8px;font-size:12.5px">
-    <span class="pill ${n.pend?'p-w':'p-g'}" style="font-size:12px;padding:3px 10px">${n.pend} por aprobar</span><span class="pill p-ok" style="font-size:12px;padding:3px 10px">${n.act} activos</span><span class="pill ${n.bloq?'p-b':'p-g'}" style="font-size:12px;padding:3px 10px">${n.bloq} bloqueados</span>
+    <span class="pill ${n.pend?'p-w':'p-g'}" style="font-size:12px;padding:3px 10px">${n.pend} por aprobar</span><span class="pill p-ok" style="font-size:12px;padding:3px 10px">${n.act} activos</span><span class="pill ${n.bloq?'p-b':'p-g'}" style="font-size:12px;padding:3px 10px">${n.bloq} bloqueados</span>${(()=>{const k=USR.filter(u=>estU(u)==='act'&&!tieneApp(u)).length;return k?`<span class="pill p-a" style="font-size:12px;padding:3px 10px">${k} activos sin app</span>`:'';})()}
     <span class="spacer"></span><button class="act sm util" id="accNuevo">+ Crear cuenta</button><button class="act sm" id="accRef" title="Actualizar">↻</button></div>
    <div id="accForm"></div>
-   <div style="overflow:auto"><table class="t"><thead><tr><th>Estado</th><th>Usuario</th><th>Colaborador</th><th>Registrado</th><th>Último ingreso</th><th></th></tr></thead><tbody>
-   ${L.map((u,i)=>`${i===0||estU(L[i-1])!==estU(u)?`<tr><td colspan="6" style="background:#F4F6F8;font-weight:800;font-size:11px;color:#4b5563;text-transform:uppercase;letter-spacing:.4px">${GN[estU(u)]} · ${n[estU(u)]}</td></tr>`:''}<tr><td>${pillE(u)}${u.rol==='admin'?' <span class="pill p-a">admin</span>':''}</td><td><b>${esc(u.nombre||'—')}</b><div class="dim">${esc(u.email)}</div></td>
-     <td><select data-uv="${u.id}" style="width:130px">${codOpts(u)}</select></td><td>${fd(u.creado)}</td><td>${u.ultimo_ingreso?fd(u.ultimo_ingreso):'<span class="dim">nunca</span>'}</td><td style="white-space:nowrap">${btns(u)}</td></tr>`).join('')||'<tr><td colspan="6" class="vacio">Sin cuentas.</td></tr>'}
+   <div style="overflow:auto"><table class="t"><thead><tr><th>Estado</th><th>Usuario</th><th class="c">App REPORTE</th><th>Colaborador</th><th>Registrado</th><th>Último ingreso</th><th></th></tr></thead><tbody>
+   ${L.map((u,i)=>`${i===0||estU(L[i-1])!==estU(u)?`<tr><td colspan="7" style="background:#F4F6F8;font-weight:800;font-size:11px;color:#4b5563;text-transform:uppercase;letter-spacing:.4px">${GN[estU(u)]} · ${n[estU(u)]}</td></tr>`:''}<tr><td>${pillE(u)}${u.rol==='admin'?' <span class="pill p-a">admin</span>':''}</td><td><b>${esc(u.nombre||'—')}</b><div class="dim">${esc(u.email)}</div></td>
+     <td class="c">${tieneApp(u)?'<span class="pill p-ok">habilitada</span>':estU(u)==='act'?`<button class="act sm primary" data-ua="app" data-id="${u.id}">Habilitar</button>`:'<span class="dim">—</span>'}</td>
+     <td><select data-uv="${u.id}" style="width:130px">${codOpts(u)}</select></td><td>${fd(u.creado)}</td><td>${u.ultimo_ingreso?fd(u.ultimo_ingreso):'<span class="dim">nunca</span>'}</td><td style="white-space:nowrap">${btns(u)}</td></tr>`).join('')||'<tr><td colspan="7" class="vacio">Sin cuentas.</td></tr>'}
    </tbody></table></div>
    <div class="dim" style="font-size:11.5px;margin-top:6px"><b>Aprobar</b> confirma el correo y habilita la app REPORTE. <b>Bloquear</b> corta el acceso de inmediato. <b>Eliminar</b> quita la cuenta; el colaborador y sus registros se conservan. <b>Colaborador</b>: código con el que la cuenta firma sus reportes.</div></div>`;
   document.getElementById('accRef').onclick=()=>recargarCol();
@@ -263,6 +267,7 @@ async function habilitarApp(uid){const {data:p}=await sb.from('profiles').select
   if(!pg.includes('campo'))await sb.from('profiles').update({paginas:[...pg,'campo']}).eq('id',uid);}
 async function accion(a,u){if(!u)return;let r;const qn=u.nombre||u.email;
   if(a==='ok'){r=await sb.rpc('pdm_admin_aprobar',{uid:u.id,p_nombre:u.nombre||null});if(!r.error)await habilitarApp(u.id);}
+  else if(a==='app'){await habilitarApp(u.id);await recargarCol();return alert(`✓ App REPORTE habilitada para ${u.email}.\n\nIngresa en la app con el mismo correo y clave de la página web.`);}
   else if(a==='blk'){if(!confirm(`¿Bloquear a ${qn}? Se cerrará su sesión en la app.`))return;r=await sb.rpc('pdm_admin_bloquear',{uid:u.id,bloquear:true});}
   else if(a==='unb'){r=await sb.rpc('pdm_admin_bloquear',{uid:u.id,bloquear:false});}
   else if(a==='pwd'){const c=prompt(`Nueva clave para ${u.email} (mínimo 6 caracteres):`,clGen());if(!c)return;r=await sb.rpc('pdm_admin_clave',{uid:u.id,nueva:c.trim()});if(!r.error)alert(`Clave cambiada.\n\nDíctale al colaborador:\nCorreo: ${u.email}\nClave: ${c.trim()}`);}
@@ -317,7 +322,7 @@ function pintarMae(){const v=document.getElementById('v-mae'),ad=esAdmin();const
      ${CON_UND.includes(tipoSel)?`<td>${ad?`<select data-m="${m.id}" data-k="unidad">${['','UND','GAL','L','LB','KG','KIT','M'].map(u=>`<option ${u===(m.unidad||'')?'selected':''}>${u}</option>`).join('')}</select>`:esc(m.unidad||'')}</td>`:''}
      <td class="c" style="width:70px">${ad?`<input type="number" data-m="${m.id}" data-k="orden" value="${m.orden||0}">`:(m.orden||0)}</td>
      <td class="c">${ad?`<input type="checkbox" data-ma="${m.id}" ${m.activo!==false?'checked':''} style="width:auto;height:auto">`:(m.activo!==false?'✓':'—')}</td>
-     ${ad?`<td class="c"><button class="act sm rojo" data-mx="${m.id}">✕</button></td>`:''}</tr>`).join('')||'<tr><td colspan="6" class="vacio">Sin valores.</td></tr>'}</tbody></table>
+     ${ad?`<td class="c"><button class="act sm rojo" data-mx="${m.id}">✕</button></td>`:''}</tr>`).join('')||'<tr><td colspan="7" class="vacio">Sin valores.</td></tr>'}</tbody></table>
    ${ad?`<div class="agr">${CON_ESP.includes(tipoSel)?`<label>Especialidad<select id="nmE"><option value="">TODAS</option><option>MECANICO</option><option>SOLDADOR</option><option>ELECTRICISTA</option></select></label>`:''}
      <label>Valor<input id="nmV" style="width:260px"></label>${CON_UND.includes(tipoSel)?`<label>Unidad<select id="nmU">${['UND','GAL','L','LB','KG','KIT','M'].map(u=>`<option>${u}</option>`).join('')}</select></label>`:''}
      <label>Orden<input id="nmO" type="number" style="width:70px" value="${(Math.max(0,...L.map(m=>m.orden||0))+1)}"></label><button class="act primary" id="nmOk">+ Agregar</button></div>`:''}</div></div>`;

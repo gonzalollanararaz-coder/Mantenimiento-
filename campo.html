@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
 <meta charset="utf-8">
-<meta name="gllr-version" content="V.201026-2" data-pagina="REPORTE (app de campo)">
+<meta name="gllr-version" content="V.211026-1" data-pagina="REPORTE (app de campo)">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>REPORTE</title>
 <link rel="manifest" href="campo.webmanifest">
@@ -157,6 +157,9 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:#E0A800;box-sh
 #cqSel{font-size:17px}
 header>div{min-width:0}header .t{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:19px}
 .hbt{display:flex;gap:8px}.hbt .btn{flex:1;font-size:16px;padding:13px 6px;white-space:nowrap}
+input.fill,select.fill{border:2px solid #c9ced4;background:#fff}
+input.fill:placeholder-shown,select.fill:invalid,select.fill.sinval{background:#FFF7D6;border-color:#F0B400}
+input.fill:focus,select.fill:focus{background:#fff}
 </style>
 </head>
 <body>
@@ -238,6 +241,8 @@ async function refrescarDatos(){
   }catch(e){console.warn(e);}
 }
 const obras=()=>[...new Set(S.EQ.map(e=>e.cod_proyec).filter(Boolean))].sort();
+const obrasAlta=()=>{const L=new Set([...(S.OBRAS||[]),...obras()]);return [...L].filter(Boolean).sort();};
+async function cargarObras(){try{const c=await DB.get('obras').catch(()=>null);if(c&&!S.OBRAS)S.OBRAS=c;if(!S.online)return;const {data,error}=await sb.rpc('pdm_obras_activas');if(!error&&data){S.OBRAS=data.map(x=>typeof x==='string'?x:(x.pdm_obras_activas||x.obra||Object.values(x)[0]));DB.set('obras',S.OBRAS);if(['alta','perfil'].includes(S.pant)){guardarCampos();pintar();}}}catch(_){}}
 const eqObra=()=>S.EQ.filter(e=>!S.obra||e.cod_proyec===S.obra);
 
 /* ═══════════════════════ SESIÓN ═══════════════════════ */
@@ -321,6 +326,7 @@ function pintar(){
   if(AFTER[S.pant])AFTER[S.pant]();
   initFirma(); initUpper();
 }
+function marcarVacios(){document.querySelectorAll('select.fill').forEach(x=>{const f=()=>x.classList.toggle('sinval',!x.value);f();x.addEventListener('change',f);});}
 function initUpper(){document.querySelectorAll('input.up,textarea.up').forEach(i=>i.addEventListener('input',()=>{const p=i.selectionStart;i.value=i.value.toUpperCase();try{i.setSelectionRange(p,p);}catch(_){}}));}
 
 /* ═══════════════════════ COMPONENTES ═══════════════════════ */
@@ -406,21 +412,23 @@ const P={
    <label>Contraseña</label><input type="password" id="lgP" autocomplete="current-password">
    <button class="btn b-n" onclick="ingresar()">Ingresar</button>
    <button class="btn b-g" onclick="ir('alta')">Soy nuevo: registrarme</button>
+   <div class="hint" style="margin-top:10px">¿Ya usas la página web de Equipos? Ingresa con el <b>mismo correo y clave</b>.</div>
    <div class="dim" style="margin-top:10px">Después del primer ingreso la app abre sin internet y recuerda la sesión.</div></div>
   <div class="ver">${VERSION}</div>`,
  alta:()=>`<div class="c"><h4>Registro de colaborador</h4><div class="dim">Escribe tus nombres y apellidos por separado. Todo en MAYÚSCULAS.</div>
-   <label>Nombres</label><input class="up" data-k="nombres" value="${esc(vF('nombres'))}" placeholder="GONZALO" oninput="prevCod()">
-   <div class="r2"><div><label>Apellido paterno</label><input class="up" data-k="ap_paterno" value="${esc(vF('ap_paterno'))}" placeholder="LLANA" oninput="prevCod()"></div>
-   <div><label>Apellido materno</label><input class="up" data-k="ap_materno" value="${esc(vF('ap_materno'))}" placeholder="RARAZ"></div></div>
+   <label>Nombres</label><input class="up fill" data-k="nombres" value="${esc(vF('nombres'))}" placeholder=" " oninput="prevCod()">
+   <div class="r2"><div><label>Apellido paterno</label><input class="up fill" data-k="ap_paterno" value="${esc(vF('ap_paterno'))}" placeholder=" " oninput="prevCod()"></div>
+   <div><label>Apellido materno</label><input class="up fill" data-k="ap_materno" value="${esc(vF('ap_materno'))}" placeholder=" "></div></div>
    <div class="hint" id="prevCod">En los reportes figurarás como: <b>—</b></div>
-   <label>Especialidad principal</label><select data-k="especialidad">${opts(['MECANICO','SOLDADOR','ELECTRICISTA','LUBRICADOR','LLANTERO','SUPERVISOR'],vF('especialidad','MECANICO'))}</select>
-   <label>Obra</label><input class="up" data-k="obra" value="${esc(vF('obra'))}" placeholder="P-0174">
-   ${S.pant==='alta'?`<label>Correo</label><input type="email" data-k="email" value="${esc(vF('email'))}">
-   <label>Contraseña (mín. 6)</label><input type="password" data-k="pass">`:''}
+   <label>Especialidad principal</label><select class="fill" data-k="especialidad">${opts(['MECANICO','SOLDADOR','ELECTRICISTA','LUBRICADOR','LLANTERO','SUPERVISOR'],vF('especialidad'),'— elegir —')}</select>
+   <label>Obra</label><select class="fill" data-k="obra">${opts(obrasAlta(),up(vF('obra')),'— elegir obra —')}</select>
+   ${S.pant==='alta'?`<label>Correo</label><input class="fill" type="email" data-k="email" value="${esc(vF('email'))}" placeholder=" ">
+   <label>Contraseña (mín. 6)</label><input class="fill" type="password" data-k="pass" placeholder=" ">
+   <div class="dim" style="margin-top:4px">¿Ya tienes cuenta en la página web? No te registres: vuelve e <b>ingresa con el mismo correo y clave</b>.</div>`:''}
    <button class="btn b-y" onclick="${S.pant==='alta'?'registrarme()':'guardarPerfil()'}">${S.pant==='alta'?'Registrarme':'Guardar mis datos'}</button>
    <div class="dim" style="margin-top:8px">${S.pant==='alta'?'Un administrador aprobará tu cuenta. Todas las áreas (mecánico, lubricación, llantas, GETs, mntto preventivo) quedan habilitadas para ti.':'Completa tus datos para que figures en los reportes.'}</div></div>`,
- espera:()=>`<div class="c" style="text-align:center"><div style="font-size:42px">⏳</div><h4>Tu cuenta está en revisión</h4>
-   <div class="dim">Un administrador debe aprobarla y habilitarte "App REPORTE (celular)" en Usuarios.</div>
+ espera:()=>`<div class="c" style="text-align:center"><div style="font-size:42px">⏳</div><h4>${S.perfil&&S.perfil.estado==='aprobado'?'Falta habilitar la app':'Tu cuenta está en revisión'}</h4>
+   <div class="dim">${S.perfil&&S.perfil.estado==='aprobado'?'Tu cuenta de la página web ya existe. Pide a tu administrador que te habilite la <b>app REPORTE</b> (Parte diario mecánico → Colaboradores).':'Un administrador debe aprobarla en Parte diario mecánico → Colaboradores.'}</div>
    <button class="btn b-n" onclick="arrancar()">Volver a intentar</button><button class="btn b-g" onclick="salir()">Cerrar sesión</button></div>`,
  home:()=>{const nq=S.COLA.filter(x=>!x.enviado).length, np=(S.PEND||[]).length;
   return `<div class="c" style="display:flex;align-items:center;gap:10px"><div style="flex:1"><div class="dim">Obra</div>
@@ -517,7 +525,7 @@ const P={
  perfil:()=>{if(S.col&&S.F.nombres==null){Object.assign(S.F,{nombres:S.col.nombres,ap_paterno:S.col.ap_paterno,ap_materno:S.col.ap_materno||'',obra:S.col.obra||'',especialidad:S.col.especialidad||'MECANICO'});}
   return P.alta();}
 };
-const AFTER={home:()=>cargarPend(),alta:()=>prevCod(),perfil:()=>prevCod(),consulta:()=>{if(S.F.cq)consultar();},pend:()=>cargarPend(),
+const AFTER={home:()=>cargarPend(),alta:()=>{prevCod();marcarVacios();if(!S.OBRAS)cargarObras();},perfil:()=>{prevCod();marcarVacios();if(!S.OBRAS)cargarObras();},consulta:()=>{if(S.F.cq)consultar();},pend:()=>cargarPend(),
   MECANICO:chkHr,LUBRICACION:chkHr,LLANTAS:chkHr,GETS:chkHr,MNTTO_PREV:chkHr};
 const MODN={MECANICO:'Reporte mecánico',LUBRICACION:'Lubricación',LLANTAS:'Llantas',GETS:'GETs',MNTTO_PREV:'Mntto preventivo',PENDIENTE:'Pendiente'};
 
@@ -526,14 +534,16 @@ function prevCod(){const n=val('nombres'),a=val('ap_paterno'),b=codigoBase(n||''
 async function ingresar(){const e=$('lgE').value.trim(),p=$('lgP').value;if(!e||!p)return toast('Escribe correo y contraseña');
   if(!S.online)return toast('Sin señal: el primer ingreso necesita internet');
   localStorage.setItem('campo_mail',e);
-  const {error}=await sb.auth.signInWithPassword({email:e,password:p});if(error){const m=error.message||'';return toast(/banned/i.test(m)?'Tu cuenta está bloqueada. Habla con tu supervisor.':/invalid login/i.test(m)?'Correo o clave incorrectos.':/not confirmed/i.test(m)?'Tu cuenta aún no está aprobada.':'No se pudo ingresar: '+m,6000);}arrancar();}
+  const {error}=await sb.auth.signInWithPassword({email:e,password:p});if(error){const m=error.message||'';return toast(/banned/i.test(m)?'Tu cuenta está bloqueada. Habla con tu supervisor.':/invalid login/i.test(m)?'Correo o clave incorrectos. Si la olvidaste, pide una clave nueva a tu administrador.':/not confirmed/i.test(m)?'Tu cuenta aún no está aprobada.':'No se pudo ingresar: '+m,6000);}arrancar();}
 async function registrarme(){guardarCampos();const d={nombres:up(S.F.nombres),ap_paterno:up(S.F.ap_paterno),ap_materno:up(S.F.ap_materno),especialidad:S.F.especialidad,obra:up(S.F.obra),email:String(S.F.email||'').trim()};
   if(!d.nombres||!d.ap_paterno)return toast('Escribe nombres y apellido paterno');
+  if(!d.especialidad||!d.obra)return toast('Elige tu especialidad y tu obra');
   if(!d.email||String(S.F.pass||'').length<6)return toast('Escribe correo y una contraseña de 6 caracteres o más');
   if(!S.online)return toast('El registro necesita internet');
   const nombre=[d.nombres,d.ap_paterno,d.ap_materno].filter(Boolean).join(' ');
   const {data,error}=await sb.auth.signUp({email:d.email,password:S.F.pass,options:{data:{nombre,nombres:d.nombres,ap_paterno:d.ap_paterno,ap_materno:d.ap_materno,origen:'campo'}}});
-  if(error)return toast('No se pudo registrar: '+error.message,5000);
+  if(error)return toast(/already|registered/i.test(error.message)?'Ese correo ya tiene cuenta. Ingresa con tu misma clave de la página web.':'No se pudo registrar: '+error.message,6000);
+  if(data.user&&Array.isArray(data.user.identities)&&data.user.identities.length===0){localStorage.setItem('campo_mail',d.email);toast('Ese correo ya tiene cuenta (por ejemplo, de la página web). Ingresa con tu misma clave.',7000);return ir('login',true);}
   localStorage.setItem('campo_alta',JSON.stringify(d));localStorage.setItem('campo_mail',d.email);
   if(data.session){await refrescarDatos();await crearColaborador(d,data.user.id);localStorage.removeItem('campo_alta');}
   toast('Registro enviado. Un administrador aprobará tu cuenta.',5000);arrancar();}
