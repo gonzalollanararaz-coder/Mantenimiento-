@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
 <meta charset="utf-8">
-<meta name="gllr-version" content="V.201026-1" data-pagina="REPORTE (app de campo)">
+<meta name="gllr-version" content="V.201026-2" data-pagina="REPORTE (app de campo)">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>REPORTE</title>
 <link rel="manifest" href="campo.webmanifest">
@@ -526,7 +526,7 @@ function prevCod(){const n=val('nombres'),a=val('ap_paterno'),b=codigoBase(n||''
 async function ingresar(){const e=$('lgE').value.trim(),p=$('lgP').value;if(!e||!p)return toast('Escribe correo y contraseña');
   if(!S.online)return toast('Sin señal: el primer ingreso necesita internet');
   localStorage.setItem('campo_mail',e);
-  const {error}=await sb.auth.signInWithPassword({email:e,password:p});if(error)return toast('No se pudo ingresar: '+error.message,5000);arrancar();}
+  const {error}=await sb.auth.signInWithPassword({email:e,password:p});if(error){const m=error.message||'';return toast(/banned/i.test(m)?'Tu cuenta está bloqueada. Habla con tu supervisor.':/invalid login/i.test(m)?'Correo o clave incorrectos.':/not confirmed/i.test(m)?'Tu cuenta aún no está aprobada.':'No se pudo ingresar: '+m,6000);}arrancar();}
 async function registrarme(){guardarCampos();const d={nombres:up(S.F.nombres),ap_paterno:up(S.F.ap_paterno),ap_materno:up(S.F.ap_materno),especialidad:S.F.especialidad,obra:up(S.F.obra),email:String(S.F.email||'').trim()};
   if(!d.nombres||!d.ap_paterno)return toast('Escribe nombres y apellido paterno');
   if(!d.email||String(S.F.pass||'').length<6)return toast('Escribe correo y una contraseña de 6 caracteres o más');

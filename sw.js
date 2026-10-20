@@ -1,7 +1,7 @@
 /* Service Worker — Maestro de Equipos UDE
    Guarda la app en el navegador para que abra sin internet.
    Los datos NO se guardan aquí: eso lo maneja IndexedDB en cada página. */
-const CACHE = 'gllr-app-v19';
+const CACHE = 'gllr-app-v20';
 const ARCHIVOS = [
   './',
   './index.html',
