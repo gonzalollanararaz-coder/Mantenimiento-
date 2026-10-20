@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
 <meta charset="utf-8">
-<meta name="gllr-version" content="V.201026-1" data-pagina="Parte diario mecánico">
+<meta name="gllr-version" content="V.201026-2" data-pagina="Parte diario mecánico">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Parte diario mecánico &mdash; UDE</title>
 <link rel="icon" href="favicon.ico" sizes="any">
@@ -225,7 +225,7 @@ function pintarCol(){const v=document.getElementById('v-col'),ad=esAdmin();
     if(error)return alert(error.message);COL.push(data);COL.sort((a,b)=>a.ap_paterno.localeCompare(b.ap_paterno));pintarCol();};}
 
 /* ═══════════ ACCESOS A LA APP (solo admin) ═══════════ */
-let USR=null, accFiltro='pend';
+let USR=null;
 const clGen=()=>'JJC'+Math.floor(1000+Math.random()*9000);
 function estU(u){if(u.estado==='bloqueado'||(u.bloqueado_hasta&&new Date(u.bloqueado_hasta)>new Date()))return 'bloq';if(u.estado!=='aprobado')return 'pend';return 'act';}
 async function cargarUsr(){const {data,error}=await sb.rpc('pdm_admin_usuarios');USR=error?{err:error.message}:(data||[]);
@@ -237,7 +237,8 @@ async function pintarAccesos(){const box=document.getElementById('accBox');if(!b
   if(USR===null){box.innerHTML='<div class="card dim">Cargando cuentas…</div>';await cargarUsr();if(!document.getElementById('accBox'))return;pintarCol();return;}
   if(USR.err){box.innerHTML=`<div class="card"><span class="bnd">ACCESOS A LA APP</span><div class="dim" style="font-size:12.5px">Para aprobar, bloquear y crear cuentas desde aquí, ejecuta una vez <b>pdm_accesos.sql</b> en Supabase (SQL Editor → Run).<br><span style="color:#B91C1C">${esc(USR.err)}</span></div></div>`;return;}
   const n={pend:0,act:0,bloq:0};USR.forEach(u=>n[estU(u)]++);
-  const L=USR.filter(u=>accFiltro==='todos'||estU(u)===accFiltro);
+  const ORD={pend:0,act:1,bloq:2}, GN={pend:'Por aprobar',act:'Activos',bloq:'Bloqueados'};
+  const L=USR.slice().sort((a,b)=>ORD[estU(a)]-ORD[estU(b)]||String(b.creado).localeCompare(String(a.creado)));
   const codOpts=u=>'<option value="">— sin vincular —</option>'+COL.filter(c=>!c.user_id||c.user_id===u.id).map(c=>`<option ${c.codigo===u.codigo?'selected':''}>${esc(c.codigo)}</option>`).join('');
   const pillE=u=>{const e=estU(u);return e==='pend'?`<span class="pill p-w">Por aprobar</span>${u.confirmado?'':'<div class="dim" style="font-size:10.5px">correo sin confirmar</div>'}`:e==='bloq'?'<span class="pill p-b">Bloqueado</span>':'<span class="pill p-ok">Activo</span>';};
   const btns=u=>{const e=estU(u);if(u.id===perfil.id)return '<span class="dim">(tú)</span>';
@@ -245,15 +246,15 @@ async function pintarAccesos(){const box=document.getElementById('accBox');if(!b
       e==='bloq'?`<button class="act sm" data-ua="unb" data-id="${u.id}">Desbloquear</button> <button class="act sm rojo" data-ua="del" data-id="${u.id}">Eliminar</button>`:
       `<button class="act sm" data-ua="pwd" data-id="${u.id}">&#128273; Clave</button> <button class="act sm" data-ua="blk" data-id="${u.id}">Bloquear</button> <button class="act sm rojo" data-ua="del" data-id="${u.id}">Eliminar</button>`;};
   box.innerHTML=`<div class="card"><span class="bnd">ACCESOS A LA APP</span>
-   <div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin-bottom:8px">${[['pend','Por aprobar'],['act','Activos'],['bloq','Bloqueados'],['todos','Todos']].map(([k,l])=>`<button class="act sm ${accFiltro===k?'primary':''}" data-af="${k}">${l} · ${k==='todos'?USR.length:n[k]}</button>`).join('')}
+   <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:8px;font-size:12.5px">
+    <span class="pill ${n.pend?'p-w':'p-g'}" style="font-size:12px;padding:3px 10px">${n.pend} por aprobar</span><span class="pill p-ok" style="font-size:12px;padding:3px 10px">${n.act} activos</span><span class="pill ${n.bloq?'p-b':'p-g'}" style="font-size:12px;padding:3px 10px">${n.bloq} bloqueados</span>
     <span class="spacer"></span><button class="act sm util" id="accNuevo">+ Crear cuenta</button><button class="act sm" id="accRef" title="Actualizar">↻</button></div>
    <div id="accForm"></div>
    <div style="overflow:auto"><table class="t"><thead><tr><th>Estado</th><th>Usuario</th><th>Colaborador</th><th>Registrado</th><th>Último ingreso</th><th></th></tr></thead><tbody>
-   ${L.map(u=>`<tr><td>${pillE(u)}${u.rol==='admin'?' <span class="pill p-a">admin</span>':''}</td><td><b>${esc(u.nombre||'—')}</b><div class="dim">${esc(u.email)}</div></td>
-     <td><select data-uv="${u.id}" style="width:130px">${codOpts(u)}</select></td><td>${fd(u.creado)}</td><td>${u.ultimo_ingreso?fd(u.ultimo_ingreso):'<span class="dim">nunca</span>'}</td><td style="white-space:nowrap">${btns(u)}</td></tr>`).join('')||`<tr><td colspan="6" class="vacio">${accFiltro==='pend'?'No hay cuentas por aprobar.':'Sin cuentas.'}</td></tr>`}
+   ${L.map((u,i)=>`${i===0||estU(L[i-1])!==estU(u)?`<tr><td colspan="6" style="background:#F4F6F8;font-weight:800;font-size:11px;color:#4b5563;text-transform:uppercase;letter-spacing:.4px">${GN[estU(u)]} · ${n[estU(u)]}</td></tr>`:''}<tr><td>${pillE(u)}${u.rol==='admin'?' <span class="pill p-a">admin</span>':''}</td><td><b>${esc(u.nombre||'—')}</b><div class="dim">${esc(u.email)}</div></td>
+     <td><select data-uv="${u.id}" style="width:130px">${codOpts(u)}</select></td><td>${fd(u.creado)}</td><td>${u.ultimo_ingreso?fd(u.ultimo_ingreso):'<span class="dim">nunca</span>'}</td><td style="white-space:nowrap">${btns(u)}</td></tr>`).join('')||'<tr><td colspan="6" class="vacio">Sin cuentas.</td></tr>'}
    </tbody></table></div>
    <div class="dim" style="font-size:11.5px;margin-top:6px"><b>Aprobar</b> confirma el correo y habilita la app REPORTE. <b>Bloquear</b> corta el acceso de inmediato. <b>Eliminar</b> quita la cuenta; el colaborador y sus registros se conservan. <b>Colaborador</b>: código con el que la cuenta firma sus reportes.</div></div>`;
-  box.querySelectorAll('[data-af]').forEach(b=>b.onclick=()=>{accFiltro=b.dataset.af;pintarAccesos();});
   document.getElementById('accRef').onclick=()=>recargarCol();
   document.getElementById('accNuevo').onclick=()=>formCuenta();
   box.querySelectorAll('[data-uv]').forEach(s=>s.onchange=async()=>{const {error}=await sb.rpc('pdm_admin_vincular',{uid:s.dataset.uv,p_codigo:s.value||null});if(error)return alert('No se pudo: '+error.message);await recargarCol();});
@@ -265,7 +266,10 @@ async function accion(a,u){if(!u)return;let r;const qn=u.nombre||u.email;
   else if(a==='blk'){if(!confirm(`¿Bloquear a ${qn}? Se cerrará su sesión en la app.`))return;r=await sb.rpc('pdm_admin_bloquear',{uid:u.id,bloquear:true});}
   else if(a==='unb'){r=await sb.rpc('pdm_admin_bloquear',{uid:u.id,bloquear:false});}
   else if(a==='pwd'){const c=prompt(`Nueva clave para ${u.email} (mínimo 6 caracteres):`,clGen());if(!c)return;r=await sb.rpc('pdm_admin_clave',{uid:u.id,nueva:c.trim()});if(!r.error)alert(`Clave cambiada.\n\nDíctale al colaborador:\nCorreo: ${u.email}\nClave: ${c.trim()}`);}
-  else if(a==='del'){if(!confirm(`¿Eliminar la cuenta de ${u.email}?\n\nNo podrá ingresar a la app. Su colaborador y sus registros se conservan.`))return;r=await sb.rpc('pdm_admin_eliminar',{uid:u.id});}
+  else if(a==='del'){if(!confirm(`¿Eliminar la cuenta de ${u.email}?\n\nNo podrá ingresar a la app. Su colaborador y sus registros se conservan.`))return;r=await sb.rpc('pdm_admin_eliminar',{uid:u.id});
+    if(!r.error){await recargarCol();const sigue=Array.isArray(USR)&&USR.some(x=>x.id===u.id);
+      return sigue?alert(`La cuenta ${u.email} NO se eliminó (sigue en Supabase). Usa Bloquear y avísame el caso.`):alert(`✓ Cuenta ${u.email} eliminada. Ya no aparece en Supabase.`);}
+    if(/foreign key|violates/i.test(r.error.message))return alert(`No se pudo eliminar: otra tabla hace referencia a esta cuenta.\nUsa Bloquear en su lugar.\n\n${r.error.message}`);}
   if(r&&r.error)return alert('No se pudo: '+r.error.message);
   await recargarCol();}
 async function recargarCol(){const {data}=await sb.from('pdm_colaboradores').select('*').order('ap_paterno');if(data)COL=data;await cargarUsr();pintarCol();}
@@ -291,7 +295,7 @@ function formCuenta(){const f=document.getElementById('accForm');if(f.innerHTML)
       else{const base=codigoBase(n,p),usados=COL.map(c=>c.codigo);let cod=base;if(usados.includes(cod)){cod=m&&!usados.includes(base+m[0])?base+m[0]:(()=>{let i=2;while(usados.includes(base+i))i++;return base+i;})();}
         r=await sb.from('pdm_colaboradores').insert({nombres:n,ap_paterno:p,ap_materno:m||null,codigo:cod,especialidad:$n('ncuE').value,obra:up($n('ncuO').value)||null,user_id:uid});if(r.error)throw r.error;}
       alert(`Cuenta creada y aprobada.\n\nDíctale al colaborador:\nCorreo: ${email}\nClave: ${clave}`);
-      accFiltro='act';await recargarCol();
+      await recargarCol();
     }catch(e){const msg=e.message||String(e);alert('No se pudo crear la cuenta: '+msg+(/rate limit/i.test(msg)?'\n\nSupabase limita los correos de confirmación. Desactiva "Confirm email" en Authentication → Sign In / Providers → Email.':''));ok.disabled=false;ok.textContent='Crear cuenta';}};}
 function dupHtml(){const g={};COL.forEach(c=>{const k=nrm(c.nombres)+'|'+nrm(c.ap_paterno)+'|'+nrm(c.ap_materno||'');(g[k]=g[k]||[]).push(c);});
   const D=Object.values(g).filter(x=>x.length>1);if(!D.length)return '';
