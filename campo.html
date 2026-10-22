@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
 <meta charset="utf-8">
-<meta name="gllr-version" content="V.221026-2" data-pagina="REPORTE (app de campo)">
+<meta name="gllr-version" content="V.221026-3" data-pagina="REPORTE (app de campo)">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>REPORTE</title>
 <link rel="manifest" href="campo.webmanifest">
@@ -583,7 +583,7 @@ const P={
  hecho:()=>`<div class="c" style="text-align:center"><div style="font-size:40px">${S.ult&&S.ult.enviado?'✅':'💾'}</div>
    <h4>${S.ult&&S.ult.enviado?'Registro enviado':'Guardado en el celular'}</h4>
    <div class="dim">${S.ult&&S.ult.enviado?'Ya está en la web (PARTE DIARIO MECÁNICO).':'Se enviará solo cuando haya señal.'}</div></div>
-   <div class="c"><div class="sec">Vista del mensaje</div><div class="resumen">${esc(textoWA(S.ult.reg))}</div>
+   <div class="c"><div class="sec">Vista del mensaje</div><div class="resumen">${esc(textoWA(S.ult.reg,nFotos(S.ult.reg)))}</div>${fotosDe(S.ult.reg).length?`<div class="fotos" style="margin-top:8px">${fotosDe(S.ult.reg).map(u=>`<div style="background-image:url(${u})"></div>`).join("")}</div>`:""}
    <button class="btn b-w" onclick="whatsapp(S.ult.reg)">📲 Enviar por WhatsApp</button></div>
    <button class="btn b-y" onclick="S.pila=['home'];S.pant='reporte';S.F=nuevoF();pintar()">+ Nuevo reporte</button><button class="btn b-g" onclick="ir('home',true)">Inicio</button>`,
  envios:()=>{const L=S.COLA.slice().sort((a,b)=>String(b.reg.created_local).localeCompare(String(a.reg.created_local)));
@@ -693,7 +693,7 @@ async function sincronizar(manual){
         const fila={...it.reg,fotos:rutas.length?rutas:null}; delete fila.created_local;
         const {error}=await sb.from('pdm_registros').upsert(fila,{onConflict:'id',ignoreDuplicates:true});
         if(error)throw error;
-        it.enviado=true;it.error=null;it.fotos=[];it.enviado_en=new Date().toISOString();ok++;
+        it.enviado=true;it.error=null;it.reg.fotos=rutas.length?rutas:null;it.enviado_en=new Date().toISOString();ok++;
         S.REC.unshift({...it.reg});S.REC=S.REC.slice(0,300);
       }catch(e){it.error=e.message||String(e);err++;}
       await DB.poner(it);
@@ -712,7 +712,7 @@ setInterval(()=>{if(S.online&&S.COLA.some(x=>!x.enviado))sincronizar();},60000);
 
 /* ═══════════════════════ WHATSAPP ═══════════════════════ */
 function nombreCol(c){const x=colDe(c);return x?c:c;}
-function textoWA(r){
+function textoWA(r,foto){
   const e=eqDe(r.cod_sap)||{}, d=r.detalle||{}, T=[];
   const hh=v=>String(v||'').slice(0,5);
   // trabajos realizados (según el área)
@@ -727,19 +727,35 @@ function textoWA(r){
   if(r.insumos&&r.insumos.length)T.push('Insumos: '+r.insumos.map(x=>`${x.n}${x.q!=null&&x.q!==''?' '+x.q+' '+(x.u||''):''}`.trim()).join(', '));
   if(r.observacion)T.push('Obs.: '+r.observacion);
   const L=[];
-  L.push(`∙ Equipo           : ${r.cod_sap}${e.equipo?' · '+e.equipo:''}${e.modelo?' '+e.modelo:''}`);
-  L.push(`∙ ${e.contador==='Km'?'Kilometraje':'Horómetro  '}: ${r.hrkm!=null?f0(r.hrkm):'—'}`);
-  L.push(`∙ Fecha             : ${fd(r.fecha)} _ ${hh(r.hora_ini)}${r.hora_fin?' – '+hh(r.hora_fin):''}`);
-  L.push('━━━━━━━━━━━━━━━━');
+  L.push(`∙ Equipo: ${r.cod_sap}`);
+  L.push(`∙ ${e.contador==='Km'?'Kilometraje':'Horómetro'}: ${r.hrkm!=null?f0(r.hrkm):'—'}`);
+  L.push(`∙ Fecha: ${fd(r.fecha)}`);
+  L.push(`∙ Hora: ${hh(r.hora_ini)}${r.hora_fin?' – '+hh(r.hora_fin):''}`);
+  L.push(' ');
   L.push('∙ Trabajos realizados:');
   T.forEach(x=>L.push('   - '+x)); if(!T.length)L.push(' ');
   L.push(`∙ Estado: ${r.estado_equipo||'—'}`);
-  L.push(`∙ Pendiente:${r.backlog?' '+r.backlog:''}`);
-  L.push('━━━━━━━━━━━━━━━━');
   L.push(`∙ Técnicos: ${(r.tecnicos||[]).join(', ')}`);
+  L.push('━━━━━━━━━━━━━━━━');
+  L.push(`Foto:${foto?' '+foto:' sin foto'}`);
   return L.join('\n');
 }
-function whatsapp(r){const u='https://wa.me/?text='+encodeURIComponent(textoWA(r));window.open(u,'_blank');}
+const _furl=new Map();
+function fotosDe(r){const it=S.COLA.find(x=>x.id===r.id);return (it&&it.fotos||[]).filter(Boolean).map(b=>{if(!_furl.has(b))_furl.set(b,URL.createObjectURL(b));return _furl.get(b);});}
+function nFotos(r){const n=fotosDe(r).length;return n?(n===1?'adjunta':n+' adjuntas'):'';}
+async function whatsapp(r){
+  const it=S.COLA.find(x=>x.id===r.id), blobs=(it&&it.fotos||[]).filter(Boolean);
+  const files=blobs.map((b,i)=>new File([b],`${r.cod_sap}_${fd(r.fecha).replace(/\//g,'-')}_${i+1}.jpg`,{type:'image/jpeg'}));
+  // 1) celular moderno: menú Compartir con texto + fotos (elige WhatsApp)
+  if(files.length&&navigator.canShare&&navigator.canShare({files})){
+    const txt=textoWA(r,files.length===1?'adjunta':files.length+' adjuntas');
+    try{await navigator.clipboard.writeText(txt);}catch(_){}
+    try{await navigator.share({files,text:txt});return;}catch(e){if(e&&e.name==='AbortError')return;}}
+  // 2) sin opción de adjuntar: enlace a la foto (válido 7 días) o aviso
+  let foto='';
+  if((r.fotos||[]).length&&S.online){try{const {data}=await sb.storage.from('pdm-fotos').createSignedUrl(r.fotos[0],7*86400);if(data&&data.signedUrl)foto=data.signedUrl;}catch(_){}}
+  else if(files.length)foto='(se envía aparte)';
+  window.open('https://wa.me/?text='+encodeURIComponent(textoWA(r,foto)),'_blank');}
 function regEn(mod,cod){ir(mod);const e=eqDe(cod);if(e){S.F.eq=e.cod_sap;S.F.eqTxt=e.cod_sap+' · '+(e.equipo||'');pintar();}}
 function verReg(id){const it=S.COLA.find(x=>x.id===id);if(!it)return;S.ult={reg:it.reg,enviado:!!it.enviado};ir('hecho');}
 function whatsappId(id){const it=S.COLA.find(x=>x.id===id);if(it)whatsapp(it.reg);}
