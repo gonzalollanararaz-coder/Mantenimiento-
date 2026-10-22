@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
 <meta charset="utf-8">
-<meta name="gllr-version" content="V.211026-2" data-pagina="Parte diario mecánico">
+<meta name="gllr-version" content="V.231026-1" data-pagina="Parte diario mecánico">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Parte diario mecánico &mdash; UDE</title>
 <link rel="icon" href="favicon.ico" sizes="any">
@@ -355,29 +355,71 @@ async function crearCuenta(email,clave,nombre,d){
 
 /* ═══════════ DATOS MAESTROS ═══════════ */
 const TIPOS=[['ESPECIALIDAD','Especialidades'],['SISTEMA','Sistemas (por especialidad)'],['TRABAJO','Trabajos (por especialidad)'],['REPUESTO','Repuestos (por especialidad)'],['INSUMO','Insumos (lubricación / PM)'],
-  ['UNIDAD','Unidades de medida'],['TRABAJO_LUB','Trabajos de lubricación'],['PUNTO_LUB','Puntos de lubricación'],['GET','Componentes GET'],['IMPLEMENTO','Implementos'],['PM','Tipos de PM'],
-  ['TAREA_PM','Tareas de PM'],['ORIGEN','Origen de falla'],['PARADA','Tipo de parada'],['FRENTE','Frentes de trabajo'],['MARCA_LLANTA','Marcas de llanta']];
-const CON_ESP=['SISTEMA','TRABAJO','REPUESTO'], CON_UND=['REPUESTO','INSUMO'];
-function pintarMae(){const v=document.getElementById('v-mae'),ad=esAdmin();const L=MAE.filter(m=>m.tipo===tipoSel).sort((a,b)=>(a.especialidad||'').localeCompare(b.especialidad||'')||(a.orden||0)-(b.orden||0));
+  ['UNIDAD','Unidades de medida'],['TRABAJO_LUB','Trabajos de lubricación'],['PUNTO_LUB','Puntos de lubricación'],['GET','Componentes GET (por tipo de equipo)'],['PM','Tipos de PM'],
+  ['TAREA_PM','Tareas de PM'],['ORIGEN','Origen de falla'],['PARADA','Tipo de parada'],['FRENTE','Frentes de trabajo'],['MARCA_LLANTA','Marcas de llanta'],['IMPLEMENTO','Implementos (ya no se usa en GETs)']];
+const FAMS=[['EX','Excavadora de oruga'],['CF','Cargador frontal'],['TO','Tractor de oruga'],['MN','Motoniveladora'],['PR','Retroexcavadora'],['MC','Minicargador']];
+const UNDS=['','UND','GAL','L','LB','KG','KIT','M','JGO'];
+/* columnas de cada lista: k=campo, l=título, t=tipo de control */
+function colsDe(t){const C=[];
+  if(['SISTEMA','TRABAJO','REPUESTO'].includes(t))C.push({k:'especialidad',l:'Especialidad',t:'esp'});
+  if(t==='GET')C.push({k:'familia',l:'Familia',t:'fam'},{k:'grupo',l:'Grupo GET',t:'txt'},{k:'aplicacion',l:'Aplicación',t:'txt'});
+  C.push({k:'valor',l:t==='GET'?'Componente':'Valor',t:'txt'});
+  if(['REPUESTO','INSUMO','GET'].includes(t))C.push({k:'unidad',l:'Unidad',t:'und'});
+  C.push({k:'orden',l:'Orden',t:'num'});return C;}
+let famSel='';
+function ctl(c,m,id){const v=m?m[c.k]:'';const at=id?`data-m="${m.id}" data-k="${c.k}"`:`id="nm_${c.k}"`;
+  if(c.t==='esp')return `<select ${at}><option value="">TODAS</option>${ESPS.filter(x=>['MECANICO','SOLDADOR','ELECTRICISTA'].includes(x)).map(x=>`<option ${x===v?'selected':''}>${x}</option>`).join('')}</select>`;
+  if(c.t==='fam')return `<select ${at}>${FAMS.map(([k,l])=>`<option value="${k}" ${k===(v||famSel)?'selected':''}>${k} · ${l}</option>`).join('')}</select>`;
+  if(c.t==='und')return `<select ${at}>${UNDS.map(u=>`<option ${u===(v||(id?'':'UND'))?'selected':''}>${u}</option>`).join('')}</select>`;
+  if(c.t==='num')return `<input type="number" ${at} value="${esc(v??'')}" style="width:70px">`;
+  return `<input ${at} value="${esc(v||'')}" style="${c.k==='aplicacion'?'':'text-transform:uppercase'}">`;}
+function pintarMae(){const v=document.getElementById('v-mae'),ad=esAdmin(),C=colsDe(tipoSel);
+  let L=MAE.filter(m=>m.tipo===tipoSel);if(tipoSel==='GET'&&famSel)L=L.filter(m=>m.familia===famSel);
+  L.sort((a,b)=>(a.familia||'').localeCompare(b.familia||'')||(a.especialidad||'').localeCompare(b.especialidad||'')||(a.orden||0)-(b.orden||0));
+  const tit=(TIPOS.find(t=>t[0]===tipoSel)||[0,tipoSel])[1];
   v.innerHTML=`<div class="grid2"><div class="card tipos"><span class="bnd">LISTAS DE LA APP</span>${TIPOS.map(([k,l])=>`<div class="${k===tipoSel?'on':''}" data-t="${k}"><span>${l}</span><span class="dim">${MAE.filter(m=>m.tipo===k&&m.activo!==false).length}</span></div>`).join('')}</div>
-   <div class="card"><span class="bnd">${esc((TIPOS.find(t=>t[0]===tipoSel)||[0,tipoSel])[1]).toUpperCase()}</span>
-   <div class="dim" style="font-size:12px;margin-bottom:6px">La app descarga estas listas y las guarda en el celular (funcionan sin señal). Un valor desactivado deja de aparecer en la app pero se conserva en los registros antiguos.${ad?'':' Solo un administrador puede editarlas.'}</div>
-   <table class="t"><thead><tr>${CON_ESP.includes(tipoSel)?'<th>Especialidad</th>':''}<th>Valor</th>${CON_UND.includes(tipoSel)?'<th>Unidad</th>':''}<th class="c">Orden</th><th class="c">Activo</th>${ad?'<th></th>':''}</tr></thead>
-   <tbody>${L.map(m=>`<tr>${CON_ESP.includes(tipoSel)?`<td>${esc(m.especialidad||'TODAS')}</td>`:''}<td>${ad?`<input data-m="${m.id}" data-k="valor" value="${esc(m.valor)}" style="text-transform:uppercase">`:esc(m.valor)}</td>
-     ${CON_UND.includes(tipoSel)?`<td>${ad?`<select data-m="${m.id}" data-k="unidad">${['','UND','GAL','L','LB','KG','KIT','M'].map(u=>`<option ${u===(m.unidad||'')?'selected':''}>${u}</option>`).join('')}</select>`:esc(m.unidad||'')}</td>`:''}
-     <td class="c" style="width:70px">${ad?`<input type="number" data-m="${m.id}" data-k="orden" value="${m.orden||0}">`:(m.orden||0)}</td>
+   <div class="card"><div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:6px"><span class="bnd" style="margin:0">${esc(tit).toUpperCase()} · ${L.length}</span>
+     ${tipoSel==='GET'?`<select id="famF" style="border:1px solid var(--line);border-radius:9px;height:30px;padding:0 8px"><option value="">Todas las familias</option>${FAMS.map(([k,l])=>`<option value="${k}" ${k===famSel?'selected':''}>${k} · ${l}</option>`).join('')}</select>`:''}
+     <span class="spacer"></span><button class="act sm util" id="maeXls">⬇ Excel</button>${ad?`<label class="act sm util" style="cursor:pointer">⬆ Importar Excel<input type="file" id="maeImp" accept=".xlsx,.xls,.csv" style="display:none"></label>`:''}</div>
+   <div class="dim" style="font-size:12px;margin-bottom:6px">La app descarga estas listas y las guarda en el celular (funcionan sin señal). Edita una celda y se guarda al salir de ella. Un valor <b>desactivado</b> deja de aparecer en la app, pero se conserva en los registros antiguos.${tipoSel==='GET'?' En la app, cada equipo ve solo los GETs de su <b>familia</b> (letras 2 y 3 del código: EEX040 → EX).':''}${ad?'':' Solo un administrador puede editarlas.'}</div>
+   <div style="overflow:auto"><table class="t"><thead><tr>${C.map(c=>`<th${c.t==='num'?' class="c"':''}>${c.l}</th>`).join('')}<th class="c">Activo</th>${ad?'<th></th>':''}</tr></thead>
+   <tbody>${L.map(m=>`<tr>${C.map(c=>`<td${c.t==='num'?' class="c"':''}>${ad?ctl(c,m,true):esc(c.t==='fam'?(m[c.k]||''):(m[c.k]??''))}</td>`).join('')}
      <td class="c">${ad?`<input type="checkbox" data-ma="${m.id}" ${m.activo!==false?'checked':''} style="width:auto;height:auto">`:(m.activo!==false?'✓':'—')}</td>
-     ${ad?`<td class="c"><button class="act sm rojo" data-mx="${m.id}">✕</button></td>`:''}</tr>`).join('')||'<tr><td colspan="7" class="vacio">Sin valores.</td></tr>'}</tbody></table>
-   ${ad?`<div class="agr">${CON_ESP.includes(tipoSel)?`<label>Especialidad<select id="nmE"><option value="">TODAS</option><option>MECANICO</option><option>SOLDADOR</option><option>ELECTRICISTA</option></select></label>`:''}
-     <label>Valor<input id="nmV" style="width:260px"></label>${CON_UND.includes(tipoSel)?`<label>Unidad<select id="nmU">${['UND','GAL','L','LB','KG','KIT','M'].map(u=>`<option>${u}</option>`).join('')}</select></label>`:''}
-     <label>Orden<input id="nmO" type="number" style="width:70px" value="${(Math.max(0,...L.map(m=>m.orden||0))+1)}"></label><button class="act primary" id="nmOk">+ Agregar</button></div>`:''}</div></div>`;
+     ${ad?`<td class="c"><button class="act sm rojo" data-mx="${m.id}" title="Eliminar">✕</button></td>`:''}</tr>`).join('')||`<tr><td colspan="${C.length+2}" class="vacio">Sin valores.</td></tr>`}</tbody></table></div>
+   ${ad?`<div class="agr">${C.map(c=>`<label>${c.l}${c.k==='orden'?`<input type="number" id="nm_orden" style="width:70px" value="${Math.max(0,...L.map(m=>m.orden||0))+1}">`:ctl(c,null,false)}</label>`).join('')}<button class="act primary" id="nmOk">+ Agregar</button></div>`:''}</div></div>`;
   v.querySelectorAll('[data-t]').forEach(d=>d.onclick=()=>{tipoSel=d.dataset.t;pintarMae();});
+  const ff=document.getElementById('famF');if(ff)ff.onchange=()=>{famSel=ff.value;pintarMae();};
+  document.getElementById('maeXls').onclick=()=>exportarMae(L,C,tit);
   if(!ad)return;
-  v.querySelectorAll('[data-m]').forEach(i=>i.onchange=async()=>{let val=i.dataset.k==='orden'?+i.value:(up(i.value)||null);const {error}=await sb.from('pdm_maestros').update({[i.dataset.k]:val}).eq('id',i.dataset.m);if(error)return alert(error.message);const m=MAE.find(x=>String(x.id)===i.dataset.m);m[i.dataset.k]=val;});
+  document.getElementById('maeImp').onchange=e=>{const f=e.target.files[0];e.target.value='';if(f)importarMae(f,C);};
+  v.querySelectorAll('[data-m]').forEach(i=>i.onchange=async()=>{const k=i.dataset.k;let val=k==='orden'?(+i.value||0):(k==='aplicacion'?(i.value.trim()||null):(up(i.value)||null));
+    const {error}=await sb.from('pdm_maestros').update({[k]:val}).eq('id',i.dataset.m);if(error)return alert('No se pudo guardar: '+error.message);const m=MAE.find(x=>String(x.id)===i.dataset.m);m[k]=val;i.style.background='#DCF5E3';setTimeout(()=>i.style.background='',700);});
   v.querySelectorAll('[data-ma]').forEach(i=>i.onchange=async()=>{const {error}=await sb.from('pdm_maestros').update({activo:i.checked}).eq('id',i.dataset.ma);if(error)return alert(error.message);MAE.find(x=>String(x.id)===i.dataset.ma).activo=i.checked;pintarMae();});
-  v.querySelectorAll('[data-mx]').forEach(b=>b.onclick=async()=>{if(!confirm('¿Eliminar este valor? (mejor desactivarlo si ya se usó)'))return;const {error}=await sb.from('pdm_maestros').delete().eq('id',b.dataset.mx);if(error)return alert(error.message);MAE=MAE.filter(x=>String(x.id)!==b.dataset.mx);pintarMae();});
-  nmOk.onclick=async()=>{const valor=up(nmV.value);if(!valor)return;const fila={tipo:tipoSel,valor,especialidad:(window.nmE&&nmE.value)||null,unidad:(window.nmU&&nmU.value)||null,orden:+nmO.value||0};
-    const {data,error}=await sb.from('pdm_maestros').insert(fila).select().single();if(error)return alert(error.message);MAE.push(data);pintarMae();};}
+  v.querySelectorAll('[data-mx]').forEach(b=>b.onclick=async()=>{if(!confirm('¿Eliminar este valor?\n\nSi ya se usó en registros, mejor desactívalo.'))return;const {error}=await sb.from('pdm_maestros').delete().eq('id',b.dataset.mx);if(error)return alert(error.message);MAE=MAE.filter(x=>String(x.id)!==b.dataset.mx);pintarMae();});
+  document.getElementById('nmOk').onclick=async()=>{const fila={tipo:tipoSel};
+    for(const c of C){const el=document.getElementById('nm_'+c.k);if(!el)continue;fila[c.k]=c.t==='num'?(+el.value||0):(c.k==='aplicacion'?(el.value.trim()||null):(up(el.value)||null));}
+    if(!fila.valor)return alert('Escribe el '+(tipoSel==='GET'?'componente':'valor')+'.');
+    const {data,error}=await sb.from('pdm_maestros').insert(fila).select().single();if(error)return alert(/duplicate|unique/i.test(error.message)?'Ese valor ya existe en la lista.':error.message);MAE.push(data);pintarMae();};}
+function exportarMae(L,C,tit){if(!window.XLSX)return alert('No se cargó la librería de Excel.');
+  const filas=L.map(m=>{const o={ID:m.id};C.forEach(c=>o[c.l]=m[c.k]??'');o.Activo=m.activo!==false?'SI':'NO';return o;});
+  const ws=XLSX.utils.json_to_sheet(filas.length?filas:[Object.fromEntries([['ID',''],...C.map(c=>[c.l,'']),['Activo','SI']])]);const wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,ws,tipoSel.slice(0,30));
+  XLSX.writeFile(wb,`lista_${tipoSel.toLowerCase()}.xlsx`);}
+async function importarMae(f,C){if(!window.XLSX)return alert('No se cargó la librería de Excel.');
+  const wb=XLSX.read(await f.arrayBuffer());const R=XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]],{defval:''});
+  const norm=x=>nrm(x).replace(/[^A-Z]/g,'');const map={};C.forEach(c=>map[norm(c.l)]=c);map[norm('Valor')]=C.find(c=>c.k==='valor');map[norm('Componente')]=C.find(c=>c.k==='valor');map[norm('Clave')]=C.find(c=>c.k==='familia');
+  const nuevos=[],cambios=[];
+  R.forEach(row=>{const o={tipo:tipoSel};let id=null,act=true;
+    Object.entries(row).forEach(([h,val])=>{const n=norm(h);if(n==='ID'){id=val||null;return;}if(n==='ACTIVO'){act=!/^(NO|0|FALSE)$/i.test(String(val).trim());return;}
+      const c=map[n];if(!c)return;o[c.k]=c.t==='num'?(+val||0):(c.k==='aplicacion'?(String(val).trim()||null):(up(val)||null));});
+    if(!o.valor)return;o.activo=act;if(id)cambios.push({id,...o});else nuevos.push(o);});
+  if(!nuevos.length&&!cambios.length)return alert('No encontré filas. La primera fila del Excel debe tener los títulos: '+C.map(c=>c.l).join(', ')+'.');
+  if(!confirm(`Importar a "${tipoSel}":\n\n• ${nuevos.length} valores nuevos\n• ${cambios.length} valores a actualizar (los que traen ID)\n\n¿Continuar?`))return;
+  let err=[];
+  for(const x of cambios){const {id,...o}=x;const {error}=await sb.from('pdm_maestros').update(o).eq('id',id);if(error)err.push(error.message);}
+  if(nuevos.length){const {error}=await sb.from('pdm_maestros').upsert(nuevos,{onConflict:'tipo,especialidad,familia,grupo,aplicacion,valor',ignoreDuplicates:true});
+    if(error){for(const o of nuevos){const r=await sb.from('pdm_maestros').insert(o);if(r.error&&!/duplicate|unique/i.test(r.error.message))err.push(r.error.message);}}}
+  const {data}=await sb.from('pdm_maestros').select('*');if(data)MAE=data;pintarMae();
+  alert(err.length?`Importado con ${err.length} error(es):\n${[...new Set(err)].slice(0,3).join('\n')}`:'✓ Lista importada.');}
 
 /* ═══════════ INICIO ═══════════ */
 async function cargarListas(){const [e,c,m]=await Promise.all([sb.from('maestro').select('cod_sap,equipo,modelo,cod_proyec').order('cod_sap'),
