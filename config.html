@@ -1,0 +1,211 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="gllr-version" content="V.241026-1" data-pagina="Configuración">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Configuración &mdash; UDE</title>
+<link rel="icon" href="favicon.ico" sizes="any">
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+<script src="supabase.js"></script>
+<style>
+:root{--bg:#f2f4f7;--card:#fff;--ink:#1a1d21;--mu:#6b747d;--line:#e1e5ea;--navy:#1F3864;--azul:#4254A5}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:14px/1.45 -apple-system,"Segoe UI",Roboto,Arial,sans-serif}
+.hide{display:none!important}
+.wrap{padding:12px 14px 40px}
+.bar{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:12px}
+.seg{display:flex;border:1px solid var(--line);border-radius:10px;overflow:hidden;background:#fff}.seg button{border:0;background:none;padding:7px 14px;font:inherit;font-size:13px;font-weight:600;color:var(--mu);cursor:pointer}.seg button.on{background:#334281;color:#fff}
+input.q{border:1px solid var(--line);border-radius:9px;height:34px;padding:0 10px;width:320px;max-width:100%;font:inherit}
+.g2{display:grid;grid-template-columns:290px minmax(0,1fr);gap:14px}@media(max-width:900px){.g2{grid-template-columns:minmax(0,1fr)}}
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:12px 14px}
+.side h5{margin:12px 4px 4px;font-size:10.5px;text-transform:uppercase;letter-spacing:.7px;color:#334281}.side h5:first-child{margin-top:2px}
+.it{display:flex;align-items:center;gap:8px;padding:5px 8px;border-radius:9px;cursor:pointer;font-size:13px}
+.it:hover{background:#f4f6fb}.it.on{background:#E6E9F7;color:#334281;font-weight:700}
+.it .n{margin-left:auto;font-size:11px;color:var(--mu);font-variant-numeric:tabular-nums}.it .e{color:#B91C1C;font-size:11px;margin-left:auto}
+.uses{display:flex;gap:4px;flex-wrap:wrap}.uses span{font-size:10.5px;font-weight:700;border-radius:6px;padding:1px 7px;background:#eef0f2;color:#4b5563}.uses span.k{background:#1c232b;color:#FFC20E}
+.eh{display:flex;gap:10px;align-items:flex-start;flex-wrap:wrap;margin-bottom:8px}
+.eh h2{margin:0;font-size:19px;color:var(--navy)}.eh p{margin:2px 0 0;color:var(--mu);font-size:12.5px;max-width:80ch}
+.sp{flex:1}
+.btn{border:1px solid var(--line);background:#fff;border-radius:9px;height:30px;padding:0 11px;font:inherit;font-size:12.5px;cursor:pointer;white-space:nowrap;display:inline-flex;align-items:center;gap:5px}
+.btn.pri{background:linear-gradient(180deg,#FFE98A,#FFD84A);border-color:#DCB61C;color:#5C4708;font-weight:700}.btn.u{color:#4254A5;border-color:#C7CDEB}
+.tw{overflow-x:auto}
+table{width:100%;border-collapse:collapse;font-size:12.5px}
+th{background:linear-gradient(180deg,#7B87C0,#4254A5 60%,#334281);color:#fff;font-size:9.5px;text-transform:uppercase;letter-spacing:.3px;padding:5px 7px;text-align:left;white-space:nowrap}
+td{padding:2px 6px;border-bottom:1px solid #eef1f4;white-space:nowrap}
+td input,td select{border:1px solid #dfe3e7;border-radius:6px;height:25px;padding:0 6px;font:inherit;font-size:12px;width:100%;min-width:70px;background:#fff}
+td input.n{text-align:right;font-variant-numeric:tabular-nums}td input.up{text-transform:uppercase}
+td input:focus,td select:focus{outline:none;border-color:#4254A5;box-shadow:0 0 0 2px rgba(66,84,165,.2)}
+td input.okf,td select.okf{background:#DCF5E3}
+tr.nueva td input,tr.nueva td select{background:#FFFBEA}
+.x{border:1px solid #f3b0b0;color:#B91C1C;background:#fff;border-radius:6px;width:22px;height:20px;font-size:11px;cursor:pointer;padding:0}
+.meta{display:flex;gap:14px;flex-wrap:wrap;font-size:11.5px;color:var(--mu);margin-top:8px}
+.form{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:12px}
+.form label{display:flex;flex-direction:column;gap:3px;font-size:10.5px;font-weight:800;color:var(--mu);text-transform:uppercase}
+.form input,.form select{border:1px solid #cfd5dc;border-radius:8px;height:32px;padding:0 8px;font:inherit;font-size:13px}
+.form small{font-weight:400;text-transform:none;color:#98a2ad}
+.warn{background:#FFF6D6;border:1px solid #F2D27A;border-radius:10px;padding:8px 10px;font-size:12.5px;color:#6b5300;margin:8px 0}
+.err{background:#FDE4E4;border:1px solid #f3b0b0;border-radius:10px;padding:8px 10px;font-size:12.5px;color:#B91C1C;margin:8px 0}
+.map th.v{writing-mode:vertical-rl;transform:rotate(180deg);height:110px;text-align:left;font-size:10px}
+.map td{text-align:center}.map td:first-child{text-align:left;font-weight:600}
+.dot{display:inline-block;width:12px;height:12px;border-radius:50%;background:#334281}
+.map tr.grp td{background:#F4F6F8;font-size:10px;font-weight:800;text-transform:uppercase;color:#4b5563;text-align:left}
+.vacio{padding:30px;text-align:center;color:#98a2ad}
+</style>
+</head>
+<body>
+<div class="wrap">
+ <div class="bar"><div class="seg"><button class="on" data-vw="ed">Por tema</button><button data-vw="map">Mapa: quién usa qué</button></div>
+  <input class="q" id="q" placeholder="Buscar en toda la configuración (ej. cocada, PC390, frenos)" aria-label="Buscar"><span class="sp"></span><button class="btn" id="xAll">⬇ Exportar todo (Excel)</button></div>
+ <div id="vEd" class="g2"><div class="card side" id="side"><div class="vacio">Cargando…</div></div><div class="card" id="ed"></div></div>
+ <div id="vMap" class="card hide"><div class="tw"><table class="map" id="map"></table></div></div>
+</div>
+<script>
+const CFG=(()=>{try{return JSON.parse(localStorage.getItem('gllr_sbcfg')||'null')}catch(_){return null}})();
+if(!CFG||!CFG.url){document.body.innerHTML='<div class="vacio"><h2>Abre primero la página principal</h2></div>';throw new Error('sin configuracion');}
+const sb=window.supabase.createClient(CFG.url,CFG.key);
+const esc=s=>String(s??'').replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;');
+const nrm=s=>String(s??'').normalize('NFD').replace(/[̀-ͯ]/g,'').toUpperCase().replace(/\s+/g,' ').trim();
+const $=id=>document.getElementById(id);
+const P={eq:'Equipos',pms:'PM-S',comb:'Combustible',sos:'SOS',neu:'Neumáticos',pdm:'Parte diario',app:'App REPORTE'};
+const ESPS=['','MECANICO','SOLDADOR','ELECTRICISTA'], UNDS=['','UND','GAL','L','LB','KG','KIT','M','JGO'];
+const FAMS=['EX','CF','TO','MN','PR','MC'];
+/* columnas de las listas de pdm_maestros */
+const C_VAL={k:'valor',l:'Valor',t:'txt',up:1}, C_ORD={k:'orden',l:'Orden',t:'num'}, C_ACT={k:'activo',l:'Activo',t:'bool'};
+const C_ESP={k:'especialidad',l:'Especialidad',t:'sel',o:ESPS}, C_UND={k:'unidad',l:'Unidad',t:'sel',o:UNDS};
+const pdm=(tipo,l,u,cols,d)=>({id:'pdm_'+tipo,l,u,tb:'pdm_maestros',key:'id',filtro:{tipo},cols:cols||[C_VAL,C_ORD,C_ACT],d:d||'Lista de la app REPORTE. Desactivar oculta el valor en la app y lo conserva en los registros antiguos.'});
+const G=[
+ {g:'Generales',it:[
+  pdm('ESPECIALIDAD','Especialidades',['pdm','app']),
+  pdm('UNIDAD','Unidades de medida',['pdm','app']),
+  pdm('FRENTE','Frentes de trabajo',['pdm','app']),
+  {id:'alt',l:'Obras · altitud',u:['sos'],tb:'sos_altitud_obra',key:'proyecto',cols:[{k:'proyecto',l:'Obra',t:'txt',up:1},{k:'altitud',l:'Altitud (m.s.n.m.)',t:'num'}],d:'Altitud de cada obra. SOS la usa para interpretar los resultados de aceite.'}]},
+ {g:'Equipos y horómetros',it:[
+  {id:'dsf',l:'Desfase de horómetros',u:['eq','comb','sos','pms','neu','app'],tb:'desfase_horometro',key:'id',orden:'cod_sap',
+   cols:[{k:'cod_sap',l:'Equipo',t:'txt',up:1},{k:'fecha',l:'Fecha del cambio',t:'date'},{k:'hm_dia',l:'Horas máquina ese día',t:'num'},{k:'panel_dia',l:'Panel nuevo ese día',t:'num'},{k:'motivo',l:'Motivo',t:'txt'}],
+   extra:()=>({registrado_por:YO.nombre||null}),d:'Equipos con reinicio o cambio de horómetro. Todas las pestañas convierten la lectura de panel a horas máquina (horas máquina debe ser mayor que el panel).',
+   accion:{t:'⟲ Abrir asistente (convierte también el maestro)',fn:()=>{try{parent.dsfAbrir();}catch(_){alert('Abre esta página desde la web principal.');}}}}]},
+ {g:'Mantenimiento',it:[
+  pdm('PM','Tipos de PM',['pms','pdm','app']),
+  pdm('TAREA_PM','Tareas de PM',['pdm','app']),
+  pdm('SISTEMA','Sistemas',['pdm','app'],[C_ESP,C_VAL,C_ORD,C_ACT]),
+  pdm('TRABAJO','Trabajos',['pdm','app'],[C_ESP,C_VAL,C_ORD,C_ACT]),
+  pdm('REPUESTO','Repuestos',['pdm','app'],[C_ESP,C_VAL,C_UND,C_ORD,C_ACT]),
+  pdm('ORIGEN','Origen de falla',['pdm','app']),
+  pdm('PARADA','Tipo de parada',['pdm','app'])]},
+ {g:'Lubricación y SOS',it:[
+  pdm('TRABAJO_LUB','Trabajos de lubricación',['pdm','app']),
+  pdm('PUNTO_LUB','Puntos de lubricación',['pdm','app']),
+  pdm('INSUMO','Insumos (lubricación / PM)',['pdm','app'],[C_VAL,C_UND,C_ORD,C_ACT]),
+  {id:'lim',l:'Límites SOS',u:['sos','eq'],tb:'sos_limites',key:'id',orden:'orden',cols:[{k:'grupo',l:'Grupo',t:'sel',o:['Desgaste','Contaminantes','Salud - aceite','Salud - viscosidad']},{k:'parametro',l:'Parámetro',t:'txt'},{k:'limite',l:'Límite (≤)',t:'num'},{k:'orden',l:'Orden',t:'num'}],d:'Valor máximo aceptable de cada parámetro del análisis de aceite.'},
+  {id:'eqe',l:'Equivalencias · estado',u:['sos'],tb:'sos_eq_estado',key:'id',cols:[{k:'texto',l:'Texto del laboratorio',t:'txt'},{k:'laboratorio',l:'Laboratorio',t:'txt'},{k:'estandar',l:'Se lee como',t:'sel',o:['NORMAL','PRECAUCION','CRITICO']}],d:'Cómo se interpreta el estado que informa cada laboratorio.',accion:{t:'Uniformar datos ya cargados (en SOS)',fn:()=>abrirEnSos()}},
+  {id:'eqs',l:'Equivalencias · sistema',u:['sos'],tb:'sos_eq_sistema',key:'id',cols:[{k:'texto',l:'Texto del laboratorio',t:'txt'},{k:'estandar',l:'Sistema estándar',t:'txt',up:1}],d:'Nombre estándar de cada sistema según el texto del laboratorio.',accion:{t:'Uniformar datos ya cargados (en SOS)',fn:()=>abrirEnSos()}},
+  {id:'eqt',l:'Equivalencias · tipo de equipo',u:['sos'],tb:'sos_eq_tipo',key:'id',cols:[{k:'texto',l:'Equipo (según maestro)',t:'txt'},{k:'estandar',l:'Tipo estándar',t:'txt',up:1}],d:'Tipo estándar de cada equipo del maestro; define qué sistemas se muestrean.',accion:{t:'Uniformar datos ya cargados (en SOS)',fn:()=>abrirEnSos()}},
+  {id:'sis',l:'Sistemas por tipo y PM',u:['sos'],tb:'sos_sistemas',key:null,cols:[{k:'tipo_equipo',l:'Tipo de equipo',t:'txt'},{k:'pm',l:'PM',t:'txt'},{k:'sistema',l:'Sistema',t:'txt'}],d:'Qué sistemas se muestrean en cada PM (acumulativo: PM4 incluye PM1–PM3). Solo lectura: esta tabla no tiene clave para editarla desde aquí.'}]},
+ {g:'Combustible',it:[
+  {id:'bm',l:'Rangos de referencia de consumo',u:['comb','eq'],tb:'benchmark',key:'id',orden:'tipo_equipo',cols:[{k:'tipo_equipo',l:'Familia',t:'txt',up:1},{k:'marca',l:'Marca',t:'txt',up:1},{k:'modelo',l:'Modelo',t:'txt',up:1},{k:'contador',l:'Contador',t:'sel',o:['Hr','Km']},{k:'minimo',l:'Mínimo',t:'num'},{k:'maximo',l:'Máximo',t:'num'},{k:'obs',l:'Nota',t:'txt'}],
+   d:'Rango normal de consumo: gal/h si el contador es Hr (menos es mejor); km/gal si es Km (más es mejor). Se busca por familia, luego marca y modelo. Sin rango, se compara con ±20 % del promedio.'}]},
+ {g:'Neumáticos',it:[
+  {id:'neup',l:'Parámetros generales',u:['neu','eq'],tb:'neu_parametros',key:'id',single:1,cols:[{k:'retiro_mm_def',l:'Cocada de retiro por defecto (mm)',t:'num',h:'se usa si la medida no tiene la suya'},{k:'dias_rojo',l:'"Cambiar ya" si faltan menos de (días)',t:'num'},{k:'dias_amarillo',l:'"Ir pidiendo" hasta (días)',t:'num'},{k:'dif_duales_mm',l:'Duales desparejas desde (mm)',t:'num'},{k:'presion_activa',l:'Control de presión',t:'bool',h:'activa la regla de presiones'}],d:'Reglas de cálculo de vida útil y alertas de neumáticos.'},
+  {id:'neum',l:'Marcas (precio, cocada, h/mm)',u:['neu','eq'],tb:'neu_param_marca',key:'id',orden:'marca',cols:[{k:'marca',l:'Marca',t:'txt',up:1},{k:'medida',l:'Medida (vacío = todas)',t:'txt',up:1},{k:'precio',l:'Precio (USD)',t:'num'},{k:'cocada_nueva',l:'Cocada nueva (mm)',t:'num'},{k:'hmm_ref',l:'Horas por mm (ref.)',t:'num'}],d:'Vida esperada = (cocada nueva − retiro) × horas por mm.'},
+  {id:'neud',l:'Medidas (cocada de retiro)',u:['neu','eq'],tb:'neu_param_medida',key:'id',orden:'medida',cols:[{k:'medida',l:'Medida',t:'txt',up:1},{k:'retiro_mm',l:'Retiro (mm)',t:'num'}],d:'Cocada mínima para retirar la llanta y proteger el casco.'},
+  {id:'neupr',l:'Presiones recomendadas',u:['neu'],tb:'neu_param_presion',key:'id',orden:'medida',cols:[{k:'tipo_equipo',l:'Tipo de equipo (vacío = todos)',t:'txt',up:1},{k:'medida',l:'Medida',t:'txt',up:1},{k:'presion_obj',l:'Objetivo (psi)',t:'num'},{k:'presion_min',l:'Mínima (psi)',t:'num'},{k:'presion_max',l:'Máxima (psi)',t:'num'}],d:'Presión en frío. Solo se aplica con el control de presión activo.'},
+  pdm('MARCA_LLANTA','Marcas de llanta (app)',['pdm','app'])]},
+ {g:'GETs',it:[
+  pdm('GET','Componentes GET por familia',['pdm','app'],[{k:'familia',l:'Familia',t:'sel',o:FAMS},{k:'grupo',l:'Grupo GET',t:'txt',up:1},{k:'aplicacion',l:'Aplicación',t:'txt'},{k:'valor',l:'Componente',t:'txt',up:1},C_UND,C_ORD,C_ACT],
+   'Herramientas de corte que ve cada tipo de equipo en la app (familia = letras 2 y 3 del código: EEX040 → EX).')]}];
+const L_ALL=G.flatMap(g=>g.it);
+const D={},E={}; let YO={}, sel=null;
+const filasDe=x=>{let r=D[x.tb]||[];if(x.filtro)r=r.filter(o=>Object.entries(x.filtro).every(([k,v])=>o[k]===v));
+  if(x.orden)r=r.slice().sort((a,b)=>String(a[x.orden]??'').localeCompare(String(b[x.orden]??''),'es',{numeric:true}));
+  else if(r.length&&'orden' in r[0])r=r.slice().sort((a,b)=>(a.familia||'').localeCompare(b.familia||'')||(a.especialidad||'').localeCompare(b.especialidad||'')||(a.orden||0)-(b.orden||0));return r;};
+async function cargarDatos(){const tbs=[...new Set(L_ALL.map(x=>x.tb))];
+  await Promise.all(tbs.map(async t=>{const {data,error}=await sb.from(t).select('*').limit(5000);if(error){E[t]=error.message;D[t]=[];}else{D[t]=data||[];delete E[t];}}));}
+/* ═════ lateral ═════ */
+function q(){return nrm($('q').value);}
+const coincide=(x,t)=>!t||nrm(x.l+' '+x.d).includes(t)||filasDe(x).some(r=>nrm(x.cols.map(c=>r[c.k]).join(' ')).includes(t));
+function pintarSide(){const t=q();
+  $('side').innerHTML=G.map(g=>{const L=g.it.filter(x=>coincide(x,t));if(!L.length)return'';return `<h5>${g.g}</h5>${L.map(x=>`<div class="it ${x.id===sel?'on':''}" data-id="${x.id}" tabindex="0"><span>${x.l}</span>${E[x.tb]?'<span class="e">⚠</span>':`<span class="n">${x.single?'':filasDe(x).length}</span>`}</div>`).join('')}`;}).join('')||'<div class="vacio">Sin resultados.</div>';
+  $('side').querySelectorAll('.it').forEach(e=>{e.onclick=()=>abrirLista(e.dataset.id);e.onkeydown=ev=>{if(ev.key==='Enter')e.click();};});}
+/* ═════ editor ═════ */
+function ctl(c,v,attr){
+  if(c.t==='sel')return `<select ${attr}>${(c.o.includes(v??'')?c.o:[...c.o,v]).map(o=>`<option ${String(o??'')===String(v??'')?'selected':''}>${esc(o??'')}</option>`).join('')}</select>`;
+  if(c.t==='bool')return `<input type="checkbox" ${attr} ${v!==false&&v!=null?'checked':''} style="width:auto;height:auto;min-width:0">`;
+  if(c.t==='num')return `<input class="n" type="number" step="any" ${attr} value="${esc(v??'')}">`;
+  if(c.t==='date')return `<input type="date" ${attr} value="${esc(String(v??'').slice(0,10))}">`;
+  return `<input class="${c.up?'up':''}" ${attr} value="${esc(v??'')}">`;}
+function leer(c,el){if(c.t==='bool')return el.checked;const v=el.value.trim();if(v==='')return null;if(c.t==='num')return Number(v);return c.up?v.toUpperCase():v;}
+function pintarEd(){const x=L_ALL.find(i=>i.id===sel);if(!x){$('ed').innerHTML='<div class="vacio">Elige una lista a la izquierda.</div>';return;}
+  const t=q(), R=filasDe(x).filter(r=>!t||nrm(x.l).includes(t)||nrm(x.cols.map(c=>r[c.k]).join(' ')).includes(t)), ro=!x.key;
+  const head=`<div class="eh"><div><h2>${x.l}</h2><p>${esc(x.d)}</p></div><span class="sp"></span>${x.accion?`<button class="btn u" id="acc">${x.accion.t}</button>`:''}<button class="btn" id="xOne">⬇ Excel</button>${ro||x.single?'':'<label class="btn" style="cursor:pointer">⬆ Importar<input type="file" id="imp" accept=".xlsx,.xls,.csv" class="hide"></label>'}</div>
+   <div style="display:flex;gap:8px;align-items:center;margin-bottom:8px;font-size:12px;color:#6b747d">Lo usan: <div class="uses">${x.u.map(k=>`<span${k==='app'?' class="k"':''}>${P[k]}</span>`).join('')}</div></div>
+   ${E[x.tb]?`<div class="err">No se pudo leer la tabla <b>${x.tb}</b>: ${esc(E[x.tb])}</div>`:''}`;
+  let body='';
+  if(x.single){const r=(D[x.tb]||[]).find(o=>o.id===1)||{};
+    body=`<div class="form">${x.cols.map(c=>`<label>${c.l}${ctl(c,r[c.k],`data-s="${c.k}"`)}${c.h?`<small>${c.h}</small>`:''}</label>`).join('')}</div>`;}
+  else body=`<div class="tw"><table><thead><tr>${x.cols.map(c=>`<th>${c.l}</th>`).join('')}${ro?'':'<th></th>'}</tr></thead><tbody>
+    ${R.map(r=>`<tr>${x.cols.map(c=>`<td>${ro?esc(r[c.k]??''):ctl(c,r[c.k],`data-k="${esc(r[x.key])}" data-c="${c.k}"`)}</td>`).join('')}${ro?'':`<td><button class="x" data-del="${esc(r[x.key])}" title="Eliminar">✕</button></td>`}</tr>`).join('')||`<tr><td colspan="${x.cols.length+1}" class="vacio">Sin valores.</td></tr>`}
+    ${ro?'':`<tr class="nueva">${x.cols.map(c=>`<td>${c.t==='bool'?'':ctl(c,c.k==='orden'?(Math.max(0,...R.map(r=>+r.orden||0))+1):(x.id==='pdm_GET'&&c.k==='unidad'?'UND':null),`data-n="${c.k}"`)}</td>`).join('')}<td><button class="btn pri" id="add" style="height:24px;padding:0 8px">+</button></td></tr>`}</tbody></table></div>`;
+  $('ed').innerHTML=head+body+`<div class="meta"><span>${x.single?'1 registro':R.length+' valores'}</span><span>Tabla: ${x.tb}</span><span>${ro?'Solo lectura':'Se guarda al salir de cada casilla'}</span></div>`;
+  conectar(x);}
+const marca=el=>{el.classList.add('okf');setTimeout(()=>el.classList.remove('okf'),700);};
+function conectar(x){
+  if($('acc'))$('acc').onclick=x.accion.fn;
+  $('xOne').onclick=()=>exportar([x]);
+  if($('imp'))$('imp').onchange=e=>{const f=e.target.files[0];e.target.value='';if(f)importar(x,f);};
+  $('ed').querySelectorAll('[data-s]').forEach(el=>el.onchange=async()=>{const c=x.cols.find(k=>k.k===el.dataset.s),v=leer(c,el);
+    const {error}=await sb.from(x.tb).upsert({id:1,[c.k]:v});if(error)return alert('No se pudo guardar: '+error.message);
+    let r=(D[x.tb]||[]).find(o=>o.id===1);if(!r){r={id:1};(D[x.tb]=D[x.tb]||[]).push(r);}r[c.k]=v;marca(el);});
+  $('ed').querySelectorAll('[data-c]').forEach(el=>el.onchange=async()=>{const c=x.cols.find(k=>k.k===el.dataset.c),v=leer(c,el),kv=el.dataset.k;
+    const row=(D[x.tb]||[]).find(o=>String(o[x.key])===kv);
+    const {error}=await sb.from(x.tb).update({[c.k]:v}).eq(x.key,row?row[x.key]:kv);if(error){alert('No se pudo guardar: '+error.message);return pintarEd();}
+    if(row)row[c.k]=v;if(c.k===x.key){pintarEd();}else marca(el);pintarSide();});
+  $('ed').querySelectorAll('[data-del]').forEach(b=>b.onclick=async()=>{if(!confirm('¿Eliminar este valor?'+(x.tb==='pdm_maestros'?'\n\nSi ya se usó en registros, mejor desmarca "Activo".':'')))return;
+    const row=(D[x.tb]||[]).find(o=>String(o[x.key])===b.dataset.del);
+    const {error}=await sb.from(x.tb).delete().eq(x.key,row?row[x.key]:b.dataset.del);if(error)return alert('No se pudo eliminar: '+error.message);
+    D[x.tb]=D[x.tb].filter(o=>o!==row);pintarEd();pintarSide();});
+  if($('add'))$('add').onclick=async()=>{const o={...(x.filtro||{}),...(x.extra?x.extra():{})};let vacio=true;
+    $('ed').querySelectorAll('[data-n]').forEach(el=>{const c=x.cols.find(k=>k.k===el.dataset.n),v=leer(c,el);if(v!=null&&c.k!=='orden'&&c.k!=='unidad')vacio=false;if(v!=null)o[c.k]=v;});
+    if(vacio)return alert('Completa al menos un dato.');
+    const {data,error}=await sb.from(x.tb).insert(o).select().single();if(error)return alert(/duplicate|unique/i.test(error.message)?'Ese valor ya existe.':/check/i.test(error.message)?'Revisa los valores: '+error.message:'No se pudo agregar: '+error.message);
+    (D[x.tb]=D[x.tb]||[]).push(data);pintarEd();pintarSide();};}
+function abrirLista(id){if(!L_ALL.find(i=>i.id===id))return;sel=id;vista('ed');pintarSide();pintarEd();try{history.replaceState(null,'','#'+id);}catch(_){}}
+function abrirEnSos(){try{parent.irPestana('sos','eqAbrir');}catch(_){alert('Abre esta página desde la web principal.');}}
+/* ═════ Excel ═════ */
+function hoja(x){const R=x.single?(D[x.tb]||[]).filter(o=>o.id===1):filasDe(x);
+  return R.map(r=>{const o={};if(x.key&&!x.single)o.ID=r[x.key];x.cols.forEach(c=>o[c.l]=c.t==='bool'?(r[c.k]?'SI':'NO'):(r[c.k]??''));return o;});}
+function exportar(L){if(!window.XLSX)return alert('No se cargó la librería de Excel.');const wb=XLSX.utils.book_new();
+  L.forEach(x=>{const f=hoja(x);XLSX.utils.book_append_sheet(wb,XLSX.utils.json_to_sheet(f.length?f:[Object.fromEntries(x.cols.map(c=>[c.l,'']))]),x.l.replace(/[\\/?*[\]:]/g,' ').slice(0,31));});
+  XLSX.writeFile(wb,L.length>1?'configuracion_UDE.xlsx':`config_${L[0].id}.xlsx`);}
+async function importar(x,f){if(!window.XLSX)return alert('No se cargó la librería de Excel.');
+  const wb=XLSX.read(await f.arrayBuffer());const F=XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]],{defval:''});
+  const N=s=>nrm(s).replace(/[^A-Z0-9]/g,''),M={};x.cols.forEach(c=>M[N(c.l)]=c);
+  const nuevos=[],cambios=[];
+  F.forEach(row=>{const o={...(x.filtro||{})};let id=null,algo=false;
+    Object.entries(row).forEach(([h,v])=>{if(N(h)==='ID'){id=v===''?null:v;return;}const c=M[N(h)];if(!c)return;
+      let val=v===''?null:v;if(c.t==='num'&&val!=null)val=Number(val);if(c.t==='bool')val=/^(SI|SÍ|1|TRUE|X)$/i.test(String(v).trim());if(c.up&&typeof val==='string')val=val.toUpperCase();o[c.k]=val;if(val!=null&&val!==false)algo=true;});
+    if(!algo)return;if(id!=null)cambios.push([id,o]);else nuevos.push({...o,...(x.extra?x.extra():{})});});
+  if(!nuevos.length&&!cambios.length)return alert('No encontré filas. La primera fila debe tener los títulos: '+x.cols.map(c=>c.l).join(', '));
+  if(!confirm(`Importar a "${x.l}":\n• ${nuevos.length} nuevos\n• ${cambios.length} a actualizar (filas con ID)\n\n¿Continuar?`))return;
+  const err=[];for(const [id,o] of cambios){const {error}=await sb.from(x.tb).update(o).eq(x.key,id);if(error)err.push(error.message);}
+  for(const o of nuevos){const {error}=await sb.from(x.tb).insert(o);if(error&&!/duplicate|unique/i.test(error.message))err.push(error.message);}
+  await cargarDatos();pintarSide();pintarEd();alert(err.length?`Importado con ${err.length} error(es):\n${[...new Set(err)].slice(0,3).join('\n')}`:'✓ Lista importada.');}
+/* ═════ mapa ═════ */
+function pintarMap(){const cols=Object.keys(P);let h=`<thead><tr><th style="min-width:230px">Dato</th>${cols.map(c=>`<th class="v">${P[c]}</th>`).join('')}</tr></thead><tbody>`;
+  G.forEach(g=>{h+=`<tr class="grp"><td colspan="${cols.length+1}">${g.g}</td></tr>`;g.it.forEach(x=>{h+=`<tr><td><a href="#" data-id="${x.id}" style="color:#334281">${x.l}</a></td>${cols.map(c=>`<td>${x.u.includes(c)?'<span class="dot"></span>':''}</td>`).join('')}</tr>`;});});
+  $('map').innerHTML=h+'</tbody>';$('map').querySelectorAll('a').forEach(a=>a.onclick=e=>{e.preventDefault();abrirLista(a.dataset.id);});}
+function vista(v){document.querySelectorAll('[data-vw]').forEach(b=>b.classList.toggle('on',b.dataset.vw===v));$('vEd').classList.toggle('hide',v!=='ed');$('vMap').classList.toggle('hide',v!=='map');}
+document.querySelectorAll('[data-vw]').forEach(b=>b.onclick=()=>vista(b.dataset.vw));
+$('q').oninput=()=>{pintarSide();const x=L_ALL.find(i=>i.id===sel);if(q()&&(!x||!coincide(x,q()))){const f=$('side').querySelector('.it');if(f){sel=f.dataset.id;pintarSide();}}pintarEd();};
+$('xAll').onclick=()=>exportar(L_ALL.filter(x=>!E[x.tb]));
+window.abrirLista=abrirLista; window.cargar=async()=>{await cargarDatos();pintarSide();pintarEd();};
+(async()=>{const {data:{session}}=await sb.auth.getSession();
+  if(!session){document.body.innerHTML='<div class="vacio"><h2>Sesión no iniciada</h2></div>';return;}
+  const {data:p}=await sb.from('profiles').select('id,nombre,rol,estado').eq('id',session.user.id).single();YO=p||{};
+  if(!p||p.rol!=='admin'){document.body.innerHTML='<div class="vacio"><h2>Solo administradores</h2><p>La configuración la editan los administradores.</p></div>';return;}
+  await cargarDatos();sel=(location.hash||'').slice(1)||'pdm_GET';if(!L_ALL.find(i=>i.id===sel))sel='pdm_GET';pintarSide();pintarEd();pintarMap();})();
+</script>
+<style>.ver-pag{position:fixed;right:8px;bottom:4px;font:600 10px/1.3 -apple-system,"Segoe UI",Roboto,sans-serif;color:#8a939c;background:rgba(255,255,255,.88);border:1px solid #e3e6e9;padding:1px 7px;border-radius:6px;z-index:9000;pointer-events:none}</style>
+<script>(function(){var m=document.querySelector('meta[name="gllr-version"]');if(!m)return;var d=document.createElement('div');d.className='ver-pag';d.textContent=(m.getAttribute('data-pagina')||'')+' · '+m.content;document.body.appendChild(d);})();</script>
+</body>
+</html>

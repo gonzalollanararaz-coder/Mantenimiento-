@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
 <meta charset="utf-8">
-<meta name="gllr-version" content="V.181026-1" data-pagina="SOS">
+<meta name="gllr-version" content="V.251026-1" data-pagina="SOS">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>SOS &mdash; Muestreo de Aceites</title>
 <link rel="icon" href="favicon.ico" sizes="any">
@@ -376,7 +376,7 @@
       <button class="act util" id="btnIASemana">&#129302; Resumen semanal</button>
       <button class="act util" id="btnSubir" title="Planilla de envío o resultados de laboratorio: se reconoce solo">&#11014; Subir archivo</button>
       <button class="act util" id="btnXls">&#8681; Excel</button>
-      <button class="act util" id="btnEq">&#9878; Equivalencias</button>
+      <button class="act util" id="btnEq" title="Equivalencias y límites están en ⚙ Configuración">&#9881; Configurar</button>
       <button class="act util" id="btnRec">&#8635;</button>
     </div>
   </div>
@@ -3075,7 +3075,7 @@ async function reNormalizar(){
   if(camb.length)pie.textContent=`Se uniformaron ${camb.length} muestra(s).`;
   pintar();
 }
-btnEq.onclick=eqAbrir;
+btnEq.onclick=()=>{if(window.parent!==window&&parent.irConfig)parent.irConfig('eqe');else eqAbrir();};
 
 /* ── Periodo: desplegable (último mes … todo el historial / personalizado) ── */
 function aplicarRango(){

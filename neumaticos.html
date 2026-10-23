@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
 <meta charset="utf-8">
-<meta name="gllr-version" content="V.181026-1" data-pagina="Neumáticos">
+<meta name="gllr-version" content="V.251026-1" data-pagina="Neumáticos">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Neumáticos &mdash; UDE</title>
 <link rel="icon" href="favicon.ico" sizes="any">
@@ -127,7 +127,7 @@
   <button data-v="lis">Rendimiento y proyección</button>
   <button data-v="mar">Comparar marcas</button>
   <button data-v="ins">Inspecciones</button>
-  <button data-v="par">&#9881; Parámetros</button>
+  <button data-v="par">&#9881; Parámetros ↗</button>
 </div>
 <div class="toolbar">
   <div class="grupo-wrap"><span class="rotulo">Filtros</span>
@@ -809,5 +809,7 @@ btnRec.onclick=cargarTodo;
 (function(){var m=document.querySelector('meta[name="gllr-version"]');if(!m)return;
   var d=document.createElement('div');d.id='verPag';d.className='ver-pag';
   d.textContent=(m.getAttribute('data-pagina')||'')+' · '+m.content;document.body.appendChild(d);})();</script>
+<script>/* dentro de la web principal, esta subpestaña abre ⚙ Configuración */
+(function(){var n=document.getElementById('subnav');if(!n||window.parent===window)return;n.addEventListener('click',function(e){var b=e.target.closest('button[data-v="par"]');if(!b||!parent.irConfig)return;e.stopPropagation();e.preventDefault();parent.irConfig('neup');},true);})();</script>
 </body>
 </html>

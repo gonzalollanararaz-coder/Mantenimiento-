@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
 <meta charset="utf-8">
-<meta name="gllr-version" content="V.181026-2" data-pagina="Combustible">
+<meta name="gllr-version" content="V.251026-1" data-pagina="Combustible">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Rendimiento de Combustible &mdash; UDE</title>
 <link rel="icon" href="favicon.ico" sizes="any">
@@ -310,7 +310,7 @@
   <div class="spacer"></div>
   <button class="act blue" id="btnDash">&#128202; Dashboard</button>
   <button class="act" id="btnDesp">&#129534; Despachos</button>
-  <button class="act" id="btnBench">&#9878; Rangos de referencia</button>
+  <button class="act" id="btnBench" title="Los rangos están en ⚙ Configuración">&#9881; Rangos de referencia</button>
   <button class="act" id="btnXls" disabled>&#8681; Excel</button>
   <button class="act" id="btnRec">&#8635;</button>
 </div>
@@ -1129,7 +1129,7 @@ function bmPintar(){
     if(!dWrap.classList.contains('hide'))dPintar();
   };
 }
-btnBench.onclick=bmAbrir;
+btnBench.onclick=()=>{if(window.parent!==window&&parent.irConfig)parent.irConfig('bm');else bmAbrir();};
 bmCerrar.onclick=()=>bmWrap.classList.add('hide');
 bmWrap.addEventListener('click',ev=>{if(ev.target===bmWrap)bmWrap.classList.add('hide');});
 

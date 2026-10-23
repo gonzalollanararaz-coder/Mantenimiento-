@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8">
-<meta name="gllr-version" content="V.241026-1" data-pagina="Equipos">
+<meta name="gllr-version" content="V.251026-1" data-pagina="Equipos">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Control de Mantenimiento — UDE</title>
 <link rel="icon" href="favicon.ico" sizes="any">
@@ -660,6 +660,7 @@
     <button id="tabPdm" data-tab="pdm">Parte diario mecánico</button>
     <button id="tabPendientes" data-tab="pendientes">Pendientes</button>
     <button id="tabUsers" data-tab="users" style="display:none">Usuarios</button>
+    <button id="tabCfg" data-tab="cfg" style="display:none">⚙ Configuración</button>
   </nav>
 </div>
 
@@ -721,6 +722,7 @@
   <section id="paneFrame_neu" class="paneFrame hide"></section>
   <section id="paneFrame_pdm" class="paneFrame hide"></section>
   <section id="paneFrame_users" class="paneFrame hide"></section>
+  <section id="paneFrame_cfg" class="paneFrame hide"></section>
   <footer id="appFoot">Los cambios se guardan en la base de datos.</footer>
 </div>
 
@@ -1055,12 +1057,13 @@ function aplicarPermisos(){
   });
   const bu=document.querySelector('nav button[data-tab="users"]');
   if(bu)bu.style.display=(perfil&&perfil.rol==='admin')?'':'none';
+  const bc=document.querySelector('nav button[data-tab="cfg"]');if(bc)bc.style.display=(perfil&&perfil.rol==='admin')?'':'none';
 }
 async function entrarApp(){
   stopGate();mostrar("app");aplicarPermisos();
   who.textContent=(perfil.nombre||perfil.email)+(perfil.rol==="admin"?" · Admin":"");
   mudarUsuario(true);
-  if(perfil.rol==="admin")tabUsers.style.display="inline-block";
+  if(perfil.rol==="admin"){tabUsers.style.display="inline-block";tabCfg.style.display="inline-block";}
   await cargar();startPoll();
 }
 function startGate(){stopGate();gateTimer=setInterval(checkGate,8000);}
@@ -2296,7 +2299,13 @@ async function programarSeleccion(){
    misma página — igual que Equipos/Usuarios ya lo hacían. Se cargan la
    primera vez que se visitan; después, cambiar de pestaña es solo
    mostrar/ocultar (nunca hay una segunda carga ni una ventana aparte). */
-const IFRAME_PAGINAS={pms:'pms.html',comb:'combustible.html',sos:'sos.html',neu:'neumaticos.html',pdm:'pdm.html',users:'usuarios.html'};
+const IFRAME_PAGINAS={pms:'pms.html',comb:'combustible.html',sos:'sos.html',neu:'neumaticos.html',pdm:'pdm.html',users:'usuarios.html',cfg:'config.html'};
+/* abre ⚙ Configuración en una lista concreta (lo llaman las pestañas con su botón "⚙ Configurar") */
+function irConfig(id){mostrarPanel('cfg');const f=_iframes.cfg;if(!f)return;const ir=()=>{try{f.contentWindow.abrirLista(id);}catch(_){}};
+  if(f.contentWindow&&f.contentWindow.abrirLista)ir();else f.addEventListener('load',()=>setTimeout(ir,800),{once:true});}
+/* abre otra pestaña y ejecuta una de sus funciones (ej. el asistente de equivalencias de SOS) */
+function irPestana(t,fn){mostrarPanel(t);const f=_iframes[t];if(!f)return;const ir=()=>{try{f.contentWindow[fn]();}catch(_){}};
+  if(f.contentWindow&&typeof f.contentWindow[fn]==='function')ir();else f.addEventListener('load',()=>setTimeout(ir,1500),{once:true});}
 const _iframes={};
 function asegurarIframe(k){
   if(_iframes[k])return;
@@ -2817,7 +2826,7 @@ function dsfAbrir(){
     render(); dsfAbrir();
   };
 }
-btnDesf.onclick=dsfAbrir;
+btnDesf.onclick=()=>(perfil&&perfil.rol==='admin')?irConfig('dsf'):dsfAbrir();
 
 /* ---------- al cargar un reporte: ¿panel u horas máquina? ----------
    Para los equipos con desfase, cada lectura se reconoce como panel (se le
@@ -3543,7 +3552,7 @@ init();
 <script>/* Versión general = la más reciente de todas las pestañas. Se lee la etiqueta
    gllr-version del inicio de cada archivo, así cambia sola cada vez que se sube un archivo nuevo. */
 (function(){
-  const ARCH=['index.html','pms.html','combustible.html','sos.html','neumaticos.html','pendientes.html','partes.html','campo.html','pdm.html','usuarios.html'];
+  const ARCH=['index.html','pms.html','combustible.html','sos.html','neumaticos.html','pendientes.html','partes.html','campo.html','pdm.html','usuarios.html','config.html'];
   const clave=v=>{const m=/^V\.(\d{2})(\d{2})(\d{2})-(\d+)$/.exec(v||'');return m?(+m[3])*1e7+(+m[2])*1e5+(+m[1])*1e3+(+m[4]):-1;};
   const leer=a=>fetch(a,{cache:'no-cache',headers:{Range:'bytes=0-1500'}}).then(r=>r.ok?r.text():'').then(t=>{
       const m=/name="gllr-version" content="([^"]+)"(?: data-pagina="([^"]*)")?/.exec(t);return m?{a,v:m[1],p:m[2]||a}:null;}).catch(()=>null);

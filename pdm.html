@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
 <meta charset="utf-8">
-<meta name="gllr-version" content="V.241026-3" data-pagina="Parte diario mecánico">
+<meta name="gllr-version" content="V.251026-1" data-pagina="Parte diario mecánico">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Parte diario mecánico &mdash; UDE</title>
 <link rel="icon" href="favicon.ico" sizes="any">
@@ -70,7 +70,7 @@
   <button data-v="reg" class="on">&#128221; Registros</button>
   <button data-v="pen">&#128204; Pendientes</button>
   <button data-v="col" class="hide">&#128119; Colaboradores</button>
-  <button data-v="mae">&#9881; Datos maestros</button>
+  <button data-v="mae">&#9881; Datos maestros ↗</button>
 </div>
 <div class="toolbar" id="tbReg">
   <label>Obra<select id="fObra"><option value="">Todas</option></select></label>
@@ -455,5 +455,7 @@ async function cargarListas(){const [e,c,m]=await Promise.all([sb.from('maestro'
 </script>
 <style>.ver-pag{position:fixed;right:8px;bottom:4px;font:600 10px/1.3 -apple-system,"Segoe UI",Roboto,sans-serif;color:#8a939c;background:rgba(255,255,255,.88);border:1px solid #e3e6e9;padding:1px 7px;border-radius:6px;z-index:9000;pointer-events:none}</style>
 <script>(function(){var m=document.querySelector('meta[name="gllr-version"]');if(!m)return;var d=document.createElement('div');d.id='verPag';d.className='ver-pag';d.textContent=(m.getAttribute('data-pagina')||'')+' · '+m.content;document.body.appendChild(d);})();</script>
+<script>/* dentro de la web principal, esta subpestaña abre ⚙ Configuración */
+(function(){var n=document.getElementById('subnav');if(!n||window.parent===window)return;n.addEventListener('click',function(e){var b=e.target.closest('button[data-v="mae"]');if(!b||!parent.irConfig)return;e.stopPropagation();e.preventDefault();parent.irConfig('pdm_GET');},true);})();</script>
 </body>
 </html>
