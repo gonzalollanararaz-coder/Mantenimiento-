@@ -1,0 +1,280 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="gllr-version" content="V.241026-1" data-pagina="Usuarios">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Usuarios &mdash; UDE</title>
+<link rel="icon" href="favicon.ico" sizes="any">
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+<script src="supabase.js"></script>
+<style>
+:root{--bg:#f2f4f7;--card:#fff;--ink:#1a1d21;--mu:#6b747d;--line:#e1e5ea;--navy:#1F3864;--azul:#4254A5}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:14px/1.45 -apple-system,"Segoe UI",Roboto,Arial,sans-serif}
+.hide{display:none!important}
+.wrap{padding:12px 14px 40px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px;margin-bottom:12px}
+.head{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:10px}
+.bnd{display:inline-block;border-radius:8px;padding:5px 11px;font-weight:700;font-size:12px;color:#fff;background:linear-gradient(180deg,#7B87C0,#4254A5 48%,#334281)}
+.sp{flex:1}
+.pill{border-radius:999px;padding:2px 9px;font-size:11px;font-weight:800;white-space:nowrap;display:inline-block}
+.ok{background:#DCF5E3;color:#0F7A33}.w{background:#FFF1C2;color:#8A6A00}.b{background:#FDE4E4;color:#B91C1C}.a{background:#E6E9F7;color:#334281}.g{background:#eef0f2;color:#6b747d}
+input.q{border:1px solid var(--line);border-radius:9px;height:32px;padding:0 10px;width:240px;max-width:100%;font:inherit}
+.btn{border:1px solid var(--line);background:#fff;border-radius:9px;height:32px;padding:0 12px;font:inherit;font-size:12.5px;cursor:pointer;white-space:nowrap}
+.btn.pri{background:linear-gradient(180deg,#FFE98A,#FFD84A);border-color:#DCB61C;color:#5C4708;font-weight:700}
+.btn.sm{height:27px;padding:0 9px;font-size:11.5px}.btn.r{color:#B91C1C;border-color:#f3b0b0}.btn.u{color:#4254A5;border-color:#C7CDEB}
+.btn:disabled{opacity:.5;cursor:default}
+.tw{overflow-x:auto}
+table{width:100%;border-collapse:collapse;min-width:980px;font-size:12.5px}
+th{background:linear-gradient(180deg,#7B87C0,#4254A5 60%,#334281);color:#fff;font-size:10px;text-transform:uppercase;letter-spacing:.4px;padding:7px 8px;text-align:left;white-space:nowrap;position:sticky;top:0}
+td{padding:8px;border-bottom:1px solid #eef1f4;vertical-align:middle}
+tr.gr td{background:#F4F6F8;font-weight:800;font-size:11px;color:#4b5563;text-transform:uppercase;letter-spacing:.4px;padding:6px 8px}
+tr.row{cursor:pointer}tr.row:hover td{background:#f7fbff}tr.row.sel td{background:#EEF2FF}
+.cod{font-family:ui-monospace,"SF Mono",monospace;font-weight:800}
+.nm b{display:block}.nm small{color:var(--mu)}
+.chips{display:flex;gap:4px;flex-wrap:wrap}.chips span{border-radius:6px;padding:1px 7px;font-size:10.5px;font-weight:700;background:#eef0f2;color:#4b5563}
+.chips span.app{background:#1c232b;color:#FFC20E}.chips span.web{background:#E6E9F7;color:#334281}.chips span.adm{background:#334281;color:#fff}
+.legend{font-size:11.5px;color:var(--mu);margin-top:8px}
+.drawer{position:fixed;top:0;right:0;bottom:0;width:min(480px,100%);background:#fff;box-shadow:-12px 0 40px rgba(0,0,0,.18);transform:translateX(105%);transition:transform .2s;z-index:20;display:flex;flex-direction:column}
+.drawer.on{transform:none}
+.dh{padding:14px 16px;border-bottom:1px solid var(--line);display:flex;gap:10px;align-items:flex-start}
+.dh h3{margin:0;font-size:17px;color:var(--navy)}.dh small{color:var(--mu)}
+.db{flex:1;overflow:auto;padding:12px 16px 20px}
+.sec{border:1px solid var(--line);border-radius:12px;padding:10px 12px;margin-bottom:10px}
+.sec h4{margin:0 0 8px;font-size:11px;text-transform:uppercase;letter-spacing:.6px;color:#334281}
+.fr{display:grid;grid-template-columns:1fr 1fr;gap:8px}.fr label{display:flex;flex-direction:column;font-size:10px;font-weight:800;color:var(--mu);text-transform:uppercase;gap:3px}
+.fr input,.fr select{border:1px solid #cfd5dc;border-radius:8px;height:32px;padding:0 8px;font:inherit;font-size:13px;text-transform:uppercase;background:#fff}
+.fr input.lc{text-transform:none}
+.fr input:focus,.fr select:focus{outline:none;border-color:#4254A5;box-shadow:0 0 0 2px rgba(66,84,165,.2)}
+.tg{display:flex;gap:6px;flex-wrap:wrap}
+.tg span{border:1px solid #d6dbe1;border-radius:8px;padding:5px 10px;font-size:12px;cursor:pointer;user-select:none;background:#fff}
+.tg span.on{background:#E6E9F7;border-color:#4254A5;color:#334281;font-weight:700;box-shadow:0 0 0 1px #4254A5}
+.tg.app span.on{background:#1c232b;border-color:#1c232b;color:#FFC20E;box-shadow:0 0 0 1px #FFC20E}
+.tg.dis span{pointer-events:none;opacity:.6}
+.prof{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+.prof div{border:1px solid #d6dbe1;border-radius:10px;padding:7px 9px;cursor:pointer;font-size:12px}.prof div b{display:block;font-size:12.5px;color:var(--navy)}.prof div small{color:var(--mu)}
+.prof div.on{border-color:#DCB61C;background:#FFFBEA;box-shadow:0 0 0 1px #DCB61C}
+.df{padding:10px 16px 14px;border-top:1px solid var(--line);display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.veil{position:fixed;inset:0;background:rgba(15,20,26,.25);opacity:0;pointer-events:none;transition:opacity .2s;z-index:19}.veil.on{opacity:1;pointer-events:auto}
+.msg{font-size:12px;color:#6b747d}.okm{color:#0F7A33;font-size:12px}
+.dup{border-color:#F2D27A;background:#FFFCF0}
+.vacio{padding:30px;text-align:center;color:#98a2ad}
+@media(max-width:600px){.fr{grid-template-columns:1fr}.prof{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<div class="wrap">
+ <div id="dupBox"></div>
+ <div class="card">
+  <div class="head"><span class="bnd">USUARIOS · <span id="nTot">…</span></span><span id="cnt"></span><span class="sp"></span>
+   <input class="q" id="q" placeholder="Buscar nombre, código o correo" aria-label="Buscar"><button class="btn" id="xls">⬇ Excel</button><button class="btn pri" id="nuevo">+ Nuevo usuario</button><button class="btn" id="ref" title="Actualizar">↻</button></div>
+  <div id="aviso"></div>
+  <div class="tw"><table><thead><tr><th>Estado</th><th>Código</th><th>Persona</th><th>Ingresa con</th><th>Accesos</th><th>Obras</th><th>Último ingreso</th><th style="text-align:center">Reportes 30 d</th></tr></thead><tbody id="tb"><tr><td colspan="8" class="vacio">Cargando…</td></tr></tbody></table></div>
+  <div class="legend"><span class="chips" style="display:inline-flex"><span class="app">APP</span></span> app REPORTE del celular · <span class="chips" style="display:inline-flex"><span class="web">WEB 5</span></span> pestañas de la web · toca una fila para abrir su ficha · tu cuenta no aparece en la lista.</div>
+ </div>
+</div>
+<div class="veil" id="veil"></div>
+<aside class="drawer" id="dr" aria-label="Ficha de usuario"><div class="dh"><div style="flex:1;min-width:0"><h3 id="dTit"></h3><small id="dSub"></small></div><button class="btn sm" id="dX" aria-label="Cerrar">✕</button></div>
+ <div class="db" id="dB"></div><div class="df" id="dF"></div></aside>
+
+<script>
+const CFG=(()=>{try{return JSON.parse(localStorage.getItem('gllr_sbcfg')||'null')}catch(_){return null}})();
+if(!CFG||!CFG.url){document.body.innerHTML='<div class="vacio"><h2>Abre primero la página principal</h2></div>';throw new Error('sin configuracion');}
+const sb=window.supabase.createClient(CFG.url,CFG.key);
+const esc=s=>String(s??'').replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;');
+const nrm=s=>String(s??'').normalize('NFD').replace(/[̀-ͯ]/g,'').toUpperCase().replace(/\s+/g,' ').trim();
+const up=s=>String(s??'').toUpperCase().replace(/\s+/g,' ').trim();
+const fd=v=>{if(!v)return'';const p=String(v).slice(0,10).split('-');return p.length===3?`${p[2]}/${p[1]}/${p[0].slice(2)}`:String(v);};
+const $=id=>document.getElementById(id);
+const DOM_INT='@reporte-jjc.app', esInt=e=>String(e||'').toLowerCase().endsWith(DOM_INT), codDeMail=e=>String(e).split('@')[0].toUpperCase();
+const ingTxt=e=>!e?'':esInt(e)?'código '+codDeMail(e):e;
+const clGen=()=>'JJC'+Math.floor(1000+Math.random()*9000);
+const codigoBase=(n,a)=>{const x=nrm(n).split(' ')[0]||'',y=nrm(a).replace(/[^A-Z]/g,'');return (x[0]||'')+y;};
+const ESPS=['MECANICO','SOLDADOR','ELECTRICISTA','LUBRICADOR','LLANTERO','SUPERVISOR'];
+const PEST=[['pms','PM-S'],['comb','Combustible'],['sos','SOS'],['neu','Neumáticos'],['pdm','Parte diario mecánico'],['pendientes','Pendientes']];
+const PERF={campo:{t:'Técnico de campo',s:'solo app REPORTE',app:true,web:[],rol:'usuario'},sup:{t:'Supervisor',s:'app + Parte diario + Pendientes',app:true,web:['pdm','pendientes'],rol:'usuario'},
+  ofi:{t:'Oficina / planner',s:'todas las pestañas web',app:false,web:PEST.map(p=>p[0]),rol:'usuario'},adm:{t:'Administrador',s:'todo, y gestiona usuarios',app:true,web:PEST.map(p=>p[0]),rol:'admin'}};
+let yo=null, USR=[], PRO={}, COL=[], OBRAS=[], REP={}, R=[], selKey=null, errSql='';
+
+/* ═════════ carga ═════════ */
+async function cargar(){
+  const [u,p,c,m,g]=await Promise.all([sb.rpc('pdm_admin_usuarios'),sb.from('profiles').select('id,nombre,email,rol,estado,proyectos,paginas'),
+    sb.from('pdm_colaboradores').select('*').order('ap_paterno'),sb.from('maestro').select('cod_proyec'),
+    sb.from('pdm_registros').select('tecnicos').gte('fecha',new Date(Date.now()-30*864e5).toISOString().slice(0,10)).eq('anulado',false).limit(20000)]);
+  errSql=u.error?u.error.message:'';USR=u.data||[];PRO={};(p.data||[]).forEach(x=>PRO[x.id]=x);
+  if(u.error)USR=(p.data||[]).map(x=>({id:x.id,email:x.email,nombre:x.nombre,rol:x.rol,estado:x.estado}));
+  COL=c.data||[];OBRAS=[...new Set((m.data||[]).map(x=>x.cod_proyec).filter(Boolean))].sort();
+  REP={};(g.data||[]).forEach(r=>(r.tecnicos||[]).forEach(t=>REP[t]=(REP[t]||0)+1));
+  armar();pintar();if(selKey)abrir(selKey,true);}
+function armar(){R=COL.map(c=>{const u=c.user_id?USR.find(x=>x.id===c.user_id)||null:null;return {key:'c'+c.id,c,u};});
+  USR.forEach(u=>{if(!COL.some(c=>c.user_id===u.id))R.push({key:'u'+u.id,c:null,u});});
+  R=R.filter(r=>!((r.u&&r.u.id===yo.id)||(r.c&&r.c.user_id===yo.id)));}
+const estU=u=>u.estado==='bloqueado'||(u.bloqueado_hasta&&new Date(u.bloqueado_hasta)>new Date())?'bloq':u.estado!=='aprobado'?'pend':'act';
+const est=r=>r.u?estU(r.u):(r.c&&r.c.activo===false?'inac':'sin');
+const pro=r=>r.u?(PRO[r.u.id]||{}):{};
+const pags=r=>{const p=pro(r).paginas;return Array.isArray(p)?p:[];};
+const obrasDe=r=>{const p=pro(r).proyectos;return Array.isArray(p)?p:[];};
+const esAdm=r=>r.u&&pro(r).rol==='admin';
+const nomR=r=>r.c?[r.c.nombres,r.c.ap_paterno,r.c.ap_materno].filter(Boolean).join(' '):(r.u.nombre&&!r.u.nombre.includes('@')?r.u.nombre:ingTxt(r.u.email));
+const GR={pend:'Por aprobar',act:'Con acceso',sin:'Sin cuenta (los compañeros los eligen como técnicos)',bloq:'Bloqueados',inac:'Inactivos'},ORD=['pend','act','sin','bloq','inac'];
+const estP=e=>e==='pend'?'<span class="pill w">Por aprobar</span>':e==='bloq'?'<span class="pill b">Bloqueado</span>':e==='sin'?'<span class="pill g">Sin cuenta</span>':e==='inac'?'<span class="pill g">Inactivo</span>':'<span class="pill ok">Activo</span>';
+
+/* ═════════ tabla ═════════ */
+function pintar(){const q=nrm($('q').value);
+  const L=R.filter(r=>!q||nrm(nomR(r)+' '+(r.c?r.c.codigo:'')+' '+(r.u?r.u.email:'')).includes(q)).sort((a,b)=>ORD.indexOf(est(a))-ORD.indexOf(est(b))||nomR(a).localeCompare(nomR(b)));
+  const n={};R.forEach(r=>{const e=est(r);n[e]=(n[e]||0)+1;});
+  $('nTot').textContent=R.length;
+  $('cnt').innerHTML=(n.pend?`<span class="pill w">${n.pend} por aprobar</span> `:'')+`<span class="pill ok">${n.act||0} activos</span> `+(n.sin?`<span class="pill g">${n.sin} sin cuenta</span> `:'')+(n.bloq?`<span class="pill b">${n.bloq} bloqueados</span>`:'');
+  $('aviso').innerHTML=errSql?`<div class="msg" style="color:#B91C1C;margin-bottom:8px">Faltan funciones en Supabase: ejecuta <b>pdm_accesos.sql</b>. (${esc(errSql)})</div>`:'';
+  $('tb').innerHTML=L.map((r,k)=>{const e=est(r),pg=pags(r),ob=obrasDe(r),ad=esAdm(r);
+    return `${k===0||est(L[k-1])!==e?`<tr class="gr"><td colspan="8">${GR[e]} · ${n[e]}</td></tr>`:''}<tr class="row ${selKey===r.key?'sel':''}" data-k="${r.key}" tabindex="0">
+    <td>${estP(e)}</td><td class="cod">${r.c?esc(r.c.codigo):'<span class="pill a">Sin código</span>'}</td>
+    <td class="nm"><b>${esc(nomR(r))}</b><small>${r.c?(esc(r.c.especialidad||'—')+' · '+esc(r.c.obra||'—')):'—'}</small></td>
+    <td>${r.u?esc(ingTxt(r.u.email)):'<span style="color:#98a2ad">—</span>'}</td>
+    <td><div class="chips">${ad?'<span class="adm">ADMIN</span>':''}${r.u&&(ad||pg.includes('campo'))?'<span class="app">APP</span>':''}${r.u&&!ad&&pg.filter(x=>x!=='campo').length?`<span class="web">WEB ${pg.filter(x=>x!=='campo').length}</span>`:''}${!r.u||(!ad&&!pg.length)?'<span>ninguno</span>':''}</div></td>
+    <td>${!r.u?'—':ad||(OBRAS.length&&OBRAS.every(o=>ob.includes(o)))?'<span class="pill a">todas</span>':esc(ob.join(', '))||'<span style="color:#B45309">ninguna</span>'}</td>
+    <td>${r.u?(r.u.ultimo_ingreso?fd(r.u.ultimo_ingreso):'nunca'):'—'}</td><td style="text-align:center;font-variant-numeric:tabular-nums">${r.c&&REP[r.c.codigo]?REP[r.c.codigo]:'—'}</td></tr>`;}).join('')||'<tr><td colspan="8" class="vacio">Sin usuarios.</td></tr>';
+  document.querySelectorAll('tr.row').forEach(tr=>{tr.onclick=()=>abrir(tr.dataset.k);tr.onkeydown=e=>{if(e.key==='Enter')abrir(tr.dataset.k);};});
+  pintarDup();}
+function pintarDup(){const g={};COL.forEach(c=>{const k=nrm(c.nombres)+'|'+nrm(c.ap_paterno)+'|'+nrm(c.ap_materno||'');(g[k]=g[k]||[]).push(c);});
+  const D=Object.values(g).filter(x=>x.length>1);
+  $('dupBox').innerHTML=D.length?`<div class="card dup"><span class="bnd" style="background:#B07D00">POSIBLES DUPLICADOS · ${D.length}</span>
+   <div class="msg" style="margin:6px 0">Mismo nombre con dos códigos. <b>Fusionar</b> pasa sus registros al código que se queda y borra el otro.</div>
+   ${D.map(x=>{const dest=x.find(c=>c.user_id)||x[0];return x.filter(c=>c!==dest).map(o=>`<div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;padding:3px 0"><b>${esc(o.nombres)} ${esc(o.ap_paterno)} ${esc(o.ap_materno||'')}</b><span class="cod">${esc(o.codigo)}</span>→<span class="cod">${esc(dest.codigo)}</span><button class="btn sm" data-fu="${esc(o.codigo)}" data-fd="${esc(dest.codigo)}">Fusionar</button></div>`).join('');}).join('')}</div>`:'';
+  $('dupBox').querySelectorAll('[data-fu]').forEach(b=>b.onclick=async()=>{if(!confirm(`¿Fusionar ${b.dataset.fu} en ${b.dataset.fd}?`))return;
+    const {data,error}=await sb.rpc('pdm_admin_fusionar',{origen:b.dataset.fu,destino:b.dataset.fd});if(error)return alert('No se pudo: '+error.message);alert(`Listo: ${data||0} registro(s) actualizados.`);cargar();});}
+
+/* ═════════ ficha ═════════ */
+function perfilDe(r){if(esAdm(r))return 'adm';const pg=pags(r),app=pg.includes('campo'),web=pg.filter(x=>x!=='campo');
+  for(const [k,p] of Object.entries(PERF)){if(k==='adm')continue;if(p.app===app&&p.web.length===web.length&&p.web.every(x=>web.includes(x)))return k;}return null;}
+function codigoNuevo(n,p,m){const base=codigoBase(n,p),u=COL.map(c=>c.codigo).concat(USR.filter(x=>esInt(x.email)).map(x=>codDeMail(x.email)));
+  if(!u.includes(base))return base;const mi=nrm(m)[0];if(mi&&!u.includes(base+mi))return base+mi;let i=2;while(u.includes(base+i))i++;return base+i;}
+function partirNombre(t){const w=up(t).split(' ').filter(Boolean);if(w.length>=3){const m=w.pop(),p=w.pop();return [w.join(' '),p,m];}if(w.length===2)return [w[0],w[1],''];return [w[0]||'','',''];}
+function abrir(key,quieto){selKey=key;const r=R.find(x=>x.key===key);if(!r){cerrar();return;}const e=est(r),pf=perfilDe(r),pg=pags(r),ob=obrasDe(r),ad=esAdm(r);
+  const [pn,pp,pm]=r.c?[r.c.nombres,r.c.ap_paterno,r.c.ap_materno||'']:partirNombre(r.u.nombre&&!r.u.nombre.includes('@')?r.u.nombre:'');
+  $('dTit').textContent=nomR(r);$('dSub').innerHTML=`${r.c?'<span class="cod">'+esc(r.c.codigo)+'</span> · ':''}${estP(e)}${ad?' <span class="pill a">admin</span>':''}`;
+  const colSec=r.c?`<div class="sec"><h4>Datos del colaborador</h4><div class="fr">
+     <label>Nombres<input data-c="nombres" value="${esc(pn)}"></label><label>Ap. paterno<input data-c="ap_paterno" value="${esc(pp)}"></label>
+     <label>Ap. materno<input data-c="ap_materno" value="${esc(pm)}"></label><label>Especialidad<select data-c="especialidad"><option value="">—</option>${ESPS.map(x=>`<option ${x===r.c.especialidad?'selected':''}>${x}</option>`).join('')}</select></label>
+     <label>Obra principal<select data-c="obra"><option value="">—</option>${[...new Set([...OBRAS,r.c.obra].filter(Boolean))].map(x=>`<option ${x===r.c.obra?'selected':''}>${esc(x)}</option>`).join('')}</select></label>
+     <label>Estado<select data-c="activo"><option value="1" ${r.c.activo!==false?'selected':''}>Activo</option><option value="0" ${r.c.activo===false?'selected':''}>Inactivo (no sale en la app)</option></select></label></div>
+     <div class="msg" style="margin-top:6px">Código <b class="cod">${esc(r.c.codigo)}</b>: no cambia, para no perder el historial. Se guarda al salir de cada casilla.</div></div>`
+    :`<div class="sec"><h4>Código para los reportes</h4><div class="msg" style="margin-bottom:8px">Esta cuenta no tiene código. Sin código no puede firmar reportes en la app.</div>
+     ${COL.some(c=>!c.user_id)?`<div class="fr" style="grid-template-columns:1fr"><label>Vincular con un colaborador que ya existe<select id="vinc" class="lc" style="text-transform:none"><option value="">— crear código nuevo con estos datos —</option>${COL.filter(c=>!c.user_id).map(c=>`<option value="${esc(c.codigo)}">${esc(c.codigo)} · ${esc([c.nombres,c.ap_paterno,c.ap_materno].filter(Boolean).join(' '))}</option>`).join('')}</select></label></div>`:''}
+     <div class="fr" id="nuevoCod" style="margin-top:8px"><label>Nombres<input id="cN" value="${esc(pn)}"></label><label>Ap. paterno<input id="cP" value="${esc(pp)}"></label><label>Ap. materno<input id="cM" value="${esc(pm)}"></label>
+      <label>Especialidad<select id="cE"><option value="">—</option>${ESPS.map(x=>`<option>${x}</option>`).join('')}</select></label><label>Obra principal<select id="cO"><option value="">—</option>${OBRAS.map(x=>`<option>${esc(x)}</option>`).join('')}</select></label>
+      <label>Código<input id="cC" disabled></label></div><button class="btn u sm" id="cOk" style="margin-top:8px">Guardar código</button></div>`;
+  const ingSec=r.u?`<div class="sec"><h4>Ingreso</h4><div style="font-size:13px;margin-bottom:8px">Ingresa con: <b>${esc(ingTxt(r.u.email))}</b> · último ingreso ${r.u.ultimo_ingreso?fd(r.u.ultimo_ingreso):'nunca'}</div>
+     <div class="tg"><button class="btn sm" data-a="pwd">🔑 Nueva clave</button>${e==='bloq'?'<button class="btn sm" data-a="unb">Desbloquear</button>':e!=='pend'?'<button class="btn sm" data-a="blk">Bloquear</button>':''}<button class="btn sm r" data-a="del">Eliminar cuenta</button></div></div>`
+    :`<div class="sec"><h4>Ingreso</h4><div class="msg" style="margin-bottom:8px">No tiene cuenta: no ingresa, pero un compañero lo puede elegir como técnico. Para que use la app, créale un acceso.</div>
+     <div class="fr"><label>Correo (opcional)<input id="aC" class="lc" type="email" placeholder="vacío = ingresa con código"></label><label>Clave temporal<input id="aK" class="lc" value="${clGen()}"></label></div>
+     <div class="msg" style="margin:6px 0 4px">Perfil del acceso:</div><div class="prof">${Object.entries(PERF).map(([k,p])=>`<div class="${k==='campo'?'on':''}" data-np="${k}"><b>${p.t}</b><small>${p.s}</small></div>`).join('')}</div>
+     <button class="btn u" id="aOk" style="margin-top:8px">+ Crear acceso</button></div>`;
+  const permSec=!r.u?'':`<div class="sec"><h4>Perfil (un clic)</h4><div class="prof">${Object.entries(PERF).map(([k,p])=>`<div class="${k===pf?'on':''}" data-p="${k}"><b>${p.t}</b><small>${p.s}</small></div>`).join('')}</div>
+     <div class="msg" style="margin-top:6px">El perfil marca las casillas de abajo; puedes ajustarlas a mano. Se guarda al tocar.</div></div>
+    <div class="sec"><h4>App del celular</h4><div class="tg app ${ad?'dis':''}"><span class="${ad||pg.includes('campo')?'on':''}" data-pg="campo">App REPORTE</span></div></div>
+    <div class="sec"><h4>Pestañas de la web</h4><div class="tg ${ad?'dis':''}">${PEST.map(([k,l])=>`<span class="${ad||pg.includes(k)?'on':''}" data-pg="${k}">${l}</span>`).join('')}</div>${ad?'<div class="msg" style="margin-top:6px">El administrador entra a todas.</div>':''}</div>
+    <div class="sec"><h4>Obras que ve</h4><div class="tg ${ad?'dis':''}"><span class="${ad||(OBRAS.length&&OBRAS.every(o=>ob.includes(o)))?'on':''}" data-all>Todas</span>${OBRAS.map(o=>`<span class="${ad||ob.includes(o)?'on':''}" data-o="${esc(o)}">${esc(o)}${r.c&&o===r.c.obra?' ★':''}</span>`).join('')}</div>${ad?'<div class="msg" style="margin-top:6px">El administrador ve todas las obras.</div>':''}</div>`;
+  $('dB').innerHTML=colSec+ingSec+permSec;
+  $('dF').innerHTML=(e==='pend'?`<button class="btn pri" data-a="ok">✓ Aprobar</button><button class="btn r" data-a="del">Rechazar</button>`:'')+`<span class="okm" id="okm"></span><span class="sp"></span>${!r.u&&r.c?'<button class="btn r" id="delC">Eliminar colaborador</button>':''}<button class="btn" id="cerrar2">Cerrar</button>`;
+  conectar(r);if(!quieto){$('dB').scrollTop=0;$('dr').classList.add('on');$('veil').classList.add('on');}pintar();}
+function ok(t){const m=$('okm');if(m){m.textContent=t||'✓ Guardado';clearTimeout(m._t);m._t=setTimeout(()=>m.textContent='',1800);}}
+async function guardarPerfil(r,cambio){const {error}=await sb.from('profiles').update(cambio).eq('id',r.u.id);if(error)return alert('No se pudo guardar: '+error.message);
+  PRO[r.u.id]={...(PRO[r.u.id]||{}),...cambio};abrir(r.key,true);ok();}
+function conectar(r){const B=$('dB');
+  // datos del colaborador
+  B.querySelectorAll('[data-c]').forEach(i=>i.onchange=async()=>{const k=i.dataset.c;const v=k==='activo'?i.value==='1':(up(i.value)||null);
+    const {error}=await sb.from('pdm_colaboradores').update({[k]:v}).eq('id',r.c.id);if(error)return alert('No se pudo guardar: '+error.message);r.c[k]=v;pintar();ok();});
+  // código para cuenta sin colaborador
+  const cv=()=>{if($('cC'))$('cC').value=codigoNuevo($('cN').value,$('cP').value,$('cM').value)||'';};
+  if($('cN')){['cN','cP','cM'].forEach(id=>$(id).addEventListener('input',cv));cv();
+    if($('vinc'))$('vinc').onchange=()=>{$('nuevoCod').style.opacity=$('vinc').value?.35:1;};
+    $('cOk').onclick=async()=>{const v=$('vinc')&&$('vinc').value;
+      if(v){const {error}=await sb.rpc('pdm_admin_vincular',{uid:r.u.id,p_codigo:v});if(error)return alert(error.message);}
+      else{const n=up($('cN').value),p=up($('cP').value);if(!n||!p)return alert('Escribe nombres y apellido paterno.');if(!$('cE').value||!$('cO').value)return alert('Elige especialidad y obra.');
+        const fila={nombres:n,ap_paterno:p,ap_materno:up($('cM').value)||null,codigo:codigoNuevo(n,p,$('cM').value),especialidad:$('cE').value,obra:$('cO').value,user_id:r.u.id};
+        const {error}=await sb.from('pdm_colaboradores').insert(fila);if(error)return alert(error.message);}
+      selKey=null;await cargar();const nr=R.find(x=>x.u&&x.u.id===r.u.id);if(nr)abrir(nr.key);};}
+  // crear acceso para colaborador sin cuenta
+  let npf='campo';B.querySelectorAll('[data-np]').forEach(d=>d.onclick=()=>{npf=d.dataset.np;B.querySelectorAll('[data-np]').forEach(x=>x.classList.toggle('on',x===d));});
+  if($('aOk'))$('aOk').onclick=async()=>{const mail=$('aC').value.trim().toLowerCase(),clave=$('aK').value.trim();
+    if(mail&&!/^\S+@\S+\.\S+$/.test(mail))return alert('El correo no es válido. Déjalo vacío para que ingrese con su código.');if(clave.length<6)return alert('La clave debe tener al menos 6 caracteres.');
+    $('aOk').disabled=true;$('aOk').textContent='Creando…';
+    try{const uid=await crearCuenta(mail||r.c.codigo.toLowerCase()+DOM_INT,clave,[r.c.nombres,r.c.ap_paterno,r.c.ap_materno].filter(Boolean).join(' '),r.c,npf,r.c.obra);
+      const x=await sb.rpc('pdm_admin_vincular',{uid,p_codigo:r.c.codigo});if(x.error)throw x.error;
+      alert(`Listo: ${r.c.codigo} ya tiene acceso.\n\nDíctale al colaborador:\n${mail?'Correo: '+mail:'Código: '+r.c.codigo}\nClave: ${clave}`);await cargar();
+    }catch(e){alert('No se pudo crear el acceso: '+(e.message||e));$('aOk').disabled=false;$('aOk').textContent='+ Crear acceso';}};
+  // permisos
+  B.querySelectorAll('[data-p]').forEach(d=>d.onclick=()=>{const p=PERF[d.dataset.p];const keep=obrasDe(r);
+    guardarPerfil(r,{rol:p.rol,paginas:[...p.web,...(p.app?['campo']:[])],proyectos:keep.length?keep:(r.c&&r.c.obra?[r.c.obra]:[])});});
+  B.querySelectorAll('[data-pg]').forEach(s=>s.onclick=()=>{const k=s.dataset.pg,pg=pags(r);guardarPerfil(r,{paginas:pg.includes(k)?pg.filter(x=>x!==k):[...pg,k]});});
+  B.querySelectorAll('[data-o]').forEach(s=>s.onclick=()=>{const o=s.dataset.o,ob=obrasDe(r);guardarPerfil(r,{proyectos:ob.includes(o)?ob.filter(x=>x!==o):[...ob,o]});});
+  const al=B.querySelector('[data-all]');if(al)al.onclick=()=>{const ob=obrasDe(r),todas=OBRAS.length&&OBRAS.every(o=>ob.includes(o));guardarPerfil(r,{proyectos:todas?(r.c&&r.c.obra?[r.c.obra]:[]):OBRAS.slice()});};
+  // acciones de cuenta
+  document.querySelectorAll('#dB [data-a],#dF [data-a]').forEach(b=>b.onclick=()=>accion(b.dataset.a,r));
+  if($('delC'))$('delC').onclick=()=>borrarColab(r.c);
+  $('cerrar2').onclick=cerrar;}
+async function accion(a,r){const u=r.u;let x;const qn=nomR(r);
+  if(a==='ok'){x=await sb.rpc('pdm_admin_aprobar',{uid:u.id,p_nombre:r.c?nomR(r):(u.nombre||null)});
+    if(!x.error&&!pags(r).length)await sb.from('profiles').update({paginas:['campo'],proyectos:r.c&&r.c.obra?[r.c.obra]:[]}).eq('id',u.id);}
+  else if(a==='blk'){if(!confirm(`¿Bloquear a ${qn}? Se cerrará su sesión.`))return;x=await sb.rpc('pdm_admin_bloquear',{uid:u.id,bloquear:true});}
+  else if(a==='unb'){x=await sb.rpc('pdm_admin_bloquear',{uid:u.id,bloquear:false});}
+  else if(a==='pwd'){const c=prompt(`Nueva clave para ${qn} (mínimo 6 caracteres):`,clGen());if(!c)return;x=await sb.rpc('pdm_admin_clave',{uid:u.id,nueva:c.trim()});
+    if(!x.error)alert(`Clave cambiada.\n\nDíctale:\n${esInt(u.email)?'Código: '+codDeMail(u.email):'Correo: '+u.email}\nClave: ${c.trim()}`);}
+  else if(a==='del'){if(!confirm(`¿Eliminar la cuenta de ${qn}?\n\nYa no podrá ingresar. Su colaborador y sus registros se conservan.`))return;x=await sb.rpc('pdm_admin_eliminar',{uid:u.id});
+    if(!x.error){selKey=null;cerrar();await cargar();return alert(USR.some(y=>y.id===u.id)?'La cuenta NO se eliminó. Usa Bloquear.':'✓ Cuenta eliminada.');}}
+  if(x&&x.error)return alert('No se pudo: '+x.error.message);
+  await cargar();ok();}
+async function borrarColab(c){if(!confirm(`¿Eliminar al colaborador ${c.codigo}?`))return;
+  let x=await sb.rpc('pdm_admin_borrar_colab',{p_codigo:c.codigo,forzar:false});
+  if(x.error&&/TIENE_REGISTROS:(\d+)/.test(x.error.message)){const n=x.error.message.match(/TIENE_REGISTROS:(\d+)/)[1];if(!confirm(`${c.codigo} figura en ${n} registro(s). Si es duplicado, mejor usa Fusionar.\n\n¿Eliminar de todas formas?`))return;x=await sb.rpc('pdm_admin_borrar_colab',{p_codigo:c.codigo,forzar:true});}
+  if(x.error)return alert('No se pudo eliminar: '+x.error.message);selKey=null;cerrar();await cargar();}
+/* crea la cuenta sin cerrar la sesión del administrador */
+async function crearCuenta(email,clave,nombre,d,perfil,obra){
+  const sb2=window.supabase.createClient(CFG.url,CFG.key,{auth:{persistSession:false,autoRefreshToken:false,detectSessionInUrl:false,storageKey:'usr_alta_tmp'}});
+  const {data,error}=await sb2.auth.signUp({email,password:clave,options:{data:{nombre,nombres:d.nombres,ap_paterno:d.ap_paterno,ap_materno:d.ap_materno,origen:'web-admin'}}});
+  if(error)throw error;const uid=data.user&&data.user.id;if(!uid||(data.user.identities&&data.user.identities.length===0))throw new Error('Ese correo o código ya tiene una cuenta.');
+  await new Promise(r=>setTimeout(r,800));const r=await sb.rpc('pdm_admin_aprobar',{uid,p_nombre:nombre});if(r.error)throw r.error;
+  const p=PERF[perfil||'campo'];await sb.from('profiles').update({rol:p.rol,paginas:[...p.web,...(p.app?['campo']:[])],proyectos:obra?[obra]:[]}).eq('id',uid);return uid;}
+/* nuevo usuario */
+function nuevo(){selKey=null;$('dTit').textContent='Nuevo usuario';$('dSub').textContent='colaborador + acceso (opcional)';
+  $('dB').innerHTML=`<div class="sec"><h4>Datos del colaborador</h4><div class="fr"><label>Nombres<input id="nN"></label><label>Ap. paterno<input id="nP"></label><label>Ap. materno<input id="nM"></label>
+    <label>Especialidad<select id="nE"><option value="">— elegir —</option>${ESPS.map(x=>`<option>${x}</option>`).join('')}</select></label><label>Obra principal<select id="nO"><option value="">— elegir —</option>${OBRAS.map(x=>`<option>${esc(x)}</option>`).join('')}</select></label><label>Código<input id="nC" disabled></label></div></div>
+   <div class="sec"><h4>Acceso</h4><label style="display:flex;gap:8px;align-items:center;font-weight:700;color:#334281;cursor:pointer"><input type="checkbox" id="nAcc" checked> Darle acceso (app y/o web)</label>
+    <div id="nAccB"><div class="fr" style="margin-top:8px"><label>Correo (opcional)<input id="nCo" class="lc" type="email" placeholder="vacío = ingresa con código"></label><label>Clave temporal<input id="nK" class="lc" value="${clGen()}"></label></div>
+    <div class="msg" style="margin:8px 0 4px">Perfil:</div><div class="prof">${Object.entries(PERF).map(([k,p])=>`<div class="${k==='campo'?'on':''}" data-np="${k}"><b>${p.t}</b><small>${p.s}</small></div>`).join('')}</div></div>
+    <div class="msg" style="margin-top:6px">Sin acceso, igual aparece en la app para que un compañero lo elija como técnico.</div></div>`;
+  $('dF').innerHTML='<button class="btn pri" id="nOk">Crear</button><span class="sp"></span><button class="btn" id="cerrar2">Cancelar</button>';
+  const cv=()=>{$('nC').value=codigoNuevo($('nN').value,$('nP').value,$('nM').value)||'';};['nN','nP','nM'].forEach(id=>$(id).addEventListener('input',cv));
+  $('nAcc').onchange=()=>$('nAccB').classList.toggle('hide',!$('nAcc').checked);
+  let npf='campo';$('dB').querySelectorAll('[data-np]').forEach(d=>d.onclick=()=>{npf=d.dataset.np;$('dB').querySelectorAll('[data-np]').forEach(x=>x.classList.toggle('on',x===d));});
+  $('cerrar2').onclick=cerrar;
+  $('nOk').onclick=async()=>{const n=up($('nN').value),p=up($('nP').value),m=up($('nM').value),e=$('nE').value,o=$('nO').value,acc=$('nAcc').checked;
+    if(!n||!p)return alert('Escribe nombres y apellido paterno.');if(!e||!o)return alert('Elige especialidad y obra.');
+    const mail=acc?$('nCo').value.trim().toLowerCase():'',clave=acc?$('nK').value.trim():'';
+    if(acc&&mail&&!/^\S+@\S+\.\S+$/.test(mail))return alert('El correo no es válido.');if(acc&&clave.length<6)return alert('La clave debe tener al menos 6 caracteres.');
+    const cod=codigoNuevo(n,p,m);$('nOk').disabled=true;$('nOk').textContent='Creando…';
+    try{let uid=null;if(acc)uid=await crearCuenta(mail||cod.toLowerCase()+DOM_INT,clave,[n,p,m].filter(Boolean).join(' '),{nombres:n,ap_paterno:p,ap_materno:m},npf,o);
+      const {error}=await sb.from('pdm_colaboradores').insert({nombres:n,ap_paterno:p,ap_materno:m||null,codigo:cod,especialidad:e,obra:o,user_id:uid});if(error)throw error;
+      if(acc)alert(`Listo: ${cod} creado con acceso.\n\nDíctale al colaborador:\n${mail?'Correo: '+mail:'Código: '+cod}\nClave: ${clave}`);
+      await cargar();const nr=R.find(x=>x.c&&x.c.codigo===cod);if(nr)abrir(nr.key);else cerrar();
+    }catch(err){alert('No se pudo crear: '+(err.message||err)+(/rate limit/i.test(err.message||'')?'\n\nDesactiva "Confirm email" en Supabase (Authentication → Sign In / Providers → Email).':''));$('nOk').disabled=false;$('nOk').textContent='Crear';}};
+  $('dr').classList.add('on');$('veil').classList.add('on');setTimeout(()=>$('nN').focus(),60);}
+function cerrar(){selKey=null;$('dr').classList.remove('on');$('veil').classList.remove('on');pintar();}
+function excel(){if(!window.XLSX)return alert('No se cargó la librería de Excel.');
+  const F=R.map(r=>({Estado:GR[est(r)]||est(r),Codigo:r.c?r.c.codigo:'',Persona:nomR(r),Especialidad:r.c?r.c.especialidad||'':'',Obra:r.c?r.c.obra||'':'',Ingresa_con:r.u?ingTxt(r.u.email):'',
+    Rol:r.u?(pro(r).rol||''):'',App:r.u&&(esAdm(r)||pags(r).includes('campo'))?'SI':'NO',Pestanas_web:r.u?pags(r).filter(x=>x!=='campo').map(k=>(PEST.find(p=>p[0]===k)||[0,k])[1]).join(', '):'',Obras:r.u?obrasDe(r).join(', '):'',
+    Ultimo_ingreso:r.u&&r.u.ultimo_ingreso?fd(r.u.ultimo_ingreso):'',Reportes_30d:r.c?REP[r.c.codigo]||0:0}));
+  const wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,XLSX.utils.json_to_sheet(F),'Usuarios');XLSX.writeFile(wb,'usuarios_UDE.xlsx');}
+$('dX').onclick=cerrar;$('veil').onclick=cerrar;$('q').oninput=pintar;$('nuevo').onclick=nuevo;$('ref').onclick=cargar;$('xls').onclick=excel;
+(async()=>{const {data:{session}}=await sb.auth.getSession();
+  if(!session){document.body.innerHTML='<div class="vacio"><h2>Sesión no iniciada</h2><p>Ingresa en la página principal.</p></div>';return;}
+  const {data:p}=await sb.from('profiles').select('id,rol,estado').eq('id',session.user.id).single();yo=p||{id:session.user.id};
+  if(!p||p.rol!=='admin'||p.estado!=='aprobado'){document.body.innerHTML='<div class="vacio"><h2>Solo administradores</h2></div>';return;}
+  await cargar();})();
+</script>
+<style>.ver-pag{position:fixed;right:8px;bottom:4px;font:600 10px/1.3 -apple-system,"Segoe UI",Roboto,sans-serif;color:#8a939c;background:rgba(255,255,255,.88);border:1px solid #e3e6e9;padding:1px 7px;border-radius:6px;z-index:9000;pointer-events:none}</style>
+<script>(function(){var m=document.querySelector('meta[name="gllr-version"]');if(!m)return;var d=document.createElement('div');d.className='ver-pag';d.textContent=(m.getAttribute('data-pagina')||'')+' · '+m.content;document.body.appendChild(d);})();</script>
+</body>
+</html>

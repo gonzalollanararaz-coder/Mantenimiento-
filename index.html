@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8">
-<meta name="gllr-version" content="V.191026-1" data-pagina="Equipos">
+<meta name="gllr-version" content="V.241026-1" data-pagina="Equipos">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Control de Mantenimiento — UDE</title>
 <link rel="icon" href="favicon.ico" sizes="any">
@@ -720,6 +720,7 @@
   <section id="paneFrame_sos" class="paneFrame hide"></section>
   <section id="paneFrame_neu" class="paneFrame hide"></section>
   <section id="paneFrame_pdm" class="paneFrame hide"></section>
+  <section id="paneFrame_users" class="paneFrame hide"></section>
   <footer id="appFoot">Los cambios se guardan en la base de datos.</footer>
 </div>
 
@@ -2295,7 +2296,7 @@ async function programarSeleccion(){
    misma página — igual que Equipos/Usuarios ya lo hacían. Se cargan la
    primera vez que se visitan; después, cambiar de pestaña es solo
    mostrar/ocultar (nunca hay una segunda carga ni una ventana aparte). */
-const IFRAME_PAGINAS={pms:'pms.html',comb:'combustible.html',sos:'sos.html',neu:'neumaticos.html',pdm:'pdm.html'};
+const IFRAME_PAGINAS={pms:'pms.html',comb:'combustible.html',sos:'sos.html',neu:'neumaticos.html',pdm:'pdm.html',users:'usuarios.html'};
 const _iframes={};
 function asegurarIframe(k){
   if(_iframes[k])return;
@@ -2309,8 +2310,8 @@ function mostrarPanel(t){
   document.querySelectorAll("nav button").forEach(x=>x.classList.toggle("on",x.dataset.tab===t));
   paneEq.classList.toggle("hide",t!=="eq");
   // la versión de Equipos se oculta cuando se ve otra pestaña (esa muestra la suya en el mismo lugar)
-  {const vp=document.getElementById('verPag'); if(vp)vp.style.display=(t==='eq'||t==='users')?'':'none';}
-  paneUsers.classList.toggle("hide",t!=="users");
+  {const vp=document.getElementById('verPag'); if(vp)vp.style.display=(t==='eq')?'':'none';}
+  paneUsers.classList.add("hide"); // la tabla antigua quedó reemplazada por usuarios.html
   Object.keys(IFRAME_PAGINAS).forEach(k=>{
     const pane=document.getElementById('paneFrame_'+k); if(pane)pane.classList.toggle('hide',t!==k);
     // pausa el trabajo de fondo de la pestaña que se oculta, reanuda la que se muestra
@@ -2318,7 +2319,7 @@ function mostrarPanel(t){
     if(!w)return;
     try{ (t===k ? w.reanudarFondo : w.pausarFondo)&&(t===k ? w.reanudarFondo() : w.pausarFondo()); }catch(_){}
   });
-  if(t==="users")cargarUsuarios();
+  if(t==="users"&&_iframes.users){try{_iframes.users.contentWindow.cargar();}catch(_){}}
   if(IFRAME_PAGINAS[t])asegurarIframe(t);
 }
 document.querySelectorAll("nav button").forEach(b=>b.onclick=()=>{
@@ -3542,7 +3543,7 @@ init();
 <script>/* Versión general = la más reciente de todas las pestañas. Se lee la etiqueta
    gllr-version del inicio de cada archivo, así cambia sola cada vez que se sube un archivo nuevo. */
 (function(){
-  const ARCH=['index.html','pms.html','combustible.html','sos.html','neumaticos.html','pendientes.html','partes.html','campo.html','pdm.html'];
+  const ARCH=['index.html','pms.html','combustible.html','sos.html','neumaticos.html','pendientes.html','partes.html','campo.html','pdm.html','usuarios.html'];
   const clave=v=>{const m=/^V\.(\d{2})(\d{2})(\d{2})-(\d+)$/.exec(v||'');return m?(+m[3])*1e7+(+m[2])*1e5+(+m[1])*1e3+(+m[4]):-1;};
   const leer=a=>fetch(a,{cache:'no-cache',headers:{Range:'bytes=0-1500'}}).then(r=>r.ok?r.text():'').then(t=>{
       const m=/name="gllr-version" content="([^"]+)"(?: data-pagina="([^"]*)")?/.exec(t);return m?{a,v:m[1],p:m[2]||a}:null;}).catch(()=>null);

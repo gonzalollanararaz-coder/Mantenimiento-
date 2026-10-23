@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
 <meta charset="utf-8">
-<meta name="gllr-version" content="V.241026-2" data-pagina="Parte diario mecánico">
+<meta name="gllr-version" content="V.241026-3" data-pagina="Parte diario mecánico">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Parte diario mecánico &mdash; UDE</title>
 <link rel="icon" href="favicon.ico" sizes="any">
@@ -69,7 +69,7 @@
 <div id="subnav">
   <button data-v="reg" class="on">&#128221; Registros</button>
   <button data-v="pen">&#128204; Pendientes</button>
-  <button data-v="col">&#128119; Colaboradores</button>
+  <button data-v="col" class="hide">&#128119; Colaboradores</button>
   <button data-v="mae">&#9881; Datos maestros</button>
 </div>
 <div class="toolbar" id="tbReg">
@@ -450,7 +450,7 @@ async function cargarListas(){const [e,c,m]=await Promise.all([sb.from('maestro'
   if(perfil.estado!=='aprobado'||(perfil.rol!=='admin'&&!(Array.isArray(perfil.paginas)&&perfil.paginas.includes('pdm')))){
     document.body.innerHTML='<div style="padding:60px;text-align:center;font-family:sans-serif"><h2 style="font-size:18px;margin-bottom:10px">Sin acceso a Parte diario mecánico</h2><p style="color:#6b747d">Un administrador debe habilitarte esta pestaña desde Usuarios.</p></div>';return;}
   const h=new Date(); fHasta.value=isoDe(h); fDesde.value=isoDe(new Date(h.getTime()-30*86400000));
-  await cargarListas(); if(esAdmin())cargarUsr(); await buscar(0);
+  await cargarListas(); await buscar(0);
 })();
 </script>
 <style>.ver-pag{position:fixed;right:8px;bottom:4px;font:600 10px/1.3 -apple-system,"Segoe UI",Roboto,sans-serif;color:#8a939c;background:rgba(255,255,255,.88);border:1px solid #e3e6e9;padding:1px 7px;border-radius:6px;z-index:9000;pointer-events:none}</style>
