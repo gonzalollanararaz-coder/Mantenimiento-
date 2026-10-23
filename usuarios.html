@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
 <meta charset="utf-8">
-<meta name="gllr-version" content="V.241026-1" data-pagina="Usuarios">
+<meta name="gllr-version" content="V.241026-2" data-pagina="Usuarios">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Usuarios &mdash; UDE</title>
 <link rel="icon" href="favicon.ico" sizes="any">
@@ -18,7 +18,7 @@ body{margin:0;background:var(--bg);color:var(--ink);font:14px/1.45 -apple-system
 .head{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:10px}
 .bnd{display:inline-block;border-radius:8px;padding:5px 11px;font-weight:700;font-size:12px;color:#fff;background:linear-gradient(180deg,#7B87C0,#4254A5 48%,#334281)}
 .sp{flex:1}
-.pill{border-radius:999px;padding:2px 9px;font-size:11px;font-weight:800;white-space:nowrap;display:inline-block}
+.pill{border-radius:999px;padding:1px 8px;font-size:10.5px;font-weight:800;white-space:nowrap;display:inline-block}
 .ok{background:#DCF5E3;color:#0F7A33}.w{background:#FFF1C2;color:#8A6A00}.b{background:#FDE4E4;color:#B91C1C}.a{background:#E6E9F7;color:#334281}.g{background:#eef0f2;color:#6b747d}
 input.q{border:1px solid var(--line);border-radius:9px;height:32px;padding:0 10px;width:240px;max-width:100%;font:inherit}
 .btn{border:1px solid var(--line);background:#fff;border-radius:9px;height:32px;padding:0 12px;font:inherit;font-size:12.5px;cursor:pointer;white-space:nowrap}
@@ -26,14 +26,15 @@ input.q{border:1px solid var(--line);border-radius:9px;height:32px;padding:0 10p
 .btn.sm{height:27px;padding:0 9px;font-size:11.5px}.btn.r{color:#B91C1C;border-color:#f3b0b0}.btn.u{color:#4254A5;border-color:#C7CDEB}
 .btn:disabled{opacity:.5;cursor:default}
 .tw{overflow-x:auto}
-table{width:100%;border-collapse:collapse;min-width:980px;font-size:12.5px}
-th{background:linear-gradient(180deg,#7B87C0,#4254A5 60%,#334281);color:#fff;font-size:10px;text-transform:uppercase;letter-spacing:.4px;padding:7px 8px;text-align:left;white-space:nowrap;position:sticky;top:0}
-td{padding:8px;border-bottom:1px solid #eef1f4;vertical-align:middle}
-tr.gr td{background:#F4F6F8;font-weight:800;font-size:11px;color:#4b5563;text-transform:uppercase;letter-spacing:.4px;padding:6px 8px}
+table{width:100%;border-collapse:collapse;font-size:12px}
+th{background:linear-gradient(180deg,#7B87C0,#4254A5 60%,#334281);color:#fff;font-size:9.5px;text-transform:uppercase;letter-spacing:.3px;padding:5px 6px;text-align:left;white-space:nowrap;position:sticky;top:0}
+td{padding:2px 6px;height:24px;border-bottom:1px solid #eef1f4;vertical-align:middle;white-space:nowrap;width:1%}
+td.nm{width:auto}
+tr.gr td{background:#F4F6F8;font-weight:800;font-size:10px;color:#4b5563;text-transform:uppercase;letter-spacing:.4px;padding:3px 6px;height:auto;width:auto}
 tr.row{cursor:pointer}tr.row:hover td{background:#f7fbff}tr.row.sel td{background:#EEF2FF}
 .cod{font-family:ui-monospace,"SF Mono",monospace;font-weight:800}
-.nm b{display:block}.nm small{color:var(--mu)}
-.chips{display:flex;gap:4px;flex-wrap:wrap}.chips span{border-radius:6px;padding:1px 7px;font-size:10.5px;font-weight:700;background:#eef0f2;color:#4b5563}
+.nm b{font-weight:700}.nm small{color:var(--mu);margin-left:6px}
+.chips{display:flex;gap:4px;flex-wrap:wrap}.chips{flex-wrap:nowrap}.chips span{border-radius:6px;padding:0 6px;font-size:10px;font-weight:700;background:#eef0f2;color:#4b5563}
 .chips span.app{background:#1c232b;color:#FFC20E}.chips span.web{background:#E6E9F7;color:#334281}.chips span.adm{background:#334281;color:#fff}
 .legend{font-size:11.5px;color:var(--mu);margin-top:8px}
 .drawer{position:fixed;top:0;right:0;bottom:0;width:min(480px,100%);background:#fff;box-shadow:-12px 0 40px rgba(0,0,0,.18);transform:translateX(105%);transition:transform .2s;z-index:20;display:flex;flex-direction:column}
@@ -61,6 +62,7 @@ tr.row{cursor:pointer}tr.row:hover td{background:#f7fbff}tr.row.sel td{backgroun
 .dup{border-color:#F2D27A;background:#FFFCF0}
 .vacio{padding:30px;text-align:center;color:#98a2ad}
 @media(max-width:600px){.fr{grid-template-columns:1fr}.prof{grid-template-columns:1fr}}
+.bx{border:1px solid #f3b0b0;background:#fff;color:#B91C1C;border-radius:6px;width:24px;height:20px;line-height:16px;font-size:12px;cursor:pointer;padding:0}.bx:hover{background:#FDE4E4}
 </style>
 </head>
 <body>
@@ -70,7 +72,7 @@ tr.row{cursor:pointer}tr.row:hover td{background:#f7fbff}tr.row.sel td{backgroun
   <div class="head"><span class="bnd">USUARIOS · <span id="nTot">…</span></span><span id="cnt"></span><span class="sp"></span>
    <input class="q" id="q" placeholder="Buscar nombre, código o correo" aria-label="Buscar"><button class="btn" id="xls">⬇ Excel</button><button class="btn pri" id="nuevo">+ Nuevo usuario</button><button class="btn" id="ref" title="Actualizar">↻</button></div>
   <div id="aviso"></div>
-  <div class="tw"><table><thead><tr><th>Estado</th><th>Código</th><th>Persona</th><th>Ingresa con</th><th>Accesos</th><th>Obras</th><th>Último ingreso</th><th style="text-align:center">Reportes 30 d</th></tr></thead><tbody id="tb"><tr><td colspan="8" class="vacio">Cargando…</td></tr></tbody></table></div>
+  <div class="tw"><table><thead><tr><th>Estado</th><th>Código</th><th>Persona</th><th>Ingresa con</th><th>Accesos</th><th>Obras</th><th>Último ingreso</th><th style="text-align:center">Rep. 30 d</th><th style="text-align:center">Eliminar</th></tr></thead><tbody id="tb"><tr><td colspan="9" class="vacio">Cargando…</td></tr></tbody></table></div>
   <div class="legend"><span class="chips" style="display:inline-flex"><span class="app">APP</span></span> app REPORTE del celular · <span class="chips" style="display:inline-flex"><span class="web">WEB 5</span></span> pestañas de la web · toca una fila para abrir su ficha · tu cuenta no aparece en la lista.</div>
  </div>
 </div>
@@ -128,13 +130,15 @@ function pintar(){const q=nrm($('q').value);
   $('cnt').innerHTML=(n.pend?`<span class="pill w">${n.pend} por aprobar</span> `:'')+`<span class="pill ok">${n.act||0} activos</span> `+(n.sin?`<span class="pill g">${n.sin} sin cuenta</span> `:'')+(n.bloq?`<span class="pill b">${n.bloq} bloqueados</span>`:'');
   $('aviso').innerHTML=errSql?`<div class="msg" style="color:#B91C1C;margin-bottom:8px">Faltan funciones en Supabase: ejecuta <b>pdm_accesos.sql</b>. (${esc(errSql)})</div>`:'';
   $('tb').innerHTML=L.map((r,k)=>{const e=est(r),pg=pags(r),ob=obrasDe(r),ad=esAdm(r);
-    return `${k===0||est(L[k-1])!==e?`<tr class="gr"><td colspan="8">${GR[e]} · ${n[e]}</td></tr>`:''}<tr class="row ${selKey===r.key?'sel':''}" data-k="${r.key}" tabindex="0">
+    return `${k===0||est(L[k-1])!==e?`<tr class="gr"><td colspan="9">${GR[e]} · ${n[e]}</td></tr>`:''}<tr class="row ${selKey===r.key?'sel':''}" data-k="${r.key}" tabindex="0">
     <td>${estP(e)}</td><td class="cod">${r.c?esc(r.c.codigo):'<span class="pill a">Sin código</span>'}</td>
     <td class="nm"><b>${esc(nomR(r))}</b><small>${r.c?(esc(r.c.especialidad||'—')+' · '+esc(r.c.obra||'—')):'—'}</small></td>
     <td>${r.u?esc(ingTxt(r.u.email)):'<span style="color:#98a2ad">—</span>'}</td>
     <td><div class="chips">${ad?'<span class="adm">ADMIN</span>':''}${r.u&&(ad||pg.includes('campo'))?'<span class="app">APP</span>':''}${r.u&&!ad&&pg.filter(x=>x!=='campo').length?`<span class="web">WEB ${pg.filter(x=>x!=='campo').length}</span>`:''}${!r.u||(!ad&&!pg.length)?'<span>ninguno</span>':''}</div></td>
     <td>${!r.u?'—':ad||(OBRAS.length&&OBRAS.every(o=>ob.includes(o)))?'<span class="pill a">todas</span>':esc(ob.join(', '))||'<span style="color:#B45309">ninguna</span>'}</td>
-    <td>${r.u?(r.u.ultimo_ingreso?fd(r.u.ultimo_ingreso):'nunca'):'—'}</td><td style="text-align:center;font-variant-numeric:tabular-nums">${r.c&&REP[r.c.codigo]?REP[r.c.codigo]:'—'}</td></tr>`;}).join('')||'<tr><td colspan="8" class="vacio">Sin usuarios.</td></tr>';
+    <td>${r.u?(r.u.ultimo_ingreso?fd(r.u.ultimo_ingreso):'nunca'):'—'}</td><td style="text-align:center;font-variant-numeric:tabular-nums">${r.c&&REP[r.c.codigo]?REP[r.c.codigo]:'—'}</td>
+    <td style="text-align:center"><button class="bx" data-del="${r.key}" title="${r.u?'Eliminar cuenta':'Eliminar colaborador'}" aria-label="Eliminar">✕</button></td></tr>`;}).join('')||'<tr><td colspan="9" class="vacio">Sin usuarios.</td></tr>';
+  document.querySelectorAll('[data-del]').forEach(b=>b.onclick=ev=>{ev.stopPropagation();const r=R.find(x=>x.key===b.dataset.del);if(!r)return;if(r.u)accion('del',r);else borrarColab(r.c);});
   document.querySelectorAll('tr.row').forEach(tr=>{tr.onclick=()=>abrir(tr.dataset.k);tr.onkeydown=e=>{if(e.key==='Enter')abrir(tr.dataset.k);};});
   pintarDup();}
 function pintarDup(){const g={};COL.forEach(c=>{const k=nrm(c.nombres)+'|'+nrm(c.ap_paterno)+'|'+nrm(c.ap_materno||'');(g[k]=g[k]||[]).push(c);});
@@ -194,7 +198,8 @@ function conectar(r){const B=$('dB');
       if(v){const {error}=await sb.rpc('pdm_admin_vincular',{uid:r.u.id,p_codigo:v});if(error)return alert(error.message);}
       else{const n=up($('cN').value),p=up($('cP').value);if(!n||!p)return alert('Escribe nombres y apellido paterno.');if(!$('cE').value||!$('cO').value)return alert('Elige especialidad y obra.');
         const fila={nombres:n,ap_paterno:p,ap_materno:up($('cM').value)||null,codigo:codigoNuevo(n,p,$('cM').value),especialidad:$('cE').value,obra:$('cO').value,user_id:r.u.id};
-        const {error}=await sb.from('pdm_colaboradores').insert(fila);if(error)return alert(error.message);}
+        const {error}=await sb.from('pdm_colaboradores').insert(fila);if(error)return alert(error.message);
+        if(!obrasDe(r).length)await sb.from('profiles').update({proyectos:[fila.obra]}).eq('id',r.u.id);}
       selKey=null;await cargar();const nr=R.find(x=>x.u&&x.u.id===r.u.id);if(nr)abrir(nr.key);};}
   // crear acceso para colaborador sin cuenta
   let npf='campo';B.querySelectorAll('[data-np]').forEach(d=>d.onclick=()=>{npf=d.dataset.np;B.querySelectorAll('[data-np]').forEach(x=>x.classList.toggle('on',x===d));});
@@ -217,7 +222,7 @@ function conectar(r){const B=$('dB');
   $('cerrar2').onclick=cerrar;}
 async function accion(a,r){const u=r.u;let x;const qn=nomR(r);
   if(a==='ok'){x=await sb.rpc('pdm_admin_aprobar',{uid:u.id,p_nombre:r.c?nomR(r):(u.nombre||null)});
-    if(!x.error&&!pags(r).length)await sb.from('profiles').update({paginas:['campo'],proyectos:r.c&&r.c.obra?[r.c.obra]:[]}).eq('id',u.id);}
+    if(!x.error){const cam={};if(!pags(r).length)cam.paginas=['campo'];if(!obrasDe(r).length&&r.c&&r.c.obra)cam.proyectos=[r.c.obra];if(Object.keys(cam).length)await sb.from('profiles').update(cam).eq('id',u.id);}}
   else if(a==='blk'){if(!confirm(`¿Bloquear a ${qn}? Se cerrará su sesión.`))return;x=await sb.rpc('pdm_admin_bloquear',{uid:u.id,bloquear:true});}
   else if(a==='unb'){x=await sb.rpc('pdm_admin_bloquear',{uid:u.id,bloquear:false});}
   else if(a==='pwd'){const c=prompt(`Nueva clave para ${qn} (mínimo 6 caracteres):`,clGen());if(!c)return;x=await sb.rpc('pdm_admin_clave',{uid:u.id,nueva:c.trim()});
