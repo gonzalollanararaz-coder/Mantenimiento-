@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
 <meta charset="utf-8">
-<meta name="gllr-version" content="V.231026-2" data-pagina="REPORTE (app de campo)">
+<meta name="gllr-version" content="V.231026-3" data-pagina="REPORTE (app de campo)">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>REPORTE</title>
 <link rel="manifest" href="campo.webmanifest">
@@ -215,6 +215,15 @@ input:focus,select:focus,textarea:focus{border-color:var(--am);box-shadow:0 0 0 
 .gget{font-size:12.5px;font-weight:800;color:var(--am);text-transform:uppercase;letter-spacing:.05em;margin:10px 0 4px;border-bottom:1px solid #3a3f22;padding-bottom:3px}
 .grow{display:grid;grid-template-columns:30px 1fr 84px;gap:8px;align-items:center;background:var(--card2);border:1px solid #39414a;border-radius:12px;padding:8px 10px;margin:0 0 6px;text-transform:none;font-size:17px;font-weight:600;color:var(--tx);letter-spacing:0;cursor:pointer}
 .grow.on{border-color:var(--am);background:#2a2614}.grow input[type=checkbox]{width:24px;height:24px;accent-color:#FFC20E}.grow input[type=number]{padding:8px;text-align:center;font-size:17px}
+
+/* ═══ selección estilo neón (borde y brillo de color, fondo oscuro teñido) ═══ */
+.chips span,.tec span,.grow{transition:box-shadow .15s,border-color .15s,background .15s,color .15s}
+.chips span.on,.grow.on{background:rgba(255,194,14,.10);border-color:#FFC20E;color:#FFC20E;font-weight:800;box-shadow:0 0 0 1px #FFC20E,0 0 12px rgba(255,194,14,.40),inset 0 0 10px rgba(255,194,14,.10)}
+.grow.on{color:var(--tx)}
+.chips span.on.op{background:rgba(34,197,94,.10);border-color:#22c55e;color:#4ade80;box-shadow:0 0 0 1px #22c55e,0 0 12px rgba(34,197,94,.40),inset 0 0 10px rgba(34,197,94,.10)}
+.chips span.on.in{background:rgba(239,68,68,.10);border-color:#ef4444;color:#f87171;box-shadow:0 0 0 1px #ef4444,0 0 12px rgba(239,68,68,.45),inset 0 0 10px rgba(239,68,68,.10)}
+.chips span.on.nt,.tec span.on{background:rgba(59,130,246,.10);border-color:#3b82f6;color:#93c5fd;font-weight:700;box-shadow:0 0 0 1px #3b82f6,0 0 12px rgba(59,130,246,.40),inset 0 0 10px rgba(59,130,246,.10)}
+.tec span.on b{color:#bfdbfe}
 </style>
 </head>
 <body>
@@ -407,7 +416,7 @@ function initUpper(){document.querySelectorAll('input.up,textarea.up').forEach(i
 /* ═══════════════════════ COMPONENTES ═══════════════════════ */
 const opts=(arr,sel,ph)=>(ph!=null?`<option value="">${ph}</option>`:'')+arr.map(v=>`<option ${v===sel?'selected':''}>${esc(v)}</option>`).join('');
 function chips(k,arr,def,cls){ if(S.F.ch[k]==null&&def!=null)S.F.ch[k]=def;
-  return `<div class="chips" data-ch="${k}">${arr.map(v=>`<span class="${S.F.ch[k]===v?'on':''} ${v==='OPERATIVO'?'op':v==='INOPERATIVO'?'in':''}" data-v="${esc(v)}">${esc(v)}</span>`).join('')}</div>`;}
+  return `<div class="chips" data-ch="${k}">${arr.map(v=>`<span class="${S.F.ch[k]===v?'on':''} ${v==='OPERATIVO'?'op':v==='INOPERATIVO'?'in':v==='NOCHE'?'nt':''}" data-v="${esc(v)}">${esc(v)}</span>`).join('')}</div>`;}
 document.addEventListener('click',ev=>{const s=ev.target.closest('.chips span');if(!s)return;const box=s.parentElement,k=box.dataset.ch;if(!k)return;
   S.F.ch[k]=s.dataset.v;box.querySelectorAll('span').forEach(x=>x.classList.toggle('on',x===s));if(box.dataset.re!=null||RE_CH.includes(k)){guardarCampos();pintar();}});
 const RE_CH=['esp','trabLL','neuN','aplG'];
