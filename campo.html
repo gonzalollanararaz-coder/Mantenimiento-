@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
 <meta charset="utf-8">
-<meta name="gllr-version" content="V.231026-1" data-pagina="REPORTE (app de campo)">
+<meta name="gllr-version" content="V.231026-2" data-pagina="REPORTE (app de campo)">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>REPORTE</title>
 <link rel="manifest" href="campo.webmanifest">
@@ -213,6 +213,8 @@ input:focus,select:focus,textarea:focus{border-color:var(--am);box-shadow:0 0 0 
 .dlgc{background:#1d2228;border:1px solid #2f363e;border-radius:18px;padding:18px;width:100%;max-width:460px;margin-bottom:env(safe-area-inset-bottom)}
 .dlgc b{font-size:20px;color:#fff}.dlgc p{color:var(--mu);margin:6px 0 4px}.dlgb{display:flex;gap:10px}.dlgb .btn{flex:1}
 .gget{font-size:12.5px;font-weight:800;color:var(--am);text-transform:uppercase;letter-spacing:.05em;margin:10px 0 4px;border-bottom:1px solid #3a3f22;padding-bottom:3px}
+.grow{display:grid;grid-template-columns:30px 1fr 84px;gap:8px;align-items:center;background:var(--card2);border:1px solid #39414a;border-radius:12px;padding:8px 10px;margin:0 0 6px;text-transform:none;font-size:17px;font-weight:600;color:var(--tx);letter-spacing:0;cursor:pointer}
+.grow.on{border-color:var(--am);background:#2a2614}.grow input[type=checkbox]{width:24px;height:24px;accent-color:#FFC20E}.grow input[type=number]{padding:8px;text-align:center;font-size:17px}
 </style>
 </head>
 <body>
@@ -566,18 +568,19 @@ const P={
   const CON=M('GET').filter(m=>m.familia), L=CON.filter(m=>m.familia===fam);
   let cuerpo='';
   if(!CON.length){ // lista antigua sin familias: se muestran todos
-    const G=MV('GET');if(S.F.gk!=='*'){S.F.gk='*';S.F.g=G.map(n=>({n,gr:'',q:'',d:''}));}
+    const G=MV('GET');if(S.F.gk!=='*'){S.F.gk='*';S.F.g=G.map(n=>({n,gr:'',q:'',on:false}));}
   }else if(!e){S.F.g=[];S.F.gk=null;cuerpo='<div class="hint" style="margin-top:8px">Elige primero el equipo: se mostrarán solo sus herramientas de corte.</div>';}
   else if(!L.length){S.F.g=[];S.F.gk=null;cuerpo=`<div class="warn" style="margin-top:8px">No hay GETs registrados para este tipo de equipo (${esc(fam)}). Si debería tenerlos, avisa al administrador para agregarlos en Datos maestros.</div>`;}
   else{const apls=[...new Set(L.map(m=>m.aplicacion||'—'))];if(!apls.includes(S.F.ch.aplG))S.F.ch.aplG=apls[0];
     const LL=L.filter(m=>(m.aplicacion||'—')===S.F.ch.aplG).sort((a,b)=>(a.orden||0)-(b.orden||0)), key=fam+'|'+S.F.ch.aplG;
-    if(S.F.gk!==key){S.F.gk=key;S.F.g=LL.map(m=>({n:m.valor,gr:m.grupo||'',q:'',d:''}));}
+    if(S.F.gk!==key){S.F.gk=key;S.F.g=LL.map(m=>({n:m.valor,gr:m.grupo||'',q:'',on:false}));}
     cuerpo=(apls.length>1?`<label>Aplicación</label>${chips('aplG',apls)}`:`<div class="hint" style="margin-top:6px">Aplicación: <b>${esc(apls[0])}</b></div>`);}
-  const filas=S.F.g.map((x,i)=>`${i===0||S.F.g[i-1].gr!==x.gr?(x.gr?`<div class="gget">${esc(x.gr)}</div>`:''):''}<div class="tp" style="grid-template-columns:1fr 70px 84px"><span>${esc(x.n)}</span><input type="number" inputmode="numeric" value="${esc(x.q)}" oninput="S.F.g[${i}].q=this.value"><input type="number" inputmode="numeric" value="${esc(x.d)}" oninput="S.F.g[${i}].d=this.value"></div>`).join('');
+  const filas=S.F.g.map((x,i)=>`<label class="grow ${x.on?'on':''}"><input type="checkbox" ${x.on?'checked':''} onchange="tglGet(${i},this.checked)"><span>${esc(x.n)}</span><input type="number" inputmode="numeric" min="0" placeholder="Cant." value="${esc(x.q)}" oninput="S.F.g[${i}].q=this.value;if(this.value&&!S.F.g[${i}].on)tglGet(${i},true)"></label>`).join('');
   return cabecera(true)+`<div class="c"><div class="sec">GETs (herramientas de corte)</div>
    <label>Trabajo realizado</label>${chips('trabGet',['EVALUACION','CAMBIO','ROTACION'],'CAMBIO')}
    ${cuerpo}
-   ${S.F.g.length?`<div class="tp h" style="grid-template-columns:1fr 70px 84px;margin-top:10px"><span>Componente</span><span>Cant.</span><span>Desgaste %</span></div>${filas}`:''}
+   ${S.F.g.length?`<label style="margin-top:12px">Marca lo que se trabajó y su cantidad</label>${filas}`:''}
+   <label>Estado del equipo</label>${chips('estado',['OPERATIVO','INOPERATIVO'],'OPERATIVO')}
    <label>Trabajo pendiente (backlog)</label><input class="up" data-k="backlog" value="${esc(vF('backlog'))}" placeholder="OPCIONAL">
   </div>`+cierre();},
  MNTTO_PREV:()=>{const e=eqDe(S.F.eq);const T=MV('TAREA_PM');if(!S.F.tar)S.F.tar=T.map(()=>true);
@@ -668,9 +671,9 @@ async function guardar(){
     r.detalle={posiciones_equipo:+(S.F.ch.neuN||6),posiciones:pos};
     if(S.F.ch.trabLL==='CAMBIO')r.detalle.cambio={pos:val('llPos')?+val('llPos'):null,marca:val('llMarca')||null,estado:val('llEstado')||null,diseno:up(val('llDis'))||null,medida:up(val('llMed'))||null,serie:up(val('llSerie'))||null};
     if(!pos.length)return toast('Registra al menos una posición');}
-  else if(mod==='GETS'){const g=(S.F.g||[]).filter(x=>x.q!==''||x.d!=='').map(x=>({n:x.n,grupo:x.gr||null,cant:x.q===''?null:+x.q,desgaste:x.d===''?null:+x.d}));const apl=S.F.ch.aplG||null;
-    Object.assign(r,{trabajo:S.F.ch.trabGet,sistema:'HERRAMIENTAS DE CORTE',componente:apl});r.detalle={implemento:apl,componentes:g};
-    if(!g.length)return toast('Registra al menos un componente');}
+  else if(mod==='GETS'){const g=(S.F.g||[]).filter(x=>x.on).map(x=>({n:x.n,grupo:x.gr||null,cant:x.q===''?null:+x.q}));const apl=S.F.ch.aplG||null;
+    Object.assign(r,{trabajo:S.F.ch.trabGet,sistema:'HERRAMIENTAS DE CORTE',componente:apl,estado_equipo:S.F.ch.estado||'OPERATIVO'});r.detalle={implemento:apl,componentes:g};
+    if(!g.length)return toast('Marca al menos un componente');}
   else if(mod==='MNTTO_PREV'){const T=MV('TAREA_PM');Object.assign(r,{especialidad:'MECANICO',trabajo:S.F.ch.pm||null,sistema:'MNTTO PREVENTIVO',insumos:insL});
     r.detalle={pm:S.F.ch.pm||null,tareas:T.filter((_,i)=>S.F.tar[i])};if(!r.trabajo)return toast('Elige el tipo de PM');}
   else if(mod==='PENDIENTE'){Object.assign(r,{trabajo:'PENDIENTE',estado_equipo:S.F.ch.estado});if(!r.backlog)return toast('Describe el pendiente');}
@@ -767,6 +770,7 @@ async function whatsapp(r){
   if((r.fotos||[]).length&&S.online){try{const {data}=await sb.storage.from('pdm-fotos').createSignedUrl(r.fotos[0],7*86400);if(data&&data.signedUrl)foto=data.signedUrl;}catch(_){}}
   else if(files.length)foto='(se envía aparte)';
   window.open('https://wa.me/?text='+encodeURIComponent(textoWA(r,foto)),'_blank');}
+function tglGet(i,v){guardarCampos();const x=S.F.g[i];x.on=v;if(v&&!x.q)x.q='1';if(!v)x.q='';pintar();}
 function regEn(mod,cod){ir(mod);const e=eqDe(cod);if(e){S.F.eq=e.cod_sap;S.F.eqTxt=e.cod_sap+' · '+(e.equipo||'');pintar();}}
 function verReg(id){const it=S.COLA.find(x=>x.id===id);if(!it)return;S.ult={reg:it.reg,enviado:!!it.enviado};ir('hecho');}
 function whatsappId(id){const it=S.COLA.find(x=>x.id===id);if(it)whatsapp(it.reg);}
