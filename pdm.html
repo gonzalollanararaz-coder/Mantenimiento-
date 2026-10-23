@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
 <meta charset="utf-8">
-<meta name="gllr-version" content="V.231026-1" data-pagina="Parte diario mecánico">
+<meta name="gllr-version" content="V.241026-1" data-pagina="Parte diario mecánico">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Parte diario mecánico &mdash; UDE</title>
 <link rel="icon" href="favicon.ico" sizes="any">
@@ -242,7 +242,7 @@ function codigoNuevo(n,p,m){const base=codigoBase(n,p),usados=COL.map(c=>c.codig
   if(m&&!usados.includes(base+nrm(m)[0]))return base+nrm(m)[0];let i=2;while(usados.includes(base+i))i++;return base+i;}
 function filasPersonas(){const U=Array.isArray(USR)?USR:[];const R=COL.map(c=>({c,u:c.user_id?U.find(x=>x.id===c.user_id)||null:null}));
   U.forEach(u=>{if(!COL.some(c=>c.user_id===u.id))R.push({c:null,u});});
-  return R;}
+  return R.filter(r=>!((r.u&&r.u.id===perfil.id)||(r.c&&r.c.user_id===perfil.id)));}
 const grupoDe=r=>r.u&&estU(r.u)==='pend'?'pend':r.u&&estU(r.u)==='bloq'?'bloq':r.c&&r.c.activo===false?'inac':r.c?'col':'web';
 const GRUPOS={pend:'Por aprobar',col:'Colaboradores',web:'Cuentas sin código (solo web)',bloq:'Bloqueados',inac:'Inactivos'}, GORD=['pend','col','web','bloq','inac'];
 function pintarCol(){const v=document.getElementById('v-col'),ad=esAdmin();
@@ -258,7 +258,7 @@ function pintarCol(){const v=document.getElementById('v-col'),ad=esAdmin();
   const appCel=r=>!r.u?'<span class="dim">—</span>':tieneApp(r.u)?'<span class="pill p-ok">habilitada</span>':estU(r.u)==='act'?`<button class="act sm primary" data-ua="app" data-id="${r.u.id}">Habilitar</button>`:'<span class="dim">—</span>';
   const acc=(r,i)=>{const b=[];const u=r.u,yo=u&&u.id===perfil.id;
     if(r.c)b.push(`<button class="act sm" data-ed="${i}">✎ Editar</button>`);else b.push(`<button class="act sm util" data-cod="${i}">Asignar código</button>`);
-    if(!u&&r.c)b.push(`<button class="act sm util" data-acc="${i}">+ Acceso a la app</button>`);
+    if(!u&&r.c)b.push(`<button class="act sm util" data-acc="${i}">+ Acceso a la app</button>`,`<button class="act sm rojo" data-delc="${i}">Eliminar</button>`);
     if(u&&!yo){const e=estU(u);
       if(e==='pend')b.push(`<button class="act sm primary" data-ua="ok" data-id="${u.id}">✓ Aprobar</button>`,`<button class="act sm rojo" data-ua="del" data-id="${u.id}">Rechazar</button>`);
       else if(e==='bloq')b.push(`<button class="act sm" data-ua="unb" data-id="${u.id}">Desbloquear</button>`,`<button class="act sm rojo" data-ua="del" data-id="${u.id}">Eliminar cuenta</button>`);
@@ -288,9 +288,18 @@ function pintarCol(){const v=document.getElementById('v-col'),ad=esAdmin();
   v.querySelectorAll('[data-cod]').forEach(b=>b.onclick=()=>{const r=R[+b.dataset.cod];modalCol('codigo',null,r.u);});
   v.querySelectorAll('[data-acc]').forEach(b=>b.onclick=()=>{const r=R[+b.dataset.acc];modalCol('acceso',r.c,null);});
   v.querySelectorAll('[data-ua]').forEach(b=>b.onclick=()=>accion(b.dataset.ua,USR.find(u=>u.id===b.dataset.id)));
+  v.querySelectorAll('[data-delc]').forEach(b=>b.onclick=()=>borrarColab(R[+b.dataset.delc].c));
   v.querySelectorAll('[data-fu]').forEach(b=>b.onclick=async()=>{if(!confirm(`¿Fusionar ${b.dataset.fu} en ${b.dataset.fd}?\n\nTodos los registros de ${b.dataset.fu} pasarán a ${b.dataset.fd} y ${b.dataset.fu} se borrará.`))return;
     const {data,error}=await sb.rpc('pdm_admin_fusionar',{origen:b.dataset.fu,destino:b.dataset.fd});if(error)return alert('No se pudo: '+error.message);alert(`Listo: ${data||0} registro(s) actualizados.`);await recargarCol();});}
 
+async function borrarColab(c){if(!c)return;
+  if(!confirm(`¿Eliminar al colaborador ${c.codigo} · ${nomC(c)}?\n\nDejará de aparecer en la app y en esta tabla.`))return;
+  let r=await sb.rpc('pdm_admin_borrar_colab',{p_codigo:c.codigo,forzar:false});
+  if(r.error&&/TIENE_REGISTROS:(\d+)/.test(r.error.message)){const n=r.error.message.match(/TIENE_REGISTROS:(\d+)/)[1];
+    if(!confirm(`${c.codigo} figura en ${n} registro(s).\n\nSi lo eliminas, esos registros conservan el código escrito pero ya no estará en la lista.\nSi es un duplicado, mejor usa "Fusionar".\n\n¿Eliminar de todas formas?`))return;
+    r=await sb.rpc('pdm_admin_borrar_colab',{p_codigo:c.codigo,forzar:true});}
+  if(r.error)return alert('No se pudo eliminar: '+r.error.message+(/function|does not exist/i.test(r.error.message)?'\n\nEjecuta de nuevo pdm_accesos.sql en Supabase.':''));
+  await recargarCol();alert(`✓ ${c.codigo} eliminado.`);}
 /* ventana para nuevo / editar / asignar código / dar acceso */
 function modalCol(modo,c,u){
   let pre={nombres:'',ap_paterno:'',ap_materno:'',especialidad:'',obra:''};
