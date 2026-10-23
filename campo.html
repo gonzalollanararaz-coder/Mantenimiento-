@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
 <meta charset="utf-8">
-<meta name="gllr-version" content="V.231026-3" data-pagina="REPORTE (app de campo)">
+<meta name="gllr-version" content="V.241026-1" data-pagina="REPORTE (app de campo)">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>REPORTE</title>
 <link rel="manifest" href="campo.webmanifest">
@@ -260,6 +260,9 @@ const fd=v=>{if(!v)return'';const p=String(v).slice(0,10).split('-');return p.le
 const uuid=()=>(crypto.randomUUID?crypto.randomUUID():'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g,c=>{const r=Math.random()*16|0;return (c==='x'?r:(r&3|8)).toString(16);}));
 function toast(t,ms){const e=$('toast');e.textContent=t;e.style.display='block';clearTimeout(e._t);e._t=setTimeout(()=>e.style.display='none',ms||2800);}
 /* Código del colaborador: inicial del primer nombre + apellido paterno (GONZALO LLANA RARAZ → GLLANA) */
+const DOM_INT='@reporte-jjc.app';
+const aCorreo=x=>{x=String(x||'').trim();return x.includes('@')?x.toLowerCase():x.toLowerCase().replace(/\s+/g,'')+DOM_INT;};
+const esInt=e=>String(e||'').toLowerCase().endsWith(DOM_INT);
 function codigoBase(nombres,apPat){const n=nrm(nombres).split(' ')[0]||'', a=nrm(apPat).replace(/[^A-Z]/g,'');return (n[0]||'')+a;}
 
 /* ═══════════════════════ ALMACÉN LOCAL (IndexedDB) ═══════════════════════
@@ -335,9 +338,9 @@ async function arrancar(){
 }
 async function crearColaborador(d,userId){
   const base=codigoBase(d.nombres,d.ap_paterno); if(!base)return null;
-  let codigo=base, otros=S.COL.map(c=>c.codigo);
+  let codigo=d.codigo||base, otros=S.COL.map(c=>c.codigo);
   if(S.online){const {data}=await sb.from('pdm_colaboradores').select('codigo').ilike('codigo',base+'%');if(data)otros=otros.concat(data.map(x=>x.codigo));}
-  if(otros.includes(codigo)){const m=nrm(d.ap_materno)[0]; if(m&&!otros.includes(base+m))codigo=base+m; else{let i=2;while(otros.includes(base+i))i++;codigo=base+i;}}
+  if(!d.codigo&&otros.includes(codigo)){const m=nrm(d.ap_materno)[0]; if(m&&!otros.includes(base+m))codigo=base+m; else{let i=2;while(otros.includes(base+i))i++;codigo=base+i;}}
   const fila={nombres:up(d.nombres),ap_paterno:up(d.ap_paterno),ap_materno:up(d.ap_materno)||null,codigo,user_id:userId||null,obra:up(d.obra)||null,especialidad:d.especialidad||null};
   const {data,error}=await sb.from('pdm_colaboradores').insert(fila).select().single();
   if(error){toast('No se pudo registrar el colaborador: '+error.message,6000);return null;}
@@ -492,11 +495,11 @@ const P={
  cargando:()=>`<div class="logo"><img src="campo-192.png" alt=""><div class="tx">REPORTE<small>JJC · UDE</small></div></div><p class="dim" style="text-align:center;margin-top:20px">Cargando…</p>`,
  login:()=>`<div class="logo"><img src="campo-192.png" alt=""><div class="tx">REPORTE<small>PARTE DIARIO MECÁNICO</small></div></div>
   <div class="c" style="margin-top:12px"><h4>Ingresar</h4>
-   <label>Correo</label><input type="email" id="lgE" autocomplete="username" value="${esc(localStorage.getItem('campo_mail')||'')}">
+   <label>Código o correo</label><input id="lgE" autocomplete="username" autocapitalize="characters" placeholder="Ej.: GLLANA" value="${esc(localStorage.getItem('campo_mail')||'')}">
    <label>Contraseña</label><input type="password" id="lgP" autocomplete="current-password">
    <button class="btn b-n" onclick="ingresar()">Ingresar</button>
    <button class="btn b-g" onclick="ir('alta')">Soy nuevo: registrarme</button>
-   <div class="hint" style="margin-top:10px">¿Ya usas la página web de Equipos? Ingresa con el <b>mismo correo y clave</b>.</div>
+   <div class="hint" style="margin-top:10px">Ingresa con tu <b>código</b> (ej. GLLANA) o tu correo. ¿Usas la página web de Equipos? Usa el <b>mismo correo y clave</b>.</div>
    <div class="dim" style="margin-top:10px">Después del primer ingreso la app abre sin internet y recuerda la sesión.</div></div>
   <div class="ver">${VERSION}</div>`,
  alta:()=>`<div class="c"><h4>Registro de colaborador</h4><div class="dim">Escribe tus nombres y apellidos por separado. Todo en MAYÚSCULAS.</div>
@@ -506,9 +509,9 @@ const P={
    <div class="hint" id="prevCod">En los reportes figurarás como: <b>—</b></div>
    <label>Especialidad principal</label><select class="fill" data-k="especialidad">${opts(['MECANICO','SOLDADOR','ELECTRICISTA','LUBRICADOR','LLANTERO','SUPERVISOR'],vF('especialidad'),'— elegir —')}</select>
    <label>Obra</label><select class="fill" data-k="obra">${opts(obrasAlta(),up(vF('obra')),'— elegir obra —')}</select>
-   ${S.pant==='alta'?`<label>Correo</label><input class="fill" type="email" data-k="email" value="${esc(vF('email'))}" placeholder=" ">
-   <label>Contraseña (mín. 6)</label><input class="fill" type="password" data-k="pass" placeholder=" ">
-   <div class="dim" style="margin-top:4px">¿Ya tienes cuenta en la página web? No te registres: vuelve e <b>ingresa con el mismo correo y clave</b>.</div>`:''}
+   ${S.pant==='alta'?`<label>Correo (opcional)</label><input type="email" data-k="email" value="${esc(vF('email'))}" placeholder="Si no tienes, déjalo vacío">
+   <label>Crea tu clave (mín. 6)</label><input class="fill" type="password" data-k="pass" placeholder=" ">
+   <div class="dim" style="margin-top:4px">Sin correo: ingresarás con tu <b>código</b> (el de arriba) y esta clave. ¿Ya tienes cuenta en la página web? No te registres: vuelve e ingresa con tu mismo correo y clave.</div>`:''}
    <button class="btn b-y" onclick="${S.pant==='alta'?'registrarme()':'guardarPerfil()'}">${S.pant==='alta'?'Registrarme':'Guardar mis datos'}</button>
    <div class="dim" style="margin-top:8px">${S.pant==='alta'?'Un administrador aprobará tu cuenta. Todas las áreas (mecánico, lubricación, llantas, GETs, mntto preventivo) quedan habilitadas para ti.':'Completa tus datos para que figures en los reportes.'}</div></div>`,
  espera:()=>`<div class="c" style="text-align:center"><div style="font-size:42px">⏳</div><h4>${S.perfil&&S.perfil.estado==='aprobado'?'Falta habilitar la app':'Tu cuenta está en revisión'}</h4>
@@ -628,21 +631,24 @@ const MODN={MECANICO:'Reporte mecánico',LUBRICACION:'Lubricación',LLANTAS:'Lla
 
 /* ═══════════════════════ ALTA / INGRESO ═══════════════════════ */
 function prevCod(){const n=val('nombres'),a=val('ap_paterno'),b=codigoBase(n||'',a||'');const e=$('prevCod');if(e)e.innerHTML=`En los reportes figurarás como: <b>${b||'—'}</b>`;}
-async function ingresar(){const e=$('lgE').value.trim(),p=$('lgP').value;if(!e||!p)return toast('Escribe correo y contraseña');
+async function ingresar(){const t=$('lgE').value.trim(),p=$('lgP').value;if(!t||!p)return toast('Escribe tu código (o correo) y tu clave');const e=aCorreo(t);
   if(!S.online)return toast('Sin señal: el primer ingreso necesita internet');
-  localStorage.setItem('campo_mail',e);
-  const {error}=await sb.auth.signInWithPassword({email:e,password:p});if(error){const m=error.message||'';return toast(/banned/i.test(m)?'Tu cuenta está bloqueada. Habla con tu supervisor.':/invalid login/i.test(m)?'Correo o clave incorrectos. Si la olvidaste, pide una clave nueva a tu administrador.':/not confirmed/i.test(m)?'Tu cuenta aún no está aprobada.':'No se pudo ingresar: '+m,6000);}arrancar();}
+  localStorage.setItem('campo_mail',t.includes('@')?t:t.toUpperCase());
+  const {error}=await sb.auth.signInWithPassword({email:e,password:p});if(error){const m=error.message||'';return toast(/banned/i.test(m)?'Tu cuenta está bloqueada. Habla con tu supervisor.':/invalid login/i.test(m)?'Código/correo o clave incorrectos. Si la olvidaste, pide una clave nueva a tu administrador.':/not confirmed/i.test(m)?'Tu cuenta aún no está aprobada.':'No se pudo ingresar: '+m,6000);}arrancar();}
 async function registrarme(){guardarCampos();const d={nombres:up(S.F.nombres),ap_paterno:up(S.F.ap_paterno),ap_materno:up(S.F.ap_materno),especialidad:S.F.especialidad,obra:up(S.F.obra),email:String(S.F.email||'').trim()};
   if(!d.nombres||!d.ap_paterno)return toast('Escribe nombres y apellido paterno');
   if(!d.especialidad||!d.obra)return toast('Elige tu especialidad y tu obra');
-  if(!d.email||String(S.F.pass||'').length<6)return toast('Escribe correo y una contraseña de 6 caracteres o más');
+  if(String(S.F.pass||'').length<6)return toast('Crea una clave de 6 caracteres o más');
   if(!S.online)return toast('El registro necesita internet');
+  if(!d.email){const {data:cod,error:ec}=await sb.rpc('pdm_codigo_libre',{p_nombres:d.nombres,p_paterno:d.ap_paterno,p_materno:d.ap_materno||null});
+    if(ec||!cod)return toast('No se pudo generar tu código: '+((ec&&ec.message)||'intenta de nuevo'),6000);d.codigo=cod;d.email=aCorreo(cod);}
   const nombre=[d.nombres,d.ap_paterno,d.ap_materno].filter(Boolean).join(' ');
   const {data,error}=await sb.auth.signUp({email:d.email,password:S.F.pass,options:{data:{nombre,nombres:d.nombres,ap_paterno:d.ap_paterno,ap_materno:d.ap_materno,origen:'campo'}}});
   if(error)return toast(/already|registered/i.test(error.message)?'Ese correo ya tiene cuenta. Ingresa con tu misma clave de la página web.':'No se pudo registrar: '+error.message,6000);
   if(data.user&&Array.isArray(data.user.identities)&&data.user.identities.length===0){localStorage.setItem('campo_mail',d.email);toast('Ese correo ya tiene cuenta (por ejemplo, de la página web). Ingresa con tu misma clave.',7000);return ir('login',true);}
-  localStorage.setItem('campo_alta',JSON.stringify(d));localStorage.setItem('campo_mail',d.email);
+  localStorage.setItem('campo_alta',JSON.stringify(d));localStorage.setItem('campo_mail',d.codigo||d.email);
   if(data.session){await refrescarDatos();await crearColaborador(d,data.user.id);localStorage.removeItem('campo_alta');}
+  if(d.codigo)alert(`Tu código para ingresar es: ${d.codigo}\n\nAnótalo. Ingresarás con este código y la clave que creaste.`);
   toast('Registro enviado. Un administrador aprobará tu cuenta.',5000);arrancar();}
 async function guardarPerfil(){guardarCampos();const d={nombres:up(S.F.nombres),ap_paterno:up(S.F.ap_paterno),ap_materno:up(S.F.ap_materno),especialidad:S.F.especialidad,obra:up(S.F.obra)};
   if(!d.nombres||!d.ap_paterno)return toast('Escribe nombres y apellido paterno');
