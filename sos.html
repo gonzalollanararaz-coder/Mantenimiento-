@@ -351,7 +351,7 @@
       <select id="fObra"><option value="">Obra</option></select>
       <select id="fEstado"><option value="">Todos los estados</option><option value="CRITICO">Cr&iacute;tico</option><option value="PRECAUCION">Precauci&oacute;n</option><option value="NORMAL">Normal</option></select>
       <select id="fSistema"><option value="">Sistemas</option></select>
-      <select id="fFuente"><option value="">Laboratorio</option><option>Ferreyros</option><option>LUBTEC</option><option>MARCO PERUANA</option></select>
+      <select id="fFuente"><option value="">Laboratorio</option><option>Ferreyros</option><option>LUBTEC</option><option>MARCO PERUANA</option><option>Komatsu</option></select>
       <span class="chip hide" id="chN">&mdash;</span>
       <button class="act" id="btnLimpiarSOS">&#10005; Borrar filtros</button>
     </div>
@@ -2283,13 +2283,13 @@ Escribe en español una lista priorizada (los Críticos primero) de qué equipos
 async function subirResultados(filas,nom,hoja){
   // el laboratorio se deduce del nombre de la hoja o del archivo
   const t=nrm(hoja+' '+nom);
-  let fuente = /FESA/.test(t)?'Ferreyros' : /LUBTEC/.test(t)?'LUBTEC' : /MARCO/.test(t)?'MARCO PERUANA' : null;
+  let fuente = /FESA/.test(t)?'Ferreyros' : /LUBTEC/.test(t)?'LUBTEC' : /MARCO/.test(t)?'MARCO PERUANA' : /KOMATSU|KMMP/.test(t)?'Komatsu' : null;
   if(!fuente&&leerHoja(filas,['No. de control de laboratorio','ID de equipo','Compartimento']))fuente='Ferreyros';
   if(!fuente&&leerHoja(filas,['Nro de Muestra','Equipo','Compartimiento','CONDICIÓN SOS']))fuente='MARCO PERUANA';
   if(!fuente){
-    fuente=prompt('¿De qué laboratorio es este archivo?\n\nEscribe: Ferreyros, LUBTEC o MARCO','Ferreyros');
+    fuente=prompt('¿De qué laboratorio es este archivo?\n\nEscribe: Ferreyros, LUBTEC, MARCO o Komatsu','Ferreyros');
     if(!fuente)return;
-    fuente=nrm(fuente).startsWith('MARCO')?'MARCO PERUANA':nrm(fuente).startsWith('FERREYROS')||nrm(fuente).startsWith('FESA')?'Ferreyros':nrm(fuente);
+    fuente=nrm(fuente).startsWith('MARCO')?'MARCO PERUANA':nrm(fuente).startsWith('KOMATSU')?'Komatsu':nrm(fuente).startsWith('FERREYROS')||nrm(fuente).startsWith('FESA')?'Ferreyros':nrm(fuente);
   }
   const regs=(leerResultados(filas,fuente)||[]).filter(Boolean);
   sosDsf(regs,'fecha','fecha');
