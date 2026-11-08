@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
 <meta charset="utf-8">
-<meta name="gllr-version" content="V.071126-1" data-pagina="REPORTE (app de campo)">
+<meta name="gllr-version" content="V.071126-2" data-pagina="REPORTE (app de campo)">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>REPORTE</title>
 <link rel="manifest" href="campo.webmanifest">
@@ -176,6 +176,28 @@ input:focus,select:focus,textarea:focus{border-color:var(--am);box-shadow:0 0 0 
 input.fill,select.fill,input.fill:focus,select.fill:focus,input.fill:placeholder-shown,select.fill.sinval{background:#2a2614;border:2px solid #a07f00;color:#fff;-webkit-text-fill-color:#fff}
 input.fill:focus,select.fill:focus{border-color:var(--am);box-shadow:0 0 0 2px rgba(255,194,14,.3)}
 input.fill:-webkit-autofill{-webkit-box-shadow:0 0 0 40px #2a2614 inset;-webkit-text-fill-color:#fff}
+.yo{color:#60a5fa;font-weight:800;text-shadow:0 0 8px rgba(96,165,250,.45)}
+.eqbtn{display:flex;align-items:center;justify-content:space-between;width:100%;background:#2a2614;border:2px solid #a07f00;border-radius:10px;padding:12px 14px;color:#fff;font-size:18px;font-weight:700;cursor:pointer}
+.eqbtn.vacio{color:#c9b98a;font-weight:500}.eqbtn i{font-style:normal;color:var(--am);font-size:14px}
+.eqpan{margin-top:8px;max-height:58vh;overflow:auto;background:#181c21;border:1px solid #2f363e;border-radius:12px;padding:6px 10px 10px}
+.eqpan input{position:sticky;top:0;z-index:1;margin:4px 0 6px}
+.eqg{color:#60a5fa;font-weight:800;font-size:14px;letter-spacing:.03em;margin:10px 0 6px;text-shadow:0 0 6px rgba(96,165,250,.35)}
+.eqg small{color:#93c5fd;font-weight:700}
+.eqc{display:grid;grid-template-columns:repeat(auto-fill,minmax(92px,1fr));gap:6px}
+.eqc span{background:#232930;border:1px solid #39414a;border-radius:9px;padding:9px 4px;text-align:center;font-weight:800;font-size:15.5px;color:#e9ecef;cursor:pointer}
+.eqc span.on{background:var(--am);color:#1c1500;border-color:var(--am)}
+.st.tap{cursor:pointer;position:relative}.st.tap:after{content:'›';position:absolute;right:10px;top:6px;color:var(--mu);font-size:20px}
+.st.tap.abierto{outline:2px solid var(--am)}
+.st small.sub{display:block;font-size:12.5px;color:var(--mu);font-weight:500;margin-top:2px}
+.dcard{background:var(--card);border:1px solid #262c33;border-radius:14px;padding:10px 12px;margin-top:10px}
+.dcard h5{margin:0 0 6px;font-size:15px;color:var(--am);text-transform:uppercase;letter-spacing:.04em}
+.sosi{border-top:1px solid #2a3038;padding:8px 0}.sosi:first-of-type{border-top:0}
+.sosi .q{font-size:12px;color:var(--mu);text-transform:uppercase;margin-top:5px}.sosi p{margin:2px 0 0;font-size:14.5px;color:#dfe3e7;white-space:pre-wrap}
+.prow{display:flex;justify-content:space-between;gap:8px;align-items:center;border-top:1px solid #2a3038;padding:9px 0;cursor:pointer}.prow:first-of-type{border-top:0}
+.prow .tx{min-width:0}.prow small{display:block;color:var(--mu)}
+.kv{display:grid;grid-template-columns:auto 1fr;gap:6px 12px;font-size:15px}.kv span{color:var(--mu)}.kv b{color:#fff;font-weight:600;word-break:break-word}
+.fotos{display:flex;gap:8px;flex-wrap:wrap}.fotos img{width:96px;height:96px;object-fit:cover;border-radius:10px;border:1px solid #39414a}
+.prow .chev,.row .chev{color:#6b7580;font-size:26px;font-weight:700;line-height:1}
 .nota-am{color:var(--am);font-weight:700;margin-top:10px;text-align:center}
 .dim{color:var(--mu)}.hint{color:#fcd34d}.warn{color:#f87171}.add{color:var(--am)}.ver{color:#5f6974}
 .chips span,.tec span{background:var(--card2);border:1px solid #39414a;color:#cfd5db}
@@ -410,11 +432,11 @@ function salirApp(){cerrarSalir();_saliendo=true;try{window.close();}catch(_){}h
 function nuevoF(){const yo=S.col?[S.col.codigo]:[];return {tec:yo,ins:[],fotos:[],firma:[],ch:{}};}
 const TIT={cargando:'REPORTE',login:'Ingresar',alta:'Registro de colaborador',espera:'Cuenta en revisión',perfil:'Mis datos',home:'Inicio',reporte:'Reporte',
   MECANICO:'1 · Reporte mecánico',LUBRICACION:'2 · Lubricación',LLANTAS:'3 · Llantas',GETS:'4 · GETs',MNTTO_PREV:'5 · Mntto preventivo',PENDIENTE:'Nuevo pendiente',
-  pend:'Pendientes',consulta:'Ficha del equipo',envios:'Envíos',hecho:'Registro guardado',mas:'Mi cuenta'};
+  pend:'Pendientes',pdet:'Detalle del pendiente',consulta:'Ficha del equipo',envios:'Envíos',hecho:'Registro guardado',mas:'Mi cuenta'};
 TIT.home='REPORTE MECÁNICO';TIT.reporte='Nuevo reporte';
 function pintar(){
   $('tit').textContent=TIT[S.pant]||'REPORTE';
-  $('sub').textContent=S.col?`${S.col.codigo} · ${S.obra||'sin obra'}`:'';
+  $('sub').innerHTML=S.col?`<b class="yo">${esc(S.col.codigo)}</b> · ${esc(S.obra||'sin obra')}`:'';
   $('bk').style.display=S.pila.length?'':'none';
   const enTab=!!S.col&&TABS.some(t=>t[0]===S.pant), enForm=FORMS.includes(S.pant);
   $('tabs').classList.toggle('hide',!enTab); $('pie').classList.toggle('hide',!enForm);
@@ -511,9 +533,7 @@ const P={
    <label>Código o correo</label><input id="lgE" autocomplete="username" autocapitalize="characters" placeholder="Ej.: GLLANA" value="${esc(localStorage.getItem('campo_mail')||'')}">
    <label>Contraseña</label><input type="password" id="lgP" autocomplete="current-password">
    <button class="btn b-n" onclick="ingresar()">Ingresar</button>
-   <button class="btn b-g" onclick="ir('alta')">Soy nuevo: registrarme</button>
-   <div class="hint" style="margin-top:10px">Ingresa con tu <b>código</b> (ej. GLLANA) o tu correo. ¿Usas la página web de Equipos? Usa el <b>mismo correo y clave</b>.</div>
-   <div class="dim" style="margin-top:10px">Después del primer ingreso la app abre sin internet y recuerda la sesión.</div></div>
+   <button class="btn b-g" onclick="ir('alta')">Soy nuevo: registrarme</button></div>
   <div class="ver">${VERSION}</div>`,
  alta:()=>`<div class="c"><h4>Registro de colaborador</h4>
    <label>Nombres</label><input class="up fill" data-k="nombres" value="${esc(vF('nombres'))}" placeholder=" " oninput="prevCod()">
@@ -531,8 +551,7 @@ const P={
    <button class="btn b-n" onclick="arrancar()">Volver a intentar</button><button class="btn b-g" onclick="salir()">Cerrar sesión</button></div>`,
  home:()=>{const nq=S.COLA.filter(x=>!x.enviado).length, np=(S.PEND||[]).length;
   return `<div class="topo"><div style="flex:1;min-width:0"><div class="dim" style="font-size:13px">Obra</div>
-     <select class="obra" onchange="S.obra=this.value;localStorage.setItem('campo_obra',this.value);pintar()">${opts(obras(),S.obra,'— todas —')}</select></div>
-     <div style="text-align:right"><div class="dim" style="font-size:13px">Yo</div><b style="color:#FFC20E;font-size:19px">${esc(S.col.codigo)}</b></div></div>
+     <select class="obra" onchange="S.obra=this.value;localStorage.setItem('campo_obra',this.value);pintar()">${opts(obras(),S.obra,'— todas —')}</select></div></div>
    <div class="lblc">Registrar</div>
    ${gridReg(k=>`ir('${k}')`)}
    <div class="lblc">Consultar</div>
@@ -630,14 +649,15 @@ const P={
      <div style="text-align:right"><span class="pill ${x.enviado?'p-ok':x.error?'p-b':'p-w'}">${x.enviado?'✓ Enviado':x.error?'Error':'⏳ En cola'}</span><br><span class="add" onclick="whatsappId('${x.id}')">📲</span></div></div>`).join(''):'<div class="dim">Sin registros en este celular.</div>'}</div>
    <button class="btn b-n" onclick="sincronizar(true)" ${S.online?'':'disabled'}>Enviar ahora</button>
    <div class="dim" style="margin-top:6px">Los enviados se quedan aquí 7 días para reenviarlos por WhatsApp.</div>`;},
- consulta:()=>`<div class="c"><label>Equipo</label><div class="eqsel"><select id="cqSel" onchange="S.F.cq=this.value;consultar()">${cqOpts()}</select><span class="sbtn" title="Buscar" onclick="S.F.cqBus=!S.F.cqBus;guardarCampos();pintar()">${svg('bus')}</span></div>
-   ${S.F.cqBus?`<input class="up" id="cqBus" style="margin-top:8px" placeholder="FILTRAR POR CÓDIGO O NOMBRE" value="${esc(vF('cqf'))}" oninput="S.F.cqf=this.value;$('cqSel').innerHTML=cqOpts()">`:''}</div><div id="cqRes"></div>`,
+ consulta:()=>`<div class="c"><label>Equipo</label><div class="eqbtn ${S.cq?'':'vacio'}" onclick="tglEqPan()">${S.cq?esc(S.cq):'— elegir equipo —'}<i>${S.cqPan?'▲':'▼'}</i></div>
+   ${S.cqPan||!S.cq?`<div class="eqpan" id="eqPan"><input class="up" id="cqBus" placeholder="FILTRAR (código o tipo)" value="${esc(S.cqf||'')}" oninput="S.cqf=this.value;$('eqLst').innerHTML=cqGrupos()"><div id="eqLst">${cqGrupos()}</div></div>`:''}</div><div id="cqRes"></div>`,
+ pdet:()=>`<div id="pdBox"><div class="c dim">${S.online?'Cargando…':'Sin señal'}</div></div>`,
  pend:()=>`<div class="c"><h4>📌 Pendientes · ${esc(S.obra||'todas las obras')}</h4><div id="pdRes" class="dim">${S.online?'Cargando…':'Sin señal: se muestran los últimos descargados.'}</div></div>
    <button class="btn b-g" onclick="ir('PENDIENTE')">+ Nuevo pendiente</button>`,
  perfil:()=>{if(S.col&&S.F.nombres==null){Object.assign(S.F,{nombres:S.col.nombres,ap_paterno:S.col.ap_paterno,ap_materno:S.col.ap_materno||'',obra:S.col.obra||'',especialidad:S.col.especialidad||'MECANICO'});}
   return P.alta();}
 };
-const AFTER={home:()=>cargarPend(),alta:()=>{prevCod();marcarVacios();if(!S.OBRAS)cargarObras();},perfil:()=>{prevCod();marcarVacios();if(!S.OBRAS)cargarObras();},consulta:()=>{if(S.F.cq)consultar();},pend:()=>cargarPend(),
+const AFTER={home:()=>cargarPend(),alta:()=>{prevCod();marcarVacios();if(!S.OBRAS)cargarObras();},perfil:()=>{prevCod();marcarVacios();if(!S.OBRAS)cargarObras();},consulta:()=>{if(S.cq)consultar();},pdet:()=>verPendiente(),pend:()=>cargarPend(),
   MECANICO:chkHr,LUBRICACION:chkHr,LLANTAS:chkHr,GETS:chkHr,MNTTO_PREV:chkHr};
 const MODN={MECANICO:'Reporte mecánico',LUBRICACION:'Lubricación',LLANTAS:'Llantas',GETS:'GETs',MNTTO_PREV:'Mntto preventivo',PENDIENTE:'Pendiente'};
 
@@ -803,32 +823,48 @@ function verReg(id){const it=S.COLA.find(x=>x.id===id);if(!it)return;S.ult={reg:
 function whatsappId(id){const it=S.COLA.find(x=>x.id===id);if(it)whatsapp(it.reg);}
 
 /* ═══════════════════════ CONSULTA Y PENDIENTES ═══════════════════════ */
-function cqOpts(){const q=nrm(S.F.cqf||'');const L=eqObra().filter(x=>!q||nrm(x.cod_sap+' '+(x.equipo||'')+' '+(x.modelo||'')).includes(q));
-  return '<option value="">— elegir equipo —</option>'+L.map(x=>`<option value="${esc(x.cod_sap)}" ${S.F.cq===x.cod_sap?'selected':''}>${esc(x.cod_sap)} · ${esc(x.equipo||'')} ${esc(x.modelo||'')}</option>`).join('');}
+/* tipo de equipo (mismas reglas que la página web) */
+const FAM_R=[[/RETRO\s*EXCAVADORA/,'RETROEXCAVADORA'],[/EXCAVADORA.*(RUEDA|LLANTA)/,'EXCAVADORA SOBRE RUEDAS'],[/EXCAVADORA/,'EXCAVADORA'],[/MINI\s*CARGADOR/,'MINICARGADOR'],[/CARGADOR/,'CARGADOR FRONTAL'],
+ [/TRACTOR/,'TRACTOR SOBRE ORUGAS'],[/MOTONIVELADORA/,'MOTONIVELADORA'],[/RODILLO/,'RODILLO'],[/TORRE|LUMINARIA/,'TORRE DE ILUMINACION'],[/GRUPO\s*ELECTROGENO|GENERADOR/,'GRUPO ELECTROGENO'],
+ [/MOTOSOLDADORA/,'MOTOSOLDADORA'],[/COMPRESOR/,'COMPRESORA'],[/MARTILLO/,'MARTILLO HIDRAULICO'],[/CHANCADORA/,'CHANCADORA'],[/PLANTA/,'PLANTA'],[/CISTERNA.*COMBUSTIBLE/,'CISTERNA DE COMBUSTIBLE'],
+ [/CISTERNA/,'CISTERNA DE AGUA'],[/VOLQUETE/,'VOLQUETE'],[/CAMABAJA|CAMA\s*BAJA|TRACTO/,'TRACTO CAMABAJA'],[/GRUA/,'GRUA'],[/LUBRICADOR/,'CAMION LUBRICADOR'],[/BARANDA/,'CAMION BARANDA'],
+ [/DOBLE\s*CABINA/,'CAMION DOBLE CABINA'],[/CAMIONETA|PICK\s*UP|HILUX/,'CAMIONETA'],[/SPRINTER|MINIVAN|FURGONETA/,'MINIVAN'],[/OMNIBUS|MICROBUS|MINI\s*BUS|BUS/,'OMNIBUS'],[/AUTO\s*HORMIGONERA|MIXER/,'AUTOHORMIGONERA'],
+ [/MONTACARGA/,'MONTACARGAS'],[/CAMION/,'CAMION']];
+function tipoEq(e){const s=String(e&&e.equipo||'').normalize('NFD').replace(/[̀-ͯ]/g,'').toUpperCase();for(const [re,n] of FAM_R)if(re.test(s))return n;return s.split(' ')[0]||'OTROS';}
+function cqGrupos(){const q=nrm(S.cqf||'');const G={};
+  eqObra().filter(x=>!q||nrm(x.cod_sap+' '+tipoEq(x)+' '+(x.equipo||'')).includes(q)).forEach(x=>{const t=tipoEq(x);(G[t]=G[t]||[]).push(x);});
+  const K=Object.keys(G).sort();if(!K.length)return '<div class="dim" style="padding:8px">Sin equipos.</div>';
+  return K.map(t=>`<div class="eqg">${esc(t)} <small>(${String(G[t].length).padStart(2,'0')})</small></div><div class="eqc">${G[t].sort((a,b)=>a.cod_sap.localeCompare(b.cod_sap)).map(x=>`<span class="${S.cq===x.cod_sap?'on':''}" onclick="elegirCq('${esc(x.cod_sap)}')">${esc(x.cod_sap)}</span>`).join('')}</div>`).join('');}
+function tglEqPan(){S.cqPan=!S.cqPan;pintar();if(S.cqPan){const i=$('cqBus');if(i)i.focus();}}
+function elegirCq(c){S.cq=c;S.cqPan=false;S.cqVer=null;pintar();}
 const ESPN={MECANICO:'Mecánico',SOLDADOR:'Soldador',ELECTRICISTA:'Electricista',LUBRICADOR:'Lubricador',LLANTERO:'Llantero'};
 const espDe=r=>ESPN[r.especialidad]||({LUBRICACION:'Lubricador',LLANTAS:'Llantero'}[r.modulo])||'Mecánico';
 const SOSP={CRITICO:['p-b','Crítico'],PRECAUCION:['p-w','Precaución'],NORMAL:['p-ok','Normal']};
-async function consultar(){const c=String(S.F.cq||'').split('·')[0].trim().toUpperCase(), e=eqDe(c), box=$('cqRes');if(!box)return;
+async function consultar(){const c=String(S.cq||'').split('·')[0].trim().toUpperCase(), e=eqDe(c), box=$('cqRes');if(!box)return;
   if(!c){box.innerHTML='';return;} if(!e){box.innerHTML='<div class="c dim">Equipo no encontrado.</div>';return;}
   const u=e.contador==='Km'?'km':'h';
   const prox=+e.frecuencia?(+e.hrkm_ult_mntto||0)+(+e.frecuencia):null, rest=prox!=null&&e.hrkm_actual!=null?prox-(+e.hrkm_actual):null;
   const dsf=window.GLLR_DSF&&GLLR_DSF.de(e.cod_sap).length;
   const pct=rest==null?0:Math.max(0,Math.min(100,100-rest/(+e.frecuencia)*100));
   box.innerHTML=`<div class="hero"><div class="dim">${esc(e.equipo||'')} · ${esc(e.marca||'')} ${esc(e.modelo||'')}</div><div class="code">${esc(e.cod_sap)}</div>
-    <div class="stats"><div class="st"><span>${e.contador==='Km'?'Kilometraje':'Horómetro'}</span><b>${e.hrkm_actual!=null?f0(e.hrkm_actual)+' '+u:'—'}</b>${dsf?'<small class="pill p-a">⟲ desfase</small>':''}</div>
-     <div class="st"><span>Próximo PM</span><b style="color:${rest==null?'inherit':rest<0?'#f87171':rest<(+e.frecuencia*0.1)?'#fbbf24':'#4ade80'}">${rest==null?'—':rest<0?'vencido '+f0(-rest):'faltan '+f0(rest)}</b>${rest==null?'':`<div class="pbar"><i style="width:${pct}%;background:${rest<0?'#ef4444':rest<(+e.frecuencia*0.1)?'#f59e0b':'#22c55e'}"></i></div>`}</div>
-     <div class="st"><span>SOS aceite</span><b id="cqSos">…</b></div><div class="st"><span>Pendientes</span><b id="cqPend">…</b></div></div></div>
+    <div class="stats"><div class="st"><span>${e.contador==='Km'?'Kilometraje':'Horómetro'}</span><b>${e.hrkm_actual!=null?f0(e.hrkm_actual)+' '+u:'—'}</b><small class="sub">fecha: ${e.fecha_lectura?fd(e.fecha_lectura):'—'}</small>${dsf?'<small class="pill p-a">⟲ desfase</small>':''}</div>
+     <div class="st"><span>Próximo PM</span><b style="color:${rest==null?'inherit':rest<0?'#f87171':rest<(+e.frecuencia*0.1)?'#fbbf24':'#4ade80'}">${rest==null?'—':rest<0?'vencido '+f0(-rest):'faltan '+f0(rest)}</b>${rest==null?'':`<div class="pbar"><i style="width:${pct}%;background:${rest<0?'#ef4444':rest<(+e.frecuencia*0.1)?'#f59e0b':'#22c55e'}"></i></div>`}<small class="sub">Último servicio: ${e.hrkm_ult_mntto!=null&&e.hrkm_ult_mntto!==''?f0(e.hrkm_ult_mntto)+' '+u:'—'}</small></div>
+     <div class="st tap ${S.cqVer==='sos'?'abierto':''}" onclick="verCq('sos')"><span>SOS aceite</span><b id="cqSos">…</b></div><div class="st tap ${S.cqVer==='pend'?'abierto':''}" onclick="verCq('pend')"><span>Pendientes</span><b id="cqPend">…</b></div></div></div>
+    <div id="cqDet"></div>
     <div class="lblc">Historial</div><div id="cqL" class="tlx dim">${S.online?'Cargando…':''}</div>`;
   // pendientes abiertos del equipo
   let np=(S.PEND||[]).filter(p=>p.cod_sap===e.cod_sap).length;
   if(S.online){const {data}=await sb.from('pdm_registros').select('id').eq('cod_sap',e.cod_sap).eq('backlog_estado','ABIERTO').eq('anulado',false);if(data)np=data.length;}
   if($('cqPend'))$('cqPend').textContent=np?np+(np===1?' abierto':' abiertos'):'ninguno';
+  S.cqE=e;
   // último resultado SOS (el peor estado entre los últimos de cada sistema)
-  let sos=(await DB.get('sos_'+e.cod_sap).catch(()=>null))||null;
-  if(S.online){const {data}=await sb.from('sos_muestras').select('sistema,estado_std,f_muestreo').eq('cod_sap',e.cod_sap).order('f_muestreo',{ascending:false}).limit(80);
-    if(data){const ult={};data.forEach(m=>{const k=m.sistema||'-';if(!ult[k]||String(m.f_muestreo)>String(ult[k].f_muestreo))ult[k]=m;});
+  let sos=(await DB.get('sos_'+e.cod_sap).catch(()=>null))||null;S.cqSos=(await DB.get('sosd_'+e.cod_sap).catch(()=>null))||[];
+  if(S.online){let {data,error}=await sb.from('sos_muestras').select('sistema,estado_std,f_muestreo,nro_muestra,observacion,observacion_lab').eq('cod_sap',e.cod_sap).order('f_muestreo',{ascending:false}).limit(80);
+    if(error)({data}=await sb.from('sos_muestras').select('sistema,estado_std,f_muestreo').eq('cod_sap',e.cod_sap).order('f_muestreo',{ascending:false}).limit(80));
+    if(data){const ult={};data.forEach(m=>{const k=m.sistema||'-';if(!ult[k]||String(m.f_muestreo)>String(ult[k].f_muestreo))ult[k]=m;});S.cqSos=Object.values(ult);DB.set('sosd_'+e.cod_sap,S.cqSos);
       const rk={CRITICO:3,PRECAUCION:2,NORMAL:1};sos=Object.values(ult).sort((a,b)=>(rk[b.estado_std]||0)-(rk[a.estado_std]||0)||String(b.f_muestreo).localeCompare(String(a.f_muestreo)))[0]||null;DB.set('sos_'+e.cod_sap,sos);}}
   if($('cqSos')){const t=sos&&SOSP[sos.estado_std];$('cqSos').innerHTML=sos?`<span style="color:${sos.estado_std==='CRITICO'?'#f87171':sos.estado_std==='PRECAUCION'?'#fbbf24':'#4ade80'}">${esc(t?t[1]:sos.estado_std)}</span><small class="dim" style="display:block;font-size:12px;font-weight:400">${fd(sos.f_muestreo)}</small>`:'—';}
+  if(S.cqVer)verCq(S.cqVer,true);
   // historial
   let regs=S.REC.filter(r=>r.cod_sap===e.cod_sap).concat(S.COLA.filter(x=>!x.enviado&&x.reg.cod_sap===e.cod_sap).map(x=>x.reg));
   if(S.online){const {data}=await sb.from('pdm_registros').select('id,fecha,modulo,especialidad,trabajo,sistema,tecnicos,backlog').eq('cod_sap',e.cod_sap).eq('anulado',false).order('fecha',{ascending:false}).limit(20);if(data)regs=data;}
@@ -839,11 +875,58 @@ async function cargarPend(){const box=$('pdRes');let L=(await DB.get('pend').cat
     if(S.obra)q=q.eq('obra',S.obra);const {data,error}=await q;if(!error){L=data||[];DB.set('pend',L);}}
   S.PEND=L;const bd=$('pendBadge');if(bd){bd.textContent=L.length;bd.style.display=L.length?'':'none';}
   if(!box)return;
-  box.className='';box.innerHTML=L.length?L.map(p=>`<div class="row"><div><b>${esc(p.cod_sap)}</b> · ${esc(p.backlog)}<br><span class="dim">${fd(p.fecha)} · ${esc(p.registrado_por||'')}${p.estado_equipo==='INOPERATIVO'?' · <b style="color:#B91C1C">INOPERATIVO</b>':''}</span></div>
-     <span class="pill p-w" style="cursor:pointer" onclick="cerrarPend('${p.id}')">Cerrar</span></div>`).join(''):'<span class="dim">Sin pendientes abiertos.</span>';}
+  box.className='';box.innerHTML=L.length?L.map(p=>`<div class="row"><div style="cursor:pointer;flex:1;min-width:0" onclick="abrirPend('${p.id}')"><b>${esc(p.cod_sap)}</b> · ${esc(p.backlog)}<br><span class="dim">${fd(p.fecha)} · ${esc(p.registrado_por||'')}${p.estado_equipo==='INOPERATIVO'?' · <b style="color:#B91C1C">INOPERATIVO</b>':''}</span></div>
+     <span class="pill p-w" style="cursor:pointer" onclick="cerrarPend('${p.id}')">Cerrar</span><span class="chev" style="cursor:pointer;margin-left:6px" onclick="abrirPend('${p.id}')">›</span></div>`).join(''):'<span class="dim">Sin pendientes abiertos.</span>';}
 async function cerrarPend(id){if(!S.online)return toast('Necesitas señal para cerrar un pendiente');if(!confirm('¿Marcar este pendiente como resuelto?'))return;
   const {error}=await sb.from('pdm_registros').update({backlog_estado:'CERRADO',backlog_cerrado_en:new Date().toISOString()}).eq('id',id);
-  if(error)return toast('No se pudo cerrar: '+error.message,5000);toast('✓ Pendiente cerrado');cargarPend();}
+  if(error)return toast('No se pudo cerrar: '+error.message,5000);toast('✓ Pendiente cerrado');if(S.pant==='pdet')verPendiente();else cargarPend();}
+/* ── detalle de un pendiente ── */
+function abrirPend(id){S.pid=id;ir('pdet');}
+const kv=(k,v)=>v==null||v===''||(Array.isArray(v)&&!v.length)?'':`<span>${k}</span><b>${v}</b>`;
+async function verPendiente(){const box=$('pdBox');if(!box||!S.pid)return;let r=(S.PEND||[]).find(x=>x.id===S.pid)||(S.cqPL||[]).find(x=>x.id===S.pid)||null;
+  if(S.online){const {data,error}=await sb.from('pdm_registros').select('*').eq('id',S.pid).maybeSingle();if(!error&&data)r=data;}
+  if(!$('pdBox'))return;if(!r){box.innerHTML='<div class="c dim">No se encontró el pendiente.</div>';return;}
+  const e=eqDe(r.cod_sap)||{}, ab=r.backlog_estado!=='CERRADO', u=e.contador==='Km'?'km':'h';
+  const ins=(Array.isArray(r.insumos)?r.insumos:[]).map(i=>esc(`${i.n||''} ${i.q!=null?'· '+i.q:''} ${i.u||''}`)).join('<br>');
+  const nom=c=>{const x=(S.COL||[]).find(k=>k.codigo===c);return x?`${esc(c)} <span class="dim" style="font-weight:400">(${esc([x.nombres,x.ap_paterno].filter(Boolean).join(' '))})</span>`:esc(c);};
+  box.innerHTML=`<div class="hero"><div class="dim">${esc(e.equipo||'')} ${esc(e.modelo||'')}</div><div class="code">${esc(r.cod_sap)}</div>
+     <span class="pill ${ab?'p-w':'p-ok'}">${ab?'ABIERTO':'CERRADO'}</span>${r.estado_equipo?` <span class="pill ${r.estado_equipo==='INOPERATIVO'?'p-b':'p-ok'}">${esc(r.estado_equipo)}</span>`:''}</div>
+   <div class="dcard"><h5>Pendiente</h5><div style="font-size:17px;color:#fff;white-space:pre-wrap">${esc(r.backlog||'—')}</div></div>
+   <div class="dcard"><h5>Registro</h5><div class="kv">
+     ${kv('Fecha',fd(r.fecha)+(r.hora_ini?' · '+esc(String(r.hora_ini).slice(0,5))+(r.hora_fin?' – '+esc(String(r.hora_fin).slice(0,5)):''):''))}
+     ${kv('Registró',r.registrado_por?nom(r.registrado_por):'')}
+     ${kv('Técnicos',(r.tecnicos||[]).map(nom).join('<br>'))}
+     ${kv('Obra',esc(r.obra||''))}
+     ${kv(u==='km'?'Kilometraje':'Horómetro',r.hrkm!=null?f0(r.hrkm)+' '+u+(r.hrkm_panel!=null&&+r.hrkm_panel!==+r.hrkm?` <span class="dim" style="font-weight:400">(tablero ${f0(r.hrkm_panel)})</span>`:''):'')}
+     ${kv('Tipo',esc(MODN[r.modulo]||r.modulo||''))}
+     ${kv('Sistema',esc(r.sistema||''))}${kv('Componente',esc(r.componente||''))}
+     ${kv('Trabajo',esc(r.trabajo||''))}${kv('Tipo de parada',esc(r.tipo_parada||''))}${kv('Origen',esc(r.origen_falla||''))}${kv('Frente',esc(r.frente||''))}
+     ${kv('Descripción',esc(r.descripcion||''))}${kv('Observación',esc(r.observacion||''))}${kv('Insumos',ins)}
+     ${!ab?kv('Cerrado el',r.backlog_cerrado_en?fd(String(r.backlog_cerrado_en).slice(0,10)):''):''}</div></div>
+   ${(r.fotos||[]).length?`<div class="dcard"><h5>Fotos</h5><div class="fotos" id="pdFotos">${S.online?'<span class="dim">Cargando…</span>':'<span class="dim">Necesitas señal para ver las fotos.</span>'}</div></div>`:''}
+   ${ab?`<button class="btn b-y" onclick="cerrarPend('${r.id}')">✓ Marcar como resuelto</button>`:''}`;
+  if((r.fotos||[]).length&&S.online){try{const {data}=await sb.storage.from('pdm-fotos').createSignedUrls(r.fotos,3600);const f=$('pdFotos');
+    if(f&&data)f.innerHTML=data.filter(x=>x.signedUrl).map(x=>`<a href="${x.signedUrl}" target="_blank"><img src="${x.signedUrl}" alt=""></a>`).join('')||'<span class="dim">Sin fotos.</span>';}catch(_){}}}
+/* ── ficha: detalle SOS y pendientes del equipo ── */
+async function verCq(t,refresco){if(!refresco)S.cqVer=S.cqVer===t?null:t;document.querySelectorAll('.st.tap').forEach(x=>x.classList.remove('abierto'));
+  const box=$('cqDet');if(!box)return;if(!S.cqVer){box.innerHTML='';return;}
+  const tiles=document.querySelectorAll('.st.tap');(S.cqVer==='sos'?tiles[0]:tiles[1])?.classList.add('abierto');
+  const e=S.cqE;if(!e)return;
+  if(S.cqVer==='sos'){const L=(S.cqSos||[]).slice().sort((a,b)=>({CRITICO:3,PRECAUCION:2,NORMAL:1}[b.estado_std]||0)-({CRITICO:3,PRECAUCION:2,NORMAL:1}[a.estado_std]||0));
+    box.innerHTML=`<div class="dcard"><h5>SOS · último resultado por sistema</h5>${L.length?L.map(m=>{const t=SOSP[m.estado_std];return `<div class="sosi"><div style="display:flex;justify-content:space-between;gap:8px"><b style="color:#fff">${esc(m.sistema||'—')}</b><span class="pill ${t?t[0]:'p-a'}">${esc(t?t[1]:(m.estado_std||'—'))}</span></div>
+      <small class="dim">${fd(m.f_muestreo)}${m.nro_muestra?' · muestra '+esc(m.nro_muestra):''}</small>
+      ${m.observacion?`<div class="q">Observación</div><p>${esc(m.observacion)}</p>`:''}
+      <div class="q">Comentario de laboratorio</div><p>${m.observacion_lab?esc(m.observacion_lab):'<span class="dim">Sin comentario del laboratorio.</span>'}</p></div>`;}).join(''):'<div class="dim">Sin análisis de aceite registrados.</div>'}</div>`;return;}
+  // pendientes del equipo en su obra actual: abiertos + histórico cerrado
+  box.innerHTML='<div class="dcard dim">Cargando…</div>';let L=(S.PEND||[]).filter(p=>p.cod_sap===e.cod_sap);
+  if(S.online){let q=sb.from('pdm_registros').select('id,fecha,cod_sap,backlog,backlog_estado,backlog_cerrado_en,registrado_por,estado_equipo,obra,hrkm').eq('cod_sap',e.cod_sap).not('backlog','is',null).eq('anulado',false).order('fecha',{ascending:false}).limit(60);
+    if(e.cod_proyec)q=q.eq('obra',e.cod_proyec);const {data}=await q;if(data)L=data.filter(x=>String(x.backlog||'').trim());}
+  S.cqPL=L;if(!$('cqDet')||S.cqVer!=='pend')return;
+  const A=L.filter(p=>p.backlog_estado!=='CERRADO'),C=L.filter(p=>p.backlog_estado==='CERRADO');
+  const fila=p=>`<div class="prow" onclick="abrirPend('${p.id}')"><div class="tx"><b>${esc(p.backlog)}</b><small>${fd(p.fecha)} · ${esc(p.registrado_por||'')}${p.hrkm!=null?' · '+f0(p.hrkm)+' h':''}${p.backlog_estado==='CERRADO'&&p.backlog_cerrado_en?' · cerrado '+fd(String(p.backlog_cerrado_en).slice(0,10)):''}</small></div><span class="chev">›</span></div>`;
+  $('cqDet').innerHTML=`<div class="dcard"><h5>Abiertos (${A.length}) · ${esc(e.cod_proyec||'')}</h5>${A.length?A.map(fila).join(''):'<div class="dim">Ninguno.</div>'}</div>
+    <div class="dcard"><h5>Histórico cerrados (${C.length})</h5>${C.length?C.map(fila).join(''):'<div class="dim">Ninguno.</div>'}</div>
+    <button class="btn b-g" onclick="regEn('PENDIENTE','${esc(e.cod_sap)}')">+ Nuevo pendiente para ${esc(e.cod_sap)}</button>`;}
 
 /* ═══════════════════════ INICIO ═══════════════════════ */
 pintar(); arrancar().catch(e=>{console.error(e);toast('Error al iniciar: '+e.message,6000);ir('login',true);});
