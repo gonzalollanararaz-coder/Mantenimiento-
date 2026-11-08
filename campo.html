@@ -444,7 +444,10 @@ function atras(){if(S.pila.length){salvarBorrador();S.pant=S.pila.pop();pintar()
 /* ── registro en curso: se guarda en el celular al salir, al cerrar la app y mientras se escribe ── */
 S.BOR={};
 function borradorDe(){const F=S.F;return {...F,fotos:(F.fotos||[]).map(f=>({blob:f.blob})),t:Date.now()};}
-function tieneDatos(F){return !!(F&&(F.hr||F.componente||F.sistema||F.trabajo||(F.ins||[]).some(x=>x.n)||F.desc||F.obs||F.backlog||(F.fotos||[]).length||(F.firma||[]).length||Object.keys(F.ch||{}).some(k=>!['turno','estado','esp','origen'].includes(k))));}
+function tieneDatos(F){if(!F)return false;const IGN=['eq','eqTxt','tec','fecha','hini','hfin','ch','_rec','_guardado','hrConv','ins','fotos','firma','g'];
+  const lleno=v=>Array.isArray(v)?v.some(lleno):v&&typeof v==='object'?Object.values(v).some(lleno):v!=null&&v!==''&&v!==false;
+  return Object.keys(F).some(k=>!IGN.includes(k)&&!/_o$/.test(k)?lleno(F[k]):false)||(F.ins||[]).some(x=>x.n)||(F.fotos||[]).length>0||(F.firma||[]).length>0
+   ||(F.g||[]).some(x=>x&&x.on)||Object.keys(F.ch||{}).some(k=>!['turno','estado','esp','origen'].includes(k)&&F.ch[k]!=null);}
 function salvarBorrador(){if(!FORMS.includes(S.pant)||!S.F||S.F._guardado)return;try{guardarCampos();}catch(_){}
   const k='bor_'+S.pant;if(!tieneDatos(S.F)){DB.set(k,null).catch(()=>{});delete S.BOR[S.pant];return;}
   const b=borradorDe();S.BOR[S.pant]=b.t;DB.set(k,b).catch(()=>{});}
