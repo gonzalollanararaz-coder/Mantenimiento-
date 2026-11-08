@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
 <meta charset="utf-8">
-<meta name="gllr-version" content="V.081126-7" data-pagina="REPORTE (app de campo)">
+<meta name="gllr-version" content="V.081126-8" data-pagina="REPORTE (app de campo)">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>REPORTE</title>
 <link rel="manifest" href="campo.webmanifest">
@@ -439,24 +439,25 @@ const TABS=[];
 const FORMS=['MECANICO','LUBRICACION','LLANTAS','GETS','MNTTO_PREV','PENDIENTE'];
 function li(av,ic,t,sub,der,on){return `<div class="li" ${on?`onclick="${on}"`:''}><div class="av ${av}">${svg(ic)}</div><div class="tx"><b>${t}</b><small>${sub}</small></div>${der||''}<span class="chev">${svg('chev')}</span></div>`;}
 /* ═══════════════════════ NAVEGACIÓN ═══════════════════════ */
-function ir(p,raiz){salvarBorrador();S.eqAb=null;S.eqf='';if(p==='consulta'){S.cq=null;S.cqVer=null;}if(!raiz){S.pila.push(S.pant);hPush();}else S.pila=[];S.pant=p;if(!['hecho'].includes(p))S.F=nuevoF();pintar();$('main').scrollTop=0;if(FORMS.includes(p))recuperarBorrador(p);}
+function ir(p,raiz){salvarBorrador();S.eqAb=null;S.eqf='';if(p==='consulta'){S.cq=null;S.cqVer=null;}if(!raiz){S.pila.push(S.pant);hPush();}else S.pila=[];S.pant=p;if(!['hecho'].includes(p))S.F=nuevoF();pintar();$('main').scrollTop=0;if(FORMS.includes(p)){try{guardarCampos();}catch(_){}S.F._base=huella(S.F);recuperarBorrador(p);}}
 function atras(){if(S.pila.length){salvarBorrador();S.pant=S.pila.pop();pintar();if(FORMS.includes(S.pant))recuperarBorrador(S.pant);}}
 /* ── registro en curso: se guarda en el celular al salir, al cerrar la app y mientras se escribe ── */
 S.BOR={};
 function borradorDe(){const F=S.F;return {...F,fotos:(F.fotos||[]).map(f=>({blob:f.blob})),t:Date.now()};}
-function tieneDatos(F){if(!F)return false;const IGN=['eq','eqTxt','tec','fecha','hini','hfin','ch','_rec','_guardado','hrConv','ins','fotos','firma','g'];
-  const lleno=v=>Array.isArray(v)?v.some(lleno):v&&typeof v==='object'?Object.values(v).some(lleno):v!=null&&v!==''&&v!==false;
-  return Object.keys(F).some(k=>!IGN.includes(k)&&!/_o$/.test(k)?lleno(F[k]):false)||(F.ins||[]).some(x=>x.n)||(F.fotos||[]).length>0||(F.firma||[]).length>0
-   ||(F.g||[]).some(x=>x&&x.on)||Object.keys(F.ch||{}).some(k=>!['turno','estado','esp','origen'].includes(k)&&F.ch[k]!=null);}
+/* huella del formulario: si no cambió nada desde que se abrió, no hay registro en curso */
+function huella(F){const o={};Object.keys(F||{}).sort().forEach(k=>{if(['_rec','_guardado','_base','fotos','firma','hrConv','eqTxt'].includes(k))return;o[k]=F[k];});
+  o._nf=(F.fotos||[]).length;o._nfi=(F.firma||[]).filter(t=>t&&t.length>1).length;return JSON.stringify(o);}
+function tieneDatos(F){return !!F&&F._base!=null&&huella(F)!==F._base;}
 function salvarBorrador(){if(!FORMS.includes(S.pant)||!S.F||S.F._guardado)return;try{guardarCampos();}catch(_){}
   const k='bor_'+S.pant;if(!tieneDatos(S.F)){DB.set(k,null).catch(()=>{});delete S.BOR[S.pant];return;}
   const b=borradorDe();S.BOR[S.pant]=b.t;DB.set(k,b).catch(()=>{});}
 async function recuperarBorrador(mod){const b=await DB.get('bor_'+mod).catch(()=>null);if(!b||S.pant!==mod)return;
+  if(!tieneDatos(b)){borrarBorrador(mod);return;}             // vacío o de una versión anterior
   if(S.F.eq&&b.eq&&S.F.eq!==b.eq)return;            // vino desde la ficha con otro equipo
   const F={...b};F.fotos=(b.fotos||[]).filter(f=>f&&f.blob).map(f=>({blob:f.blob,url:URL.createObjectURL(f.blob)}));delete F.t;
   S.F=F;S.F._rec=b.t;pintar();toast('📝 Se recuperó tu registro en curso');}
 async function borrarBorrador(mod){delete S.BOR[mod];await DB.set('bor_'+mod,null).catch(()=>{});}
-async function cargarBorradores(){for(const [k] of MODS){const b=await DB.get('bor_'+k).catch(()=>null);if(b)S.BOR[k]=b.t;else delete S.BOR[k];}}
+async function cargarBorradores(){for(const [k] of MODS){const b=await DB.get('bor_'+k).catch(()=>null);if(b&&tieneDatos(b))S.BOR[k]=b.t;else{delete S.BOR[k];if(b)DB.set('bor_'+k,null).catch(()=>{});}}}
 let _tBor=null;document.addEventListener('input',()=>{if(!FORMS.includes(S.pant))return;clearTimeout(_tBor);_tBor=setTimeout(salvarBorrador,800);});
 document.addEventListener('click',()=>{if(!FORMS.includes(S.pant))return;clearTimeout(_tBor);_tBor=setTimeout(salvarBorrador,800);});
 document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='hidden')salvarBorrador();});
