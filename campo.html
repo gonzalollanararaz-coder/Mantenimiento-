@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
 <meta charset="utf-8">
-<meta name="gllr-version" content="V.081126-1" data-pagina="REPORTE (app de campo)">
+<meta name="gllr-version" content="V.081126-2" data-pagina="REPORTE (app de campo)">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>REPORTE</title>
 <link rel="manifest" href="campo.webmanifest">
@@ -322,9 +322,14 @@ addEventListener('offline',()=>{S.online=false;pintarNet();});
 /* ═══════════════════════ DATOS ═══════════════════════ */
 async function cargarCache(){
   const [eq,co,ma,df,pe,rc]=await Promise.all(['eq','col','mae','dsf','perfil','rec'].map(k=>DB.get(k).catch(()=>null)));
-  S.EQ=eq||[];S.COL=co||[];S.MAE=ma||[];S.REC=rc||[];if(df&&window.GLLR_DSF)GLLR_DSF.lista=df;if(pe)S.perfil=pe;
+  S.EQ=eqActivos(eq||[]);S.COL=co||[];S.MAE=ma||[];S.REC=rc||[];if(df&&window.GLLR_DSF)GLLR_DSF.lista=df;if(pe)S.perfil=pe;
   S.COLA=await DB.cola().catch(()=>[]);
 }
+/* solo equipos MOVILIZADOS o EN TRÁNSITO (por movilizar); los desmovilizados y por desmovilizar no aparecen en ninguna lista */
+const stN=s=>String(s||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toUpperCase().replace(/[^A-Z]/g,'');
+const eqVale=e=>/^(MOVILIZ|PORMOVIL|ENTRANSIT|TRANSIT)/.test(stN(e.status));
+function eqActivos(L){const M=new Map();(L||[]).filter(eqVale).forEach(e=>{const k=e.cod_sap,o=M.get(k);
+  if(!o||(/^MOVILIZ/.test(stN(e.status))&&!/^MOVILIZ/.test(stN(o.status))))M.set(k,e);});return [...M.values()];}
 async function refrescarDatos(){
   if(!S.online)return;
   try{
@@ -332,7 +337,7 @@ async function refrescarDatos(){
       sb.from('maestro').select('id,cod_sap,equipo,marca,modelo,cod_proyec,familia,status,contador,hrkm_actual,fecha_lectura,hr_dia,hrkm_ult_mntto,frecuencia').order('cod_sap'),
       sb.from('pdm_colaboradores').select('*').eq('activo',true).order('ap_paterno'),
       sb.from('pdm_maestros').select('*').eq('activo',true)]);
-    if(!eq.error){S.EQ=eq.data||[];DB.set('eq',S.EQ);}
+    if(!eq.error){S.EQ=eqActivos(eq.data||[]);DB.set('eq',S.EQ);}
     if(!co.error){S.COL=co.data||[];DB.set('col',S.COL);}
     if(!ma.error){S.MAE=ma.data||[];DB.set('mae',S.MAE);}
     if(window.GLLR_DSF){await GLLR_DSF.cargar(sb);DB.set('dsf',GLLR_DSF.lista);}
