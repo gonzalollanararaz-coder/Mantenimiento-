@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
 <meta charset="utf-8">
-<meta name="gllr-version" content="V.241026-1" data-pagina="Configuración">
+<meta name="gllr-version" content="V.071126-1" data-pagina="Configuración">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Configuración &mdash; UDE</title>
 <link rel="icon" href="favicon.ico" sizes="any">
@@ -76,10 +76,10 @@ const C_ESP={k:'especialidad',l:'Especialidad',t:'sel',o:ESPS}, C_UND={k:'unidad
 const pdm=(tipo,l,u,cols,d)=>({id:'pdm_'+tipo,l,u,tb:'pdm_maestros',key:'id',filtro:{tipo},cols:cols||[C_VAL,C_ORD,C_ACT],d:d||'Lista de la app REPORTE. Desactivar oculta el valor en la app y lo conserva en los registros antiguos.'});
 const G=[
  {g:'Generales',it:[
-  pdm('ESPECIALIDAD','Especialidades',['pdm','app']),
+  pdm('ESPECIALIDAD','Puestos de trabajo',['pdm','app'],null,'Lista «Puesto de trabajo» del registro de la app REPORTE (y especialidades del parte diario). Desactivar oculta el valor y lo conserva en los registros antiguos.'),
   pdm('UNIDAD','Unidades de medida',['pdm','app']),
   pdm('FRENTE','Frentes de trabajo',['pdm','app']),
-  {id:'alt',l:'Obras · altitud',u:['sos'],tb:'sos_altitud_obra',key:'proyecto',cols:[{k:'proyecto',l:'Obra',t:'txt',up:1},{k:'altitud',l:'Altitud (m.s.n.m.)',t:'num'}],d:'Altitud de cada obra. SOS la usa para interpretar los resultados de aceite.'}]},
+  {id:'alt',l:'Obras · nombre y altitud',u:['sos','app'],tb:'sos_altitud_obra',key:'proyecto',cols:[{k:'proyecto',l:'Obra',t:'txt',up:1},{k:'nombre',l:'Nombre de la obra',t:'txt',up:1},{k:'altitud',l:'Altitud (m.s.n.m.)',t:'num'}],d:'Nombre y altitud de cada obra. La app REPORTE muestra «P-0171 / NOMBRE» solo para las obras que tienen equipos activos (no desmovilizados) en Equipos; SOS usa la altitud.'}]},
  {g:'Equipos y horómetros',it:[
   {id:'dsf',l:'Desfase de horómetros',u:['eq','comb','sos','pms','neu','app'],tb:'desfase_horometro',key:'id',orden:'cod_sap',
    cols:[{k:'cod_sap',l:'Equipo',t:'txt',up:1},{k:'fecha',l:'Fecha del cambio',t:'date'},{k:'hm_dia',l:'Horas máquina ese día',t:'num'},{k:'panel_dia',l:'Panel nuevo ese día',t:'num'},{k:'motivo',l:'Motivo',t:'txt'}],

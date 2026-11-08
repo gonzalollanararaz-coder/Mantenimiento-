@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
 <meta charset="utf-8">
-<meta name="gllr-version" content="V.241026-1" data-pagina="REPORTE (app de campo)">
+<meta name="gllr-version" content="V.071126-1" data-pagina="REPORTE (app de campo)">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>REPORTE</title>
 <link rel="manifest" href="campo.webmanifest">
@@ -173,6 +173,10 @@ select option{background:#232930;color:#e9ecef}
 input.fill,select.fill{background:var(--card2);border:2px solid #3d454e}
 input.fill:placeholder-shown,select.fill.sinval{background:#2a2614;border-color:#a07f00}
 input:focus,select:focus,textarea:focus{border-color:var(--am);box-shadow:0 0 0 2px rgba(255,194,14,.25);background:#262c33}
+input.fill,select.fill,input.fill:focus,select.fill:focus,input.fill:placeholder-shown,select.fill.sinval{background:#2a2614;border:2px solid #a07f00;color:#fff;-webkit-text-fill-color:#fff}
+input.fill:focus,select.fill:focus{border-color:var(--am);box-shadow:0 0 0 2px rgba(255,194,14,.3)}
+input.fill:-webkit-autofill{-webkit-box-shadow:0 0 0 40px #2a2614 inset;-webkit-text-fill-color:#fff}
+.nota-am{color:var(--am);font-weight:700;margin-top:10px;text-align:center}
 .dim{color:var(--mu)}.hint{color:#fcd34d}.warn{color:#f87171}.add{color:var(--am)}.ver{color:#5f6974}
 .chips span,.tec span{background:var(--card2);border:1px solid #39414a;color:#cfd5db}
 .chips span.on,.tec span.on{background:var(--am);border-color:var(--am);color:#1c1500}
@@ -309,8 +313,17 @@ async function refrescarDatos(){
   }catch(e){console.warn(e);}
 }
 const obras=()=>[...new Set(S.EQ.map(e=>e.cod_proyec).filter(Boolean))].sort();
-const obrasAlta=()=>{const L=new Set([...(S.OBRAS||[]),...obras()]);return [...L].filter(Boolean).sort();};
-async function cargarObras(){try{const c=await DB.get('obras').catch(()=>null);if(c&&!S.OBRAS)S.OBRAS=c;if(!S.online)return;const {data,error}=await sb.rpc('pdm_obras_activas');if(!error&&data){S.OBRAS=data.map(x=>typeof x==='string'?x:(x.pdm_obras_activas||x.obra||Object.values(x)[0]));DB.set('obras',S.OBRAS);if(['alta','perfil'].includes(S.pant)){guardarCampos();pintar();}}}catch(_){}}
+/* obras activas (con equipos no desmovilizados) + nombre de la obra (Configuración → Obras) */
+const obrasAlta=(sel)=>{const m=new Map();(S.OBRAS||[]).forEach(o=>{if(typeof o==='string')o={c:o,n:''};if(o&&o.c)m.set(o.c,o);});
+  if(!(S.OBRAS||[]).length)obras().forEach(c=>m.set(c,{c,n:''}));if(sel&&!m.has(sel))m.set(sel,{c:sel,n:''});
+  return [...m.values()].sort((a,b)=>a.c.localeCompare(b.c));};
+const PUESTOS0=['MECANICO','SOLDADOR','ELECTRICISTA','LUBRICADOR','LLANTERO','SUPERVISOR'];
+const puestos=(sel)=>{let L=(S.PUESTOS&&S.PUESTOS.length)?S.PUESTOS:M('ESPECIALIDAD').map(m=>m.valor);if(!L.length)L=PUESTOS0;if(sel&&!L.includes(sel))L=[...L,sel];return L;};
+async function cargarObras(){try{const c=await DB.get('obras').catch(()=>null);if(c&&!S.OBRAS)S.OBRAS=c;const p=await DB.get('puestos').catch(()=>null);if(p&&!S.PUESTOS)S.PUESTOS=p;if(!S.online)return;
+  const [o,q]=await Promise.all([sb.rpc('pdm_obras_activas'),sb.rpc('pdm_puestos')]);let cambio=false;
+  if(!o.error&&o.data){S.OBRAS=o.data.map(x=>typeof x==='string'?{c:x,n:''}:{c:x.codigo||x.obra||Object.values(x)[0],n:x.nombre||''});DB.set('obras',S.OBRAS);cambio=true;}
+  if(!q.error&&q.data){S.PUESTOS=q.data.map(x=>typeof x==='string'?x:(x.pdm_puestos||Object.values(x)[0])).filter(Boolean);DB.set('puestos',S.PUESTOS);cambio=true;}
+  if(cambio&&['alta','perfil'].includes(S.pant)){guardarCampos();pintar();}}catch(_){}}
 const eqObra=()=>S.EQ.filter(e=>!S.obra||e.cod_proyec===S.obra);
 
 /* ═══════════════════════ SESIÓN ═══════════════════════ */
@@ -502,18 +515,17 @@ const P={
    <div class="hint" style="margin-top:10px">Ingresa con tu <b>código</b> (ej. GLLANA) o tu correo. ¿Usas la página web de Equipos? Usa el <b>mismo correo y clave</b>.</div>
    <div class="dim" style="margin-top:10px">Después del primer ingreso la app abre sin internet y recuerda la sesión.</div></div>
   <div class="ver">${VERSION}</div>`,
- alta:()=>`<div class="c"><h4>Registro de colaborador</h4><div class="dim">Escribe tus nombres y apellidos por separado. Todo en MAYÚSCULAS.</div>
+ alta:()=>`<div class="c"><h4>Registro de colaborador</h4>
    <label>Nombres</label><input class="up fill" data-k="nombres" value="${esc(vF('nombres'))}" placeholder=" " oninput="prevCod()">
    <div class="r2"><div><label>Apellido paterno</label><input class="up fill" data-k="ap_paterno" value="${esc(vF('ap_paterno'))}" placeholder=" " oninput="prevCod()"></div>
    <div><label>Apellido materno</label><input class="up fill" data-k="ap_materno" value="${esc(vF('ap_materno'))}" placeholder=" "></div></div>
    <div class="hint" id="prevCod">En los reportes figurarás como: <b>—</b></div>
-   <label>Especialidad principal</label><select class="fill" data-k="especialidad">${opts(['MECANICO','SOLDADOR','ELECTRICISTA','LUBRICADOR','LLANTERO','SUPERVISOR'],vF('especialidad'),'— elegir —')}</select>
-   <label>Obra</label><select class="fill" data-k="obra">${opts(obrasAlta(),up(vF('obra')),'— elegir obra —')}</select>
+   <label>Puesto de trabajo</label><select class="fill" data-k="especialidad">${opts(puestos(vF('especialidad')),vF('especialidad'),'— elegir —')}</select>
+   <label>Obra</label><select class="fill" data-k="obra"><option value="">— elegir obra —</option>${obrasAlta(up(vF('obra'))).map(o=>`<option value="${esc(o.c)}" ${o.c===up(vF('obra'))?'selected':''}>${esc(o.n?o.c+' / '+o.n:o.c)}</option>`).join('')}</select>
    ${S.pant==='alta'?`<label>Correo (opcional)</label><input type="email" data-k="email" value="${esc(vF('email'))}" placeholder="Si no tienes, déjalo vacío">
-   <label>Crea tu clave (mín. 6)</label><input class="fill" type="password" data-k="pass" placeholder=" ">
-   <div class="dim" style="margin-top:4px">Sin correo: ingresarás con tu <b>código</b> (el de arriba) y esta clave. ¿Ya tienes cuenta en la página web? No te registres: vuelve e ingresa con tu mismo correo y clave.</div>`:''}
+   <label>Crea tu clave (mín. 6)</label><input class="fill" type="password" data-k="pass" placeholder=" ">`:''}
    <button class="btn b-y" onclick="${S.pant==='alta'?'registrarme()':'guardarPerfil()'}">${S.pant==='alta'?'Registrarme':'Guardar mis datos'}</button>
-   <div class="dim" style="margin-top:8px">${S.pant==='alta'?'Un administrador aprobará tu cuenta. Todas las áreas (mecánico, lubricación, llantas, GETs, mntto preventivo) quedan habilitadas para ti.':'Completa tus datos para que figures en los reportes.'}</div></div>`,
+   ${S.pant==='alta'?'<div class="nota-am">El administrador aprobará tu cuenta</div>':'<div class="dim" style="margin-top:8px">Completa tus datos para que figures en los reportes.</div>'}</div>`,
  espera:()=>`<div class="c" style="text-align:center"><div style="font-size:42px">⏳</div><h4>${S.perfil&&S.perfil.estado==='aprobado'?'Falta habilitar la app':'Tu cuenta está en revisión'}</h4>
    <div class="dim">${S.perfil&&S.perfil.estado==='aprobado'?'Tu cuenta de la página web ya existe. Pide a tu administrador que te habilite la <b>app REPORTE</b> (Parte diario mecánico → Colaboradores).':'Un administrador debe aprobarla en Parte diario mecánico → Colaboradores.'}</div>
    <button class="btn b-n" onclick="arrancar()">Volver a intentar</button><button class="btn b-g" onclick="salir()">Cerrar sesión</button></div>`,
@@ -536,7 +548,7 @@ const P={
  mas:()=>{const nq=S.COLA.filter(x=>!x.enviado).length;
   return `<div class="li" style="cursor:default"><div class="av a1" style="width:56px;height:56px">${svg('yo')}</div><div class="tx"><b>${esc(S.col.codigo)}</b><small>${esc(S.col.nombres)} ${esc(S.col.ap_paterno)} ${esc(S.col.ap_materno||'')}</small><small>${esc(S.obra||'sin obra')} · ${esc(S.col.especialidad||'')}</small></div></div>
    <div class="gh">Opciones</div>
-   ${li('a3','edit','Mis datos','nombres, obra, especialidad','',`ir('perfil')`)}
+   ${li('a3','edit','Mis datos','nombres, obra, puesto','',`ir('perfil')`)}
    ${li('a2','env','Envíos',nq?nq+' por enviar':'todo enviado',nq?`<span class="badge" style="background:#E0B000;color:#3B2E00">${nq}</span>`:'',`ir('envios')`)}
    ${li('a5','ref','Actualizar listas',`${S.EQ.length} equipos · ${S.COL.length} colaboradores`,'',`actualizar()`)}
    ${li('a4','out','Cerrar sesión','','',`salir()`)}
@@ -637,7 +649,7 @@ async function ingresar(){const t=$('lgE').value.trim(),p=$('lgP').value;if(!t||
   const {error}=await sb.auth.signInWithPassword({email:e,password:p});if(error){const m=error.message||'';return toast(/banned/i.test(m)?'Tu cuenta está bloqueada. Habla con tu supervisor.':/invalid login/i.test(m)?'Código/correo o clave incorrectos. Si la olvidaste, pide una clave nueva a tu administrador.':/not confirmed/i.test(m)?'Tu cuenta aún no está aprobada.':'No se pudo ingresar: '+m,6000);}arrancar();}
 async function registrarme(){guardarCampos();const d={nombres:up(S.F.nombres),ap_paterno:up(S.F.ap_paterno),ap_materno:up(S.F.ap_materno),especialidad:S.F.especialidad,obra:up(S.F.obra),email:String(S.F.email||'').trim()};
   if(!d.nombres||!d.ap_paterno)return toast('Escribe nombres y apellido paterno');
-  if(!d.especialidad||!d.obra)return toast('Elige tu especialidad y tu obra');
+  if(!d.especialidad||!d.obra)return toast('Elige tu puesto de trabajo y tu obra');
   if(String(S.F.pass||'').length<6)return toast('Crea una clave de 6 caracteres o más');
   if(!S.online)return toast('El registro necesita internet');
   if(!d.email){const {data:cod,error:ec}=await sb.rpc('pdm_codigo_libre',{p_nombres:d.nombres,p_paterno:d.ap_paterno,p_materno:d.ap_materno||null});
