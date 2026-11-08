@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
 <meta charset="utf-8">
-<meta name="gllr-version" content="V.081126-3" data-pagina="REPORTE (app de campo)">
+<meta name="gllr-version" content="V.081126-4" data-pagina="REPORTE (app de campo)">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>REPORTE</title>
 <link rel="manifest" href="campo.webmanifest">
@@ -179,6 +179,9 @@ input.fill:-webkit-autofill{-webkit-box-shadow:0 0 0 40px #2a2614 inset;-webkit-
 .yo{color:#60a5fa;font-weight:800;text-shadow:0 0 8px rgba(96,165,250,.45)}
 .eqcb{position:relative}
 .eqin{width:100%;text-overflow:ellipsis;background:#2a2614!important;border:2px solid #a07f00!important;border-radius:10px;padding:12px 44px 12px 14px;color:#fff!important;font-size:19px;font-weight:800;cursor:pointer}
+.eqcb.fino .eqin{font-weight:400!important}
+.eqlab{text-transform:none!important;font-size:14.5px;line-height:1.35}.eqlab b{color:#fff}.eqlab span{color:var(--mu);font-size:13.5px}
+.eqin{color:var(--am)!important;letter-spacing:.03em}
 .eqin::placeholder{color:#c9b98a;font-weight:500;text-transform:none}.eqcb.ab .eqin{border-color:var(--am)!important;border-radius:10px 10px 0 0}
 .eqcb>i{position:absolute;right:12px;top:13px;font-style:normal;color:var(--am);font-size:15px;cursor:pointer;padding:2px 4px}
 .eqdrop{position:absolute;left:0;right:0;top:100%;max-height:62vh;overflow:auto;background:#181c21;border:2px solid var(--am);border-top:0;border-radius:0 0 12px 12px;padding:2px 10px 12px;box-shadow:0 14px 28px rgba(0,0,0,.6)}
@@ -484,13 +487,13 @@ function cabecera(conHr){
   const e=eqDe(S.F.eq), ahora=new Date(), hh=ahora.toTimeString().slice(0,5);
   if(S.F.ch.turno==null)S.F.ch.turno=(ahora.getHours()>=7&&ahora.getHours()<19)?'DIA':'NOCHE';
   return `<div class="c"><div class="sec">Equipo y tiempo</div>
-   <label>Código del equipo · obra ${esc(S.obra||'—')}</label>
+   <label class="eqlab">${e?`<b>${esc(e.equipo||tipoEq(e))}</b> / ${esc(e.marca||'—')} / ${esc(e.modelo||'—')}<br><span>último ${e.contador==='Km'?'KM':'HR'}: <b>${e.hrkm_actual!=null?f0(e.hrkm_actual):'—'}</b>${e.fecha_lectura?' ('+fd(e.fecha_lectura)+')':''}</span>`:'Equipo'}</label>
    <div style="position:relative;z-index:6">${eqCombo('f')}</div>
-   <div class="dim" id="eqInfo">${e?`${esc(e.marca||'')} ${esc(e.modelo||'')} · último ${e.contador==='Km'?'KM':'HR'}: ${e.hrkm_actual!=null?f0(e.hrkm_actual):'—'}${e.fecha_lectura?' ('+fd(e.fecha_lectura)+')':''}`:'Elige un equipo de la lista'}</div>
+   <div id="eqInfo" hidden></div>
    ${conHr?`<label>${e&&e.contador==='Km'?'Kilometraje':'Horómetro'} del tablero</label><input type="number" inputmode="numeric" data-k="hr" value="${esc(vF('hr'))}" oninput="chkHr()"><div id="hrMsg" class="dim"></div>`:''}
    <div class="r2"><div><label>Fecha</label><input type="date" data-k="fecha" value="${esc(vF('fecha',hoyIso()))}"></div><div><label>Turno</label>${chips('turno',['DIA','NOCHE'])}</div></div>
    <div class="r2"><div><label>Hora inicio</label><select class="hsel" data-k="hini">${horaOpts(vF('hini',media(ahora)),'')}</select></div><div><label>Hora fin</label><select class="hsel" data-k="hfin">${horaOpts(vF('hfin'),'— : —')}</select></div></div>
-   <label>Técnicos que participaron (un solo trabajo, realizar un solo registro para todos)</label>
+   <label>Técnicos (un solo trabajo, un registro)</label>
    <div class="eqcb" id="tecCb" style="position:relative;z-index:4"><div class="eqin tecin" onclick="tglTecLst()"><span id="tecSel">${tecSelTxt()}</span></div><i onclick="event.stopPropagation();tglTecLst()">▼</i>
     <div class="eqdrop" id="tecLst" style="display:none"></div></div>
   </div>`;}
@@ -862,8 +865,8 @@ function tipoEq(e){const s=String(e&&e.equipo||'').normalize('NFD').replace(/[̀
 /* ── lista desplegable de equipos (ficha y formularios): códigos agrupados por tipo ── */
 const eqSel=ctx=>ctx==='cq'?S.cq:S.F.eq;
 function eqCombo(ctx,ph){const sel=eqSel(ctx),e=sel?eqDe(sel):null,ab=S.eqAb===ctx||(ctx==='cq'&&!sel);
-  return `<div class="eqcb ${ab?'ab':''}" id="eqCb" data-ctx="${ctx}">
-   <input id="eqIn" class="eqin up" readonly autocomplete="off" placeholder="${ph||'— elegir equipo —'}" value="${ab?esc(S.eqf||''):sel?esc(sel+(ctx==='cq'?'':' · '+(e&&e.equipo||''))):''}" onclick="tocarEq('${ctx}')" oninput="S.eqf=this.value;$('eqLst').innerHTML=eqGrupos('${ctx}')">
+  return `<div class="eqcb ${ab?'ab':''} ${ctx==='f'?'fino':''}" id="eqCb" data-ctx="${ctx}">
+   <input id="eqIn" class="eqin up" readonly autocomplete="off" placeholder="${ph||'— elegir equipo —'}" value="${ab?esc(S.eqf||''):sel?esc(sel):''}" onclick="tocarEq('${ctx}')" oninput="S.eqf=this.value;$('eqLst').innerHTML=eqGrupos('${ctx}')">
    <i onclick="event.stopPropagation();tglEq('${ctx}')">${ab?'▲':'▼'}</i>
    <div class="eqdrop" id="eqLst" style="${ab?'':'display:none'}">${ab?eqGrupos(ctx):''}</div></div>`;}
 function eqGrupos(ctx){const q=nrm(S.eqf||''),sel=eqSel(ctx);const G={};
@@ -872,7 +875,7 @@ function eqGrupos(ctx){const q=nrm(S.eqf||''),sel=eqSel(ctx);const G={};
   return K.map(t=>`<div class="eqg">${esc(t)} <small>(${String(G[t].length).padStart(2,'0')})</small></div><div class="eqc">${G[t].sort((a,b)=>a.cod_sap.localeCompare(b.cod_sap)).map(x=>`<span class="${sel===x.cod_sap?'on':''}" onclick="event.stopPropagation();pickEq('${ctx}','${esc(x.cod_sap)}')">${esc(x.cod_sap)}</span>`).join('')}</div>`).join('');}
 function abrirEq(ctx,si){const cb=$('eqCb'),l=$('eqLst'),i=$('eqIn');if(!cb)return;S.eqf='';
   if(si){S.eqAb=ctx;cb.classList.add('ab');l.innerHTML=eqGrupos(ctx);l.style.display='';i.value='';cb.querySelector('i').textContent='▲';}
-  else{if(ctx==='cq'&&!S.cq)return;S.eqAb=null;cb.classList.remove('ab');l.style.display='none';i.readOnly=true;const sel=eqSel(ctx),e=sel&&eqDe(sel);i.value=sel?sel+(ctx==='cq'?'':' · '+(e&&e.equipo||'')):'';cb.querySelector('i').textContent='▼';}}
+  else{if(ctx==='cq'&&!S.cq)return;S.eqAb=null;cb.classList.remove('ab');l.style.display='none';i.readOnly=true;const sel=eqSel(ctx),e=sel&&eqDe(sel);i.value=sel||'';cb.querySelector('i').textContent='▼';}}
 function tglEq(ctx){abrirEq(ctx,!$('eqCb').classList.contains('ab'));}
 /* 1er toque: abre la lista (sin teclado) · 2do toque: escribir para filtrar */
 function tocarEq(ctx){const i=$('eqIn');if(!$('eqCb').classList.contains('ab')){abrirEq(ctx,true);return;}
