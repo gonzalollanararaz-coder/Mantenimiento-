@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
 <meta charset="utf-8">
-<meta name="gllr-version" content="V.081126-4" data-pagina="REPORTE (app de campo)">
+<meta name="gllr-version" content="V.081126-5" data-pagina="REPORTE (app de campo)">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>REPORTE</title>
 <link rel="manifest" href="campo.webmanifest">
@@ -180,6 +180,9 @@ input.fill:-webkit-autofill{-webkit-box-shadow:0 0 0 40px #2a2614 inset;-webkit-
 .eqcb{position:relative}
 .eqin{width:100%;text-overflow:ellipsis;background:#2a2614!important;border:2px solid #a07f00!important;border-radius:10px;padding:12px 44px 12px 14px;color:#fff!important;font-size:19px;font-weight:800;cursor:pointer}
 .eqcb.fino .eqin{font-weight:400!important}
+.eqcb.fino .eqdrop{padding:0}
+.eqr{padding:11px 14px;border-top:1px solid #262c33;font-size:18px;color:#e9ecef;cursor:pointer}.eqr:first-child{border-top:0}
+.eqr b{color:var(--am)}.eqr.on,.eqr:active{background:#3a300d;color:var(--am)}
 .eqlab{text-transform:none!important;font-size:14.5px;line-height:1.35}.eqlab b{color:#fff}.eqlab span{color:var(--mu);font-size:13.5px}
 .eqin{color:var(--am)!important;letter-spacing:.03em}
 .eqin::placeholder{color:#c9b98a;font-weight:500;text-transform:none}.eqcb.ab .eqin{border-color:var(--am)!important;border-radius:10px 10px 0 0}
@@ -866,19 +869,23 @@ function tipoEq(e){const s=String(e&&e.equipo||'').normalize('NFD').replace(/[̀
 const eqSel=ctx=>ctx==='cq'?S.cq:S.F.eq;
 function eqCombo(ctx,ph){const sel=eqSel(ctx),e=sel?eqDe(sel):null,ab=S.eqAb===ctx||(ctx==='cq'&&!sel);
   return `<div class="eqcb ${ab?'ab':''} ${ctx==='f'?'fino':''}" id="eqCb" data-ctx="${ctx}">
-   <input id="eqIn" class="eqin up" readonly autocomplete="off" placeholder="${ph||'— elegir equipo —'}" value="${ab?esc(S.eqf||''):sel?esc(sel):''}" onclick="tocarEq('${ctx}')" oninput="S.eqf=this.value;$('eqLst').innerHTML=eqGrupos('${ctx}')">
+   <input id="eqIn" class="eqin up" ${ctx==='cq'?'readonly':''} autocomplete="off" placeholder="${ph||'— elegir equipo —'}" value="${ab?esc(S.eqf||''):sel?esc(sel):''}" onclick="tocarEq('${ctx}')" oninput="S.eqf=this.value;$('eqLst').innerHTML=eqGrupos('${ctx}')">
    <i onclick="event.stopPropagation();tglEq('${ctx}')">${ab?'▲':'▼'}</i>
    <div class="eqdrop" id="eqLst" style="${ab?'':'display:none'}">${ab?eqGrupos(ctx):''}</div></div>`;}
 function eqGrupos(ctx){const q=nrm(S.eqf||''),sel=eqSel(ctx);const G={};
+  if(ctx==='f'){const Q=String(S.eqf||'').toUpperCase().trim(),L=eqObra().filter(x=>!Q||String(x.cod_sap).toUpperCase().includes(Q)).sort((a,b)=>a.cod_sap.localeCompare(b.cod_sap));
+    if(!L.length)return '<div class="dim" style="padding:10px">Ningún código coincide</div>';
+    const mk=c=>{const i=Q?c.toUpperCase().indexOf(Q):-1;return i<0?esc(c):esc(c.slice(0,i))+'<b>'+esc(c.slice(i,i+Q.length))+'</b>'+esc(c.slice(i+Q.length));};
+    return L.map(x=>`<div class="eqr ${sel===x.cod_sap?'on':''}" onclick="event.stopPropagation();pickEq('f','${esc(x.cod_sap)}')">${mk(x.cod_sap)}</div>`).join('');}
   eqObra().filter(x=>!q||nrm(x.cod_sap+' '+tipoEq(x)+' '+(x.equipo||'')).includes(q)).forEach(x=>{const t=tipoEq(x);(G[t]=G[t]||[]).push(x);});
   const K=Object.keys(G).sort();if(!K.length)return '<div class="dim" style="padding:8px">Sin equipos.</div>';
   return K.map(t=>`<div class="eqg">${esc(t)} <small>(${String(G[t].length).padStart(2,'0')})</small></div><div class="eqc">${G[t].sort((a,b)=>a.cod_sap.localeCompare(b.cod_sap)).map(x=>`<span class="${sel===x.cod_sap?'on':''}" onclick="event.stopPropagation();pickEq('${ctx}','${esc(x.cod_sap)}')">${esc(x.cod_sap)}</span>`).join('')}</div>`).join('');}
 function abrirEq(ctx,si){const cb=$('eqCb'),l=$('eqLst'),i=$('eqIn');if(!cb)return;S.eqf='';
   if(si){S.eqAb=ctx;cb.classList.add('ab');l.innerHTML=eqGrupos(ctx);l.style.display='';i.value='';cb.querySelector('i').textContent='▲';}
-  else{if(ctx==='cq'&&!S.cq)return;S.eqAb=null;cb.classList.remove('ab');l.style.display='none';i.readOnly=true;const sel=eqSel(ctx),e=sel&&eqDe(sel);i.value=sel||'';cb.querySelector('i').textContent='▼';}}
+  else{if(ctx==='cq'&&!S.cq)return;S.eqAb=null;cb.classList.remove('ab');l.style.display='none';i.readOnly=ctx==='cq';const sel=eqSel(ctx),e=sel&&eqDe(sel);i.value=sel||'';cb.querySelector('i').textContent='▼';}}
 function tglEq(ctx){abrirEq(ctx,!$('eqCb').classList.contains('ab'));}
 /* 1er toque: abre la lista (sin teclado) · 2do toque: escribir para filtrar */
-function tocarEq(ctx){const i=$('eqIn');if(!$('eqCb').classList.contains('ab')){abrirEq(ctx,true);return;}
+function tocarEq(ctx){const i=$('eqIn');if(!$('eqCb').classList.contains('ab')){abrirEq(ctx,true);if(ctx==='f'&&i)i.placeholder='escribe el número (ej. 14)';return;}
   if(i&&i.readOnly){i.readOnly=false;i.placeholder='escribe código o tipo…';i.focus();}}
 function pickEq(ctx,c){S.eqAb=null;S.eqf='';if(ctx==='cq')return elegirCq(c);
   guardarCampos();const e=eqDe(c);S.F.eq=c;S.F.eqTxt=c+' · '+(e&&e.equipo||'');pintar();}
