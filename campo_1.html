@@ -1,0 +1,852 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="gllr-version" content="V.071126-1" data-pagina="REPORTE (app de campo)">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>REPORTE</title>
+<link rel="manifest" href="campo.webmanifest">
+<link rel="icon" href="campo-32.png" sizes="32x32">
+<link rel="icon" href="campo-192.png" sizes="192x192">
+<link rel="apple-touch-icon" href="campo-180.png">
+<meta name="theme-color" content="#13171c">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="REPORTE">
+<script>
+(function(){try{var sw=Math.min(screen.width,screen.height);
+if(sw&&sw<700&&window.innerWidth>sw*1.5){document.documentElement.style.zoom=(window.innerWidth/screen.width).toFixed(2);}
+}catch(e){}})();
+</script>
+<script src="supabase.js"></script>
+<script src="desfase.js"></script>
+<style>
+:root{--navy:#1F3864;--azul:#4254A5;--oro:#FFCD11;--line:#e3e6e9;--muted:#6b747d;--bg:#f2f4f7}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;height:100%}
+body{font-family:-apple-system,"Segoe UI",Roboto,Arial,sans-serif;background:var(--bg);color:#1f2933;font-size:17px;display:flex;flex-direction:column;overscroll-behavior:none}
+.hide{display:none!important}
+header{background:#1c232b;color:#fff;padding:calc(8px + env(safe-area-inset-top)) 12px 10px;display:flex;align-items:center;gap:10px;flex-shrink:0}
+header .bk{font-size:31.5px;width:28px;cursor:pointer;line-height:1}
+header .t{font-size:19.5px;font-weight:800}header .s{font-size:13.5px;color:#c9d2e8}
+.net{margin-left:auto;font-size:13px;font-weight:800;border-radius:999px;padding:3px 9px;white-space:nowrap}
+.net.on{background:#DCF5E3;color:#0F7A33}.net.off{background:#FDE4E4;color:#B91C1C}
+main{flex:1;overflow:auto;padding:12px 12px calc(24px + env(safe-area-inset-bottom));-webkit-overflow-scrolling:touch}
+.toast{position:fixed;left:12px;right:12px;bottom:calc(16px + env(safe-area-inset-bottom));background:#1c232b;color:#fff;border-radius:12px;padding:11px 13px;font-size:16px;display:none;z-index:50;box-shadow:0 8px 24px rgba(0,0,0,.3)}
+.c{background:#fff;border-radius:14px;padding:12px;margin-bottom:10px;box-shadow:0 1px 3px rgba(0,0,0,.06)}
+.c h4{margin:0 0 4px;font-size:17px;color:var(--navy)}
+.sec{font-size:13px;font-weight:800;color:#334281;letter-spacing:.04em;margin:0 0 6px;text-transform:uppercase}
+label{display:block;font-size:13px;font-weight:700;color:var(--muted);text-transform:uppercase;margin:9px 0 3px}
+input,select,textarea{width:100%;border:1px solid #d6dbe1;border-radius:10px;padding:10px;font:inherit;font-size:18px;background:#fff;color:#1f2933}
+input.up,textarea.up{text-transform:uppercase}
+input:focus,select:focus,textarea:focus{outline:2px solid #9DB0E8;border-color:#9DB0E8}
+.r2{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.chips{display:flex;gap:6px;flex-wrap:wrap}
+.chips span{border:1px solid #d6dbe1;border-radius:999px;padding:8px 12px;font-size:16px;cursor:pointer;background:#fff;user-select:none}
+.chips span.on{background:var(--azul);color:#fff;border-color:var(--azul)}
+.chips span.on.op{background:#16A34A;border-color:#16A34A}.chips span.on.in{background:#DC2626;border-color:#DC2626}
+.btn{display:block;width:100%;border:none;border-radius:12px;padding:14px;font-size:18.5px;font-weight:800;cursor:pointer;margin-top:10px;font-family:inherit}
+.b-y{background:var(--oro);color:#3B2E00}.b-n{background:var(--navy);color:#fff}.b-g{background:#fff;border:1px solid #d6dbe1;color:#333;font-weight:700}
+.b-w{background:#25D366;color:#fff}
+.btn:disabled{opacity:.5}
+.hint{font-size:14px;color:#334281;margin-top:4px}.warn{font-size:14px;color:#B91C1C;margin-top:4px}.dim{font-size:14px;color:var(--muted)}
+.logo{background:#1c232b;color:var(--oro);font-weight:900;font-size:27px;letter-spacing:.06em;border-radius:14px;padding:16px;text-align:center;display:flex;align-items:center;justify-content:center;gap:12px}
+.logo img{width:56px;height:56px}.logo .tx{text-align:left;line-height:1.1}
+.logo small{display:block;color:#c9d2e8;font-size:13px;letter-spacing:.1em;margin-top:3px;font-weight:600}
+.hb{background:#fff;border-radius:16px;padding:16px;display:flex;align-items:center;gap:12px;box-shadow:0 1px 3px rgba(0,0,0,.08);cursor:pointer;margin-bottom:10px}
+.hb .i{width:48px;height:48px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:29.5px;background:#E6E9F7;flex-shrink:0}
+.hb b{font-size:18.5px;color:var(--navy)}.hb small{display:block;color:var(--muted);font-size:14px}
+.badge{margin-left:auto;background:#DC2626;color:#fff;border-radius:999px;padding:2px 9px;font-size:14.5px;font-weight:800}
+.mods{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.mod{background:#fff;border-radius:14px;padding:16px 8px;text-align:center;box-shadow:0 1px 3px rgba(0,0,0,.08);cursor:pointer;position:relative}
+.mod .n{position:absolute;left:9px;top:6px;font-size:13.5px;font-weight:800;color:#98a2ad}
+.mod .i{font-size:36.5px}.mod b{display:block;font-size:16px;color:var(--navy);margin-top:4px}.mod small{font-size:13px;color:var(--muted)}
+.it{display:grid;grid-template-columns:1fr 72px 58px 26px;gap:5px;align-items:center;margin-bottom:6px}
+.it input,.it select{padding:8px 6px;font-size:16px}
+.x{color:#B91C1C;font-weight:900;cursor:pointer;text-align:center;font-size:19.5px}
+.add{font-size:16px;color:var(--azul);font-weight:800;cursor:pointer;margin-top:6px;display:inline-block}
+.fotos{display:flex;gap:8px;flex-wrap:wrap}
+.fotos div{width:72px;height:72px;border-radius:10px;background:#dfe3e8 center/cover;display:flex;align-items:center;justify-content:center;font-size:29.5px;color:#8b949e;cursor:pointer;position:relative}
+.fotos div i{position:absolute;right:-6px;top:-6px;background:#DC2626;color:#fff;border-radius:50%;width:20px;height:20px;font-size:14.5px;font-style:normal;display:flex;align-items:center;justify-content:center}
+canvas.firma{width:100%;height:120px;border:1px dashed #b8c0ca;border-radius:10px;background:#fff;touch-action:none;display:block}
+.chasis{width:230px;margin:8px auto}.eje{display:flex;justify-content:space-between;align-items:center;margin:8px 0;position:relative}
+.eje:before{content:'';position:absolute;left:38px;right:38px;top:50%;height:4px;background:#c9ced6}
+.lado{display:flex;gap:3px;position:relative}
+.neu{width:36px;height:46px;border-radius:8px;display:flex;flex-direction:column;align-items:center;justify-content:center;font-size:13.5px;font-weight:800;color:#fff;cursor:pointer;border:2px solid transparent;background:#9aa4ad}
+.neu small{font-size:10.5px;opacity:.9}.neu.sel{border-color:#111}
+.n-ok{background:#16A34A}.n-w{background:#E0B000;color:#3B2E00}.n-b{background:#DC2626}
+.tp{display:grid;grid-template-columns:40px 1fr 1fr 1fr;gap:5px;align-items:center;font-size:14.5px;margin-bottom:5px}
+.tp input{padding:8px 4px;font-size:17px;text-align:center}
+.tp.h{font-weight:800;color:var(--muted);font-size:11.5px;text-transform:uppercase}
+.tp.sel{background:#FFFBEA;border-radius:8px}
+.row{display:flex;justify-content:space-between;align-items:center;padding:9px 0;border-bottom:1px solid #f0f1f3;font-size:16px;gap:10px}
+.row:last-child{border-bottom:none}
+.pill{border-radius:999px;padding:2px 9px;font-size:13.5px;font-weight:800;white-space:nowrap}
+.p-ok{background:#DCF5E3;color:#0F7A33}.p-w{background:#FFF6D6;color:#8A6A00}.p-b{background:#FDE4E4;color:#B91C1C}.p-a{background:#E6E9F7;color:#334281}
+.eqsel{display:flex;gap:6px}.eqsel input{flex:1}
+.tec{display:flex;flex-wrap:wrap;gap:6px}
+.tec span{border:1px solid #d6dbe1;border-radius:999px;padding:7px 11px;font-size:16px;background:#fff;cursor:pointer}
+.tec span.on{background:var(--navy);border-color:var(--navy);color:#fff}
+.tec span b{font-weight:800}
+.resumen{white-space:pre-wrap;font-size:16px;line-height:1.5;background:#F7F8FA;border-radius:10px;padding:10px;border:1px solid var(--line)}
+.ver{text-align:center;font-size:12px;color:#98a2ad;margin-top:10px}
+
+/* ajuste celular */
+@media (min-width:700px){main{max-width:640px;margin:0 auto;width:100%}}
+.tp{grid-template-columns:46px 1fr 1fr 1fr}
+.neu{width:42px;height:52px}
+
+/* ═══ ESTILO tipo AppSheet (Material) ═══ */
+:root{--am:#FFC20E;--amT:#2b2100;--bg:#f5f5f5;--gris:#5f6368}
+body{font-family:Roboto,"Segoe UI",Arial,sans-serif;background:var(--bg)}
+header{background:var(--am);color:var(--amT);box-shadow:0 2px 4px rgba(0,0,0,.2);padding:calc(10px + env(safe-area-inset-top)) 10px 12px;z-index:5}
+header .t{font-weight:500;font-size:20px}header .s{color:#6b5300;font-size:13.5px}
+header .bk{display:flex;align-items:center;width:34px}header .bk svg{width:26px;height:26px}
+header .hico{width:38px;height:38px;border-radius:50%;display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0}
+header .hico svg{width:26px;height:26px;fill:var(--amT)}
+.net{margin-left:auto;background:rgba(255,255,255,.6)!important}
+svg{fill:currentColor}
+main{padding:12px 12px calc(24px + env(safe-area-inset-bottom))}
+main.full{padding:0 0 110px}
+.c{border-radius:6px;box-shadow:0 1px 2px rgba(0,0,0,.14);padding:14px}
+.c h4{color:#202124;font-weight:500;font-size:18px}
+.sec{color:#7a5b00;font-weight:700;letter-spacing:.06em;border-bottom:2px solid var(--am);padding-bottom:6px;margin-bottom:8px}
+label{color:var(--gris);font-weight:500;letter-spacing:.02em}
+input,select,textarea{border-radius:4px;border:1px solid #c4c7c5}
+input:focus,select:focus,textarea:focus{outline:none;border-color:#E0A800;box-shadow:0 0 0 2px rgba(255,194,14,.35)}
+.chips span{border-radius:4px;background:#f1f3f4;border:1px solid #e0e0e0;flex:1;text-align:center;padding:12px 10px;color:#3c4043}
+.chips span.on{background:var(--am);border-color:#E0A800;color:var(--amT);font-weight:700}
+.chips span.on.op{color:#fff}.chips span.on.in{color:#fff}
+.tec span{border-radius:4px;background:#f1f3f4;border-color:#e0e0e0}
+.tec span.on{background:var(--am);border-color:#E0A800;color:var(--amT)}
+.btn{border-radius:6px;font-weight:700;letter-spacing:.03em}
+.b-y{background:var(--am);color:var(--amT)}.b-n{background:#1c232b}
+.hint{color:#7a5b00}.add{color:#B07D00}
+/* barra inferior */
+#tabs{display:flex;background:var(--am);box-shadow:0 -1px 4px rgba(0,0,0,.18);padding-bottom:env(safe-area-inset-bottom);flex-shrink:0;z-index:5}
+#tabs a{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;padding:9px 2px 8px;font-size:12.5px;color:#5a4600;text-transform:uppercase;letter-spacing:.02em;position:relative;cursor:pointer;text-decoration:none}
+#tabs a svg{width:25px;height:25px;fill:#5a4600}
+#tabs a.on{color:#1a1400;font-weight:700}#tabs a.on svg{fill:#1a1400}
+#tabs a.on:after{content:'';position:absolute;bottom:3px;width:40px;height:3px;border-radius:2px;background:#1c232b}
+/* pie de formulario Cancelar | Guardar */
+#pie{display:flex;background:#fff;border-top:1px solid #e0e0e0;flex-shrink:0;padding-bottom:env(safe-area-inset-bottom);z-index:5}
+#pie button{flex:1;border:none;background:none;padding:17px;font:inherit;font-size:18px;cursor:pointer;color:#3c4043}
+#pie button.g{color:#C48A00;font-weight:700}#pie button:disabled{opacity:.4}
+/* botón flotante */
+.fab{position:fixed;right:18px;bottom:calc(86px + env(safe-area-inset-bottom));width:62px;height:62px;border-radius:50%;background:var(--am);box-shadow:0 4px 12px rgba(0,0,0,.3);display:flex;align-items:center;justify-content:center;cursor:pointer;z-index:20}
+.fab svg{width:34px;height:34px;fill:#1c232b}
+/* listas tipo tabla */
+.bar{background:#fff;padding:10px 14px;display:flex;align-items:center;gap:10px;border-bottom:1px solid #e6e6e6}
+.bar select{flex:1}
+.gh{background:#f1f3f4;padding:10px 14px;font-size:14px;color:#3c4043;text-transform:uppercase;letter-spacing:.03em;display:flex;gap:8px;align-items:center;border-bottom:1px solid #e3e3e3}
+.gh .ct{background:#dadce0;border-radius:3px;padding:0 7px;font-size:13px;font-weight:700}
+.li{display:flex;align-items:center;gap:12px;padding:12px 14px;border-bottom:1px solid #eee;cursor:pointer;background:#fff}
+.li:active{background:#FFF8E1}
+.li .av{width:44px;height:44px;border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.li .av svg{width:24px;height:24px}
+.li .tx{flex:1;min-width:0}
+.li .tx b{display:block;font-weight:500;font-size:17px;color:#202124;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.li .tx small{display:block;color:var(--gris);font-size:14.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.li .chev svg{width:22px;height:22px;fill:#80868b}
+.vacio{text-align:center;color:var(--gris);padding:40px 24px;font-size:16px}
+.vacio svg{width:56px;height:56px;fill:#d0d3d6;display:block;margin:0 auto 10px}
+.a1{background:#FFF3CC;color:#B07D00}.a2{background:#E3F2FD;color:#1565C0}.a3{background:#ECEFF1;color:#37474F}
+.a4{background:#FBE9E7;color:#BF360C}.a5{background:#E8F5E9;color:#2E7D32}.a6{background:#F3E5F5;color:#6A1B9A}
+.hb{border-radius:16px;box-shadow:0 1px 4px rgba(0,0,0,.08)}.hb .i{background:#E6E9F7}.hb b{color:var(--navy);font-weight:800}
+.sbtn{width:52px;flex-shrink:0;border-radius:10px;background:#E6E9F7;display:flex;align-items:center;justify-content:center;cursor:pointer}.sbtn svg{width:26px;height:26px;fill:var(--navy)}
+#cqSel{font-size:17px}
+header>div{min-width:0}header .t{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:19px}
+.hbt{display:flex;gap:8px}.hbt .btn{flex:1;font-size:16px;padding:13px 6px;white-space:nowrap}
+input.fill,select.fill{border:2px solid #c9ced4;background:#fff}
+input.fill:placeholder-shown,select.fill:invalid,select.fill.sinval{background:#FFF7D6;border-color:#F0B400}
+input.fill:focus,select.fill:focus{background:#fff}
+
+/* ═══ TEMA OSCURO · estilo C (ficha del equipo) ═══ */
+:root{--bg:#13171c;--card:#1d2228;--card2:#232930;--ln:#2f363e;--tx:#e9ecef;--mu:#8b96a1;--am:#FFC20E;--navy:#e9ecef}
+html,body{background:var(--bg);color:var(--tx);color-scheme:dark}
+header{background:#1d2228;color:#fff;box-shadow:0 1px 0 #2a3038}header .s{color:var(--mu)}header .bk svg{fill:#fff}header .t{color:#fff}
+.net{background:#232930!important}.net.on{color:#4ade80}.net.off{color:#f87171}
+.c{background:var(--card);box-shadow:none;border:1px solid #262c33}.c h4{color:#fff}
+.sec{color:var(--am);border-bottom-color:#4a3f10}label{color:var(--mu)}
+input,select,textarea{background:var(--card2);border:1px solid #39414a;color:var(--tx)}
+select option{background:#232930;color:#e9ecef}
+input.fill,select.fill{background:var(--card2);border:2px solid #3d454e}
+input.fill:placeholder-shown,select.fill.sinval{background:#2a2614;border-color:#a07f00}
+input:focus,select:focus,textarea:focus{border-color:var(--am);box-shadow:0 0 0 2px rgba(255,194,14,.25);background:#262c33}
+input.fill,select.fill,input.fill:focus,select.fill:focus,input.fill:placeholder-shown,select.fill.sinval{background:#2a2614;border:2px solid #a07f00;color:#fff;-webkit-text-fill-color:#fff}
+input.fill:focus,select.fill:focus{border-color:var(--am);box-shadow:0 0 0 2px rgba(255,194,14,.3)}
+input.fill:-webkit-autofill{-webkit-box-shadow:0 0 0 40px #2a2614 inset;-webkit-text-fill-color:#fff}
+.nota-am{color:var(--am);font-weight:700;margin-top:10px;text-align:center}
+.dim{color:var(--mu)}.hint{color:#fcd34d}.warn{color:#f87171}.add{color:var(--am)}.ver{color:#5f6974}
+.chips span,.tec span{background:var(--card2);border:1px solid #39414a;color:#cfd5db}
+.chips span.on,.tec span.on{background:var(--am);border-color:var(--am);color:#1c1500}
+.btn.b-g{background:var(--card2);border:1px solid #39414a;color:var(--tx)}.b-n{background:var(--am);color:#1c1500}
+.row{border-bottom-color:#262c33}.resumen{background:var(--card2);border-color:#39414a;color:var(--tx)}
+.p-ok{background:#14361f;color:#4ade80}.p-w{background:#3a300d;color:#fcd34d}.p-b{background:#3d1717;color:#f87171}.p-a{background:#232b45;color:#a9b6f0}
+.tp.sel{background:#2a2614}.it select,.it input{background:var(--card2)}
+#pie{background:var(--bg);border-top-color:#262c33}#pie button{color:#cfd5db}#pie button.g{color:var(--am)}
+.gh{background:#1a1f25;color:#aab3bd;border-bottom-color:#262c33}.gh .ct{background:#2f363e;color:#e9ecef}
+.li{background:var(--card);border-bottom-color:#262c33}.li .tx b{color:var(--tx)}.li .tx small{color:var(--mu)}.li:active{background:#262c33}
+.hb{background:var(--card);border:1px solid #262c33;box-shadow:none}.hb b{color:#fff}.hb .i{background:#2b323a}
+.logo{background:#1d2228;border:1px solid #2a3038}
+.toast{background:#e9ecef;color:#13171c}
+/* inicio y ficha */
+.topo{display:flex;gap:12px;align-items:flex-end;margin-bottom:6px}.topo select.obra{font-size:17px;padding:9px 10px}
+.lblc{font-size:13px;font-weight:800;color:var(--mu);text-transform:uppercase;letter-spacing:.07em;margin:16px 2px 8px}
+.acts{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.act{background:var(--card);border:1px solid #262c33;border-radius:16px;padding:14px 4px 12px;text-align:center;font-size:14.5px;font-weight:700;color:#dfe4e9;cursor:pointer;user-select:none}
+.act:active{background:#262c33;transform:scale(.98)}
+.act .ic{width:62px;height:62px;border-radius:50%;margin:0 auto 8px;background:#2b323a;display:flex;align-items:center;justify-content:center}
+.act .ic img{width:46px;height:46px}
+.lin{display:flex;align-items:center;gap:12px;background:var(--card);border:1px solid #262c33;border-radius:14px;padding:12px;margin-bottom:8px;cursor:pointer}
+.lin .li-ic{width:40px;height:40px;border-radius:50%;background:#2b323a;display:flex;align-items:center;justify-content:center;flex-shrink:0}.lin .li-ic svg{width:22px;height:22px;fill:var(--am)}
+.lin div{flex:1;min-width:0}.lin b{display:block;font-size:17px;color:#fff}.lin small{display:block;color:var(--mu);font-size:14px}
+.lin .chev svg{width:22px;height:22px;fill:#5f6974}.lin .badge{margin-left:0}
+.hero{background:linear-gradient(160deg,#2a3038,#171b20);border:1px solid #2b323a;border-radius:16px;padding:12px 14px 14px}
+.hero .code{font-size:32px;font-weight:900;color:var(--am);letter-spacing:.02em;line-height:1.1;margin:2px 0 4px}
+.stats{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px}
+.st{background:#232930;border-radius:12px;padding:8px 10px}.st span{font-size:12px;color:var(--mu);text-transform:uppercase;letter-spacing:.04em}.st b{display:block;font-size:19px;color:#fff}
+.pbar{height:6px;background:#3a414a;border-radius:3px;margin-top:6px;overflow:hidden}.pbar i{display:block;height:100%;border-radius:3px}
+.sbtn{background:#2b323a!important}.sbtn svg{fill:#FFC20E!important}
+.tlx{border-left:2px solid #2f363e;margin-left:8px;padding-left:14px;color:var(--tx)}
+.tlx>div{position:relative;padding-bottom:12px;font-size:15.5px}.tlx>div:before{content:"";position:absolute;left:-21px;top:6px;width:12px;height:12px;border-radius:50%;background:var(--am)}
+.tlx small{color:var(--mu);font-size:13.5px}
+#nav2{display:flex;background:var(--bg);border-top:1px solid #262c33;flex-shrink:0;padding-bottom:env(safe-area-inset-bottom)}
+#nav2 button{flex:1;border:none;background:none;color:#cfd5db;font:inherit;font-size:17px;font-weight:700;padding:15px;cursor:pointer}#nav2 button+button{border-left:1px solid #262c33;color:var(--am)}
+.dlg{position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:80;display:flex;align-items:flex-end;justify-content:center;padding:16px}
+.dlgc{background:#1d2228;border:1px solid #2f363e;border-radius:18px;padding:18px;width:100%;max-width:460px;margin-bottom:env(safe-area-inset-bottom)}
+.dlgc b{font-size:20px;color:#fff}.dlgc p{color:var(--mu);margin:6px 0 4px}.dlgb{display:flex;gap:10px}.dlgb .btn{flex:1}
+.gget{font-size:12.5px;font-weight:800;color:var(--am);text-transform:uppercase;letter-spacing:.05em;margin:10px 0 4px;border-bottom:1px solid #3a3f22;padding-bottom:3px}
+.grow{display:grid;grid-template-columns:30px 1fr 84px;gap:8px;align-items:center;background:var(--card2);border:1px solid #39414a;border-radius:12px;padding:8px 10px;margin:0 0 6px;text-transform:none;font-size:17px;font-weight:600;color:var(--tx);letter-spacing:0;cursor:pointer}
+.grow.on{border-color:var(--am);background:#2a2614}.grow input[type=checkbox]{width:24px;height:24px;accent-color:#FFC20E}.grow input[type=number]{padding:8px;text-align:center;font-size:17px}
+
+/* ═══ selección estilo neón (borde y brillo de color, fondo oscuro teñido) ═══ */
+.chips span,.tec span,.grow{transition:box-shadow .15s,border-color .15s,background .15s,color .15s}
+.chips span.on,.grow.on{background:rgba(255,194,14,.10);border-color:#FFC20E;color:#FFC20E;font-weight:800;box-shadow:0 0 0 1px #FFC20E,0 0 12px rgba(255,194,14,.40),inset 0 0 10px rgba(255,194,14,.10)}
+.grow.on{color:var(--tx)}
+.chips span.on.op{background:rgba(34,197,94,.10);border-color:#22c55e;color:#4ade80;box-shadow:0 0 0 1px #22c55e,0 0 12px rgba(34,197,94,.40),inset 0 0 10px rgba(34,197,94,.10)}
+.chips span.on.in{background:rgba(239,68,68,.10);border-color:#ef4444;color:#f87171;box-shadow:0 0 0 1px #ef4444,0 0 12px rgba(239,68,68,.45),inset 0 0 10px rgba(239,68,68,.10)}
+.chips span.on.nt,.tec span.on{background:rgba(59,130,246,.10);border-color:#3b82f6;color:#93c5fd;font-weight:700;box-shadow:0 0 0 1px #3b82f6,0 0 12px rgba(59,130,246,.40),inset 0 0 10px rgba(59,130,246,.10)}
+.tec span.on b{color:#bfdbfe}
+</style>
+</head>
+<body>
+<header>
+  <span class="bk" id="bk"><svg viewBox="0 0 24 24"><path d="M20 11H7.83l5.59-5.59L12 4l-8 8 8 8 1.41-1.41L7.83 13H20v-2z"/></svg></span><img id="hlogo" src="campo-192.png" alt="" style="width:30px;height:30px">
+  <div><div class="t" id="tit">REPORTE</div><div class="s" id="sub"></div></div>
+  <span class="net on" id="net">● En línea</span>
+  <span class="hico" id="hRef" title="Actualizar" onclick="actualizar()"><svg viewBox="0 0 24 24"><path d="M17.65 6.35A7.96 7.96 0 0 0 12 4a8 8 0 1 0 7.73 10h-2.08A6 6 0 1 1 12 6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z"/></svg></span>
+</header>
+<main id="main"></main>
+<nav id="tabs" class="hide"></nav>
+<div id="nav2" class="hide"><button onclick="volver()">‹ Atrás</button><button onclick="ir('home',true)">⌂ Inicio</button></div>
+<div id="pie" class="hide"><button onclick="volver()">Cancelar</button><button class="g" id="btnGuardar" onclick="guardar()">Guardar</button></div>
+<div class="toast" id="toast"></div>
+<input type="file" id="inFoto" accept="image/*" capture="environment" class="hide">
+
+<script>
+/* ═══════════════════════ CONFIGURACIÓN ═══════════════════════ */
+const SUPABASE_URL="https://hklwvdhzltjsbfvlewbu.supabase.co";
+const SUPABASE_KEY="sb_publishable_NgDfyDHDI_KByR-qf35EpA_ZuKI5E0K";
+const VERSION=document.querySelector('meta[name="gllr-version"]').content;
+const sb=window.supabase.createClient(SUPABASE_URL,SUPABASE_KEY,{auth:{persistSession:true,autoRefreshToken:true}});
+try{localStorage.setItem('gllr_sbcfg',JSON.stringify({url:SUPABASE_URL,key:SUPABASE_KEY}));}catch(_){}
+if('serviceWorker' in navigator)navigator.serviceWorker.register('sw.js').catch(()=>{});
+
+/* ═══════════════════════ UTILIDADES ═══════════════════════ */
+const $=id=>document.getElementById(id);
+const esc=s=>String(s??'').replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;');
+const nrm=s=>String(s??'').normalize('NFD').replace(/[̀-ͯ]/g,'').toUpperCase().replace(/\s+/g,' ').trim();
+const up=s=>String(s??'').toUpperCase().replace(/\s+/g,' ').trim();
+const f0=n=>Number(n).toLocaleString('es-PE',{maximumFractionDigits:0});
+const hoyIso=()=>{const d=new Date();return new Date(d.getTime()-d.getTimezoneOffset()*60000).toISOString().slice(0,10);};
+const fd=v=>{if(!v)return'';const p=String(v).slice(0,10).split('-');return p.length===3?`${p[2]}/${p[1]}/${p[0].slice(2)}`:String(v);};
+const uuid=()=>(crypto.randomUUID?crypto.randomUUID():'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g,c=>{const r=Math.random()*16|0;return (c==='x'?r:(r&3|8)).toString(16);}));
+function toast(t,ms){const e=$('toast');e.textContent=t;e.style.display='block';clearTimeout(e._t);e._t=setTimeout(()=>e.style.display='none',ms||2800);}
+/* Código del colaborador: inicial del primer nombre + apellido paterno (GONZALO LLANA RARAZ → GLLANA) */
+const DOM_INT='@reporte-jjc.app';
+const aCorreo=x=>{x=String(x||'').trim();return x.includes('@')?x.toLowerCase():x.toLowerCase().replace(/\s+/g,'')+DOM_INT;};
+const esInt=e=>String(e||'').toLowerCase().endsWith(DOM_INT);
+function codigoBase(nombres,apPat){const n=nrm(nombres).split(' ')[0]||'', a=nrm(apPat).replace(/[^A-Z]/g,'');return (n[0]||'')+a;}
+
+/* ═══════════════════════ ALMACÉN LOCAL (IndexedDB) ═══════════════════════
+   kv:   copia de equipos, colaboradores, datos maestros, desfases, perfil
+   cola: registros por enviar (con sus fotos)                             */
+const DB=(()=>{let db=null;
+  const abrir=()=>db?Promise.resolve(db):new Promise((ok,ko)=>{const r=indexedDB.open('gllr_campo',1);
+    r.onupgradeneeded=()=>{const d=r.result;if(!d.objectStoreNames.contains('kv'))d.createObjectStore('kv');if(!d.objectStoreNames.contains('cola'))d.createObjectStore('cola',{keyPath:'id'});};
+    r.onsuccess=()=>{db=r.result;ok(db);};r.onerror=()=>ko(r.error);});
+  const tx=(st,m,fn)=>abrir().then(d=>new Promise((ok,ko)=>{const t=d.transaction(st,m),s=t.objectStore(st),req=fn(s);t.oncomplete=()=>ok(req&&req.result);t.onerror=()=>ko(t.error);}));
+  return {get:k=>tx('kv','readonly',s=>s.get(k)),set:(k,v)=>tx('kv','readwrite',s=>s.put(v,k)),
+    cola:()=>tx('cola','readonly',s=>s.getAll()),poner:o=>tx('cola','readwrite',s=>s.put(o)),quitar:id=>tx('cola','readwrite',s=>s.delete(id))};})();
+
+/* ═══════════════════════ ESTADO ═══════════════════════ */
+const S={user:null,perfil:null,col:null,obra:'',EQ:[],COL:[],MAE:[],REC:[],COLA:[],pant:'cargando',pila:[],F:{},online:navigator.onLine};
+const M=(tipo,esp)=>S.MAE.filter(m=>m.tipo===tipo&&m.activo!==false&&(!esp||!m.especialidad||m.especialidad===esp)).sort((a,b)=>(a.orden||0)-(b.orden||0));
+const MV=(tipo,esp)=>M(tipo,esp).map(m=>m.valor);
+const eqDe=c=>S.EQ.find(e=>e.cod_sap===c)||null;
+const colDe=c=>S.COL.find(x=>x.codigo===c)||null;
+
+/* ═══════════════════════ RED ═══════════════════════ */
+function pintarNet(){const n=$('net');n.className='net '+(S.online?'on':'off');n.textContent=S.online?'● En línea':'○ Sin señal';}
+addEventListener('online',()=>{S.online=true;pintarNet();sincronizar();});
+addEventListener('offline',()=>{S.online=false;pintarNet();});
+
+/* ═══════════════════════ DATOS ═══════════════════════ */
+async function cargarCache(){
+  const [eq,co,ma,df,pe,rc]=await Promise.all(['eq','col','mae','dsf','perfil','rec'].map(k=>DB.get(k).catch(()=>null)));
+  S.EQ=eq||[];S.COL=co||[];S.MAE=ma||[];S.REC=rc||[];if(df&&window.GLLR_DSF)GLLR_DSF.lista=df;if(pe)S.perfil=pe;
+  S.COLA=await DB.cola().catch(()=>[]);
+}
+async function refrescarDatos(){
+  if(!S.online)return;
+  try{
+    const [eq,co,ma]=await Promise.all([
+      sb.from('maestro').select('id,cod_sap,equipo,marca,modelo,cod_proyec,familia,status,contador,hrkm_actual,fecha_lectura,hr_dia,hrkm_ult_mntto,frecuencia').order('cod_sap'),
+      sb.from('pdm_colaboradores').select('*').eq('activo',true).order('ap_paterno'),
+      sb.from('pdm_maestros').select('*').eq('activo',true)]);
+    if(!eq.error){S.EQ=eq.data||[];DB.set('eq',S.EQ);}
+    if(!co.error){S.COL=co.data||[];DB.set('col',S.COL);}
+    if(!ma.error){S.MAE=ma.data||[];DB.set('mae',S.MAE);}
+    if(window.GLLR_DSF){await GLLR_DSF.cargar(sb);DB.set('dsf',GLLR_DSF.lista);}
+    if(co.error&&/relation|does not exist|schema cache/i.test(co.error.message))toast('Falta crear las tablas: ejecuta pdm_tablas.sql en Supabase',6000);
+  }catch(e){console.warn(e);}
+}
+const obras=()=>[...new Set(S.EQ.map(e=>e.cod_proyec).filter(Boolean))].sort();
+/* obras activas (con equipos no desmovilizados) + nombre de la obra (Configuración → Obras) */
+const obrasAlta=(sel)=>{const m=new Map();(S.OBRAS||[]).forEach(o=>{if(typeof o==='string')o={c:o,n:''};if(o&&o.c)m.set(o.c,o);});
+  if(!(S.OBRAS||[]).length)obras().forEach(c=>m.set(c,{c,n:''}));if(sel&&!m.has(sel))m.set(sel,{c:sel,n:''});
+  return [...m.values()].sort((a,b)=>a.c.localeCompare(b.c));};
+const PUESTOS0=['MECANICO','SOLDADOR','ELECTRICISTA','LUBRICADOR','LLANTERO','SUPERVISOR'];
+const puestos=(sel)=>{let L=(S.PUESTOS&&S.PUESTOS.length)?S.PUESTOS:M('ESPECIALIDAD').map(m=>m.valor);if(!L.length)L=PUESTOS0;if(sel&&!L.includes(sel))L=[...L,sel];return L;};
+async function cargarObras(){try{const c=await DB.get('obras').catch(()=>null);if(c&&!S.OBRAS)S.OBRAS=c;const p=await DB.get('puestos').catch(()=>null);if(p&&!S.PUESTOS)S.PUESTOS=p;if(!S.online)return;
+  const [o,q]=await Promise.all([sb.rpc('pdm_obras_activas'),sb.rpc('pdm_puestos')]);let cambio=false;
+  if(!o.error&&o.data){S.OBRAS=o.data.map(x=>typeof x==='string'?{c:x,n:''}:{c:x.codigo||x.obra||Object.values(x)[0],n:x.nombre||''});DB.set('obras',S.OBRAS);cambio=true;}
+  if(!q.error&&q.data){S.PUESTOS=q.data.map(x=>typeof x==='string'?x:(x.pdm_puestos||Object.values(x)[0])).filter(Boolean);DB.set('puestos',S.PUESTOS);cambio=true;}
+  if(cambio&&['alta','perfil'].includes(S.pant)){guardarCampos();pintar();}}catch(_){}}
+const eqObra=()=>S.EQ.filter(e=>!S.obra||e.cod_proyec===S.obra);
+
+/* ═══════════════════════ SESIÓN ═══════════════════════ */
+async function arrancar(){
+  pintarNet(); await cargarCache();
+  const {data:{session}}=await sb.auth.getSession();
+  if(!session){ir('login',true);return;}
+  S.user=session.user;
+  if(S.online){
+    const {data:p,error}=await sb.from('profiles').select('id,nombre,rol,estado,paginas,email').eq('id',S.user.id).single();
+    if(!error&&p){S.perfil=p;DB.set('perfil',p);}
+  }
+  if(!S.perfil){ir('login',true);return;}
+  if(S.perfil.estado!=='aprobado'||(S.perfil.rol!=='admin'&&!(Array.isArray(S.perfil.paginas)&&S.perfil.paginas.includes('campo')))){ir('espera',true);return;}
+  await refrescarDatos();
+  S.col=S.COL.find(c=>c.user_id===S.user.id)||(await DB.get('yo'))||null;
+  if(!S.col&&S.online){ // registro pendiente desde la pantalla de alta
+    let pend=null;try{pend=JSON.parse(localStorage.getItem('campo_alta')||'null');}catch(_){}
+    if(pend&&nrm(pend.email)===nrm(S.user.email)){await crearColaborador(pend,S.user.id);localStorage.removeItem('campo_alta');}
+  }
+  if(!S.col){ir('perfil',true);return;}
+  DB.set('yo',S.col);
+  S.obra=localStorage.getItem('campo_obra')||S.col.obra||obras()[0]||'';
+  ir('home',true); sincronizar();
+}
+async function crearColaborador(d,userId){
+  const base=codigoBase(d.nombres,d.ap_paterno); if(!base)return null;
+  let codigo=d.codigo||base, otros=S.COL.map(c=>c.codigo);
+  if(S.online){const {data}=await sb.from('pdm_colaboradores').select('codigo').ilike('codigo',base+'%');if(data)otros=otros.concat(data.map(x=>x.codigo));}
+  if(!d.codigo&&otros.includes(codigo)){const m=nrm(d.ap_materno)[0]; if(m&&!otros.includes(base+m))codigo=base+m; else{let i=2;while(otros.includes(base+i))i++;codigo=base+i;}}
+  const fila={nombres:up(d.nombres),ap_paterno:up(d.ap_paterno),ap_materno:up(d.ap_materno)||null,codigo,user_id:userId||null,obra:up(d.obra)||null,especialidad:d.especialidad||null};
+  const {data,error}=await sb.from('pdm_colaboradores').insert(fila).select().single();
+  if(error){toast('No se pudo registrar el colaborador: '+error.message,6000);return null;}
+  S.COL.push(data);DB.set('col',S.COL);if(userId){S.col=data;DB.set('yo',data);}
+  return data;
+}
+
+
+/* ═══════════════════════ ÍCONOS (Material) ═══════════════════════ */
+const IC={
+ rep:'<path d="M19 3h-4.18C14.4 1.84 13.3 1 12 1s-2.4.84-2.82 2H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V5a2 2 0 0 0-2-2zm-7 0a1 1 0 1 1 0 2 1 1 0 0 1 0-2zm2 14H7v-2h7v2zm3-4H7v-2h10v2zm0-4H7V7h10v2z"/>',
+ bus:'<path d="M15.5 14h-.79l-.28-.27A6.47 6.47 0 0 0 16 9.5 6.5 6.5 0 1 0 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/>',
+ pin:'<path d="M16 9V4h1a1 1 0 0 0 0-2H7a1 1 0 0 0 0 2h1v5c0 1.66-1.34 3-3 3v2h5.97v7l1 1 1-1v-7H19v-2c-1.66 0-3-1.34-3-3z"/>',
+ yo:'<path d="M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20zm0 3a3 3 0 1 1 0 6 3 3 0 0 1 0-6zm0 14.2a7.2 7.2 0 0 1-6-3.22c.03-1.99 4-3.08 6-3.08s5.97 1.09 6 3.08a7.2 7.2 0 0 1-6 3.22z"/>',
+ MECANICO:'<path d="M22.7 19l-9.1-9.1c.9-2.3.4-5-1.5-6.9-2-2-5-2.4-7.4-1.3L9 6 6 9 1.6 4.7C.4 7.1.9 10.1 2.9 12.1c1.9 1.9 4.6 2.4 6.9 1.5l9.1 9.1c.4.4 1 .4 1.4 0l2.3-2.3c.5-.4.5-1.1.1-1.4z"/>',
+ LUBRICACION:'<path d="M12 2c-5.33 4.55-8 8.48-8 11.8 0 4.98 3.8 8.2 8 8.2s8-3.22 8-8.2c0-3.32-2.67-7.25-8-11.8z"/>',
+ LLANTAS:'<path d="M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20zm0 4a6 6 0 1 1 0 12 6 6 0 0 1 0-12zm0 3.5a2.5 2.5 0 1 0 0 5 2.5 2.5 0 0 0 0-5z"/>',
+ GETS:'<path d="M2 20h20l-4-9-3 4-3-9-4 8-2-3z"/>',
+ MNTTO_PREV:'<path d="M17 12h-5v5h5v-5zM16 1v2H8V1H6v2H5a2 2 0 0 0-1.99 2L3 19a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V5a2 2 0 0 0-2-2h-1V1h-2zm3 18H5V8h14v11z"/>',
+ PENDIENTE:'<path d="M16 9V4h1a1 1 0 0 0 0-2H7a1 1 0 0 0 0 2h1v5c0 1.66-1.34 3-3 3v2h5.97v7l1 1 1-1v-7H19v-2c-1.66 0-3-1.34-3-3z"/>',
+ env:'<path d="M19.35 10.04A7.49 7.49 0 0 0 12 4C9.11 4 6.6 5.64 5.35 8.04A5.994 5.994 0 0 0 0 14c0 3.31 2.69 6 6 6h13c2.76 0 5-2.24 5-5 0-2.64-2.05-4.78-4.65-4.96zM14 13v4h-4v-4H7l5-5 5 5h-3z"/>',
+ out:'<path d="M10.09 15.59L11.5 17l5-5-5-5-1.41 1.41L12.67 11H3v2h9.67l-2.58 2.59zM19 3H5a2 2 0 0 0-2 2v4h2V5h14v14H5v-4H3v4a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V5a2 2 0 0 0-2-2z"/>',
+ edit:'<path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04a1 1 0 0 0 0-1.41l-2.34-2.34a1 1 0 0 0-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/>',
+ ref:'<path d="M17.65 6.35A7.96 7.96 0 0 0 12 4a8 8 0 1 0 7.73 10h-2.08A6 6 0 1 1 12 6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z"/>',
+ mas:'<path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/>',
+ chev:'<path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"/>'};
+const ICO={"MECANICO": "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9Ii00IC00IDEwOCAxMDgiPjxkZWZzPgo8bGluZWFyR3JhZGllbnQgaWQ9Im1ldCIgeDE9IjAiIHkxPSIwIiB4Mj0iMSIgeTI9IjEiPjxzdG9wIG9mZnNldD0iMCIgc3RvcC1jb2xvcj0iI2ZmZmZmZiIvPjxzdG9wIG9mZnNldD0iLjMiIHN0b3AtY29sb3I9IiNkZmUzZTgiLz48c3RvcCBvZmZzZXQ9Ii41NSIgc3RvcC1jb2xvcj0iIzlhYTNhZCIvPjxzdG9wIG9mZnNldD0iLjc1IiBzdG9wLWNvbG9yPSIjZWVmMWY0Ii8+PHN0b3Agb2Zmc2V0PSIxIiBzdG9wLWNvbG9yPSIjYWFiMmJiIi8+PC9saW5lYXJHcmFkaWVudD4KPGxpbmVhckdyYWRpZW50IGlkPSJhbWIiIHgxPSIwIiB5MT0iMCIgeDI9IjAiIHkyPSIxIj48c3RvcCBvZmZzZXQ9IjAiIHN0b3AtY29sb3I9IiNGRkUwN0EiLz48c3RvcCBvZmZzZXQ9IjEiIHN0b3AtY29sb3I9IiNEOTlBMDAiLz48L2xpbmVhckdyYWRpZW50Pgo8cGF0dGVybiBpZD0iZG90cyIgd2lkdGg9IjIuNiIgaGVpZ2h0PSIyLjYiIHBhdHRlcm5Vbml0cz0idXNlclNwYWNlT25Vc2UiPjxjaXJjbGUgY3g9IjEuMyIgY3k9IjEuMyIgcj0iLjU1IiBmaWxsPSIjMmUzNTNkIi8+PC9wYXR0ZXJuPgo8cGF0dGVybiBpZD0iZG90c0wiIHdpZHRoPSIzIiBoZWlnaHQ9IjMiIHBhdHRlcm5Vbml0cz0idXNlclNwYWNlT25Vc2UiPjxjaXJjbGUgY3g9IjEuNSIgY3k9IjEuNSIgcj0iLjUiIGZpbGw9IiM5YWEzYWQiLz48L3BhdHRlcm4+CjxsaW5lYXJHcmFkaWVudCBpZD0ibWciIHgxPSIwIiB5MT0iMCIgeDI9IjEiIHkyPSIxIj48c3RvcCBvZmZzZXQ9Ii4zNSIgc3RvcC1jb2xvcj0iIzAwMCIvPjxzdG9wIG9mZnNldD0iLjk1IiBzdG9wLWNvbG9yPSIjZmZmIi8+PC9saW5lYXJHcmFkaWVudD4KPG1hc2sgaWQ9InNoIiBtYXNrVW5pdHM9InVzZXJTcGFjZU9uVXNlIiB4PSIwIiB5PSIwIiB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCI+PHJlY3Qgd2lkdGg9IjEwMCIgaGVpZ2h0PSIxMDAiIGZpbGw9InVybCgjbWcpIi8+PC9tYXNrPgo8L2RlZnM+PGcgZmlsbD0iIzdkODc5MiIgc3Ryb2tlPSIjN2Q4NzkyIiBzdHJva2Utd2lkdGg9IjQiIHN0cm9rZS1saW5lam9pbj0icm91bmQiPjxnIHRyYW5zZm9ybT0idHJhbnNsYXRlKDUwIDUwKSBzY2FsZSgxLjEpIHJvdGF0ZSgtNDUpIHRyYW5zbGF0ZSgtNTAgLTUwKSI+CiA8cGF0aCBkPSJNIDcwIDQzIEwgNzMgMzcuNSBBIDE1IDE1IDAgMCAxIDk5IDQwIEwgOTAuNSA0NS41IEwgOTAuNSA1NC41IEwgOTkgNjAgQSAxNSAxNSAwIDAgMSA3MyA2Mi41IEwgNzAgNTcgWiIvPgogPHBhdGggZD0iTSAyMiA0My41IEwgNzIgNDEuNSBMIDcyIDU4LjUgTCAyMiA1Ni41IFoiLz4KIDxwYXRoIGZpbGwtcnVsZT0iZXZlbm9kZCIgZD0iTSAxIDUwIEEgMTMuNSAxMy41IDAgMSAwIDI4IDUwIEEgMTMuNSAxMy41IDAgMSAwIDEgNTAgWiBNIDcuNSA1MCBMIDEwLjUgNDQuOCBMIDE2LjUgNDQuOCBMIDE5LjUgNTAgTCAxNi41IDU1LjIgTCAxMC41IDU1LjIgWiIvPjwvZz48L2c+PGcgZmlsbD0idXJsKCNtZXQpIiBzdHJva2U9InVybCgjbWV0KSI+PGcgdHJhbnNmb3JtPSJ0cmFuc2xhdGUoNTAgNTApIHNjYWxlKDEuMSkgcm90YXRlKC00NSkgdHJhbnNsYXRlKC01MCAtNTApIj4KIDxwYXRoIGQ9Ik0gNzAgNDMgTCA3MyAzNy41IEEgMTUgMTUgMCAwIDEgOTkgNDAgTCA5MC41IDQ1LjUgTCA5MC41IDU0LjUgTCA5OSA2MCBBIDE1IDE1IDAgMCAxIDczIDYyLjUgTCA3MCA1NyBaIi8+CiA8cGF0aCBkPSJNIDIyIDQzLjUgTCA3MiA0MS41IEwgNzIgNTguNSBMIDIyIDU2LjUgWiIvPgogPHBhdGggZmlsbC1ydWxlPSJldmVub2RkIiBkPSJNIDEgNTAgQSAxMy41IDEzLjUgMCAxIDAgMjggNTAgQSAxMy41IDEzLjUgMCAxIDAgMSA1MCBaIE0gNy41IDUwIEwgMTAuNSA0NC44IEwgMTYuNSA0NC44IEwgMTkuNSA1MCBMIDE2LjUgNTUuMiBMIDEwLjUgNTUuMiBaIi8+PC9nPjwvZz48ZyBmaWxsPSJ1cmwoI2RvdHMpIiBzdHJva2U9InVybCgjZG90cykiIG1hc2s9InVybCgjc2gpIj48ZyB0cmFuc2Zvcm09InRyYW5zbGF0ZSg1MCA1MCkgc2NhbGUoMS4xKSByb3RhdGUoLTQ1KSB0cmFuc2xhdGUoLTUwIC01MCkiPgogPHBhdGggZD0iTSA3MCA0MyBMIDczIDM3LjUgQSAxNSAxNSAwIDAgMSA5OSA0MCBMIDkwLjUgNDUuNSBMIDkwLjUgNTQuNSBMIDk5IDYwIEEgMTUgMTUgMCAwIDEgNzMgNjIuNSBMIDcwIDU3IFoiLz4KIDxwYXRoIGQ9Ik0gMjIgNDMuNSBMIDcyIDQxLjUgTCA3MiA1OC41IEwgMjIgNTYuNSBaIi8+CiA8cGF0aCBmaWxsLXJ1bGU9ImV2ZW5vZGQiIGQ9Ik0gMSA1MCBBIDEzLjUgMTMuNSAwIDEgMCAyOCA1MCBBIDEzLjUgMTMuNSAwIDEgMCAxIDUwIFogTSA3LjUgNTAgTCAxMC41IDQ0LjggTCAxNi41IDQ0LjggTCAxOS41IDUwIEwgMTYuNSA1NS4yIEwgMTAuNSA1NS4yIFoiLz48L2c+PC9nPjwvc3ZnPg==", "LUBRICACION": "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9Ii00IC00IDEwOCAxMDgiPjxkZWZzPgo8bGluZWFyR3JhZGllbnQgaWQ9Im1ldCIgeDE9IjAiIHkxPSIwIiB4Mj0iMSIgeTI9IjEiPjxzdG9wIG9mZnNldD0iMCIgc3RvcC1jb2xvcj0iI2ZmZmZmZiIvPjxzdG9wIG9mZnNldD0iLjMiIHN0b3AtY29sb3I9IiNkZmUzZTgiLz48c3RvcCBvZmZzZXQ9Ii41NSIgc3RvcC1jb2xvcj0iIzlhYTNhZCIvPjxzdG9wIG9mZnNldD0iLjc1IiBzdG9wLWNvbG9yPSIjZWVmMWY0Ii8+PHN0b3Agb2Zmc2V0PSIxIiBzdG9wLWNvbG9yPSIjYWFiMmJiIi8+PC9saW5lYXJHcmFkaWVudD4KPGxpbmVhckdyYWRpZW50IGlkPSJhbWIiIHgxPSIwIiB5MT0iMCIgeDI9IjAiIHkyPSIxIj48c3RvcCBvZmZzZXQ9IjAiIHN0b3AtY29sb3I9IiNGRkUwN0EiLz48c3RvcCBvZmZzZXQ9IjEiIHN0b3AtY29sb3I9IiNEOTlBMDAiLz48L2xpbmVhckdyYWRpZW50Pgo8cGF0dGVybiBpZD0iZG90cyIgd2lkdGg9IjIuNiIgaGVpZ2h0PSIyLjYiIHBhdHRlcm5Vbml0cz0idXNlclNwYWNlT25Vc2UiPjxjaXJjbGUgY3g9IjEuMyIgY3k9IjEuMyIgcj0iLjU1IiBmaWxsPSIjMmUzNTNkIi8+PC9wYXR0ZXJuPgo8cGF0dGVybiBpZD0iZG90c0wiIHdpZHRoPSIzIiBoZWlnaHQ9IjMiIHBhdHRlcm5Vbml0cz0idXNlclNwYWNlT25Vc2UiPjxjaXJjbGUgY3g9IjEuNSIgY3k9IjEuNSIgcj0iLjUiIGZpbGw9IiM5YWEzYWQiLz48L3BhdHRlcm4+CjxsaW5lYXJHcmFkaWVudCBpZD0ibWciIHgxPSIwIiB5MT0iMCIgeDI9IjEiIHkyPSIxIj48c3RvcCBvZmZzZXQ9Ii4zNSIgc3RvcC1jb2xvcj0iIzAwMCIvPjxzdG9wIG9mZnNldD0iLjk1IiBzdG9wLWNvbG9yPSIjZmZmIi8+PC9saW5lYXJHcmFkaWVudD4KPG1hc2sgaWQ9InNoIiBtYXNrVW5pdHM9InVzZXJTcGFjZU9uVXNlIiB4PSIwIiB5PSIwIiB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCI+PHJlY3Qgd2lkdGg9IjEwMCIgaGVpZ2h0PSIxMDAiIGZpbGw9InVybCgjbWcpIi8+PC9tYXNrPgo8L2RlZnM+PGcgZmlsbD0iIzIyMjcyZSIgc3Ryb2tlPSIjMjIyNzJlIiBzdHJva2Utd2lkdGg9IjUuNSIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCI+PHBhdGggZD0iTSAyMCAyMCBMIDIwIDgyIEEgMzAgOSAwIDAgMCA4MCA4MiBMIDgwIDIwIFoiLz48ZWxsaXBzZSBjeD0iNTAiIGN5PSIyMCIgcng9IjMwIiByeT0iOSIvPjwvZz48ZyBmaWxsPSJ1cmwoI21ldCkiIHN0cm9rZT0idXJsKCNtZXQpIj48cGF0aCBkPSJNIDIwIDIwIEwgMjAgODIgQSAzMCA5IDAgMCAwIDgwIDgyIEwgODAgMjAgWiIvPjxlbGxpcHNlIGN4PSI1MCIgY3k9IjIwIiByeD0iMzAiIHJ5PSI5Ii8+PC9nPjxnIGZpbGw9InVybCgjZG90cykiIHN0cm9rZT0idXJsKCNkb3RzKSIgbWFzaz0idXJsKCNzaCkiPjxwYXRoIGQ9Ik0gMjAgMjAgTCAyMCA4MiBBIDMwIDkgMCAwIDAgODAgODIgTCA4MCAyMCBaIi8+PGVsbGlwc2UgY3g9IjUwIiBjeT0iMjAiIHJ4PSIzMCIgcnk9IjkiLz48L2c+PGVsbGlwc2UgY3g9IjUwIiBjeT0iMjAiIHJ4PSIzMCIgcnk9IjkiIGZpbGw9IiNlZWYxZjQiIHN0cm9rZT0iIzIyMjcyZSIgc3Ryb2tlLXdpZHRoPSIyLjUiLz48ZWxsaXBzZSBjeD0iNjIiIGN5PSIxOSIgcng9IjUiIHJ5PSIyIiBmaWxsPSIjMjIyNzJlIiBvcGFjaXR5PSIuNzUiLz4KIDxwYXRoIGQ9Ik0gMjAgMzggQSAzMCA5IDAgMCAwIDgwIDM4IiBmaWxsPSJub25lIiBzdHJva2U9IiMyMjI3MmUiIHN0cm9rZS13aWR0aD0iMi41Ii8+PHBhdGggZD0iTSAyMCA2NiBBIDMwIDkgMCAwIDAgODAgNjYiIGZpbGw9Im5vbmUiIHN0cm9rZT0iIzIyMjcyZSIgc3Ryb2tlLXdpZHRoPSIyLjUiLz4KIDxwYXRoIGQ9Ik0gNTAgMzAgQyA1MCAzMCAzNCA1MCAzNCA2MCBBIDE2IDE2IDAgMCAwIDY2IDYwIEMgNjYgNTAgNTAgMzAgNTAgMzAgWiIgZmlsbD0idXJsKCNhbWIpIiBzdHJva2U9IiMyMjI3MmUiIHN0cm9rZS13aWR0aD0iMi42Ii8+CiA8cGF0aCBkPSJNIDQxLjUgNTcgUSA0MSA2NSA0Ni41IDcwIiBmaWxsPSJub25lIiBzdHJva2U9IiNmZmY2Y2YiIHN0cm9rZS13aWR0aD0iMi4yIiBzdHJva2UtbGluZWNhcD0icm91bmQiLz48L3N2Zz4=", "LLANTAS": "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9Ii00IC00IDEwOCAxMDgiPjxkZWZzPgo8bGluZWFyR3JhZGllbnQgaWQ9Im1ldCIgeDE9IjAiIHkxPSIwIiB4Mj0iMSIgeTI9IjEiPjxzdG9wIG9mZnNldD0iMCIgc3RvcC1jb2xvcj0iI2ZmZmZmZiIvPjxzdG9wIG9mZnNldD0iLjMiIHN0b3AtY29sb3I9IiNkZmUzZTgiLz48c3RvcCBvZmZzZXQ9Ii41NSIgc3RvcC1jb2xvcj0iIzlhYTNhZCIvPjxzdG9wIG9mZnNldD0iLjc1IiBzdG9wLWNvbG9yPSIjZWVmMWY0Ii8+PHN0b3Agb2Zmc2V0PSIxIiBzdG9wLWNvbG9yPSIjYWFiMmJiIi8+PC9saW5lYXJHcmFkaWVudD4KPGxpbmVhckdyYWRpZW50IGlkPSJhbWIiIHgxPSIwIiB5MT0iMCIgeDI9IjAiIHkyPSIxIj48c3RvcCBvZmZzZXQ9IjAiIHN0b3AtY29sb3I9IiNGRkUwN0EiLz48c3RvcCBvZmZzZXQ9IjEiIHN0b3AtY29sb3I9IiNEOTlBMDAiLz48L2xpbmVhckdyYWRpZW50Pgo8cGF0dGVybiBpZD0iZG90cyIgd2lkdGg9IjIuNiIgaGVpZ2h0PSIyLjYiIHBhdHRlcm5Vbml0cz0idXNlclNwYWNlT25Vc2UiPjxjaXJjbGUgY3g9IjEuMyIgY3k9IjEuMyIgcj0iLjU1IiBmaWxsPSIjMmUzNTNkIi8+PC9wYXR0ZXJuPgo8cGF0dGVybiBpZD0iZG90c0wiIHdpZHRoPSIzIiBoZWlnaHQ9IjMiIHBhdHRlcm5Vbml0cz0idXNlclNwYWNlT25Vc2UiPjxjaXJjbGUgY3g9IjEuNSIgY3k9IjEuNSIgcj0iLjUiIGZpbGw9IiM5YWEzYWQiLz48L3BhdHRlcm4+CjxsaW5lYXJHcmFkaWVudCBpZD0ibWciIHgxPSIwIiB5MT0iMCIgeDI9IjEiIHkyPSIxIj48c3RvcCBvZmZzZXQ9Ii4zNSIgc3RvcC1jb2xvcj0iIzAwMCIvPjxzdG9wIG9mZnNldD0iLjk1IiBzdG9wLWNvbG9yPSIjZmZmIi8+PC9saW5lYXJHcmFkaWVudD4KPG1hc2sgaWQ9InNoIiBtYXNrVW5pdHM9InVzZXJTcGFjZU9uVXNlIiB4PSIwIiB5PSIwIiB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCI+PHJlY3Qgd2lkdGg9IjEwMCIgaGVpZ2h0PSIxMDAiIGZpbGw9InVybCgjbWcpIi8+PC9tYXNrPgo8L2RlZnM+PGcgZmlsbD0iIzZiNzQ4MCIgc3Ryb2tlPSIjNmI3NDgwIiBzdHJva2Utd2lkdGg9IjUiIHN0cm9rZS1saW5lam9pbj0icm91bmQiPjxyZWN0IHg9IjQ2IiB5PSI0IiB3aWR0aD0iOCIgaGVpZ2h0PSI5IiByeD0iMS41IiB0cmFuc2Zvcm09InJvdGF0ZSgwIDUwIDUwKSIvPjxyZWN0IHg9IjQ2IiB5PSI0IiB3aWR0aD0iOCIgaGVpZ2h0PSI5IiByeD0iMS41IiB0cmFuc2Zvcm09InJvdGF0ZSgxOCA1MCA1MCkiLz48cmVjdCB4PSI0NiIgeT0iNCIgd2lkdGg9IjgiIGhlaWdodD0iOSIgcng9IjEuNSIgdHJhbnNmb3JtPSJyb3RhdGUoMzYgNTAgNTApIi8+PHJlY3QgeD0iNDYiIHk9IjQiIHdpZHRoPSI4IiBoZWlnaHQ9IjkiIHJ4PSIxLjUiIHRyYW5zZm9ybT0icm90YXRlKDU0IDUwIDUwKSIvPjxyZWN0IHg9IjQ2IiB5PSI0IiB3aWR0aD0iOCIgaGVpZ2h0PSI5IiByeD0iMS41IiB0cmFuc2Zvcm09InJvdGF0ZSg3MiA1MCA1MCkiLz48cmVjdCB4PSI0NiIgeT0iNCIgd2lkdGg9IjgiIGhlaWdodD0iOSIgcng9IjEuNSIgdHJhbnNmb3JtPSJyb3RhdGUoOTAgNTAgNTApIi8+PHJlY3QgeD0iNDYiIHk9IjQiIHdpZHRoPSI4IiBoZWlnaHQ9IjkiIHJ4PSIxLjUiIHRyYW5zZm9ybT0icm90YXRlKDEwOCA1MCA1MCkiLz48cmVjdCB4PSI0NiIgeT0iNCIgd2lkdGg9IjgiIGhlaWdodD0iOSIgcng9IjEuNSIgdHJhbnNmb3JtPSJyb3RhdGUoMTI2IDUwIDUwKSIvPjxyZWN0IHg9IjQ2IiB5PSI0IiB3aWR0aD0iOCIgaGVpZ2h0PSI5IiByeD0iMS41IiB0cmFuc2Zvcm09InJvdGF0ZSgxNDQgNTAgNTApIi8+PHJlY3QgeD0iNDYiIHk9IjQiIHdpZHRoPSI4IiBoZWlnaHQ9IjkiIHJ4PSIxLjUiIHRyYW5zZm9ybT0icm90YXRlKDE2MiA1MCA1MCkiLz48cmVjdCB4PSI0NiIgeT0iNCIgd2lkdGg9IjgiIGhlaWdodD0iOSIgcng9IjEuNSIgdHJhbnNmb3JtPSJyb3RhdGUoMTgwIDUwIDUwKSIvPjxyZWN0IHg9IjQ2IiB5PSI0IiB3aWR0aD0iOCIgaGVpZ2h0PSI5IiByeD0iMS41IiB0cmFuc2Zvcm09InJvdGF0ZSgxOTggNTAgNTApIi8+PHJlY3QgeD0iNDYiIHk9IjQiIHdpZHRoPSI4IiBoZWlnaHQ9IjkiIHJ4PSIxLjUiIHRyYW5zZm9ybT0icm90YXRlKDIxNiA1MCA1MCkiLz48cmVjdCB4PSI0NiIgeT0iNCIgd2lkdGg9IjgiIGhlaWdodD0iOSIgcng9IjEuNSIgdHJhbnNmb3JtPSJyb3RhdGUoMjM0IDUwIDUwKSIvPjxyZWN0IHg9IjQ2IiB5PSI0IiB3aWR0aD0iOCIgaGVpZ2h0PSI5IiByeD0iMS41IiB0cmFuc2Zvcm09InJvdGF0ZSgyNTIgNTAgNTApIi8+PHJlY3QgeD0iNDYiIHk9IjQiIHdpZHRoPSI4IiBoZWlnaHQ9IjkiIHJ4PSIxLjUiIHRyYW5zZm9ybT0icm90YXRlKDI3MCA1MCA1MCkiLz48cmVjdCB4PSI0NiIgeT0iNCIgd2lkdGg9IjgiIGhlaWdodD0iOSIgcng9IjEuNSIgdHJhbnNmb3JtPSJyb3RhdGUoMjg4IDUwIDUwKSIvPjxyZWN0IHg9IjQ2IiB5PSI0IiB3aWR0aD0iOCIgaGVpZ2h0PSI5IiByeD0iMS41IiB0cmFuc2Zvcm09InJvdGF0ZSgzMDYgNTAgNTApIi8+PHJlY3QgeD0iNDYiIHk9IjQiIHdpZHRoPSI4IiBoZWlnaHQ9IjkiIHJ4PSIxLjUiIHRyYW5zZm9ybT0icm90YXRlKDMyNCA1MCA1MCkiLz48cmVjdCB4PSI0NiIgeT0iNCIgd2lkdGg9IjgiIGhlaWdodD0iOSIgcng9IjEuNSIgdHJhbnNmb3JtPSJyb3RhdGUoMzQyIDUwIDUwKSIvPjxjaXJjbGUgY3g9IjUwIiBjeT0iNTAiIHI9IjQwIi8+PC9nPjxnIGZpbGw9IiMyYjMxMzkiPjxyZWN0IHg9IjQ2IiB5PSI0IiB3aWR0aD0iOCIgaGVpZ2h0PSI5IiByeD0iMS41IiB0cmFuc2Zvcm09InJvdGF0ZSgwIDUwIDUwKSIvPjxyZWN0IHg9IjQ2IiB5PSI0IiB3aWR0aD0iOCIgaGVpZ2h0PSI5IiByeD0iMS41IiB0cmFuc2Zvcm09InJvdGF0ZSgxOCA1MCA1MCkiLz48cmVjdCB4PSI0NiIgeT0iNCIgd2lkdGg9IjgiIGhlaWdodD0iOSIgcng9IjEuNSIgdHJhbnNmb3JtPSJyb3RhdGUoMzYgNTAgNTApIi8+PHJlY3QgeD0iNDYiIHk9IjQiIHdpZHRoPSI4IiBoZWlnaHQ9IjkiIHJ4PSIxLjUiIHRyYW5zZm9ybT0icm90YXRlKDU0IDUwIDUwKSIvPjxyZWN0IHg9IjQ2IiB5PSI0IiB3aWR0aD0iOCIgaGVpZ2h0PSI5IiByeD0iMS41IiB0cmFuc2Zvcm09InJvdGF0ZSg3MiA1MCA1MCkiLz48cmVjdCB4PSI0NiIgeT0iNCIgd2lkdGg9IjgiIGhlaWdodD0iOSIgcng9IjEuNSIgdHJhbnNmb3JtPSJyb3RhdGUoOTAgNTAgNTApIi8+PHJlY3QgeD0iNDYiIHk9IjQiIHdpZHRoPSI4IiBoZWlnaHQ9IjkiIHJ4PSIxLjUiIHRyYW5zZm9ybT0icm90YXRlKDEwOCA1MCA1MCkiLz48cmVjdCB4PSI0NiIgeT0iNCIgd2lkdGg9IjgiIGhlaWdodD0iOSIgcng9IjEuNSIgdHJhbnNmb3JtPSJyb3RhdGUoMTI2IDUwIDUwKSIvPjxyZWN0IHg9IjQ2IiB5PSI0IiB3aWR0aD0iOCIgaGVpZ2h0PSI5IiByeD0iMS41IiB0cmFuc2Zvcm09InJvdGF0ZSgxNDQgNTAgNTApIi8+PHJlY3QgeD0iNDYiIHk9IjQiIHdpZHRoPSI4IiBoZWlnaHQ9IjkiIHJ4PSIxLjUiIHRyYW5zZm9ybT0icm90YXRlKDE2MiA1MCA1MCkiLz48cmVjdCB4PSI0NiIgeT0iNCIgd2lkdGg9IjgiIGhlaWdodD0iOSIgcng9IjEuNSIgdHJhbnNmb3JtPSJyb3RhdGUoMTgwIDUwIDUwKSIvPjxyZWN0IHg9IjQ2IiB5PSI0IiB3aWR0aD0iOCIgaGVpZ2h0PSI5IiByeD0iMS41IiB0cmFuc2Zvcm09InJvdGF0ZSgxOTggNTAgNTApIi8+PHJlY3QgeD0iNDYiIHk9IjQiIHdpZHRoPSI4IiBoZWlnaHQ9IjkiIHJ4PSIxLjUiIHRyYW5zZm9ybT0icm90YXRlKDIxNiA1MCA1MCkiLz48cmVjdCB4PSI0NiIgeT0iNCIgd2lkdGg9IjgiIGhlaWdodD0iOSIgcng9IjEuNSIgdHJhbnNmb3JtPSJyb3RhdGUoMjM0IDUwIDUwKSIvPjxyZWN0IHg9IjQ2IiB5PSI0IiB3aWR0aD0iOCIgaGVpZ2h0PSI5IiByeD0iMS41IiB0cmFuc2Zvcm09InJvdGF0ZSgyNTIgNTAgNTApIi8+PHJlY3QgeD0iNDYiIHk9IjQiIHdpZHRoPSI4IiBoZWlnaHQ9IjkiIHJ4PSIxLjUiIHRyYW5zZm9ybT0icm90YXRlKDI3MCA1MCA1MCkiLz48cmVjdCB4PSI0NiIgeT0iNCIgd2lkdGg9IjgiIGhlaWdodD0iOSIgcng9IjEuNSIgdHJhbnNmb3JtPSJyb3RhdGUoMjg4IDUwIDUwKSIvPjxyZWN0IHg9IjQ2IiB5PSI0IiB3aWR0aD0iOCIgaGVpZ2h0PSI5IiByeD0iMS41IiB0cmFuc2Zvcm09InJvdGF0ZSgzMDYgNTAgNTApIi8+PHJlY3QgeD0iNDYiIHk9IjQiIHdpZHRoPSI4IiBoZWlnaHQ9IjkiIHJ4PSIxLjUiIHRyYW5zZm9ybT0icm90YXRlKDMyNCA1MCA1MCkiLz48cmVjdCB4PSI0NiIgeT0iNCIgd2lkdGg9IjgiIGhlaWdodD0iOSIgcng9IjEuNSIgdHJhbnNmb3JtPSJyb3RhdGUoMzQyIDUwIDUwKSIvPjxjaXJjbGUgY3g9IjUwIiBjeT0iNTAiIHI9IjQwIi8+PC9nPjxjaXJjbGUgY3g9IjUwIiBjeT0iNTAiIHI9IjQwIiBmaWxsPSIjMmIzMTM5Ii8+PGNpcmNsZSBjeD0iNTAiIGN5PSI1MCIgcj0iNDAiIGZpbGw9InVybCgjZG90c0wpIiBvcGFjaXR5PSIuNTUiLz4KIDxjaXJjbGUgY3g9IjUwIiBjeT0iNTAiIHI9IjI3IiBmaWxsPSIjM2E0MTRhIiBzdHJva2U9IiMxYTFlMjMiIHN0cm9rZS13aWR0aD0iMiIvPgogPGNpcmNsZSBjeD0iNTAiIGN5PSI1MCIgcj0iMjAiIGZpbGw9InVybCgjbWV0KSIgc3Ryb2tlPSIjMjIyNzJlIiBzdHJva2Utd2lkdGg9IjIuNSIvPjxjaXJjbGUgY3g9IjUwIiBjeT0iNTAiIHI9IjIwIiBmaWxsPSJ1cmwoI2RvdHMpIiBtYXNrPSJ1cmwoI3NoKSIvPgogPGNpcmNsZSBjeD0iNTAiIGN5PSI1MCIgcj0iNyIgZmlsbD0iI2M5Y2ZkNiIgc3Ryb2tlPSIjMjIyNzJlIiBzdHJva2Utd2lkdGg9IjIiLz48Y2lyY2xlIGN4PSI2My41IiBjeT0iNTAuMCIgcj0iMS45IiBmaWxsPSIjMjIyNzJlIi8+PGNpcmNsZSBjeD0iNTkuNSIgY3k9IjU5LjUiIHI9IjEuOSIgZmlsbD0iIzIyMjcyZSIvPjxjaXJjbGUgY3g9IjUwLjAiIGN5PSI2My41IiByPSIxLjkiIGZpbGw9IiMyMjI3MmUiLz48Y2lyY2xlIGN4PSI0MC41IiBjeT0iNTkuNSIgcj0iMS45IiBmaWxsPSIjMjIyNzJlIi8+PGNpcmNsZSBjeD0iMzYuNSIgY3k9IjUwLjAiIHI9IjEuOSIgZmlsbD0iIzIyMjcyZSIvPjxjaXJjbGUgY3g9IjQwLjUiIGN5PSI0MC41IiByPSIxLjkiIGZpbGw9IiMyMjI3MmUiLz48Y2lyY2xlIGN4PSI1MC4wIiBjeT0iMzYuNSIgcj0iMS45IiBmaWxsPSIjMjIyNzJlIi8+PGNpcmNsZSBjeD0iNTkuNSIgY3k9IjQwLjUiIHI9IjEuOSIgZmlsbD0iIzIyMjcyZSIvPjwvc3ZnPg==", "GETS": "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9Ii00IC00IDEwOCAxMDgiPjxkZWZzPgo8bGluZWFyR3JhZGllbnQgaWQ9Im1ldCIgeDE9IjAiIHkxPSIwIiB4Mj0iMSIgeTI9IjEiPjxzdG9wIG9mZnNldD0iMCIgc3RvcC1jb2xvcj0iI2ZmZmZmZiIvPjxzdG9wIG9mZnNldD0iLjMiIHN0b3AtY29sb3I9IiNkZmUzZTgiLz48c3RvcCBvZmZzZXQ9Ii41NSIgc3RvcC1jb2xvcj0iIzlhYTNhZCIvPjxzdG9wIG9mZnNldD0iLjc1IiBzdG9wLWNvbG9yPSIjZWVmMWY0Ii8+PHN0b3Agb2Zmc2V0PSIxIiBzdG9wLWNvbG9yPSIjYWFiMmJiIi8+PC9saW5lYXJHcmFkaWVudD4KPGxpbmVhckdyYWRpZW50IGlkPSJhbWIiIHgxPSIwIiB5MT0iMCIgeDI9IjAiIHkyPSIxIj48c3RvcCBvZmZzZXQ9IjAiIHN0b3AtY29sb3I9IiNGRkUwN0EiLz48c3RvcCBvZmZzZXQ9IjEiIHN0b3AtY29sb3I9IiNEOTlBMDAiLz48L2xpbmVhckdyYWRpZW50Pgo8cGF0dGVybiBpZD0iZG90cyIgd2lkdGg9IjIuNiIgaGVpZ2h0PSIyLjYiIHBhdHRlcm5Vbml0cz0idXNlclNwYWNlT25Vc2UiPjxjaXJjbGUgY3g9IjEuMyIgY3k9IjEuMyIgcj0iLjU1IiBmaWxsPSIjMmUzNTNkIi8+PC9wYXR0ZXJuPgo8cGF0dGVybiBpZD0iZG90c0wiIHdpZHRoPSIzIiBoZWlnaHQ9IjMiIHBhdHRlcm5Vbml0cz0idXNlclNwYWNlT25Vc2UiPjxjaXJjbGUgY3g9IjEuNSIgY3k9IjEuNSIgcj0iLjUiIGZpbGw9IiM5YWEzYWQiLz48L3BhdHRlcm4+CjxsaW5lYXJHcmFkaWVudCBpZD0ibWciIHgxPSIwIiB5MT0iMCIgeDI9IjEiIHkyPSIxIj48c3RvcCBvZmZzZXQ9Ii4zNSIgc3RvcC1jb2xvcj0iIzAwMCIvPjxzdG9wIG9mZnNldD0iLjk1IiBzdG9wLWNvbG9yPSIjZmZmIi8+PC9saW5lYXJHcmFkaWVudD4KPG1hc2sgaWQ9InNoIiBtYXNrVW5pdHM9InVzZXJTcGFjZU9uVXNlIiB4PSIwIiB5PSIwIiB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCI+PHJlY3Qgd2lkdGg9IjEwMCIgaGVpZ2h0PSIxMDAiIGZpbGw9InVybCgjbWcpIi8+PC9tYXNrPgo8L2RlZnM+PGcgdHJhbnNmb3JtPSJ0cmFuc2xhdGUoNjAgNTgpIHJvdGF0ZSgtNDUpIHNjYWxlKC43MikgdHJhbnNsYXRlKC01MCAtNTApIj48ZyBmaWxsPSIjMjIyNzJlIiBzdHJva2U9IiMyMjI3MmUiIHN0cm9rZS13aWR0aD0iNS41IiBzdHJva2UtbGluZWpvaW49InJvdW5kIj48cGF0aCBkPSJNIDYgMzAgTCAzMCAzMCBMIDMzIDM0IEwgMzMgNjYgTCAzMCA3MCBMIDYgNzAgWiIvPjxwYXRoIGQ9Ik0gMzEgMzYgTCA2MiAzMyBMIDkzIDQ3LjUgUSA5NiA1MCA5MyA1Mi41IEwgNjIgNjcgTCAzMSA2NCBaIi8+PC9nPjxnIGZpbGw9InVybCgjbWV0KSI+PHBhdGggZD0iTSA2IDMwIEwgMzAgMzAgTCAzMyAzNCBMIDMzIDY2IEwgMzAgNzAgTCA2IDcwIFoiLz48cGF0aCBkPSJNIDMxIDM2IEwgNjIgMzMgTCA5MyA0Ny41IFEgOTYgNTAgOTMgNTIuNSBMIDYyIDY3IEwgMzEgNjQgWiIvPjwvZz48ZyBmaWxsPSJ1cmwoI2RvdHMpIiBtYXNrPSJ1cmwoI3NoKSI+PHBhdGggZD0iTSA2IDMwIEwgMzAgMzAgTCAzMyAzNCBMIDMzIDY2IEwgMzAgNzAgTCA2IDcwIFoiLz48cGF0aCBkPSJNIDMxIDM2IEwgNjIgMzMgTCA5MyA0Ny41IFEgOTYgNTAgOTMgNTIuNSBMIDYyIDY3IEwgMzEgNjQgWiIvPjwvZz48cGF0aCBkPSJNIDMzIDUwIEwgOTQgNTAiIHN0cm9rZT0iI2ZmZmZmZiIgc3Ryb2tlLXdpZHRoPSIxLjYiIG9wYWNpdHk9Ii44Ii8+PHBhdGggZD0iTSA2MiAzMyBMIDYyIDY3IiBzdHJva2U9IiMyMjI3MmUiIHN0cm9rZS13aWR0aD0iMS41IiBvcGFjaXR5PSIuNDUiLz4KIDxyZWN0IHg9IjQwIiB5PSI0NCIgd2lkdGg9IjExIiBoZWlnaHQ9IjEyIiByeD0iMyIgZmlsbD0iIzIyMjcyZSIvPjxyZWN0IHg9IjE1IiB5PSI0MCIgd2lkdGg9IjciIGhlaWdodD0iMjAiIHJ4PSIyIiBmaWxsPSIjMjIyNzJlIiBvcGFjaXR5PSIuNTUiLz48ZyBmaWxsPSIjMDAwIiBvcGFjaXR5PSIuMTgiPjxwYXRoIGQ9Ik0gNiAzMCBMIDMwIDMwIEwgMzMgMzQgTCAzMyA2NiBMIDMwIDcwIEwgNiA3MCBaIi8+PHBhdGggZD0iTSAzMSAzNiBMIDYyIDMzIEwgOTMgNDcuNSBRIDk2IDUwIDkzIDUyLjUgTCA2MiA2NyBMIDMxIDY0IFoiLz48L2c+PC9nPjxnIHRyYW5zZm9ybT0idHJhbnNsYXRlKDQyIDQ0KSByb3RhdGUoLTQ1KSBzY2FsZSguNzIpIHRyYW5zbGF0ZSgtNTAgLTUwKSI+PGcgZmlsbD0iIzIyMjcyZSIgc3Ryb2tlPSIjMjIyNzJlIiBzdHJva2Utd2lkdGg9IjUuNSIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCI+PHBhdGggZD0iTSA2IDMwIEwgMzAgMzAgTCAzMyAzNCBMIDMzIDY2IEwgMzAgNzAgTCA2IDcwIFoiLz48cGF0aCBkPSJNIDMxIDM2IEwgNjIgMzMgTCA5MyA0Ny41IFEgOTYgNTAgOTMgNTIuNSBMIDYyIDY3IEwgMzEgNjQgWiIvPjwvZz48ZyBmaWxsPSJ1cmwoI21ldCkiPjxwYXRoIGQ9Ik0gNiAzMCBMIDMwIDMwIEwgMzMgMzQgTCAzMyA2NiBMIDMwIDcwIEwgNiA3MCBaIi8+PHBhdGggZD0iTSAzMSAzNiBMIDYyIDMzIEwgOTMgNDcuNSBRIDk2IDUwIDkzIDUyLjUgTCA2MiA2NyBMIDMxIDY0IFoiLz48L2c+PGcgZmlsbD0idXJsKCNkb3RzKSIgbWFzaz0idXJsKCNzaCkiPjxwYXRoIGQ9Ik0gNiAzMCBMIDMwIDMwIEwgMzMgMzQgTCAzMyA2NiBMIDMwIDcwIEwgNiA3MCBaIi8+PHBhdGggZD0iTSAzMSAzNiBMIDYyIDMzIEwgOTMgNDcuNSBRIDk2IDUwIDkzIDUyLjUgTCA2MiA2NyBMIDMxIDY0IFoiLz48L2c+PHBhdGggZD0iTSAzMyA1MCBMIDk0IDUwIiBzdHJva2U9IiNmZmZmZmYiIHN0cm9rZS13aWR0aD0iMS42IiBvcGFjaXR5PSIuOCIvPjxwYXRoIGQ9Ik0gNjIgMzMgTCA2MiA2NyIgc3Ryb2tlPSIjMjIyNzJlIiBzdHJva2Utd2lkdGg9IjEuNSIgb3BhY2l0eT0iLjQ1Ii8+CiA8cmVjdCB4PSI0MCIgeT0iNDQiIHdpZHRoPSIxMSIgaGVpZ2h0PSIxMiIgcng9IjMiIGZpbGw9IiMyMjI3MmUiLz48cmVjdCB4PSIxNSIgeT0iNDAiIHdpZHRoPSI3IiBoZWlnaHQ9IjIwIiByeD0iMiIgZmlsbD0iIzIyMjcyZSIgb3BhY2l0eT0iLjU1Ii8+PC9nPjwvc3ZnPg==", "MNTTO_PREV": "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9Ii00IC00IDEwOCAxMDgiPjxkZWZzPgo8bGluZWFyR3JhZGllbnQgaWQ9Im1ldCIgeDE9IjAiIHkxPSIwIiB4Mj0iMSIgeTI9IjEiPjxzdG9wIG9mZnNldD0iMCIgc3RvcC1jb2xvcj0iI2ZmZmZmZiIvPjxzdG9wIG9mZnNldD0iLjMiIHN0b3AtY29sb3I9IiNkZmUzZTgiLz48c3RvcCBvZmZzZXQ9Ii41NSIgc3RvcC1jb2xvcj0iIzlhYTNhZCIvPjxzdG9wIG9mZnNldD0iLjc1IiBzdG9wLWNvbG9yPSIjZWVmMWY0Ii8+PHN0b3Agb2Zmc2V0PSIxIiBzdG9wLWNvbG9yPSIjYWFiMmJiIi8+PC9saW5lYXJHcmFkaWVudD4KPGxpbmVhckdyYWRpZW50IGlkPSJhbWIiIHgxPSIwIiB5MT0iMCIgeDI9IjAiIHkyPSIxIj48c3RvcCBvZmZzZXQ9IjAiIHN0b3AtY29sb3I9IiNGRkUwN0EiLz48c3RvcCBvZmZzZXQ9IjEiIHN0b3AtY29sb3I9IiNEOTlBMDAiLz48L2xpbmVhckdyYWRpZW50Pgo8cGF0dGVybiBpZD0iZG90cyIgd2lkdGg9IjIuNiIgaGVpZ2h0PSIyLjYiIHBhdHRlcm5Vbml0cz0idXNlclNwYWNlT25Vc2UiPjxjaXJjbGUgY3g9IjEuMyIgY3k9IjEuMyIgcj0iLjU1IiBmaWxsPSIjMmUzNTNkIi8+PC9wYXR0ZXJuPgo8cGF0dGVybiBpZD0iZG90c0wiIHdpZHRoPSIzIiBoZWlnaHQ9IjMiIHBhdHRlcm5Vbml0cz0idXNlclNwYWNlT25Vc2UiPjxjaXJjbGUgY3g9IjEuNSIgY3k9IjEuNSIgcj0iLjUiIGZpbGw9IiM5YWEzYWQiLz48L3BhdHRlcm4+CjxsaW5lYXJHcmFkaWVudCBpZD0ibWciIHgxPSIwIiB5MT0iMCIgeDI9IjEiIHkyPSIxIj48c3RvcCBvZmZzZXQ9Ii4zNSIgc3RvcC1jb2xvcj0iIzAwMCIvPjxzdG9wIG9mZnNldD0iLjk1IiBzdG9wLWNvbG9yPSIjZmZmIi8+PC9saW5lYXJHcmFkaWVudD4KPG1hc2sgaWQ9InNoIiBtYXNrVW5pdHM9InVzZXJTcGFjZU9uVXNlIiB4PSIwIiB5PSIwIiB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCI+PHJlY3Qgd2lkdGg9IjEwMCIgaGVpZ2h0PSIxMDAiIGZpbGw9InVybCgjbWcpIi8+PC9tYXNrPgo8L2RlZnM+PGcgZmlsbD0iIzIyMjcyZSIgc3Ryb2tlPSIjMjIyNzJlIiBzdHJva2Utd2lkdGg9IjUuNSIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCI+PHJlY3QgeD0iMTIiIHk9IjIwIiB3aWR0aD0iNzYiIGhlaWdodD0iNzAiIHJ4PSI5Ii8+PHJlY3QgeD0iMjYiIHk9IjEwIiB3aWR0aD0iOCIgaGVpZ2h0PSIxOCIgcng9IjQiLz48cmVjdCB4PSI2NiIgeT0iMTAiIHdpZHRoPSI4IiBoZWlnaHQ9IjE4IiByeD0iNCIvPjwvZz48ZyBmaWxsPSJ1cmwoI21ldCkiIHN0cm9rZT0idXJsKCNtZXQpIj48cmVjdCB4PSIxMiIgeT0iMjAiIHdpZHRoPSI3NiIgaGVpZ2h0PSI3MCIgcng9IjkiLz48cmVjdCB4PSIyNiIgeT0iMTAiIHdpZHRoPSI4IiBoZWlnaHQ9IjE4IiByeD0iNCIvPjxyZWN0IHg9IjY2IiB5PSIxMCIgd2lkdGg9IjgiIGhlaWdodD0iMTgiIHJ4PSI0Ii8+PC9nPjxnIGZpbGw9InVybCgjZG90cykiIHN0cm9rZT0idXJsKCNkb3RzKSIgbWFzaz0idXJsKCNzaCkiPjxyZWN0IHg9IjEyIiB5PSIyMCIgd2lkdGg9Ijc2IiBoZWlnaHQ9IjcwIiByeD0iOSIvPjxyZWN0IHg9IjI2IiB5PSIxMCIgd2lkdGg9IjgiIGhlaWdodD0iMTgiIHJ4PSI0Ii8+PHJlY3QgeD0iNjYiIHk9IjEwIiB3aWR0aD0iOCIgaGVpZ2h0PSIxOCIgcng9IjQiLz48L2c+PHBhdGggZD0iTSAxMiAyOSBRIDEyIDIwIDIxIDIwIEwgNzkgMjAgUSA4OCAyMCA4OCAyOSBMIDg4IDM2IEwgMTIgMzYgWiIgZmlsbD0iI0ZGQzIwRSIgc3Ryb2tlPSIjMjIyNzJlIiBzdHJva2Utd2lkdGg9IjIuNSIvPgogPHJlY3QgeD0iMjYiIHk9IjEwIiB3aWR0aD0iOCIgaGVpZ2h0PSIxOCIgcng9IjQiIGZpbGw9InVybCgjbWV0KSIgc3Ryb2tlPSIjMjIyNzJlIiBzdHJva2Utd2lkdGg9IjIuNSIvPjxyZWN0IHg9IjY2IiB5PSIxMCIgd2lkdGg9IjgiIGhlaWdodD0iMTgiIHJ4PSI0IiBmaWxsPSJ1cmwoI21ldCkiIHN0cm9rZT0iIzIyMjcyZSIgc3Ryb2tlLXdpZHRoPSIyLjUiLz4KIDxwYXRoIGQ9Ik02OS4wIDYxLjcgTDY5LjAgNjQuMyBMNjIuMyA2Ny4xIEw2MS42IDY4LjggTDY0LjQgNzUuNSBMNjIuNSA3Ny40IEw1NS44IDc0LjYgTDU0LjEgNzUuMyBMNTEuMyA4Mi4wIEw0OC43IDgyLjAgTDQ1LjkgNzUuMyBMNDQuMiA3NC42IEwzNy41IDc3LjQgTDM1LjYgNzUuNSBMMzguNCA2OC44IEwzNy43IDY3LjEgTDMxLjAgNjQuMyBMMzEuMCA2MS43IEwzNy43IDU4LjkgTDM4LjQgNTcuMiBMMzUuNiA1MC41IEwzNy41IDQ4LjYgTDQ0LjIgNTEuNCBMNDUuOSA1MC43IEw0OC43IDQ0LjAgTDUxLjMgNDQuMCBMNTQuMSA1MC43IEw1NS44IDUxLjQgTDYyLjUgNDguNiBMNjQuNCA1MC41IEw2MS42IDU3LjIgTDYyLjMgNTguOVoiIGZpbGw9InVybCgjbWV0KSIgc3Ryb2tlPSIjMjIyNzJlIiBzdHJva2Utd2lkdGg9IjIuMyIvPjxjaXJjbGUgY3g9IjUwIiBjeT0iNjMiIHI9IjYiIGZpbGw9IiMyMjI3MmUiLz48L3N2Zz4=", "PENDIENTE": "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9Ii00IC00IDEwOCAxMDgiPjxkZWZzPgo8bGluZWFyR3JhZGllbnQgaWQ9Im1ldCIgeDE9IjAiIHkxPSIwIiB4Mj0iMSIgeTI9IjEiPjxzdG9wIG9mZnNldD0iMCIgc3RvcC1jb2xvcj0iI2ZmZmZmZiIvPjxzdG9wIG9mZnNldD0iLjMiIHN0b3AtY29sb3I9IiNkZmUzZTgiLz48c3RvcCBvZmZzZXQ9Ii41NSIgc3RvcC1jb2xvcj0iIzlhYTNhZCIvPjxzdG9wIG9mZnNldD0iLjc1IiBzdG9wLWNvbG9yPSIjZWVmMWY0Ii8+PHN0b3Agb2Zmc2V0PSIxIiBzdG9wLWNvbG9yPSIjYWFiMmJiIi8+PC9saW5lYXJHcmFkaWVudD4KPGxpbmVhckdyYWRpZW50IGlkPSJhbWIiIHgxPSIwIiB5MT0iMCIgeDI9IjAiIHkyPSIxIj48c3RvcCBvZmZzZXQ9IjAiIHN0b3AtY29sb3I9IiNGRkUwN0EiLz48c3RvcCBvZmZzZXQ9IjEiIHN0b3AtY29sb3I9IiNEOTlBMDAiLz48L2xpbmVhckdyYWRpZW50Pgo8cGF0dGVybiBpZD0iZG90cyIgd2lkdGg9IjIuNiIgaGVpZ2h0PSIyLjYiIHBhdHRlcm5Vbml0cz0idXNlclNwYWNlT25Vc2UiPjxjaXJjbGUgY3g9IjEuMyIgY3k9IjEuMyIgcj0iLjU1IiBmaWxsPSIjMmUzNTNkIi8+PC9wYXR0ZXJuPgo8cGF0dGVybiBpZD0iZG90c0wiIHdpZHRoPSIzIiBoZWlnaHQ9IjMiIHBhdHRlcm5Vbml0cz0idXNlclNwYWNlT25Vc2UiPjxjaXJjbGUgY3g9IjEuNSIgY3k9IjEuNSIgcj0iLjUiIGZpbGw9IiM5YWEzYWQiLz48L3BhdHRlcm4+CjxsaW5lYXJHcmFkaWVudCBpZD0ibWciIHgxPSIwIiB5MT0iMCIgeDI9IjEiIHkyPSIxIj48c3RvcCBvZmZzZXQ9Ii4zNSIgc3RvcC1jb2xvcj0iIzAwMCIvPjxzdG9wIG9mZnNldD0iLjk1IiBzdG9wLWNvbG9yPSIjZmZmIi8+PC9saW5lYXJHcmFkaWVudD4KPG1hc2sgaWQ9InNoIiBtYXNrVW5pdHM9InVzZXJTcGFjZU9uVXNlIiB4PSIwIiB5PSIwIiB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCI+PHJlY3Qgd2lkdGg9IjEwMCIgaGVpZ2h0PSIxMDAiIGZpbGw9InVybCgjbWcpIi8+PC9tYXNrPgo8L2RlZnM+PGcgZmlsbD0iIzIyMjcyZSIgc3Ryb2tlPSIjMjIyNzJlIiBzdHJva2Utd2lkdGg9IjUuNSIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCI+PHJlY3QgeD0iMTYiIHk9IjE0IiB3aWR0aD0iNjgiIGhlaWdodD0iODAiIHJ4PSI4Ii8+PHJlY3QgeD0iMzQiIHk9IjciIHdpZHRoPSIzMiIgaGVpZ2h0PSIxNiIgcng9IjUiLz48L2c+PGcgZmlsbD0idXJsKCNtZXQpIiBzdHJva2U9InVybCgjbWV0KSI+PHJlY3QgeD0iMTYiIHk9IjE0IiB3aWR0aD0iNjgiIGhlaWdodD0iODAiIHJ4PSI4Ii8+PHJlY3QgeD0iMzQiIHk9IjciIHdpZHRoPSIzMiIgaGVpZ2h0PSIxNiIgcng9IjUiLz48L2c+PGcgZmlsbD0idXJsKCNkb3RzKSIgc3Ryb2tlPSJ1cmwoI2RvdHMpIiBtYXNrPSJ1cmwoI3NoKSI+PHJlY3QgeD0iMTYiIHk9IjE0IiB3aWR0aD0iNjgiIGhlaWdodD0iODAiIHJ4PSI4Ii8+PHJlY3QgeD0iMzQiIHk9IjciIHdpZHRoPSIzMiIgaGVpZ2h0PSIxNiIgcng9IjUiLz48L2c+PHJlY3QgeD0iMjUiIHk9IjI4IiB3aWR0aD0iNTAiIGhlaWdodD0iNTgiIHJ4PSIzIiBmaWxsPSIjZjZmN2Y5IiBzdHJva2U9IiMyMjI3MmUiIHN0cm9rZS13aWR0aD0iMiIvPgogPHJlY3QgeD0iMzQiIHk9IjciIHdpZHRoPSIzMiIgaGVpZ2h0PSIxNiIgcng9IjUiIGZpbGw9InVybCgjbWV0KSIgc3Ryb2tlPSIjMjIyNzJlIiBzdHJva2Utd2lkdGg9IjIuNSIvPjxjaXJjbGUgY3g9IjUwIiBjeT0iMTQiIHI9IjMiIGZpbGw9IiMyMjI3MmUiLz4KIDxwYXRoIGQ9Ik0gMzIgNDIgbCA0IDQgbCA3IC04IiBmaWxsPSJub25lIiBzdHJva2U9IiMxNkEzNEEiIHN0cm9rZS13aWR0aD0iMy4yIiBzdHJva2UtbGluZWNhcD0icm91bmQiIHN0cm9rZS1saW5lam9pbj0icm91bmQiLz48cmVjdCB4PSI0NyIgeT0iNDAiIHdpZHRoPSIyMiIgaGVpZ2h0PSI0IiByeD0iMiIgZmlsbD0iIzhhOTI5YiIvPgogPHBhdGggZD0iTSAzMiA1OCBsIDQgNCBsIDcgLTgiIGZpbGw9Im5vbmUiIHN0cm9rZT0iIzE2QTM0QSIgc3Ryb2tlLXdpZHRoPSIzLjIiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCIvPjxyZWN0IHg9IjQ3IiB5PSI1NiIgd2lkdGg9IjIyIiBoZWlnaHQ9IjQiIHJ4PSIyIiBmaWxsPSIjOGE5MjliIi8+CiA8Y2lyY2xlIGN4PSIzNyIgY3k9Ijc1IiByPSI0LjUiIGZpbGw9IiNFMEE4MDAiLz48cmVjdCB4PSI0NyIgeT0iNzIiIHdpZHRoPSIyMiIgaGVpZ2h0PSI0IiByeD0iMiIgZmlsbD0iIzhhOTI5YiIvPjwvc3ZnPg=="};
+const MODS=[['MECANICO','Mecánico'],['LUBRICACION','Lubricación'],['LLANTAS','Llantas'],['GETS','GETs'],['MNTTO_PREV','PM'],['PENDIENTE','Pendiente']];
+const gridReg=(fn)=>`<div class="acts">${MODS.map(([k,l])=>`<div class="act" onclick="${fn(k)}"><div class="ic"><img src="${ICO[k]}" alt=""></div>${l}</div>`).join('')}</div>`;
+const svg=k=>`<svg viewBox="0 0 24 24">${IC[k]||''}</svg>`;
+const AVC={MECANICO:'a1',LUBRICACION:'a2',LLANTAS:'a3',GETS:'a4',MNTTO_PREV:'a5',PENDIENTE:'a6'};
+const TABS=[];
+const FORMS=['MECANICO','LUBRICACION','LLANTAS','GETS','MNTTO_PREV','PENDIENTE'];
+function li(av,ic,t,sub,der,on){return `<div class="li" ${on?`onclick="${on}"`:''}><div class="av ${av}">${svg(ic)}</div><div class="tx"><b>${t}</b><small>${sub}</small></div>${der||''}<span class="chev">${svg('chev')}</span></div>`;}
+/* ═══════════════════════ NAVEGACIÓN ═══════════════════════ */
+function ir(p,raiz){if(!raiz){S.pila.push(S.pant);hPush();}else S.pila=[];S.pant=p;if(!['hecho'].includes(p))S.F=nuevoF();pintar();$('main').scrollTop=0;}
+function atras(){if(S.pila.length){S.pant=S.pila.pop();pintar();}}
+$('bk').onclick=volver;
+/* botón "atrás" del celular: retrocede entre pantallas; en el inicio pregunta antes de salir */
+function volver(){if(S.pila.length)history.back();else pedirSalir();}
+let _saliendo=false,_D=0;
+function hPush(){try{history.pushState({r:1},'');_D++;}catch(_){}}
+try{history.replaceState({r:0},'');}catch(_){} hPush();
+window.addEventListener('popstate',()=>{_D=Math.max(0,_D-1);if(_saliendo)return;
+  if(document.getElementById('dlgSalir')){cerrarSalir();hPush();return;}
+  if(S.pila.length){atras();return;}
+  hPush(); pedirSalir();});
+function pedirSalir(){if(document.getElementById('dlgSalir'))return;const d=document.createElement('div');d.id='dlgSalir';d.className='dlg';
+  d.innerHTML=`<div class="dlgc"><b>¿Salir de REPORTE?</b><p>${S.COLA.some(x=>!x.enviado)?'Tienes registros por enviar; se enviarán cuando vuelvas a abrir la app con señal.':'Puedes volver a abrirla desde el ícono.'}</p>
+   <div class="dlgb"><button class="btn b-g" onclick="cerrarSalir()">Quedarme</button><button class="btn b-y" onclick="salirApp()">Salir</button></div></div>`;
+  document.body.appendChild(d);}
+function cerrarSalir(){const d=document.getElementById('dlgSalir');if(d)d.remove();}
+function salirApp(){cerrarSalir();_saliendo=true;try{window.close();}catch(_){}history.go(-(_D+1));setTimeout(()=>{_saliendo=false;},1500);}
+function nuevoF(){const yo=S.col?[S.col.codigo]:[];return {tec:yo,ins:[],fotos:[],firma:[],ch:{}};}
+const TIT={cargando:'REPORTE',login:'Ingresar',alta:'Registro de colaborador',espera:'Cuenta en revisión',perfil:'Mis datos',home:'Inicio',reporte:'Reporte',
+  MECANICO:'1 · Reporte mecánico',LUBRICACION:'2 · Lubricación',LLANTAS:'3 · Llantas',GETS:'4 · GETs',MNTTO_PREV:'5 · Mntto preventivo',PENDIENTE:'Nuevo pendiente',
+  pend:'Pendientes',consulta:'Ficha del equipo',envios:'Envíos',hecho:'Registro guardado',mas:'Mi cuenta'};
+TIT.home='REPORTE MECÁNICO';TIT.reporte='Nuevo reporte';
+function pintar(){
+  $('tit').textContent=TIT[S.pant]||'REPORTE';
+  $('sub').textContent=S.col?`${S.col.codigo} · ${S.obra||'sin obra'}`:'';
+  $('bk').style.display=S.pila.length?'':'none';
+  const enTab=!!S.col&&TABS.some(t=>t[0]===S.pant), enForm=FORMS.includes(S.pant);
+  $('tabs').classList.toggle('hide',!enTab); $('pie').classList.toggle('hide',!enForm);
+  $('nav2').classList.toggle('hide',!(S.col&&!enForm&&!['home','login','alta','espera','cargando'].includes(S.pant)));
+  if(enTab)$('tabs').innerHTML=TABS.map(t=>`<a class="${S.pant===t[0]?'on':''}" onclick="ir('${t[0]}',true)">${svg(t[1])}<span>${t[2]}</span></a>`).join('');
+  $('hlogo').style.display=S.pila.length?'none':''; $('hRef').style.display='none'; $('btnGuardar').disabled=false;
+  $('main').classList.toggle('full',['reporte','mas'].includes(S.pant));
+  $('main').innerHTML=(P[S.pant]||(()=>''))();
+  if(AFTER[S.pant])AFTER[S.pant]();
+  initFirma(); initUpper();
+}
+function marcarVacios(){document.querySelectorAll('select.fill').forEach(x=>{const f=()=>x.classList.toggle('sinval',!x.value);f();x.addEventListener('change',f);});}
+function initUpper(){document.querySelectorAll('input.up,textarea.up').forEach(i=>i.addEventListener('input',()=>{const p=i.selectionStart;i.value=i.value.toUpperCase();try{i.setSelectionRange(p,p);}catch(_){}}));}
+
+/* ═══════════════════════ COMPONENTES ═══════════════════════ */
+const opts=(arr,sel,ph)=>(ph!=null?`<option value="">${ph}</option>`:'')+arr.map(v=>`<option ${v===sel?'selected':''}>${esc(v)}</option>`).join('');
+function chips(k,arr,def,cls){ if(S.F.ch[k]==null&&def!=null)S.F.ch[k]=def;
+  return `<div class="chips" data-ch="${k}">${arr.map(v=>`<span class="${S.F.ch[k]===v?'on':''} ${v==='OPERATIVO'?'op':v==='INOPERATIVO'?'in':v==='NOCHE'?'nt':''}" data-v="${esc(v)}">${esc(v)}</span>`).join('')}</div>`;}
+document.addEventListener('click',ev=>{const s=ev.target.closest('.chips span');if(!s)return;const box=s.parentElement,k=box.dataset.ch;if(!k)return;
+  S.F.ch[k]=s.dataset.v;box.querySelectorAll('span').forEach(x=>x.classList.toggle('on',x===s));if(box.dataset.re!=null||RE_CH.includes(k)){guardarCampos();pintar();}});
+const RE_CH=['esp','trabLL','neuN','aplG'];
+/* lee los campos visibles a S.F para no perderlos al repintar */
+function guardarCampos(){document.querySelectorAll('[data-k]').forEach(i=>{S.F[i.dataset.k]=i.type==='checkbox'?i.checked:i.value;});}
+const val=k=>{const i=document.querySelector(`[data-k="${k}"]`);return i?(i.type==='checkbox'?i.checked:i.value):S.F[k];};
+const vF=(k,d)=>S.F[k]!=null?S.F[k]:(d??'');
+
+function cabecera(conHr){
+  const lista=eqObra(); if(!S.F.eq&&lista.length===1)S.F.eq=lista[0].cod_sap;
+  const e=eqDe(S.F.eq), ahora=new Date(), hh=ahora.toTimeString().slice(0,5);
+  if(S.F.ch.turno==null)S.F.ch.turno=(ahora.getHours()>=7&&ahora.getHours()<19)?'DIA':'NOCHE';
+  return `<div class="c"><div class="sec">Equipo y tiempo</div>
+   <label>Equipo · obra ${esc(S.obra||'—')}</label>
+   <input list="dlEq" data-k="eqTxt" value="${esc(vF('eqTxt',e?e.cod_sap+' · '+(e.equipo||''):''))}" placeholder="Escribe el código o el nombre" onchange="elegirEq(this.value)" autocomplete="off">
+   <datalist id="dlEq">${lista.map(x=>`<option value="${esc(x.cod_sap)} · ${esc(x.equipo||'')} ${esc(x.modelo||'')}">`).join('')}</datalist>
+   <div class="dim" id="eqInfo">${e?`${esc(e.marca||'')} ${esc(e.modelo||'')} · último ${e.contador==='Km'?'KM':'HR'}: ${e.hrkm_actual!=null?f0(e.hrkm_actual):'—'}${e.fecha_lectura?' ('+fd(e.fecha_lectura)+')':''}`:'Elige un equipo de la lista'}</div>
+   ${conHr?`<label>${e&&e.contador==='Km'?'Kilometraje':'Horómetro'} del tablero</label><input type="number" inputmode="numeric" data-k="hr" value="${esc(vF('hr'))}" oninput="chkHr()"><div id="hrMsg" class="dim"></div>`:''}
+   <div class="r2"><div><label>Fecha</label><input type="date" data-k="fecha" value="${esc(vF('fecha',hoyIso()))}"></div><div><label>Turno</label>${chips('turno',['DIA','NOCHE'])}</div></div>
+   <div class="r2"><div><label>Hora inicio</label><input type="time" data-k="hini" value="${esc(vF('hini',hh))}"></div><div><label>Hora fin</label><input type="time" data-k="hfin" value="${esc(vF('hfin'))}"></div></div>
+   <label>Técnicos que participaron (un solo registro para todos)</label>
+   <input class="up" placeholder="Buscar por nombre o código" oninput="filtrarTec(this.value)" style="margin-bottom:6px">
+   <div class="tec" id="tecs">${tecChips()}</div>
+   <div class="dim" style="margin-top:4px">Seleccionados: <b id="tecSel">${S.F.tec.join(', ')||'—'}</b></div>
+  </div>`;}
+function tecChips(q){const L=S.COL.slice().sort((a,b)=>(S.F.tec.includes(b.codigo)-S.F.tec.includes(a.codigo))||((b.obra===S.obra)-(a.obra===S.obra))||a.ap_paterno.localeCompare(b.ap_paterno));
+  const qq=nrm(q||'');
+  return L.filter(c=>!qq||S.F.tec.includes(c.codigo)||nrm(c.codigo+' '+c.nombres+' '+c.ap_paterno+' '+(c.ap_materno||'')).includes(qq)).slice(0,30)
+   .map(c=>`<span class="${S.F.tec.includes(c.codigo)?'on':''}" onclick="tglTec('${esc(c.codigo)}')"><b>${esc(c.codigo)}</b> · ${esc(c.nombres.split(' ')[0])} ${esc(c.ap_paterno)}</span>`).join('')||'<span class="dim">Sin colaboradores registrados</span>';}
+function filtrarTec(q){$('tecs').innerHTML=tecChips(q);}
+function tglTec(c){const i=S.F.tec.indexOf(c);if(i>=0)S.F.tec.splice(i,1);else S.F.tec.push(c);$('tecs').innerHTML=tecChips(document.querySelector('#tecs').previousElementSibling.value);$('tecSel').textContent=S.F.tec.join(', ')||'—';}
+function elegirEq(v){const c=String(v).split('·')[0].trim().toUpperCase();const e=eqDe(c)||S.EQ.find(x=>nrm(x.cod_sap)===nrm(c));
+  guardarCampos(); if(e){S.F.eq=e.cod_sap;S.F.eqTxt=e.cod_sap+' · '+(e.equipo||'');} else {S.F.eq=null;} pintar();}
+function chkHr(){const m=$('hrMsg');if(!m)return;const e=eqDe(S.F.eq),v=Number(val('hr'));S.F.hrConv=null;
+  if(!e||!val('hr')){m.className='dim';m.textContent='';return;}
+  if(window.GLLR_DSF&&GLLR_DSF.de(e.cod_sap).length){const c=GLLR_DSF.clasificar(e.cod_sap,val('fecha')||hoyIso(),v,e);
+    if(c.tipo==='panel'){m.className='hint';m.innerHTML=`⟲ Lectura de panel: se guardará <b>${f0(c.v)} horas máquina</b>`;S.F.hrConv=c;return;}
+    if(c.tipo==='duda'){m.className='warn';m.innerHTML=`⚠ No coincide con lo esperado${c.exp!=null?' (~'+f0(c.exp)+' horas máquina)':''}. Al guardar se preguntará si es panel u horas máquina.`;return;}}
+  const ult=+e.hrkm_actual||0;
+  if(ult&&v<ult){m.className='warn';m.innerHTML=`⚠ Menor que la última lectura (${f0(ult)}). Revisa el número.`;}
+  else if(ult&&v-ult>(e.contador==='Km'?3000:300)){m.className='warn';m.innerHTML=`⚠ Avanza ${f0(v-ult)} desde la última lectura: revisa el número.`;}
+  else{m.className='dim';m.textContent=ult?`Avanza ${f0(v-ult)} desde la última lectura`:'';}}
+function insumos(tipo,esp,tit){ const L=M(tipo,esp); const def=L[0];
+  if(!S.F.ins.length&&def)S.F.ins=[{n:'',q:'',u:''}];
+  return `<div class="c"><div class="sec">${tit}</div>
+   ${S.F.ins.map((x,i)=>`<div class="it"><select onchange="cambiaIns(${i},this.value,'${tipo}','${esp||''}')"><option value="">— elegir —</option>${L.map(m=>`<option ${m.valor===x.n?'selected':''}>${esc(m.valor)}</option>`).join('')}<option ${x.n==='NINGUNO'?'selected':''}>NINGUNO</option></select>
+     <input type="number" inputmode="decimal" placeholder="Cant." value="${esc(x.q)}" oninput="S.F.ins[${i}].q=this.value"><select onchange="S.F.ins[${i}].u=this.value">${opts(MV('UNIDAD'),x.u,'')}</select><span class="x" onclick="guardarCampos();S.F.ins.splice(${i},1);pintar()">✕</span></div>`).join('')}
+   <span class="add" onclick="guardarCampos();S.F.ins.push({n:'',q:'',u:''});pintar()">+ agregar otro</span>
+   <div class="dim">La unidad se pone sola según el insumo; se puede cambiar.</div></div>`;}
+function cambiaIns(i,v,tipo,esp){const m=M(tipo,esp||null).find(x=>x.valor===v);S.F.ins[i].n=v;if(m&&m.unidad)S.F.ins[i].u=m.unidad;else if(v==='NINGUNO')S.F.ins[i].u='';guardarCampos();pintar();}
+function cierre(){return `<div class="c"><div class="sec">Foto (opcional, máx. 3) y firma</div>
+   <div class="fotos">${S.F.fotos.map((f,i)=>`<div style="background-image:url(${f.url})"><i onclick="event.stopPropagation();S.F.fotos.splice(${i},1);guardarCampos();pintar()">✕</i></div>`).join('')}${S.F.fotos.length<3?`<div onclick="guardarCampos();$('inFoto').click()">📷</div>`:''}</div>
+   <label>Observación adicional</label><textarea class="up" rows="2" data-k="obs">${esc(vF('obs'))}</textarea>
+   <label>Firma de quien registra (${esc(S.col?S.col.codigo:'')})</label><canvas class="firma" id="firma"></canvas><span class="add" onclick="S.F.firma=[];initFirma()">Borrar firma</span>
+</div>`;}
+/* fotos: se comprimen en el celular (máx. 1280 px, JPEG ~70%) */
+$('inFoto').onchange=async()=>{const f=$('inFoto').files[0];$('inFoto').value='';if(!f)return;
+  try{const b=await comprimir(f);S.F.fotos.push({blob:b,url:URL.createObjectURL(b)});pintar();toast(`📷 Foto lista (${Math.round(b.size/1024)} KB)`);}catch(e){toast('No se pudo leer la foto');}};
+function comprimir(file){return new Promise((ok,ko)=>{const img=new Image();img.onload=()=>{const k=Math.min(1,1280/Math.max(img.width,img.height));
+  const c=document.createElement('canvas');c.width=Math.round(img.width*k);c.height=Math.round(img.height*k);c.getContext('2d').drawImage(img,0,0,c.width,c.height);
+  c.toBlob(b=>b?ok(b):ko(),'image/jpeg',0.7);URL.revokeObjectURL(img.src);};img.onerror=ko;img.src=URL.createObjectURL(file);});}
+/* firma: se guarda el trazo como texto liviano (no imagen) */
+function initFirma(){const c=$('firma');if(!c)return;const r=c.getBoundingClientRect();c.width=r.width;c.height=r.height;const x=c.getContext('2d');x.lineWidth=2.2;x.lineCap='round';x.strokeStyle='#1F3864';
+  const W=c.width,H=c.height;const dib=()=>{x.clearRect(0,0,W,H);S.F.firma.forEach(tr=>{x.beginPath();tr.forEach((p,i)=>{const X=p[0]/300*W,Y=p[1]/100*H;i?x.lineTo(X,Y):x.moveTo(X,Y);});x.stroke();});};dib();
+  let d=null;const pt=e=>{const b=c.getBoundingClientRect();return [Math.round((e.clientX-b.left)/b.width*300),Math.round((e.clientY-b.top)/b.height*100)];};
+  c.onpointerdown=e=>{c.setPointerCapture(e.pointerId);d=[pt(e)];S.F.firma.push(d);};
+  c.onpointermove=e=>{if(!d)return;const p=pt(e),q=d[d.length-1];if(Math.abs(p[0]-q[0])+Math.abs(p[1]-q[1])<2)return;d.push(p);dib();};
+  c.onpointerup=c.onpointercancel=()=>{d=null;};}
+const firmaTxt=()=>S.F.firma.filter(t=>t.length>1).map(t=>t.map(p=>p.join(',')).join(' ')).join('|');
+
+/* ═══════════════════════ PANTALLAS ═══════════════════════ */
+const P={
+ cargando:()=>`<div class="logo"><img src="campo-192.png" alt=""><div class="tx">REPORTE<small>JJC · UDE</small></div></div><p class="dim" style="text-align:center;margin-top:20px">Cargando…</p>`,
+ login:()=>`<div class="logo"><img src="campo-192.png" alt=""><div class="tx">REPORTE<small>PARTE DIARIO MECÁNICO</small></div></div>
+  <div class="c" style="margin-top:12px"><h4>Ingresar</h4>
+   <label>Código o correo</label><input id="lgE" autocomplete="username" autocapitalize="characters" placeholder="Ej.: GLLANA" value="${esc(localStorage.getItem('campo_mail')||'')}">
+   <label>Contraseña</label><input type="password" id="lgP" autocomplete="current-password">
+   <button class="btn b-n" onclick="ingresar()">Ingresar</button>
+   <button class="btn b-g" onclick="ir('alta')">Soy nuevo: registrarme</button>
+   <div class="hint" style="margin-top:10px">Ingresa con tu <b>código</b> (ej. GLLANA) o tu correo. ¿Usas la página web de Equipos? Usa el <b>mismo correo y clave</b>.</div>
+   <div class="dim" style="margin-top:10px">Después del primer ingreso la app abre sin internet y recuerda la sesión.</div></div>
+  <div class="ver">${VERSION}</div>`,
+ alta:()=>`<div class="c"><h4>Registro de colaborador</h4>
+   <label>Nombres</label><input class="up fill" data-k="nombres" value="${esc(vF('nombres'))}" placeholder=" " oninput="prevCod()">
+   <div class="r2"><div><label>Apellido paterno</label><input class="up fill" data-k="ap_paterno" value="${esc(vF('ap_paterno'))}" placeholder=" " oninput="prevCod()"></div>
+   <div><label>Apellido materno</label><input class="up fill" data-k="ap_materno" value="${esc(vF('ap_materno'))}" placeholder=" "></div></div>
+   <div class="hint" id="prevCod">En los reportes figurarás como: <b>—</b></div>
+   <label>Puesto de trabajo</label><select class="fill" data-k="especialidad">${opts(puestos(vF('especialidad')),vF('especialidad'),'— elegir —')}</select>
+   <label>Obra</label><select class="fill" data-k="obra"><option value="">— elegir obra —</option>${obrasAlta(up(vF('obra'))).map(o=>`<option value="${esc(o.c)}" ${o.c===up(vF('obra'))?'selected':''}>${esc(o.n?o.c+' / '+o.n:o.c)}</option>`).join('')}</select>
+   ${S.pant==='alta'?`<label>Correo (opcional)</label><input type="email" data-k="email" value="${esc(vF('email'))}" placeholder="Si no tienes, déjalo vacío">
+   <label>Crea tu clave (mín. 6)</label><input class="fill" type="password" data-k="pass" placeholder=" ">`:''}
+   <button class="btn b-y" onclick="${S.pant==='alta'?'registrarme()':'guardarPerfil()'}">${S.pant==='alta'?'Registrarme':'Guardar mis datos'}</button>
+   ${S.pant==='alta'?'<div class="nota-am">El administrador aprobará tu cuenta</div>':'<div class="dim" style="margin-top:8px">Completa tus datos para que figures en los reportes.</div>'}</div>`,
+ espera:()=>`<div class="c" style="text-align:center"><div style="font-size:42px">⏳</div><h4>${S.perfil&&S.perfil.estado==='aprobado'?'Falta habilitar la app':'Tu cuenta está en revisión'}</h4>
+   <div class="dim">${S.perfil&&S.perfil.estado==='aprobado'?'Tu cuenta de la página web ya existe. Pide a tu administrador que te habilite la <b>app REPORTE</b> (Parte diario mecánico → Colaboradores).':'Un administrador debe aprobarla en Parte diario mecánico → Colaboradores.'}</div>
+   <button class="btn b-n" onclick="arrancar()">Volver a intentar</button><button class="btn b-g" onclick="salir()">Cerrar sesión</button></div>`,
+ home:()=>{const nq=S.COLA.filter(x=>!x.enviado).length, np=(S.PEND||[]).length;
+  return `<div class="topo"><div style="flex:1;min-width:0"><div class="dim" style="font-size:13px">Obra</div>
+     <select class="obra" onchange="S.obra=this.value;localStorage.setItem('campo_obra',this.value);pintar()">${opts(obras(),S.obra,'— todas —')}</select></div>
+     <div style="text-align:right"><div class="dim" style="font-size:13px">Yo</div><b style="color:#FFC20E;font-size:19px">${esc(S.col.codigo)}</b></div></div>
+   <div class="lblc">Registrar</div>
+   ${gridReg(k=>`ir('${k}')`)}
+   <div class="lblc">Consultar</div>
+   <div class="lin" onclick="ir('consulta')"><span class="li-ic">${svg('bus')}</span><div><b>Ficha del equipo</b><small>horómetro, próximo PM, SOS, historial</small></div><span class="chev">${svg('chev')}</span></div>
+   <div class="lin" onclick="ir('pend')"><span class="li-ic">${svg('pin')}</span><div><b>Pendientes</b><small>backlog de los equipos de la obra</small></div><span class="badge" id="pendBadge" ${np?'':'style="display:none"'}>${np}</span><span class="chev">${svg('chev')}</span></div>
+   <div class="lin" onclick="ir('envios')"><span class="li-ic">${svg('env')}</span><div><b>Envíos</b><small>${nq?nq+' por enviar':'todo sincronizado'}</small></div>${nq?`<span class="badge" style="background:#FFC20E;color:#1c1500">${nq}</span>`:''}<span class="chev">${svg('chev')}</span></div>
+   <div class="hbt" style="margin-top:14px"><button class="btn b-g" onclick="ir('perfil')">Mis datos</button><button class="btn b-g" onclick="actualizar()">Actualizar</button><button class="btn b-g" onclick="salir()">Salir</button></div>
+   <div class="ver">${VERSION} · ${S.EQ.length} equipos · ${S.COL.length} colaboradores</div>`;},
+ reporte:()=>`<div class="gh">Elige el tipo de reporte</div>
+   ${[['MECANICO','REP. MECÁNICO','mecánico · soldador · eléctrico'],['LUBRICACION','LUBRICACIÓN','engrase · rellenos'],['LLANTAS','LLANTAS','presión · cocada · cambios'],
+     ['GETS','GETs','puntas · cuchillas'],['MNTTO_PREV','MNTTO PREVENTIVO','PM1 · PM2 · PM3 · PM4'],['PENDIENTE','PENDIENTE','solo dejar un backlog']]
+     .map((m,i)=>li(AVC[m[0]],m[0],(i<5?(i+1)+' · ':'')+m[1],m[2],'',`ir('${m[0]}')`)).join('')}`,
+ mas:()=>{const nq=S.COLA.filter(x=>!x.enviado).length;
+  return `<div class="li" style="cursor:default"><div class="av a1" style="width:56px;height:56px">${svg('yo')}</div><div class="tx"><b>${esc(S.col.codigo)}</b><small>${esc(S.col.nombres)} ${esc(S.col.ap_paterno)} ${esc(S.col.ap_materno||'')}</small><small>${esc(S.obra||'sin obra')} · ${esc(S.col.especialidad||'')}</small></div></div>
+   <div class="gh">Opciones</div>
+   ${li('a3','edit','Mis datos','nombres, obra, puesto','',`ir('perfil')`)}
+   ${li('a2','env','Envíos',nq?nq+' por enviar':'todo enviado',nq?`<span class="badge" style="background:#E0B000;color:#3B2E00">${nq}</span>`:'',`ir('envios')`)}
+   ${li('a5','ref','Actualizar listas',`${S.EQ.length} equipos · ${S.COL.length} colaboradores`,'',`actualizar()`)}
+   ${li('a4','out','Cerrar sesión','','',`salir()`)}
+   <div class="ver">${VERSION}</div>`;},
+ MECANICO:()=>{const esps=['MECANICO','SOLDADOR','ELECTRICISTA'];const def=esps.includes(S.col.especialidad)?S.col.especialidad:'MECANICO';if(S.F.ch.esp==null)S.F.ch.esp=def;const e=S.F.ch.esp;
+  return cabecera(true)+`<div class="c"><div class="sec">Reporte</div>
+   <label>Especialidad</label>${chips('esp',esps)}
+   <label>Estado del equipo</label>${chips('estado',['OPERATIVO','INOPERATIVO'],'OPERATIVO')}
+   <label>Sistema</label><select data-k="sistema">${opts(MV('SISTEMA',e),vF('sistema'),'— elegir —')}</select>
+   <label>Componente</label><input class="up" data-k="componente" value="${esc(vF('componente'))}" placeholder="PIEZA O PARTE INTERVENIDA">
+   <label>Observación / descripción de la falla</label><textarea class="up" rows="2" data-k="desc">${esc(vF('desc'))}</textarea>
+   <label>Trabajo realizado</label><select data-k="trabajo">${opts(MV('TRABAJO',e),vF('trabajo'),'— elegir —')}</select>
+   <label>Tipo de parada</label>${chips('parada',MV('PARADA'))}
+   <label>Origen de la falla</label>${chips('origen',MV('ORIGEN'))}
+   <label>Frente de trabajo</label><select data-k="frente">${opts(MV('FRENTE'),vF('frente'),'— elegir —')}</select>
+   <label>Trabajo pendiente (backlog)</label><input class="up" data-k="backlog" value="${esc(vF('backlog'))}" placeholder="OPCIONAL → QUEDA EN PENDIENTES">
+  </div>`+insumos('REPUESTO',e,'Repuestos utilizados')+cierre();},
+ LUBRICACION:()=>cabecera(true)+`<div class="c"><div class="sec">Lubricación</div>
+   <label>Trabajo realizado</label>${chips('trabLub',MV('TRABAJO_LUB'),MV('TRABAJO_LUB')[0])}
+   <label>Punto / compartimiento</label><select data-k="punto">${opts(MV('PUNTO_LUB'),vF('punto'),'— elegir —')}</select>
+   <label>Trabajo pendiente (backlog)</label><input class="up" data-k="backlog" value="${esc(vF('backlog'))}" placeholder="OPCIONAL">
+  </div>`+insumos('INSUMO',null,'Insumo y cantidad')+cierre(),
+ LLANTAS:()=>{const n=+(S.F.ch.neuN||6);if(!S.F.tp||S.F.tp.length!==n)S.F.tp=Array.from({length:n},(_,i)=>(S.F.tp&&S.F.tp[i])||{p:'',c:'',t:''});
+  const steer=n<=4?n:(n%4===0?4:2);const ejes=[];let p=1;for(let i=0;i<steer;i+=2){ejes.push([p,p+1]);p+=2;}while(p<=n){const t=Math.min(4,n-p+1);ejes.push(Array.from({length:t},(_,i)=>p+i));p+=t;}
+  const cls=v=>v===''||v==null?'':(+v<=12?'n-b':+v<=14?'n-w':'n-ok');
+  const nn=q=>`<div class="neu ${cls(S.F.tp[q-1].c)} ${S.F.ps===q?'sel':''}" onclick="guardarCampos();S.F.ps=${q};pintar()">${S.F.tp[q-1].c||'—'}<small>P${q}</small></div>`;
+  return cabecera(true)+`<div class="c"><div class="sec">Llantas</div>
+   <label>Trabajo realizado</label>${chips('trabLL',['EVALUACION','CAMBIO','REPARACION','ROTACION'],'EVALUACION')}
+   <label>N° de posiciones del equipo</label>${chips('neuN',['4','6','8','10','12','14'],'6')}
+   <div class="chasis">${ejes.map(x=>{const h=Math.ceil(x.length/2);return `<div class="eje"><div class="lado">${x.slice(0,h).map(nn).join('')}</div><div class="lado">${x.slice(h).map(nn).join('')}</div></div>`;}).join('')}</div>
+   <div class="dim" style="text-align:center">Número = cocada (mm) · verde > 14 · ámbar ≤ 14 · rojo ≤ 12</div>
+   <div class="tp h" style="margin-top:8px"><span>Pos.</span><span>Presión psi</span><span>Cocada mm</span><span>Torque N·m</span></div>
+   ${S.F.tp.map((t,i)=>`<div class="tp ${S.F.ps===i+1?'sel':''}"><b style="text-align:center">${i+1}</b><input type="number" inputmode="decimal" value="${esc(t.p)}" oninput="S.F.tp[${i}].p=this.value"><input type="number" inputmode="decimal" value="${esc(t.c)}" oninput="S.F.tp[${i}].c=this.value"><input type="number" inputmode="decimal" value="${esc(t.t)}" oninput="S.F.tp[${i}].t=this.value"></div>`).join('')}
+   ${S.F.ch.trabLL==='CAMBIO'?`<div class="c" style="background:#F7F8FA;margin-top:8px;box-shadow:none"><div class="sec">Llanta nueva instalada</div>
+     <div class="r2"><div><label>Posición</label><select data-k="llPos">${opts(S.F.tp.map((_,i)=>String(i+1)),vF('llPos',S.F.ps?String(S.F.ps):''),'—')}</select></div><div><label>Marca</label><select data-k="llMarca">${opts(MV('MARCA_LLANTA'),vF('llMarca'),'—')}</select></div></div>
+     <div class="r2"><div><label>Estado</label><select data-k="llEstado">${opts(['NUEVA','REENCAUCHADA','USADA'],vF('llEstado'),'—')}</select></div><div><label>Diseño</label><input class="up" data-k="llDis" value="${esc(vF('llDis'))}"></div></div>
+     <div class="r2"><div><label>Medida</label><input class="up" data-k="llMed" value="${esc(vF('llMed'))}" placeholder="325/95 R24"></div><div><label>Serie / N° fuego</label><input class="up" data-k="llSerie" value="${esc(vF('llSerie'))}"></div></div></div>`:''}
+   <label>Trabajo pendiente (backlog)</label><input class="up" data-k="backlog" value="${esc(vF('backlog'))}" placeholder="OPCIONAL">
+  </div>`+cierre();},
+ GETS:()=>{const e=eqDe(S.F.eq), fam=e?String(e.cod_sap).slice(1,3).toUpperCase():'';
+  const CON=M('GET').filter(m=>m.familia), L=CON.filter(m=>m.familia===fam);
+  let cuerpo='';
+  if(!CON.length){ // lista antigua sin familias: se muestran todos
+    const G=MV('GET');if(S.F.gk!=='*'){S.F.gk='*';S.F.g=G.map(n=>({n,gr:'',q:'',on:false}));}
+  }else if(!e){S.F.g=[];S.F.gk=null;cuerpo='<div class="hint" style="margin-top:8px">Elige primero el equipo: se mostrarán solo sus herramientas de corte.</div>';}
+  else if(!L.length){S.F.g=[];S.F.gk=null;cuerpo=`<div class="warn" style="margin-top:8px">No hay GETs registrados para este tipo de equipo (${esc(fam)}). Si debería tenerlos, avisa al administrador para agregarlos en Datos maestros.</div>`;}
+  else{const apls=[...new Set(L.map(m=>m.aplicacion||'—'))];if(!apls.includes(S.F.ch.aplG))S.F.ch.aplG=apls[0];
+    const LL=L.filter(m=>(m.aplicacion||'—')===S.F.ch.aplG).sort((a,b)=>(a.orden||0)-(b.orden||0)), key=fam+'|'+S.F.ch.aplG;
+    if(S.F.gk!==key){S.F.gk=key;S.F.g=LL.map(m=>({n:m.valor,gr:m.grupo||'',q:'',on:false}));}
+    cuerpo=(apls.length>1?`<label>Aplicación</label>${chips('aplG',apls)}`:`<div class="hint" style="margin-top:6px">Aplicación: <b>${esc(apls[0])}</b></div>`);}
+  const filas=S.F.g.map((x,i)=>`<label class="grow ${x.on?'on':''}"><input type="checkbox" ${x.on?'checked':''} onchange="tglGet(${i},this.checked)"><span>${esc(x.n)}</span><input type="number" inputmode="numeric" min="0" placeholder="Cant." value="${esc(x.q)}" oninput="S.F.g[${i}].q=this.value;if(this.value&&!S.F.g[${i}].on)tglGet(${i},true)"></label>`).join('');
+  return cabecera(true)+`<div class="c"><div class="sec">GETs (herramientas de corte)</div>
+   <label>Trabajo realizado</label>${chips('trabGet',['EVALUACION','CAMBIO','ROTACION'],'CAMBIO')}
+   ${cuerpo}
+   ${S.F.g.length?`<label style="margin-top:12px">Marca lo que se trabajó y su cantidad</label>${filas}`:''}
+   <label>Estado del equipo</label>${chips('estado',['OPERATIVO','INOPERATIVO'],'OPERATIVO')}
+   <label>Trabajo pendiente (backlog)</label><input class="up" data-k="backlog" value="${esc(vF('backlog'))}" placeholder="OPCIONAL">
+  </div>`+cierre();},
+ MNTTO_PREV:()=>{const e=eqDe(S.F.eq);const T=MV('TAREA_PM');if(!S.F.tar)S.F.tar=T.map(()=>true);
+  const prox=e&&+e.frecuencia?(+e.hrkm_ult_mntto||0)+(+e.frecuencia):null;
+  return cabecera(true)+`<div class="c"><div class="sec">Mantenimiento preventivo</div>
+   <label>Tipo de PM</label>${chips('pm',MV('PM'))}
+   ${prox?`<div class="hint">Según el Maestro: último PM a ${f0(e.hrkm_ult_mntto||0)} · próximo a <b>${f0(prox)}</b></div>`:''}
+   <label>Tareas realizadas</label>${T.map((t,i)=>`<div class="row"><span>${esc(t)}</span><input type="checkbox" style="width:22px;height:22px" ${S.F.tar[i]?'checked':''} onchange="S.F.tar[${i}]=this.checked"></div>`).join('')}
+   <label>Trabajo pendiente (backlog)</label><input class="up" data-k="backlog" value="${esc(vF('backlog'))}" placeholder="OPCIONAL">
+  </div>`+insumos('INSUMO',null,'Insumos del PM')+cierre();},
+ PENDIENTE:()=>cabecera(false)+`<div class="c"><div class="sec">Pendiente</div>
+   <label>Descripción del trabajo pendiente</label><textarea class="up" rows="3" data-k="backlog">${esc(vF('backlog'))}</textarea>
+   <label>Estado del equipo</label>${chips('estado',['OPERATIVO','INOPERATIVO'],'OPERATIVO')}</div>`+cierre(),
+ hecho:()=>`<div class="c" style="text-align:center"><div style="font-size:40px">${S.ult&&S.ult.enviado?'✅':'💾'}</div>
+   <h4>${S.ult&&S.ult.enviado?'Registro enviado':'Guardado en el celular'}</h4>
+   <div class="dim">${S.ult&&S.ult.enviado?'Ya está en la web (PARTE DIARIO MECÁNICO).':'Se enviará solo cuando haya señal.'}</div></div>
+   <div class="c"><div class="sec">Vista del mensaje</div><div class="resumen">${esc(textoWA(S.ult.reg,nFotos(S.ult.reg)))}</div>${fotosDe(S.ult.reg).length?`<div class="fotos" style="margin-top:8px">${fotosDe(S.ult.reg).map(u=>`<div style="background-image:url(${u})"></div>`).join("")}</div>`:""}
+   <button class="btn b-w" onclick="whatsapp(S.ult.reg)">📲 Enviar por WhatsApp</button></div>
+   <button class="btn b-y" onclick="S.pila=['home'];S.pant='reporte';S.F=nuevoF();pintar()">+ Nuevo reporte</button><button class="btn b-g" onclick="ir('home',true)">Inicio</button>`,
+ envios:()=>{const L=S.COLA.slice().sort((a,b)=>String(b.reg.created_local).localeCompare(String(a.reg.created_local)));
+  return `<div class="c"><h4>⇅ Envíos</h4><div class="dim" style="margin-bottom:6px">${S.online?'Con señal: se envía al momento.':'Sin señal: los registros quedan en el celular y se envían solos al volver la señal.'}</div>
+   ${L.length?L.map(x=>`<div class="row"><div><b>${esc(MODN[x.reg.modulo]||x.reg.modulo)}</b> · ${esc(x.reg.cod_sap)}<br><span class="dim">${fd(x.reg.fecha)} ${esc(x.reg.hora_ini||'')} · ${esc((x.reg.tecnicos||[]).join(', '))}${x.error?'<br><span style="color:#B91C1C">'+esc(x.error)+'</span>':''}</span></div>
+     <div style="text-align:right"><span class="pill ${x.enviado?'p-ok':x.error?'p-b':'p-w'}">${x.enviado?'✓ Enviado':x.error?'Error':'⏳ En cola'}</span><br><span class="add" onclick="whatsappId('${x.id}')">📲</span></div></div>`).join(''):'<div class="dim">Sin registros en este celular.</div>'}</div>
+   <button class="btn b-n" onclick="sincronizar(true)" ${S.online?'':'disabled'}>Enviar ahora</button>
+   <div class="dim" style="margin-top:6px">Los enviados se quedan aquí 7 días para reenviarlos por WhatsApp.</div>`;},
+ consulta:()=>`<div class="c"><label>Equipo</label><div class="eqsel"><select id="cqSel" onchange="S.F.cq=this.value;consultar()">${cqOpts()}</select><span class="sbtn" title="Buscar" onclick="S.F.cqBus=!S.F.cqBus;guardarCampos();pintar()">${svg('bus')}</span></div>
+   ${S.F.cqBus?`<input class="up" id="cqBus" style="margin-top:8px" placeholder="FILTRAR POR CÓDIGO O NOMBRE" value="${esc(vF('cqf'))}" oninput="S.F.cqf=this.value;$('cqSel').innerHTML=cqOpts()">`:''}</div><div id="cqRes"></div>`,
+ pend:()=>`<div class="c"><h4>📌 Pendientes · ${esc(S.obra||'todas las obras')}</h4><div id="pdRes" class="dim">${S.online?'Cargando…':'Sin señal: se muestran los últimos descargados.'}</div></div>
+   <button class="btn b-g" onclick="ir('PENDIENTE')">+ Nuevo pendiente</button>`,
+ perfil:()=>{if(S.col&&S.F.nombres==null){Object.assign(S.F,{nombres:S.col.nombres,ap_paterno:S.col.ap_paterno,ap_materno:S.col.ap_materno||'',obra:S.col.obra||'',especialidad:S.col.especialidad||'MECANICO'});}
+  return P.alta();}
+};
+const AFTER={home:()=>cargarPend(),alta:()=>{prevCod();marcarVacios();if(!S.OBRAS)cargarObras();},perfil:()=>{prevCod();marcarVacios();if(!S.OBRAS)cargarObras();},consulta:()=>{if(S.F.cq)consultar();},pend:()=>cargarPend(),
+  MECANICO:chkHr,LUBRICACION:chkHr,LLANTAS:chkHr,GETS:chkHr,MNTTO_PREV:chkHr};
+const MODN={MECANICO:'Reporte mecánico',LUBRICACION:'Lubricación',LLANTAS:'Llantas',GETS:'GETs',MNTTO_PREV:'Mntto preventivo',PENDIENTE:'Pendiente'};
+
+/* ═══════════════════════ ALTA / INGRESO ═══════════════════════ */
+function prevCod(){const n=val('nombres'),a=val('ap_paterno'),b=codigoBase(n||'',a||'');const e=$('prevCod');if(e)e.innerHTML=`En los reportes figurarás como: <b>${b||'—'}</b>`;}
+async function ingresar(){const t=$('lgE').value.trim(),p=$('lgP').value;if(!t||!p)return toast('Escribe tu código (o correo) y tu clave');const e=aCorreo(t);
+  if(!S.online)return toast('Sin señal: el primer ingreso necesita internet');
+  localStorage.setItem('campo_mail',t.includes('@')?t:t.toUpperCase());
+  const {error}=await sb.auth.signInWithPassword({email:e,password:p});if(error){const m=error.message||'';return toast(/banned/i.test(m)?'Tu cuenta está bloqueada. Habla con tu supervisor.':/invalid login/i.test(m)?'Código/correo o clave incorrectos. Si la olvidaste, pide una clave nueva a tu administrador.':/not confirmed/i.test(m)?'Tu cuenta aún no está aprobada.':'No se pudo ingresar: '+m,6000);}arrancar();}
+async function registrarme(){guardarCampos();const d={nombres:up(S.F.nombres),ap_paterno:up(S.F.ap_paterno),ap_materno:up(S.F.ap_materno),especialidad:S.F.especialidad,obra:up(S.F.obra),email:String(S.F.email||'').trim()};
+  if(!d.nombres||!d.ap_paterno)return toast('Escribe nombres y apellido paterno');
+  if(!d.especialidad||!d.obra)return toast('Elige tu puesto de trabajo y tu obra');
+  if(String(S.F.pass||'').length<6)return toast('Crea una clave de 6 caracteres o más');
+  if(!S.online)return toast('El registro necesita internet');
+  if(!d.email){const {data:cod,error:ec}=await sb.rpc('pdm_codigo_libre',{p_nombres:d.nombres,p_paterno:d.ap_paterno,p_materno:d.ap_materno||null});
+    if(ec||!cod)return toast('No se pudo generar tu código: '+((ec&&ec.message)||'intenta de nuevo'),6000);d.codigo=cod;d.email=aCorreo(cod);}
+  const nombre=[d.nombres,d.ap_paterno,d.ap_materno].filter(Boolean).join(' ');
+  const {data,error}=await sb.auth.signUp({email:d.email,password:S.F.pass,options:{data:{nombre,nombres:d.nombres,ap_paterno:d.ap_paterno,ap_materno:d.ap_materno,origen:'campo'}}});
+  if(error)return toast(/already|registered/i.test(error.message)?'Ese correo ya tiene cuenta. Ingresa con tu misma clave de la página web.':'No se pudo registrar: '+error.message,6000);
+  if(data.user&&Array.isArray(data.user.identities)&&data.user.identities.length===0){localStorage.setItem('campo_mail',d.email);toast('Ese correo ya tiene cuenta (por ejemplo, de la página web). Ingresa con tu misma clave.',7000);return ir('login',true);}
+  localStorage.setItem('campo_alta',JSON.stringify(d));localStorage.setItem('campo_mail',d.codigo||d.email);
+  if(data.session){await refrescarDatos();await crearColaborador(d,data.user.id);localStorage.removeItem('campo_alta');}
+  if(d.codigo)alert(`Tu código para ingresar es: ${d.codigo}\n\nAnótalo. Ingresarás con este código y la clave que creaste.`);
+  toast('Registro enviado. Un administrador aprobará tu cuenta.',5000);arrancar();}
+async function guardarPerfil(){guardarCampos();const d={nombres:up(S.F.nombres),ap_paterno:up(S.F.ap_paterno),ap_materno:up(S.F.ap_materno),especialidad:S.F.especialidad,obra:up(S.F.obra)};
+  if(!d.nombres||!d.ap_paterno)return toast('Escribe nombres y apellido paterno');
+  if(!S.online)return toast('Necesitas señal para guardar tus datos');
+  if(S.col){const {data,error}=await sb.from('pdm_colaboradores').update({nombres:d.nombres,ap_paterno:d.ap_paterno,ap_materno:d.ap_materno||null,especialidad:d.especialidad,obra:d.obra||null}).eq('id',S.col.id).select().single();
+    if(error)return toast('No se pudo guardar: '+error.message,5000);S.col=data;const i=S.COL.findIndex(c=>c.id===data.id);if(i>=0)S.COL[i]=data;DB.set('col',S.COL);DB.set('yo',data);toast('✓ Datos guardados');ir('home',true);}
+  else{const c=await crearColaborador(d,S.user.id);if(c){S.obra=c.obra||obras()[0]||'';ir('home',true);}}}
+async function salir(){if(S.COLA.some(x=>!x.enviado)&&!confirm('Hay registros sin enviar en este celular. Si cierras sesión se mantienen y se enviarán al volver a ingresar. ¿Salir?'))return;
+  await sb.auth.signOut().catch(()=>{});S.col=null;S.perfil=null;DB.set('perfil',null);DB.set('yo',null);ir('login',true);}
+async function actualizar(){if(!S.online)return toast('Sin señal');toast('Actualizando…');await refrescarDatos();pintar();toast('✓ Listas actualizadas');}
+
+/* ═══════════════════════ GUARDAR ═══════════════════════ */
+async function guardar(){
+  guardarCampos();
+  const mod=S.pant, e=eqDe(S.F.eq);
+  if(!e)return toast('Elige el equipo');
+  if(!S.F.tec.length)return toast('Elige al menos un técnico');
+  const fecha=val('fecha')||hoyIso();
+  let hr=val('hr')===''||val('hr')==null?null:Number(val('hr')), hrPanel=null;
+  if(mod!=='PENDIENTE'&&hr==null)return toast('Escribe el horómetro / kilometraje');
+  if(hr!=null&&window.GLLR_DSF&&GLLR_DSF.de(e.cod_sap).length){const c=GLLR_DSF.convertir(e.cod_sap,fecha,hr,e,'reporte');if(c.tipo==='panel'){hrPanel=hr;hr=c.v;}}
+  const r={id:uuid(),created_local:new Date().toISOString(),fecha,hora_ini:val('hini')||null,hora_fin:val('hfin')||null,turno:S.F.ch.turno||null,
+    obra:e.cod_proyec||S.obra||null,cod_sap:e.cod_sap,maestro_id:e.id||null,modulo:mod,especialidad:null,hrkm:hr,hrkm_panel:hrPanel,
+    tecnicos:S.F.tec.slice(),registrado_por:S.col.codigo,observacion:up(val('obs'))||null,firma:firmaTxt()||null,detalle:{},insumos:null,
+    backlog:up(val('backlog'))||null};
+  r.backlog_estado=r.backlog?'ABIERTO':null;
+  const insL=S.F.ins.filter(x=>x.n&&x.n!=='NINGUNO').map(x=>({n:x.n,q:x.q===''?null:Number(x.q),u:x.u||null}));
+  if(mod==='MECANICO'){Object.assign(r,{especialidad:S.F.ch.esp,estado_equipo:S.F.ch.estado,sistema:val('sistema')||null,componente:up(val('componente'))||null,
+      descripcion:up(val('desc'))||null,trabajo:val('trabajo')||null,tipo_parada:S.F.ch.parada||null,origen_falla:S.F.ch.origen||null,frente:val('frente')||null,insumos:insL});
+    if(!r.sistema||!r.trabajo)return toast('Elige sistema y trabajo realizado');}
+  else if(mod==='LUBRICACION'){Object.assign(r,{especialidad:'LUBRICADOR',trabajo:S.F.ch.trabLub,sistema:val('punto')||null,insumos:insL});r.detalle={punto:val('punto')||null};
+    if(!insL.length)return toast('Agrega al menos un insumo con su cantidad');}
+  else if(mod==='LLANTAS'){const pos=S.F.tp.map((t,i)=>({pos:i+1,presion:t.p===''?null:+t.p,cocada:t.c===''?null:+t.c,torque:t.t===''?null:+t.t})).filter(x=>x.presion!=null||x.cocada!=null||x.torque!=null);
+    Object.assign(r,{especialidad:'LLANTERO',trabajo:S.F.ch.trabLL,sistema:'NEUMATICOS'});
+    r.detalle={posiciones_equipo:+(S.F.ch.neuN||6),posiciones:pos};
+    if(S.F.ch.trabLL==='CAMBIO')r.detalle.cambio={pos:val('llPos')?+val('llPos'):null,marca:val('llMarca')||null,estado:val('llEstado')||null,diseno:up(val('llDis'))||null,medida:up(val('llMed'))||null,serie:up(val('llSerie'))||null};
+    if(!pos.length)return toast('Registra al menos una posición');}
+  else if(mod==='GETS'){const g=(S.F.g||[]).filter(x=>x.on).map(x=>({n:x.n,grupo:x.gr||null,cant:x.q===''?null:+x.q}));const apl=S.F.ch.aplG||null;
+    Object.assign(r,{trabajo:S.F.ch.trabGet,sistema:'HERRAMIENTAS DE CORTE',componente:apl,estado_equipo:S.F.ch.estado||'OPERATIVO'});r.detalle={implemento:apl,componentes:g};
+    if(!g.length)return toast('Marca al menos un componente');}
+  else if(mod==='MNTTO_PREV'){const T=MV('TAREA_PM');Object.assign(r,{especialidad:'MECANICO',trabajo:S.F.ch.pm||null,sistema:'MNTTO PREVENTIVO',insumos:insL});
+    r.detalle={pm:S.F.ch.pm||null,tareas:T.filter((_,i)=>S.F.tar[i])};if(!r.trabajo)return toast('Elige el tipo de PM');}
+  else if(mod==='PENDIENTE'){Object.assign(r,{trabajo:'PENDIENTE',estado_equipo:S.F.ch.estado});if(!r.backlog)return toast('Describe el pendiente');}
+  // evitar duplicados: mismo equipo, fecha, módulo y trabajo con alguno de los mismos técnicos
+  const igual=x=>x.cod_sap===r.cod_sap&&x.fecha===r.fecha&&x.modulo===r.modulo&&(x.trabajo||'')===(r.trabajo||'')&&(x.tecnicos||[]).some(t=>r.tecnicos.includes(t));
+  let dup=S.COLA.map(x=>x.reg).find(igual)||S.REC.find(igual);
+  if(!dup&&S.online){try{const {data}=await sb.from('pdm_registros').select('id,cod_sap,fecha,modulo,trabajo,tecnicos,registrado_por,hora_ini').eq('cod_sap',r.cod_sap).eq('fecha',r.fecha).eq('modulo',r.modulo).eq('anulado',false).limit(20);dup=(data||[]).find(igual);}catch(_){}}
+  if(dup&&!confirm(`⚠ Ya existe un registro parecido:\n\n${r.cod_sap} · ${fd(r.fecha)} · ${MODN[r.modulo]} · ${r.trabajo||''}\nRegistrado por ${dup.registrado_por||'—'} con técnicos ${(dup.tecnicos||[]).join(', ')}${dup.hora_ini?' a las '+String(dup.hora_ini).slice(0,5):''}.\n\nSi fue el mismo trabajo, NO lo vuelvas a registrar (un registro sirve para todos los técnicos).\n\n¿Es un trabajo distinto y quieres guardarlo igual?`))return;
+  const item={id:r.id,reg:r,fotos:S.F.fotos.map(f=>f.blob),enviado:false,error:null};
+  await DB.poner(item);S.COLA.push(item);
+  S.ult={reg:r,enviado:false};$('btnGuardar').disabled=true;
+  if(S.online)await sincronizar();
+  S.ult.enviado=(S.COLA.find(x=>x.id===r.id)||{}).enviado;
+  S.pila=['home'];S.pant='hecho';pintar();$('main').scrollTop=0;
+}
+
+/* ═══════════════════════ ENVÍO (sincronización) ═══════════════════════ */
+let _sync=false;
+async function sincronizar(manual){
+  if(_sync||!S.online)return;_sync=true;let ok=0,err=0;
+  try{
+    const {data:{session}}=await sb.auth.getSession(); if(!session){_sync=false;return;}
+    for(const it of S.COLA.filter(x=>!x.enviado)){
+      try{
+        const rutas=[];
+        for(let i=0;i<(it.fotos||[]).length;i++){
+          const ruta=`${it.reg.obra||'SIN-OBRA'}/${it.reg.fecha}/${it.id}_${i+1}.jpg`;
+          const {error}=await sb.storage.from('pdm-fotos').upload(ruta,it.fotos[i],{contentType:'image/jpeg',upsert:true});
+          if(error)throw new Error('Foto: '+error.message); rutas.push(ruta);
+        }
+        const fila={...it.reg,fotos:rutas.length?rutas:null}; delete fila.created_local;
+        const {error}=await sb.from('pdm_registros').upsert(fila,{onConflict:'id',ignoreDuplicates:true});
+        if(error)throw error;
+        it.enviado=true;it.error=null;it.reg.fotos=rutas.length?rutas:null;it.enviado_en=new Date().toISOString();ok++;
+        S.REC.unshift({...it.reg});S.REC=S.REC.slice(0,300);
+      }catch(e){it.error=e.message||String(e);err++;}
+      await DB.poner(it);
+    }
+    // se limpian los enviados con más de 7 días
+    const lim=Date.now()-7*86400000;
+    for(const it of S.COLA.filter(x=>x.enviado&&new Date(x.enviado_en||0).getTime()<lim)){await DB.quitar(it.id);}
+    S.COLA=S.COLA.filter(x=>!(x.enviado&&new Date(x.enviado_en||0).getTime()<lim));
+    DB.set('rec',S.REC);
+  }finally{_sync=false;}
+  if(ok&&S.pant!=='hecho')toast(`⇅ ${ok} registro(s) enviados`);
+  if(err&&manual)toast(`${err} registro(s) no se pudieron enviar: revisa Envíos`,5000);
+  if(['home','envios'].includes(S.pant))pintar();
+}
+setInterval(()=>{if(S.online&&S.COLA.some(x=>!x.enviado))sincronizar();},60000);
+
+/* ═══════════════════════ WHATSAPP ═══════════════════════ */
+function nombreCol(c){const x=colDe(c);return x?c:c;}
+function textoWA(r,foto){
+  const e=eqDe(r.cod_sap)||{}, d=r.detalle||{}, T=[];
+  const hh=v=>String(v||'').slice(0,5);
+  // trabajos realizados (según el área)
+  const t0=[r.trabajo,r.modulo==='MECANICO'&&r.sistema?'('+r.sistema+(r.componente?' · '+r.componente:'')+')':''].filter(Boolean).join(' ');
+  if(r.modulo!=='MNTTO_PREV'&&t0)T.push(t0);
+  if(r.descripcion)T.push('Falla: '+r.descripcion);
+  if(r.modulo==='LUBRICACION'&&d.punto)T.push('Punto: '+d.punto);
+  if(r.modulo==='LLANTAS'){(d.posiciones||[]).forEach(q=>T.push(`P${q.pos}: ${q.cocada!=null?q.cocada+' mm':'—'}${q.presion!=null?' · '+q.presion+' psi':''}${q.torque!=null?' · '+q.torque+' N·m':''}`));
+    if(d.cambio)T.push(`Llanta nueva P${d.cambio.pos||'?'}: ${[d.cambio.marca,d.cambio.medida,d.cambio.diseno,d.cambio.estado].filter(Boolean).join(' · ')}${d.cambio.serie?' · S/N '+d.cambio.serie:''}`);}
+  if(r.modulo==='GETS'){if(d.implemento)T.push('Aplicación: '+d.implemento);(d.componentes||[]).forEach(c=>T.push(`${c.n}${c.cant!=null?' × '+c.cant:''}${c.desgaste!=null?' · desgaste '+c.desgaste+'%':''}`));}
+  if(r.modulo==='MNTTO_PREV'){if(r.trabajo)T.push(r.trabajo);(d.tareas||[]).forEach(x=>T.push(x));}
+  if(r.insumos&&r.insumos.length)T.push('Insumos: '+r.insumos.map(x=>`${x.n}${x.q!=null&&x.q!==''?' '+x.q+' '+(x.u||''):''}`.trim()).join(', '));
+  if(r.observacion)T.push('Obs.: '+r.observacion);
+  const L=[];
+  L.push(`∙ Equipo: ${r.cod_sap}`);
+  L.push(`∙ ${e.contador==='Km'?'Kilometraje':'Horómetro'}: ${r.hrkm!=null?f0(r.hrkm):'—'}`);
+  L.push(`∙ Fecha: ${fd(r.fecha)}`);
+  L.push(`∙ Hora: ${hh(r.hora_ini)}${r.hora_fin?' – '+hh(r.hora_fin):''}`);
+  L.push(' ');
+  L.push('∙ Trabajos realizados:');
+  T.forEach(x=>L.push('   - '+x)); if(!T.length)L.push(' ');
+  L.push(`∙ Estado: ${r.estado_equipo||'—'}`);
+  L.push(`∙ Técnicos: ${(r.tecnicos||[]).join(', ')}`);
+  L.push('━━━━━━━━━━━━━━━━');
+  L.push(`Foto:${foto?' '+foto:' sin foto'}`);
+  return L.join('\n');
+}
+const _furl=new Map();
+function fotosDe(r){const it=S.COLA.find(x=>x.id===r.id);return (it&&it.fotos||[]).filter(Boolean).map(b=>{if(!_furl.has(b))_furl.set(b,URL.createObjectURL(b));return _furl.get(b);});}
+function nFotos(r){const n=fotosDe(r).length;return n?(n===1?'adjunta':n+' adjuntas'):'';}
+async function whatsapp(r){
+  const it=S.COLA.find(x=>x.id===r.id), blobs=(it&&it.fotos||[]).filter(Boolean);
+  const files=blobs.map((b,i)=>new File([b],`${r.cod_sap}_${fd(r.fecha).replace(/\//g,'-')}_${i+1}.jpg`,{type:'image/jpeg'}));
+  // 1) celular moderno: menú Compartir con texto + fotos (elige WhatsApp)
+  if(files.length&&navigator.canShare&&navigator.canShare({files})){
+    const txt=textoWA(r,files.length===1?'adjunta':files.length+' adjuntas');
+    try{await navigator.clipboard.writeText(txt);}catch(_){}
+    try{await navigator.share({files,text:txt});return;}catch(e){if(e&&e.name==='AbortError')return;}}
+  // 2) sin opción de adjuntar: enlace a la foto (válido 7 días) o aviso
+  let foto='';
+  if((r.fotos||[]).length&&S.online){try{const {data}=await sb.storage.from('pdm-fotos').createSignedUrl(r.fotos[0],7*86400);if(data&&data.signedUrl)foto=data.signedUrl;}catch(_){}}
+  else if(files.length)foto='(se envía aparte)';
+  window.open('https://wa.me/?text='+encodeURIComponent(textoWA(r,foto)),'_blank');}
+function tglGet(i,v){guardarCampos();const x=S.F.g[i];x.on=v;if(v&&!x.q)x.q='1';if(!v)x.q='';pintar();}
+function regEn(mod,cod){ir(mod);const e=eqDe(cod);if(e){S.F.eq=e.cod_sap;S.F.eqTxt=e.cod_sap+' · '+(e.equipo||'');pintar();}}
+function verReg(id){const it=S.COLA.find(x=>x.id===id);if(!it)return;S.ult={reg:it.reg,enviado:!!it.enviado};ir('hecho');}
+function whatsappId(id){const it=S.COLA.find(x=>x.id===id);if(it)whatsapp(it.reg);}
+
+/* ═══════════════════════ CONSULTA Y PENDIENTES ═══════════════════════ */
+function cqOpts(){const q=nrm(S.F.cqf||'');const L=eqObra().filter(x=>!q||nrm(x.cod_sap+' '+(x.equipo||'')+' '+(x.modelo||'')).includes(q));
+  return '<option value="">— elegir equipo —</option>'+L.map(x=>`<option value="${esc(x.cod_sap)}" ${S.F.cq===x.cod_sap?'selected':''}>${esc(x.cod_sap)} · ${esc(x.equipo||'')} ${esc(x.modelo||'')}</option>`).join('');}
+const ESPN={MECANICO:'Mecánico',SOLDADOR:'Soldador',ELECTRICISTA:'Electricista',LUBRICADOR:'Lubricador',LLANTERO:'Llantero'};
+const espDe=r=>ESPN[r.especialidad]||({LUBRICACION:'Lubricador',LLANTAS:'Llantero'}[r.modulo])||'Mecánico';
+const SOSP={CRITICO:['p-b','Crítico'],PRECAUCION:['p-w','Precaución'],NORMAL:['p-ok','Normal']};
+async function consultar(){const c=String(S.F.cq||'').split('·')[0].trim().toUpperCase(), e=eqDe(c), box=$('cqRes');if(!box)return;
+  if(!c){box.innerHTML='';return;} if(!e){box.innerHTML='<div class="c dim">Equipo no encontrado.</div>';return;}
+  const u=e.contador==='Km'?'km':'h';
+  const prox=+e.frecuencia?(+e.hrkm_ult_mntto||0)+(+e.frecuencia):null, rest=prox!=null&&e.hrkm_actual!=null?prox-(+e.hrkm_actual):null;
+  const dsf=window.GLLR_DSF&&GLLR_DSF.de(e.cod_sap).length;
+  const pct=rest==null?0:Math.max(0,Math.min(100,100-rest/(+e.frecuencia)*100));
+  box.innerHTML=`<div class="hero"><div class="dim">${esc(e.equipo||'')} · ${esc(e.marca||'')} ${esc(e.modelo||'')}</div><div class="code">${esc(e.cod_sap)}</div>
+    <div class="stats"><div class="st"><span>${e.contador==='Km'?'Kilometraje':'Horómetro'}</span><b>${e.hrkm_actual!=null?f0(e.hrkm_actual)+' '+u:'—'}</b>${dsf?'<small class="pill p-a">⟲ desfase</small>':''}</div>
+     <div class="st"><span>Próximo PM</span><b style="color:${rest==null?'inherit':rest<0?'#f87171':rest<(+e.frecuencia*0.1)?'#fbbf24':'#4ade80'}">${rest==null?'—':rest<0?'vencido '+f0(-rest):'faltan '+f0(rest)}</b>${rest==null?'':`<div class="pbar"><i style="width:${pct}%;background:${rest<0?'#ef4444':rest<(+e.frecuencia*0.1)?'#f59e0b':'#22c55e'}"></i></div>`}</div>
+     <div class="st"><span>SOS aceite</span><b id="cqSos">…</b></div><div class="st"><span>Pendientes</span><b id="cqPend">…</b></div></div></div>
+    <div class="lblc">Historial</div><div id="cqL" class="tlx dim">${S.online?'Cargando…':''}</div>`;
+  // pendientes abiertos del equipo
+  let np=(S.PEND||[]).filter(p=>p.cod_sap===e.cod_sap).length;
+  if(S.online){const {data}=await sb.from('pdm_registros').select('id').eq('cod_sap',e.cod_sap).eq('backlog_estado','ABIERTO').eq('anulado',false);if(data)np=data.length;}
+  if($('cqPend'))$('cqPend').textContent=np?np+(np===1?' abierto':' abiertos'):'ninguno';
+  // último resultado SOS (el peor estado entre los últimos de cada sistema)
+  let sos=(await DB.get('sos_'+e.cod_sap).catch(()=>null))||null;
+  if(S.online){const {data}=await sb.from('sos_muestras').select('sistema,estado_std,f_muestreo').eq('cod_sap',e.cod_sap).order('f_muestreo',{ascending:false}).limit(80);
+    if(data){const ult={};data.forEach(m=>{const k=m.sistema||'-';if(!ult[k]||String(m.f_muestreo)>String(ult[k].f_muestreo))ult[k]=m;});
+      const rk={CRITICO:3,PRECAUCION:2,NORMAL:1};sos=Object.values(ult).sort((a,b)=>(rk[b.estado_std]||0)-(rk[a.estado_std]||0)||String(b.f_muestreo).localeCompare(String(a.f_muestreo)))[0]||null;DB.set('sos_'+e.cod_sap,sos);}}
+  if($('cqSos')){const t=sos&&SOSP[sos.estado_std];$('cqSos').innerHTML=sos?`<span style="color:${sos.estado_std==='CRITICO'?'#f87171':sos.estado_std==='PRECAUCION'?'#fbbf24':'#4ade80'}">${esc(t?t[1]:sos.estado_std)}</span><small class="dim" style="display:block;font-size:12px;font-weight:400">${fd(sos.f_muestreo)}</small>`:'—';}
+  // historial
+  let regs=S.REC.filter(r=>r.cod_sap===e.cod_sap).concat(S.COLA.filter(x=>!x.enviado&&x.reg.cod_sap===e.cod_sap).map(x=>x.reg));
+  if(S.online){const {data}=await sb.from('pdm_registros').select('id,fecha,modulo,especialidad,trabajo,sistema,tecnicos,backlog').eq('cod_sap',e.cod_sap).eq('anulado',false).order('fecha',{ascending:false}).limit(20);if(data)regs=data;}
+  if(!$('cqL'))return;
+  $('cqL').className='tlx';$('cqL').innerHTML=regs.length?regs.slice(0,20).map(r=>`<div>${esc(MODN[r.modulo]||r.modulo)} · ${esc(String(r.trabajo||r.sistema||'').toLowerCase())}${r.backlog?' 📌':''}<br><small>${fd(r.fecha)} · ${esc(espDe(r))} · ${esc((r.tecnicos||[]).join(', '))}</small></div>`).join(''):'<span class="dim">Sin registros.</span>';}
+async function cargarPend(){const box=$('pdRes');let L=(await DB.get('pend').catch(()=>null))||[];
+  if(S.online){let q=sb.from('pdm_registros').select('id,fecha,cod_sap,backlog,tecnicos,registrado_por,obra,estado_equipo').eq('backlog_estado','ABIERTO').eq('anulado',false).order('fecha',{ascending:false}).limit(150);
+    if(S.obra)q=q.eq('obra',S.obra);const {data,error}=await q;if(!error){L=data||[];DB.set('pend',L);}}
+  S.PEND=L;const bd=$('pendBadge');if(bd){bd.textContent=L.length;bd.style.display=L.length?'':'none';}
+  if(!box)return;
+  box.className='';box.innerHTML=L.length?L.map(p=>`<div class="row"><div><b>${esc(p.cod_sap)}</b> · ${esc(p.backlog)}<br><span class="dim">${fd(p.fecha)} · ${esc(p.registrado_por||'')}${p.estado_equipo==='INOPERATIVO'?' · <b style="color:#B91C1C">INOPERATIVO</b>':''}</span></div>
+     <span class="pill p-w" style="cursor:pointer" onclick="cerrarPend('${p.id}')">Cerrar</span></div>`).join(''):'<span class="dim">Sin pendientes abiertos.</span>';}
+async function cerrarPend(id){if(!S.online)return toast('Necesitas señal para cerrar un pendiente');if(!confirm('¿Marcar este pendiente como resuelto?'))return;
+  const {error}=await sb.from('pdm_registros').update({backlog_estado:'CERRADO',backlog_cerrado_en:new Date().toISOString()}).eq('id',id);
+  if(error)return toast('No se pudo cerrar: '+error.message,5000);toast('✓ Pendiente cerrado');cargarPend();}
+
+/* ═══════════════════════ INICIO ═══════════════════════ */
+pintar(); arrancar().catch(e=>{console.error(e);toast('Error al iniciar: '+e.message,6000);ir('login',true);});
+</script>
+</body>
+</html>
