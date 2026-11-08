@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
 <meta charset="utf-8">
-<meta name="gllr-version" content="V.081126-2" data-pagina="REPORTE (app de campo)">
+<meta name="gllr-version" content="V.081126-3" data-pagina="REPORTE (app de campo)">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>REPORTE</title>
 <link rel="manifest" href="campo.webmanifest">
@@ -68,7 +68,7 @@ input:focus,select:focus,textarea:focus{outline:2px solid #9DB0E8;border-color:#
 .fotos{display:flex;gap:8px;flex-wrap:wrap}
 .fotos div{width:72px;height:72px;border-radius:10px;background:#dfe3e8 center/cover;display:flex;align-items:center;justify-content:center;font-size:29.5px;color:#8b949e;cursor:pointer;position:relative}
 .fotos div i{position:absolute;right:-6px;top:-6px;background:#DC2626;color:#fff;border-radius:50%;width:20px;height:20px;font-size:14.5px;font-style:normal;display:flex;align-items:center;justify-content:center}
-canvas.firma{width:100%;height:120px;border:1px dashed #b8c0ca;border-radius:10px;background:#fff;touch-action:none;display:block}
+canvas.firma{width:100%;height:210px;border:1px dashed #b8c0ca;border-radius:10px;background:#fff;touch-action:none;display:block}
 .chasis{width:230px;margin:8px auto}.eje{display:flex;justify-content:space-between;align-items:center;margin:8px 0;position:relative}
 .eje:before{content:'';position:absolute;left:38px;right:38px;top:50%;height:4px;background:#c9ced6}
 .lado{display:flex;gap:3px;position:relative}
@@ -178,10 +178,16 @@ input.fill:focus,select.fill:focus{border-color:var(--am);box-shadow:0 0 0 2px r
 input.fill:-webkit-autofill{-webkit-box-shadow:0 0 0 40px #2a2614 inset;-webkit-text-fill-color:#fff}
 .yo{color:#60a5fa;font-weight:800;text-shadow:0 0 8px rgba(96,165,250,.45)}
 .eqcb{position:relative}
-.eqin{width:100%;background:#2a2614!important;border:2px solid #a07f00!important;border-radius:10px;padding:12px 44px 12px 14px;color:#fff!important;font-size:19px;font-weight:800;cursor:pointer}
+.eqin{width:100%;text-overflow:ellipsis;background:#2a2614!important;border:2px solid #a07f00!important;border-radius:10px;padding:12px 44px 12px 14px;color:#fff!important;font-size:19px;font-weight:800;cursor:pointer}
 .eqin::placeholder{color:#c9b98a;font-weight:500;text-transform:none}.eqcb.ab .eqin{border-color:var(--am)!important;border-radius:10px 10px 0 0}
 .eqcb>i{position:absolute;right:12px;top:13px;font-style:normal;color:var(--am);font-size:15px;cursor:pointer;padding:2px 4px}
 .eqdrop{position:absolute;left:0;right:0;top:100%;max-height:62vh;overflow:auto;background:#181c21;border:2px solid var(--am);border-top:0;border-radius:0 0 12px 12px;padding:2px 10px 12px;box-shadow:0 14px 28px rgba(0,0,0,.6)}
+.tecin{min-height:52px;display:flex;align-items:center;flex-wrap:wrap;gap:6px;font-size:16px}
+.tg{background:var(--am);color:#1c1500;border-radius:7px;padding:3px 9px;font-size:15px}
+.tecr{display:flex;gap:10px;align-items:center;padding:9px 4px;border-top:1px solid #262c33;cursor:pointer}.tecr small{display:block;color:var(--mu);font-size:13.5px}.tecr b{color:#fff;font-size:16px}
+.tecr .ck{width:26px;height:26px;border-radius:7px;border:2px solid #5f6974;display:flex;align-items:center;justify-content:center;color:#1c1500;font-weight:900;flex-shrink:0}
+.tecr.on .ck{background:var(--am);border-color:var(--am);box-shadow:0 0 8px rgba(255,194,14,.5)}
+select.hsel{font-size:19px;font-weight:700;text-align:center}
 .eqbtn{display:flex;align-items:center;justify-content:space-between;width:100%;background:#2a2614;border:2px solid #a07f00;border-radius:10px;padding:12px 14px;color:#fff;font-size:18px;font-weight:700;cursor:pointer}
 .eqbtn.vacio{color:#c9b98a;font-weight:500}.eqbtn i{font-style:normal;color:var(--am);font-size:14px}
 .eqpan{margin-top:8px;max-height:58vh;overflow:auto;background:#181c21;border:1px solid #2f363e;border-radius:12px;padding:6px 10px 10px}
@@ -421,7 +427,7 @@ const TABS=[];
 const FORMS=['MECANICO','LUBRICACION','LLANTAS','GETS','MNTTO_PREV','PENDIENTE'];
 function li(av,ic,t,sub,der,on){return `<div class="li" ${on?`onclick="${on}"`:''}><div class="av ${av}">${svg(ic)}</div><div class="tx"><b>${t}</b><small>${sub}</small></div>${der||''}<span class="chev">${svg('chev')}</span></div>`;}
 /* ═══════════════════════ NAVEGACIÓN ═══════════════════════ */
-function ir(p,raiz){if(p==='consulta'){S.cq=null;S.cqVer=null;S.cqPan=false;S.cqf='';}if(!raiz){S.pila.push(S.pant);hPush();}else S.pila=[];S.pant=p;if(!['hecho'].includes(p))S.F=nuevoF();pintar();$('main').scrollTop=0;}
+function ir(p,raiz){S.eqAb=null;S.eqf='';if(p==='consulta'){S.cq=null;S.cqVer=null;}if(!raiz){S.pila.push(S.pant);hPush();}else S.pila=[];S.pant=p;if(!['hecho'].includes(p))S.F=nuevoF();pintar();$('main').scrollTop=0;}
 function atras(){if(S.pila.length){S.pant=S.pila.pop();pintar();}}
 $('bk').onclick=volver;
 /* botón "atrás" del celular: retrocede entre pantallas; en el inicio pregunta antes de salir */
@@ -439,7 +445,7 @@ function pedirSalir(){if(document.getElementById('dlgSalir'))return;const d=docu
   document.body.appendChild(d);}
 function cerrarSalir(){const d=document.getElementById('dlgSalir');if(d)d.remove();}
 function salirApp(){cerrarSalir();_saliendo=true;try{window.close();}catch(_){}history.go(-(_D+1));setTimeout(()=>{_saliendo=false;},1500);}
-function nuevoF(){const yo=S.col?[S.col.codigo]:[];return {tec:yo,ins:[],fotos:[],firma:[],ch:{}};}
+function nuevoF(){const yo=S.col&&!/SUPERV/.test(String(S.col.especialidad||'').toUpperCase())?[S.col.codigo]:[];return {tec:yo,ins:[],fotos:[],firma:[],ch:{}};}
 const TIT={cargando:'REPORTE',login:'Ingresar',alta:'Registro de colaborador',espera:'Cuenta en revisión',perfil:'Mis datos',home:'Inicio',reporte:'Reporte',
   MECANICO:'1 · Reporte mecánico',LUBRICACION:'2 · Lubricación',LLANTAS:'3 · Llantas',GETS:'4 · GETs',MNTTO_PREV:'5 · Mntto preventivo',PENDIENTE:'Nuevo pendiente',
   pend:'Pendientes',pdet:'Detalle del pendiente',consulta:'Ficha del equipo',envios:'Envíos',hecho:'Registro guardado',mas:'Mi cuenta'};
@@ -478,24 +484,37 @@ function cabecera(conHr){
   const e=eqDe(S.F.eq), ahora=new Date(), hh=ahora.toTimeString().slice(0,5);
   if(S.F.ch.turno==null)S.F.ch.turno=(ahora.getHours()>=7&&ahora.getHours()<19)?'DIA':'NOCHE';
   return `<div class="c"><div class="sec">Equipo y tiempo</div>
-   <label>Equipo · obra ${esc(S.obra||'—')}</label>
-   <input list="dlEq" data-k="eqTxt" value="${esc(vF('eqTxt',e?e.cod_sap+' · '+(e.equipo||''):''))}" placeholder="Escribe el código o el nombre" onchange="elegirEq(this.value)" autocomplete="off">
-   <datalist id="dlEq">${lista.map(x=>`<option value="${esc(x.cod_sap)} · ${esc(x.equipo||'')} ${esc(x.modelo||'')}">`).join('')}</datalist>
+   <label>Código del equipo · obra ${esc(S.obra||'—')}</label>
+   <div style="position:relative;z-index:6">${eqCombo('f')}</div>
    <div class="dim" id="eqInfo">${e?`${esc(e.marca||'')} ${esc(e.modelo||'')} · último ${e.contador==='Km'?'KM':'HR'}: ${e.hrkm_actual!=null?f0(e.hrkm_actual):'—'}${e.fecha_lectura?' ('+fd(e.fecha_lectura)+')':''}`:'Elige un equipo de la lista'}</div>
    ${conHr?`<label>${e&&e.contador==='Km'?'Kilometraje':'Horómetro'} del tablero</label><input type="number" inputmode="numeric" data-k="hr" value="${esc(vF('hr'))}" oninput="chkHr()"><div id="hrMsg" class="dim"></div>`:''}
    <div class="r2"><div><label>Fecha</label><input type="date" data-k="fecha" value="${esc(vF('fecha',hoyIso()))}"></div><div><label>Turno</label>${chips('turno',['DIA','NOCHE'])}</div></div>
-   <div class="r2"><div><label>Hora inicio</label><input type="time" data-k="hini" value="${esc(vF('hini',hh))}"></div><div><label>Hora fin</label><input type="time" data-k="hfin" value="${esc(vF('hfin'))}"></div></div>
-   <label>Técnicos que participaron (un solo registro para todos)</label>
-   <input class="up" placeholder="Buscar por nombre o código" oninput="filtrarTec(this.value)" style="margin-bottom:6px">
-   <div class="tec" id="tecs">${tecChips()}</div>
-   <div class="dim" style="margin-top:4px">Seleccionados: <b id="tecSel">${S.F.tec.join(', ')||'—'}</b></div>
+   <div class="r2"><div><label>Hora inicio</label><select class="hsel" data-k="hini">${horaOpts(vF('hini',media(ahora)),'')}</select></div><div><label>Hora fin</label><select class="hsel" data-k="hfin">${horaOpts(vF('hfin'),'— : —')}</select></div></div>
+   <label>Técnicos que participaron (un solo trabajo, realizar un solo registro para todos)</label>
+   <div class="eqcb" id="tecCb" style="position:relative;z-index:4"><div class="eqin tecin" onclick="tglTecLst()"><span id="tecSel">${tecSelTxt()}</span></div><i onclick="event.stopPropagation();tglTecLst()">▼</i>
+    <div class="eqdrop" id="tecLst" style="display:none"></div></div>
   </div>`;}
+/* horas cada 30 min, formato 24 h */
+const media=d=>{let m=d.getHours()*60+d.getMinutes();m=Math.round(m/30)*30%1440;return String(Math.floor(m/60)).padStart(2,'0')+':'+(m%60?'30':'00');};
+function horaOpts(sel,ph){sel=String(sel||'').slice(0,5);const L=[];for(let h=0;h<24;h++)for(const m of ['00','30'])L.push(String(h).padStart(2,'0')+':'+m);
+  if(sel&&!L.includes(sel))L.push(sel),L.sort();return (ph!=null?`<option value="">${ph}</option>`:'')+L.map(v=>`<option value="${v}" ${v===sel?'selected':''}>${v}</option>`).join('');}
+/* técnicos: solo personal de la obra, sin supervisores */
+const esSup=c=>/SUPERV/.test(String(c.especialidad||'').toUpperCase());
+function tecsObra(){return S.COL.filter(c=>!esSup(c)&&(!S.obra||String(c.obra||'').toUpperCase()===String(S.obra).toUpperCase())).sort((a,b)=>String(a.ap_paterno).localeCompare(String(b.ap_paterno)));}
+function tecSelTxt(){return S.F.tec.length?S.F.tec.map(c=>`<b class="tg">${esc(c)}</b>`).join(' '):'<span style="color:#c9b98a;font-weight:500">— elegir técnicos —</span>';}
+function tecLista(){const L=tecsObra(),ex=S.F.tec.filter(c=>!L.some(x=>x.codigo===c)).map(c=>S.COL.find(x=>x.codigo===c)||{codigo:c,nombres:'',ap_paterno:''});
+  const T=[...ex,...L];if(!T.length)return '<div class="dim" style="padding:8px">No hay técnicos registrados en esta obra.</div>';
+  return `<div class="eqg">TÉCNICOS · ${esc(S.obra||'TODAS')} <small>(${String(L.length).padStart(2,'0')})</small></div>`+T.map(c=>{const on=S.F.tec.includes(c.codigo);
+   return `<div class="tecr ${on?'on':''}" onclick="event.stopPropagation();tglTec('${esc(c.codigo)}')"><span class="ck">${on?'✓':''}</span><div><b>${esc(c.codigo)}</b><small>${esc([String(c.nombres||'').split(' ')[0],c.ap_paterno].filter(Boolean).join(' '))}${c.especialidad?' · '+esc(c.especialidad):''}</small></div></div>`;}).join('')
+   +`<div style="text-align:right;margin-top:8px"><span class="pill p-w" style="cursor:pointer;font-size:15px;padding:6px 16px" onclick="event.stopPropagation();tglTecLst(false)">Listo</span></div>`;}
+function tglTecLst(si){const cb=$('tecCb'),l=$('tecLst');if(!cb)return;if(si==null)si=!cb.classList.contains('ab');
+  cb.classList.toggle('ab',si);l.style.display=si?'':'none';if(si)l.innerHTML=tecLista();cb.querySelector('i').textContent=si?'▲':'▼';}
 function tecChips(q){const L=S.COL.slice().sort((a,b)=>(S.F.tec.includes(b.codigo)-S.F.tec.includes(a.codigo))||((b.obra===S.obra)-(a.obra===S.obra))||a.ap_paterno.localeCompare(b.ap_paterno));
   const qq=nrm(q||'');
   return L.filter(c=>!qq||S.F.tec.includes(c.codigo)||nrm(c.codigo+' '+c.nombres+' '+c.ap_paterno+' '+(c.ap_materno||'')).includes(qq)).slice(0,30)
    .map(c=>`<span class="${S.F.tec.includes(c.codigo)?'on':''}" onclick="tglTec('${esc(c.codigo)}')"><b>${esc(c.codigo)}</b> · ${esc(c.nombres.split(' ')[0])} ${esc(c.ap_paterno)}</span>`).join('')||'<span class="dim">Sin colaboradores registrados</span>';}
 function filtrarTec(q){$('tecs').innerHTML=tecChips(q);}
-function tglTec(c){const i=S.F.tec.indexOf(c);if(i>=0)S.F.tec.splice(i,1);else S.F.tec.push(c);$('tecs').innerHTML=tecChips(document.querySelector('#tecs').previousElementSibling.value);$('tecSel').textContent=S.F.tec.join(', ')||'—';}
+function tglTec(c){const i=S.F.tec.indexOf(c);if(i>=0)S.F.tec.splice(i,1);else S.F.tec.push(c);const l=$('tecLst');if(l)l.innerHTML=tecLista();$('tecSel').innerHTML=tecSelTxt();}
 function elegirEq(v){const c=String(v).split('·')[0].trim().toUpperCase();const e=eqDe(c)||S.EQ.find(x=>nrm(x.cod_sap)===nrm(c));
   guardarCampos(); if(e){S.F.eq=e.cod_sap;S.F.eqTxt=e.cod_sap+' · '+(e.equipo||'');} else {S.F.eq=null;} pintar();}
 function chkHr(){const m=$('hrMsg');if(!m)return;const e=eqDe(S.F.eq),v=Number(val('hr'));S.F.hrConv=null;
@@ -659,10 +678,7 @@ const P={
      <div style="text-align:right"><span class="pill ${x.enviado?'p-ok':x.error?'p-b':'p-w'}">${x.enviado?'✓ Enviado':x.error?'Error':'⏳ En cola'}</span><br><span class="add" onclick="whatsappId('${x.id}')">📲</span></div></div>`).join(''):'<div class="dim">Sin registros en este celular.</div>'}</div>
    <button class="btn b-n" onclick="sincronizar(true)" ${S.online?'':'disabled'}>Enviar ahora</button>
    <div class="dim" style="margin-top:6px">Los enviados se quedan aquí 7 días para reenviarlos por WhatsApp.</div>`;},
- consulta:()=>{const ab=S.cqPan||!S.cq;return `<div class="c" style="position:relative;z-index:5"><label>Equipo</label><div class="eqcb ${ab?'ab':''}" id="eqCb">
-   <input id="cqIn" class="eqin up" readonly autocomplete="off" placeholder="— elegir equipo —" value="${ab?esc(S.cqf||''):esc(S.cq||'')}" onclick="tocarEq()" oninput="S.cqf=this.value;$('eqLst').innerHTML=cqGrupos()">
-   <i onclick="event.stopPropagation();tglEqPan()">${ab?'▲':'▼'}</i>
-   <div class="eqdrop" id="eqLst" style="${ab?'':'display:none'}">${ab?cqGrupos():''}</div></div></div><div id="cqRes"></div>`;},
+ consulta:()=>`<div class="c" style="position:relative;z-index:5"><label>Equipo</label>${eqCombo('cq')}</div><div id="cqRes"></div>`,
  pdet:()=>`<div id="pdBox"><div class="c dim">${S.online?'Cargando…':'Sin señal'}</div></div>`,
  pend:()=>`<div class="c"><h4>📌 Pendientes · ${esc(S.obra||'todas las obras')}</h4><div id="pdRes" class="dim">${S.online?'Cargando…':'Sin señal: se muestran los últimos descargados.'}</div></div>
    <button class="btn b-g" onclick="ir('PENDIENTE')">+ Nuevo pendiente</button>`,
@@ -843,16 +859,29 @@ const FAM_R=[[/RETRO\s*EXCAVADORA/,'RETROEXCAVADORA'],[/EXCAVADORA.*(RUEDA|LLANT
  [/DOBLE\s*CABINA/,'CAMION DOBLE CABINA'],[/CAMIONETA|PICK\s*UP|HILUX/,'CAMIONETA'],[/SPRINTER|MINIVAN|FURGONETA/,'MINIVAN'],[/OMNIBUS|MICROBUS|MINI\s*BUS|BUS/,'OMNIBUS'],[/AUTO\s*HORMIGONERA|MIXER/,'AUTOHORMIGONERA'],
  [/MONTACARGA/,'MONTACARGAS'],[/CAMION/,'CAMION']];
 function tipoEq(e){const s=String(e&&e.equipo||'').normalize('NFD').replace(/[̀-ͯ]/g,'').toUpperCase();for(const [re,n] of FAM_R)if(re.test(s))return n;return s.split(' ')[0]||'OTROS';}
-function cqGrupos(){const q=nrm(S.cqf||'');const G={};
+/* ── lista desplegable de equipos (ficha y formularios): códigos agrupados por tipo ── */
+const eqSel=ctx=>ctx==='cq'?S.cq:S.F.eq;
+function eqCombo(ctx,ph){const sel=eqSel(ctx),e=sel?eqDe(sel):null,ab=S.eqAb===ctx||(ctx==='cq'&&!sel);
+  return `<div class="eqcb ${ab?'ab':''}" id="eqCb" data-ctx="${ctx}">
+   <input id="eqIn" class="eqin up" readonly autocomplete="off" placeholder="${ph||'— elegir equipo —'}" value="${ab?esc(S.eqf||''):sel?esc(sel+(ctx==='cq'?'':' · '+(e&&e.equipo||''))):''}" onclick="tocarEq('${ctx}')" oninput="S.eqf=this.value;$('eqLst').innerHTML=eqGrupos('${ctx}')">
+   <i onclick="event.stopPropagation();tglEq('${ctx}')">${ab?'▲':'▼'}</i>
+   <div class="eqdrop" id="eqLst" style="${ab?'':'display:none'}">${ab?eqGrupos(ctx):''}</div></div>`;}
+function eqGrupos(ctx){const q=nrm(S.eqf||''),sel=eqSel(ctx);const G={};
   eqObra().filter(x=>!q||nrm(x.cod_sap+' '+tipoEq(x)+' '+(x.equipo||'')).includes(q)).forEach(x=>{const t=tipoEq(x);(G[t]=G[t]||[]).push(x);});
   const K=Object.keys(G).sort();if(!K.length)return '<div class="dim" style="padding:8px">Sin equipos.</div>';
-  return K.map(t=>`<div class="eqg">${esc(t)} <small>(${String(G[t].length).padStart(2,'0')})</small></div><div class="eqc">${G[t].sort((a,b)=>a.cod_sap.localeCompare(b.cod_sap)).map(x=>`<span class="${S.cq===x.cod_sap?'on':''}" onclick="elegirCq('${esc(x.cod_sap)}')">${esc(x.cod_sap)}</span>`).join('')}</div>`).join('');}
-function tglEqPan(){if(!S.cq)return;S.cqPan=!S.cqPan;S.cqf='';pintar();}
-/* 1er toque: abre la lista desplegable (sin teclado) · 2do toque: escribir para filtrar */
-function tocarEq(){const i=$('cqIn');if(!(S.cqPan||!S.cq)){S.cqPan=true;S.cqf='';pintar();return;}
+  return K.map(t=>`<div class="eqg">${esc(t)} <small>(${String(G[t].length).padStart(2,'0')})</small></div><div class="eqc">${G[t].sort((a,b)=>a.cod_sap.localeCompare(b.cod_sap)).map(x=>`<span class="${sel===x.cod_sap?'on':''}" onclick="event.stopPropagation();pickEq('${ctx}','${esc(x.cod_sap)}')">${esc(x.cod_sap)}</span>`).join('')}</div>`).join('');}
+function abrirEq(ctx,si){const cb=$('eqCb'),l=$('eqLst'),i=$('eqIn');if(!cb)return;S.eqf='';
+  if(si){S.eqAb=ctx;cb.classList.add('ab');l.innerHTML=eqGrupos(ctx);l.style.display='';i.value='';cb.querySelector('i').textContent='▲';}
+  else{if(ctx==='cq'&&!S.cq)return;S.eqAb=null;cb.classList.remove('ab');l.style.display='none';i.readOnly=true;const sel=eqSel(ctx),e=sel&&eqDe(sel);i.value=sel?sel+(ctx==='cq'?'':' · '+(e&&e.equipo||'')):'';cb.querySelector('i').textContent='▼';}}
+function tglEq(ctx){abrirEq(ctx,!$('eqCb').classList.contains('ab'));}
+/* 1er toque: abre la lista (sin teclado) · 2do toque: escribir para filtrar */
+function tocarEq(ctx){const i=$('eqIn');if(!$('eqCb').classList.contains('ab')){abrirEq(ctx,true);return;}
   if(i&&i.readOnly){i.readOnly=false;i.placeholder='escribe código o tipo…';i.focus();}}
-document.addEventListener('click',ev=>{if(S.pant==='consulta'&&S.cqPan&&S.cq&&!ev.target.closest('#eqCb')){S.cqPan=false;S.cqf='';pintar();}});
-function elegirCq(c){S.cq=c;S.cqPan=false;S.cqVer=null;pintar();}
+function pickEq(ctx,c){S.eqAb=null;S.eqf='';if(ctx==='cq')return elegirCq(c);
+  guardarCampos();const e=eqDe(c);S.F.eq=c;S.F.eqTxt=c+' · '+(e&&e.equipo||'');pintar();}
+document.addEventListener('click',ev=>{const cb=$('eqCb');if(cb&&cb.classList.contains('ab')&&!ev.target.closest('#eqCb'))abrirEq(cb.dataset.ctx,false);
+  const tc=$('tecCb');if(tc&&tc.classList.contains('ab')&&!ev.target.closest('#tecCb'))tglTecLst(false);});
+function elegirCq(c){S.cq=c;S.cqVer=null;pintar();}
 const ESPN={MECANICO:'Mecánico',SOLDADOR:'Soldador',ELECTRICISTA:'Electricista',LUBRICADOR:'Lubricador',LLANTERO:'Llantero'};
 const espDe=r=>ESPN[r.especialidad]||({LUBRICACION:'Lubricador',LLANTAS:'Llantero'}[r.modulo])||'Mecánico';
 const SOSP={CRITICO:['p-b','Crítico'],PRECAUCION:['p-w','Precaución'],NORMAL:['p-ok','Normal']};
