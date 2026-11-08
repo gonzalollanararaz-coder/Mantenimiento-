@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
 <meta charset="utf-8">
-<meta name="gllr-version" content="V.081126-5" data-pagina="REPORTE (app de campo)">
+<meta name="gllr-version" content="V.081126-6" data-pagina="REPORTE (app de campo)">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>REPORTE</title>
 <link rel="manifest" href="campo.webmanifest">
@@ -183,6 +183,8 @@ input.fill:-webkit-autofill{-webkit-box-shadow:0 0 0 40px #2a2614 inset;-webkit-
 .eqcb.fino .eqdrop{padding:0}
 .eqr{padding:11px 14px;border-top:1px solid #262c33;font-size:18px;color:#e9ecef;cursor:pointer}.eqr:first-child{border-top:0}
 .eqr b{color:var(--am)}.eqr.on,.eqr:active{background:#3a300d;color:var(--am)}
+input.otro{margin-top:6px}
+input.fill::placeholder{color:#c9b98a;-webkit-text-fill-color:#c9b98a;opacity:1;text-transform:none}
 .eqlab{text-transform:none!important;font-size:14.5px;line-height:1.35}.eqlab b{color:#fff}.eqlab span{color:var(--mu);font-size:13.5px}
 .eqin{color:var(--am)!important;letter-spacing:.03em}
 .eqin::placeholder{color:#c9b98a;font-weight:500;text-transform:none}.eqcb.ab .eqin{border-color:var(--am)!important;border-radius:10px 10px 0 0}
@@ -351,7 +353,7 @@ async function refrescarDatos(){
       sb.from('pdm_maestros').select('*').eq('activo',true)]);
     if(!eq.error){S.EQ=eqActivos(eq.data||[]);DB.set('eq',S.EQ);}
     if(!co.error){S.COL=co.data||[];DB.set('col',S.COL);}
-    if(!ma.error){S.MAE=ma.data||[];DB.set('mae',S.MAE);}
+    if(!ma.error){S.MAE=ma.data||[];DB.set('mae',S.MAE);subirMaePend();}
     if(window.GLLR_DSF){await GLLR_DSF.cargar(sb);DB.set('dsf',GLLR_DSF.lista);}
     if(co.error&&/relation|does not exist|schema cache/i.test(co.error.message))toast('Falta crear las tablas: ejecuta pdm_tablas.sql en Supabase',6000);
   }catch(e){console.warn(e);}
@@ -532,14 +534,28 @@ function chkHr(){const m=$('hrMsg');if(!m)return;const e=eqDe(S.F.eq),v=Number(v
   if(ult&&v<ult){m.className='warn';m.innerHTML=`⚠ Menor que la última lectura (${f0(ult)}). Revisa el número.`;}
   else if(ult&&v-ult>(e.contador==='Km'?3000:300)){m.className='warn';m.innerHTML=`⚠ Avanza ${f0(v-ult)} desde la última lectura: revisa el número.`;}
   else{m.className='dim';m.textContent=ult?`Avanza ${f0(v-ult)} desde la última lectura`:'';}}
+/* lista con opción OTRO: al elegirla aparece un casillero para escribir */
+function selOtro(k,arr,ph){const v=vF(k),cust=v&&v!=='OTRO'&&!arr.includes(v);const sv=cust?'OTRO':v;
+  return `<select data-k="${k}" onchange="guardarCampos();if(this.value!=='OTRO')S.F['${k}_o']='';pintar()">${opts([...arr,'OTRO'],sv,'— elegir —')}</select>`
+   +(sv==='OTRO'?`<input class="up fill otro" data-k="${k}_o" value="${esc(cust?v:vF(k+'_o'))}" placeholder="${ph}">`:'');}
+const valOtro=k=>{const v=val(k);return v==='OTRO'?(up(val(k+'_o'))||''):(v||'');};
+const ORIG3=['FALLA DE OPERACIÓN','TIEMPO DE SERVICIO','SIN PARADA'];
+const origenes=()=>{const L=MV('ORIGEN');return L.includes('SIN PARADA')?L:ORIG3;};
+/* agrega a la lista (Configuración) un valor escrito con OTRO, p. ej. un frente nuevo */
+async function agregarMaestro(tipo,valor){valor=up(valor);if(!valor||MV(tipo).includes(valor))return;
+  S.MAE.push({tipo,valor,activo:true,orden:999});DB.set('mae',S.MAE);
+  let pend=[];try{pend=JSON.parse(localStorage.getItem('mae_pend')||'[]');}catch(_){}pend.push([tipo,valor]);localStorage.setItem('mae_pend',JSON.stringify(pend));subirMaePend();}
+async function subirMaePend(){if(!S.online)return;let pend=[];try{pend=JSON.parse(localStorage.getItem('mae_pend')||'[]');}catch(_){}if(!pend.length)return;
+  const resto=[];for(const [t,v] of pend){const {error}=await sb.rpc('pdm_agregar_maestro',{p_tipo:t,p_valor:v});if(error&&!/does not exist|schema cache/i.test(error.message))resto.push([t,v]);else if(error)resto.push([t,v]);}
+  localStorage.setItem('mae_pend',JSON.stringify(resto));}
 function insumos(tipo,esp,tit){ const L=M(tipo,esp); const def=L[0];
   if(!S.F.ins.length&&def)S.F.ins=[{n:'',q:'',u:''}];
   return `<div class="c"><div class="sec">${tit}</div>
-   ${S.F.ins.map((x,i)=>`<div class="it"><select onchange="cambiaIns(${i},this.value,'${tipo}','${esp||''}')"><option value="">— elegir —</option>${L.map(m=>`<option ${m.valor===x.n?'selected':''}>${esc(m.valor)}</option>`).join('')}<option ${x.n==='NINGUNO'?'selected':''}>NINGUNO</option></select>
-     <input type="number" inputmode="decimal" placeholder="Cant." value="${esc(x.q)}" oninput="S.F.ins[${i}].q=this.value"><select onchange="S.F.ins[${i}].u=this.value">${opts(MV('UNIDAD'),x.u,'')}</select><span class="x" onclick="guardarCampos();S.F.ins.splice(${i},1);pintar()">✕</span></div>`).join('')}
+   ${S.F.ins.map((x,i)=>`<div class="it"><select onchange="cambiaIns(${i},this.value,'${tipo}','${esp||''}')"><option value="">— elegir —</option>${L.map(m=>`<option ${!x.o&&m.valor===x.n?'selected':''}>${esc(m.valor)}</option>`).join('')}<option ${x.n==='NINGUNO'?'selected':''}>NINGUNO</option><option value="OTRO" ${x.o?'selected':''}>OTRO</option></select>
+     <input type="number" inputmode="decimal" placeholder="Cant." value="${esc(x.q)}" oninput="S.F.ins[${i}].q=this.value"><select onchange="S.F.ins[${i}].u=this.value">${opts(MV('UNIDAD'),x.u,'')}</select><span class="x" onclick="guardarCampos();S.F.ins.splice(${i},1);pintar()">✕</span></div>${x.o?`<input class="up fill otro" style="margin:-2px 0 8px" placeholder="Escribe el repuesto o insumo" value="${esc(x.n)}" oninput="S.F.ins[${i}].n=this.value.toUpperCase()">`:''}`).join('')}
    <span class="add" onclick="guardarCampos();S.F.ins.push({n:'',q:'',u:''});pintar()">+ agregar otro</span>
    <div class="dim">La unidad se pone sola según el insumo; se puede cambiar.</div></div>`;}
-function cambiaIns(i,v,tipo,esp){const m=M(tipo,esp||null).find(x=>x.valor===v);S.F.ins[i].n=v;if(m&&m.unidad)S.F.ins[i].u=m.unidad;else if(v==='NINGUNO')S.F.ins[i].u='';guardarCampos();pintar();}
+function cambiaIns(i,v,tipo,esp){const m=M(tipo,esp||null).find(x=>x.valor===v);S.F.ins[i].o=v==='OTRO';S.F.ins[i].n=v==='OTRO'?'':v;if(m&&m.unidad)S.F.ins[i].u=m.unidad;else if(v==='NINGUNO')S.F.ins[i].u='';guardarCampos();pintar();}
 function cierre(){return `<div class="c"><div class="sec">Foto (opcional, máx. 3) y firma</div>
    <div class="fotos">${S.F.fotos.map((f,i)=>`<div style="background-image:url(${f.url})"><i onclick="event.stopPropagation();S.F.fotos.splice(${i},1);guardarCampos();pintar()">✕</i></div>`).join('')}${S.F.fotos.length<3?`<div onclick="guardarCampos();$('inFoto').click()">📷</div>`:''}</div>
    <label>Observación adicional</label><textarea class="up" rows="2" data-k="obs">${esc(vF('obs'))}</textarea>
@@ -609,15 +625,14 @@ const P={
    <div class="ver">${VERSION}</div>`;},
  MECANICO:()=>{const esps=['MECANICO','SOLDADOR','ELECTRICISTA'];const def=esps.includes(S.col.especialidad)?S.col.especialidad:'MECANICO';if(S.F.ch.esp==null)S.F.ch.esp=def;const e=S.F.ch.esp;
   return cabecera(true)+`<div class="c"><div class="sec">Reporte</div>
-   <label>Especialidad</label>${chips('esp',esps)}
+   <label>Tipo de intervención</label>${chips('esp',esps)}
    <label>Estado del equipo</label>${chips('estado',['OPERATIVO','INOPERATIVO'],'OPERATIVO')}
-   <label>Sistema</label><select data-k="sistema">${opts(MV('SISTEMA',e),vF('sistema'),'— elegir —')}</select>
+   <label>Origen de la falla</label>${chips('origen',origenes())}
+   <label>Sistema</label>${selOtro('sistema',MV('SISTEMA',e),'Escribe el sistema')}
    <label>Componente</label><input class="up" data-k="componente" value="${esc(vF('componente'))}" placeholder="PIEZA O PARTE INTERVENIDA">
-   <label>Observación / descripción de la falla</label><textarea class="up" rows="2" data-k="desc">${esc(vF('desc'))}</textarea>
-   <label>Trabajo realizado</label><select data-k="trabajo">${opts(MV('TRABAJO',e),vF('trabajo'),'— elegir —')}</select>
-   <label>Tipo de parada</label>${chips('parada',MV('PARADA'))}
-   <label>Origen de la falla</label>${chips('origen',MV('ORIGEN'))}
-   <label>Frente de trabajo</label><select data-k="frente">${opts(MV('FRENTE'),vF('frente'),'— elegir —')}</select>
+   <label>Describir la falla</label><textarea class="up" rows="2" data-k="desc">${esc(vF('desc'))}</textarea>
+   <label>Trabajo realizado</label>${selOtro('trabajo',MV('TRABAJO',e),'Escribe el trabajo')}
+   <label>Frente de trabajo</label>${selOtro('frente',MV('FRENTE'),'Escribe el frente (quedará en la lista)')}
    <label>Trabajo pendiente (backlog)</label><input class="up" data-k="backlog" value="${esc(vF('backlog'))}" placeholder="OPCIONAL → QUEDA EN PENDIENTES">
   </div>`+insumos('REPUESTO',e,'Repuestos utilizados')+cierre();},
  LUBRICACION:()=>cabecera(true)+`<div class="c"><div class="sec">Lubricación</div>
@@ -741,10 +756,11 @@ async function guardar(){
     tecnicos:S.F.tec.slice(),registrado_por:S.col.codigo,observacion:up(val('obs'))||null,firma:firmaTxt()||null,detalle:{},insumos:null,
     backlog:up(val('backlog'))||null};
   r.backlog_estado=r.backlog?'ABIERTO':null;
-  const insL=S.F.ins.filter(x=>x.n&&x.n!=='NINGUNO').map(x=>({n:x.n,q:x.q===''?null:Number(x.q),u:x.u||null}));
-  if(mod==='MECANICO'){Object.assign(r,{especialidad:S.F.ch.esp,estado_equipo:S.F.ch.estado,sistema:val('sistema')||null,componente:up(val('componente'))||null,
-      descripcion:up(val('desc'))||null,trabajo:val('trabajo')||null,tipo_parada:S.F.ch.parada||null,origen_falla:S.F.ch.origen||null,frente:val('frente')||null,insumos:insL});
-    if(!r.sistema||!r.trabajo)return toast('Elige sistema y trabajo realizado');}
+  const insL=S.F.ins.filter(x=>x.n&&x.n!=='NINGUNO'&&x.n!=='OTRO').map(x=>({n:up(x.n),q:x.q===''?null:Number(x.q),u:x.u||null}));
+  if(mod==='MECANICO'){Object.assign(r,{especialidad:S.F.ch.esp,estado_equipo:S.F.ch.estado,sistema:valOtro('sistema')||null,componente:up(val('componente'))||null,
+      descripcion:up(val('desc'))||null,trabajo:valOtro('trabajo')||null,tipo_parada:null,origen_falla:S.F.ch.origen||null,frente:valOtro('frente')||null,insumos:insL});
+    if(!r.sistema||!r.trabajo)return toast(val('sistema')==='OTRO'&&!r.sistema?'Escribe el sistema':val('trabajo')==='OTRO'&&!r.trabajo?'Escribe el trabajo realizado':'Elige sistema y trabajo realizado');
+    if(val('frente')==='OTRO'&&r.frente)agregarMaestro('FRENTE',r.frente);}
   else if(mod==='LUBRICACION'){Object.assign(r,{especialidad:'LUBRICADOR',trabajo:S.F.ch.trabLub,sistema:val('punto')||null,insumos:insL});r.detalle={punto:val('punto')||null};
     if(!insL.length)return toast('Agrega al menos un insumo con su cantidad');}
   else if(mod==='LLANTAS'){const pos=S.F.tp.map((t,i)=>({pos:i+1,presion:t.p===''?null:+t.p,cocada:t.c===''?null:+t.c,torque:t.t===''?null:+t.t})).filter(x=>x.presion!=null||x.cocada!=null||x.torque!=null);
