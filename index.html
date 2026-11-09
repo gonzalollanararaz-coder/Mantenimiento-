@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8">
-<meta name="gllr-version" content="V.251026-1" data-pagina="Equipos">
+<meta name="gllr-version" content="V.091126-1" data-pagina="Equipos">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Control de Mantenimiento — UDE</title>
 <link rel="icon" href="favicon.ico" sizes="any">
@@ -604,6 +604,12 @@
   .padwrap{padding:16px 18px;overflow-x:auto}
   .paneFrame{height:calc(100vh - 64px)}
   .paneFrame iframe{width:100%;height:100%;border:none;display:block}
+  .paneFrame{position:relative}
+  .avisoFrame{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;background:rgba(244,245,247,.96);z-index:5;font-family:inherit}
+  .avisoFrame>div{background:#fff;border:1px solid #e3e6ea;border-radius:12px;padding:22px 26px;max-width:440px;text-align:center;box-shadow:0 6px 24px rgba(0,0,0,.08)}
+  .avisoFrame b{font-size:15px;color:#1f2937}.avisoFrame p{color:#6b7280;font-size:13px;margin:8px 0 14px}
+  .avisoFrame button{border:none;border-radius:8px;padding:9px 16px;font-weight:700;cursor:pointer;background:#FFC20E;color:#3B2E00;margin:2px}
+  .avisoFrame button.sec{background:#eef0f3;color:#374151}
 
 /* === STICKY LAYOUT === */
 #vApp { display:flex; flex-direction:column; height:100vh; overflow:hidden; }
@@ -2314,7 +2320,30 @@ function asegurarIframe(k){
   ifr.src=IFRAME_PAGINAS[k];
   pane.appendChild(ifr);
   _iframes[k]=ifr;
+  ifr.addEventListener('load',()=>setTimeout(()=>vigilarIframe(k),1500));
+  setTimeout(()=>vigilarIframe(k),20000);
 }
+/* Vigía de pestañas: si una pestaña quedó en blanco, cargó otra página o no
+   terminó de cargar, se muestra un aviso con "Reintentar" y "Reparar". */
+function estadoIframe(k){const f=_iframes[k];if(!f)return 'ok';
+  try{const d=f.contentDocument, w=f.contentWindow;if(!d||!w)return 'vacia';
+    const pag=IFRAME_PAGINAS[k];
+    if(!String(w.location.pathname).endsWith('/'+pag)&&w.location.href!=='about:blank')return 'otra';
+    if(d.readyState!=='complete')return 'cargando';
+    const txt=(d.body&&d.body.innerText||'').trim();
+    if(!txt||(d.body.getBoundingClientRect().height<20))return 'vacia';
+    return 'ok';}catch(_){return 'vacia';}}
+function vigilarIframe(k){const pane=document.getElementById('paneFrame_'+k);if(!pane||pane.classList.contains('hide'))return;const est=estadoIframe(k);
+  let av=pane.querySelector('.avisoFrame');if(est==='ok'){if(av)av.remove();return;}
+  if(!av){av=document.createElement('div');av.className='avisoFrame';pane.appendChild(av);}
+  const motivo={vacia:'La pestaña quedó en blanco.',otra:'Se abrió una versión equivocada de la página (copia guardada).',cargando:'La pestaña está tardando demasiado en cargar.'}[est];
+  av.innerHTML=`<div><b>⚠ ${motivo}</b><p>Suele pasar con señal débil o después de subir una versión nueva.</p>
+    <button onclick="reintentarIframe('${k}')">↻ Reintentar</button> <button class="sec" onclick="repararApp()">🔧 Reparar y recargar todo</button></div>`;}
+function reintentarIframe(k){const f=_iframes[k];const pane=document.getElementById('paneFrame_'+k);const av=pane&&pane.querySelector('.avisoFrame');if(av)av.remove();
+  if(f)f.src=IFRAME_PAGINAS[k]+'?r='+Date.now();}
+async function repararApp(){try{if(navigator.serviceWorker){const rs=await navigator.serviceWorker.getRegistrations();await Promise.all(rs.map(r=>r.unregister()));}
+  if(window.caches){const ks=await caches.keys();await Promise.all(ks.map(x=>caches.delete(x)));}}catch(_){}
+  location.replace(location.pathname+'?r='+Date.now());}
 function mostrarPanel(t){
   document.querySelectorAll("nav button").forEach(x=>x.classList.toggle("on",x.dataset.tab===t));
   paneEq.classList.toggle("hide",t!=="eq");
@@ -2329,7 +2358,7 @@ function mostrarPanel(t){
     try{ (t===k ? w.reanudarFondo : w.pausarFondo)&&(t===k ? w.reanudarFondo() : w.pausarFondo()); }catch(_){}
   });
   if(t==="users"&&_iframes.users){try{_iframes.users.contentWindow.cargar();}catch(_){}}
-  if(IFRAME_PAGINAS[t])asegurarIframe(t);
+  if(IFRAME_PAGINAS[t]){asegurarIframe(t);setTimeout(()=>vigilarIframe(t),800);}
 }
 document.querySelectorAll("nav button").forEach(b=>b.onclick=()=>{
   const t=b.dataset.tab;
