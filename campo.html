@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
 <meta charset="utf-8">
-<meta name="gllr-version" content="V.101126-1" data-pagina="REPORTE (app de campo)">
+<meta name="gllr-version" content="V.101126-2" data-pagina="REPORTE (app de campo)">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>REPORTE</title>
 <link rel="manifest" href="campo.webmanifest">
@@ -640,7 +640,7 @@ function parBox(){const e=eqDe(S.F.eq);if(!e||S.F._edit)return '';const ab=parad
      <div class="parh">Horas inoperativas: <b>${f1(h)} h</b></div><small>Se cuentan 8 h efectivas por turno de 12 h.</small></div>`;}
   return '';}
 /* se arma la parada al guardar; devuelve false si falta algo */
-function prepararParada(r){const e=eqDe(r.cod_sap);if(!e||S.F._edit||!['MECANICO','GETS','PENDIENTE'].includes(r.modulo))return true;
+function prepararParada(r){const e=eqDe(r.cod_sap);if(!e||S.F._edit)return true;
   const ab=paradaAbierta(e.cod_sap),est=r.estado_equipo;
   if(est==='INOPERATIVO'&&!ab){const ini=aIso(val('parIniF')||r.fecha,val('parIniH')||r.hora_ini);if(!ini){toast('Indica fecha y hora de inicio de la parada');return false;}
     const mot=valOtro('parMot');if(!mot){toast('Elige el motivo de la parada');return false;}
@@ -785,6 +785,7 @@ const P={
  LUBRICACION:()=>cabecera(true)+`<div class="c"><div class="sec">Lubricación</div>
    <label>Trabajo realizado</label>${chips('trabLub',MV('TRABAJO_LUB'),MV('TRABAJO_LUB')[0])}
    <label>Punto / compartimiento</label><select data-k="punto">${opts(MV('PUNTO_LUB'),vF('punto'),'— elegir —')}</select>
+   <label>Estado del equipo</label>${chips('estado',['OPERATIVO','INOPERATIVO'],'OPERATIVO')}${parBox()}
    <label>Trabajo pendiente (backlog)</label><input class="up" data-k="backlog" value="${esc(vF('backlog'))}" placeholder="OPCIONAL">
   </div>`+insumos('INSUMO',null,'Insumo y cantidad')+cierre(),
  LLANTAS:()=>{const n=+(S.F.ch.neuN||6);if(!S.F.tp||S.F.tp.length!==n)S.F.tp=Array.from({length:n},(_,i)=>(S.F.tp&&S.F.tp[i])||{m:'',b:'',o:'',c:'',x:{}});
@@ -803,6 +804,8 @@ const P={
      <div class="r2"><div><label>Posición</label><select data-k="llPos">${opts(S.F.tp.map((_,i)=>String(i+1)),vF('llPos',S.F.ps?String(S.F.ps):''),'—')}</select></div><div><label>Marca</label>${selOtro('llMarca',marcasLL(),'Escribe la marca')}</div></div>
      <div class="r2"><div><label>Estado</label><select data-k="llEstado">${opts(['NUEVA','REENCAUCHADA','USADA'],vF('llEstado'),'—')}</select></div><div><label>Diseño / modelo</label>${selOtro('llDis',modelosLL(valOtroF('llMarca')),'Escribe el modelo')}</div></div>
      <div class="r2"><div><label>Medida</label>${selOtro('llMed',medidasLL(),'Escribe la medida')}</div><div><label>Serie / N° fuego</label><input class="up" data-k="llSerie" value="${esc(vF('llSerie'))}" placeholder="Opcional"></div></div></div>`:''}
+   <label>Estado del equipo</label>${chips('estado',['OPERATIVO','INOPERATIVO'],'OPERATIVO')}${parBox()}
+   <label>Origen de la falla</label>${chips('origen',origenes())}
    <label>Trabajo pendiente (backlog)</label><input class="up" data-k="backlog" value="${esc(vF('backlog'))}" placeholder="OPCIONAL">
   </div>`+cierre();},
  GETS:()=>{const e=eqDe(S.F.eq), fam=e?String(e.cod_sap).slice(1,3).toUpperCase():'';
@@ -823,6 +826,7 @@ const P={
    ${cuerpo}
    ${S.F.g.length?`<label style="margin-top:12px">Marca lo que se trabajó y su cantidad</label>${filas}`:''}
    <label>Estado del equipo</label>${chips('estado',['OPERATIVO','INOPERATIVO'],'OPERATIVO')}${parBox()}
+   <label>Origen de la falla</label>${chips('origen',origenes())}
    <label>Trabajo pendiente (backlog)</label><input class="up" data-k="backlog" value="${esc(vF('backlog'))}" placeholder="OPCIONAL">
   </div>`+cierre();},
  MNTTO_PREV:()=>{const e=eqDe(S.F.eq);const T=MV('TAREA_PM');if(!S.F.tar)S.F.tar=T.map(()=>true);
@@ -831,11 +835,13 @@ const P={
    <label>Tipo de PM</label>${chips('pm',MV('PM'))}
    ${prox?`<div class="hint">Según el Maestro: último PM a ${f0(e.hrkm_ult_mntto||0)} · próximo a <b>${f0(prox)}</b></div>`:''}
    <label>Tareas realizadas</label>${T.map((t,i)=>`<div class="row"><span>${esc(t)}</span><input type="checkbox" style="width:22px;height:22px" ${S.F.tar[i]?'checked':''} onchange="S.F.tar[${i}]=this.checked"></div>`).join('')}
+   <label>Estado del equipo</label>${chips('estado',['OPERATIVO','INOPERATIVO'],'OPERATIVO')}${parBox()}
    <label>Trabajo pendiente (backlog)</label><input class="up" data-k="backlog" value="${esc(vF('backlog'))}" placeholder="OPCIONAL">
   </div>`+insumos('INSUMO',null,'Insumos del PM')+cierre();},
  PENDIENTE:()=>cabecera(false)+`<div class="c"><div class="sec">Pendiente</div>
    <label>Descripción del trabajo pendiente</label><textarea class="up" rows="3" data-k="backlog">${esc(vF('backlog'))}</textarea>
-   <label>Estado del equipo</label>${chips('estado',['OPERATIVO','INOPERATIVO'],'OPERATIVO')}${parBox()}</div>`+cierre(),
+   <label>Estado del equipo</label>${chips('estado',['OPERATIVO','INOPERATIVO'],'OPERATIVO')}${parBox()}
+   <label>Origen de la falla</label>${chips('origen',origenes())}</div>`+cierre(),
  hecho:()=>`<div class="c" style="text-align:center"><div style="font-size:40px">${S.ult&&S.ult.enviado?'✅':'💾'}</div>
    <h4>${S.ult&&S.ult.enviado?'Registro enviado':'Guardado en el celular'}</h4>
    <div class="dim">${S.ult&&S.ult.enviado?'Ya está en la web (PARTE DIARIO MECÁNICO).':'Se enviará solo cuando haya señal.'}</div></div>
@@ -932,6 +938,8 @@ async function guardar(){
   if(!dup&&S.online){try{const {data}=await sb.from('pdm_registros').select('id,cod_sap,fecha,modulo,trabajo,tecnicos,registrado_por,hora_ini').eq('cod_sap',r.cod_sap).eq('fecha',r.fecha).eq('modulo',r.modulo).eq('anulado',false).limit(20);dup=(data||[]).find(igual);}catch(_){}}
   if(S.F._edit)dup=null;
   if(dup&&!confirm(`⚠ Ya existe un registro parecido:\n\n${r.cod_sap} · ${fd(r.fecha)} · ${MODN[r.modulo]} · ${r.trabajo||''}\nRegistrado por ${dup.registrado_por||'—'} con técnicos ${(dup.tecnicos||[]).join(', ')}${dup.hora_ini?' a las '+String(dup.hora_ini).slice(0,5):''}.\n\nSi fue el mismo trabajo, NO lo vuelvas a registrar (un registro sirve para todos los técnicos).\n\n¿Es un trabajo distinto y quieres guardarlo igual?`))return;
+  r.estado_equipo=r.estado_equipo||S.F.ch.estado||'OPERATIVO';
+  if(['MECANICO','LLANTAS','GETS','PENDIENTE'].includes(mod))r.origen_falla=S.F.ch.origen||null;
   if(!prepararParada(r))return;const parNueva=r._parada||null;delete r._parada;
   const edit=S.F._edit||null;if(edit){const v=S.COLA.find(x=>x.id===edit);r.id=edit;if(v)r.created_local=v.reg.created_local;}
   const item={id:r.id,reg:r,fotos:S.F.fotos.map(f=>f.blob),enviado:false,error:null,edit:!!edit,F:(()=>{const b=borradorDe();delete b._edit;b._guardado=false;return b;})()};
