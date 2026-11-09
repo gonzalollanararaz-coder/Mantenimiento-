@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
 <meta charset="utf-8">
-<meta name="gllr-version" content="V.081126-8" data-pagina="REPORTE (app de campo)">
+<meta name="gllr-version" content="V.091126-1" data-pagina="REPORTE (app de campo)">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>REPORTE</title>
 <link rel="manifest" href="campo.webmanifest">
@@ -707,11 +707,12 @@ const P={
     const G=MV('GET');if(S.F.gk!=='*'){S.F.gk='*';S.F.g=G.map(n=>({n,gr:'',q:'',on:false}));}
   }else if(!e){S.F.g=[];S.F.gk=null;cuerpo='<div class="hint" style="margin-top:8px">Elige primero el equipo: se mostrarán solo sus herramientas de corte.</div>';}
   else if(!L.length){S.F.g=[];S.F.gk=null;cuerpo=`<div class="warn" style="margin-top:8px">No hay GETs registrados para este tipo de equipo (${esc(fam)}). Si debería tenerlos, avisa al administrador para agregarlos en Datos maestros.</div>`;}
-  else{const apls=[...new Set(L.map(m=>m.aplicacion||'—'))];if(!apls.includes(S.F.ch.aplG))S.F.ch.aplG=apls[0];
-    const LL=L.filter(m=>(m.aplicacion||'—')===S.F.ch.aplG).sort((a,b)=>(a.orden||0)-(b.orden||0)), key=fam+'|'+S.F.ch.aplG;
-    if(S.F.gk!==key){S.F.gk=key;S.F.g=LL.map(m=>({n:m.valor,gr:m.grupo||'',q:'',on:false}));}
-    cuerpo=(apls.length>1?`<label>Aplicación</label>${chips('aplG',apls)}`:`<div class="hint" style="margin-top:6px">Aplicación: <b>${esc(apls[0])}</b></div>`);}
-  const filas=S.F.g.map((x,i)=>`<label class="grow ${x.on?'on':''}"><input type="checkbox" ${x.on?'checked':''} onchange="tglGet(${i},this.checked)"><span>${esc(x.n)}</span><input type="number" inputmode="numeric" min="0" placeholder="Cant." value="${esc(x.q)}" oninput="S.F.g[${i}].q=this.value;if(this.value&&!S.F.g[${i}].on)tglGet(${i},true)"></label>`).join('');
+  else{// todos los componentes de la familia, agrupados por aplicación (Ripper, Hoja, Cucharón…)
+    const apls=[...new Set(L.slice().sort((a,b)=>(a.orden||0)-(b.orden||0)).map(m=>m.aplicacion||'—'))];
+    const LL=L.slice().sort((a,b)=>apls.indexOf(a.aplicacion||'—')-apls.indexOf(b.aplicacion||'—')||(a.orden||0)-(b.orden||0)), key=fam+'|todo';
+    if(S.F.gk!==key){S.F.gk=key;S.F.g=LL.map(m=>({n:m.valor,gr:m.grupo||'',ap:m.aplicacion||'',q:'',on:false}));}}
+  const nAp=new Set(S.F.g.map(x=>x.ap||'')).size;
+  const filas=S.F.g.map((x,i)=>`${nAp>1&&(i===0||S.F.g[i-1].ap!==x.ap)?`<div class="eqg" style="margin:10px 0 4px;text-transform:uppercase">${esc(x.ap||'—')}</div>`:''}<label class="grow ${x.on?'on':''}"><input type="checkbox" ${x.on?'checked':''} onchange="tglGet(${i},this.checked)"><span>${esc(x.n)}</span><input type="number" inputmode="numeric" min="0" placeholder="Cant." value="${esc(x.q)}" oninput="S.F.g[${i}].q=this.value;if(this.value&&!S.F.g[${i}].on)tglGet(${i},true)"></label>`).join('');
   return cabecera(true)+`<div class="c"><div class="sec">GETs (herramientas de corte)</div>
    <label>Trabajo realizado</label>${chips('trabGet',['EVALUACION','CAMBIO','ROTACION'],'CAMBIO')}
    ${cuerpo}
@@ -812,7 +813,7 @@ async function guardar(){
     r.detalle={posiciones_equipo:+(S.F.ch.neuN||6),posiciones:pos};
     if(S.F.ch.trabLL==='CAMBIO')r.detalle.cambio={pos:val('llPos')?+val('llPos'):null,marca:val('llMarca')||null,estado:val('llEstado')||null,diseno:up(val('llDis'))||null,medida:up(val('llMed'))||null,serie:up(val('llSerie'))||null};
     if(!pos.length)return toast('Registra al menos una posición');}
-  else if(mod==='GETS'){const g=(S.F.g||[]).filter(x=>x.on).map(x=>({n:x.n,grupo:x.gr||null,cant:x.q===''?null:+x.q}));const apl=S.F.ch.aplG||null;
+  else if(mod==='GETS'){const g=(S.F.g||[]).filter(x=>x.on).map(x=>({n:x.n,grupo:x.gr||null,aplicacion:x.ap||null,cant:x.q===''?null:+x.q}));const apl=[...new Set(g.map(x=>x.aplicacion).filter(Boolean))].join(' / ')||S.F.ch.aplG||null;
     Object.assign(r,{trabajo:S.F.ch.trabGet,sistema:'HERRAMIENTAS DE CORTE',componente:apl,estado_equipo:S.F.ch.estado||'OPERATIVO'});r.detalle={implemento:apl,componentes:g};
     if(!g.length)return toast('Marca al menos un componente');}
   else if(mod==='MNTTO_PREV'){const T=MV('TAREA_PM');Object.assign(r,{especialidad:'MECANICO',trabajo:S.F.ch.pm||null,sistema:'MNTTO PREVENTIVO',insumos:insL});
