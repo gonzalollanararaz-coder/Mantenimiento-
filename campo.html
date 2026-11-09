@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
 <meta charset="utf-8">
-<meta name="gllr-version" content="V.101126-2" data-pagina="REPORTE (app de campo)">
+<meta name="gllr-version" content="V.101126-3" data-pagina="REPORTE (app de campo)">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>REPORTE</title>
 <link rel="manifest" href="campo.webmanifest">
@@ -200,6 +200,16 @@ input.fill::placeholder{color:#c9b98a;-webkit-text-fill-color:#c9b98a;opacity:1;
 .parbx.rojo{background:#2a1414;border:1px solid #7f1d1d}.parbx.rojo>b:first-child{color:#fca5a5}
 .parbx.verde{background:#11261a;border:1px solid #166534}.parbx.verde>b:first-child{color:#4ade80}
 .parbx label{margin-top:8px}.parh{margin-top:8px;font-size:16px}.parh b{color:#FFC20E;font-size:20px}
+.linino{border-color:#7f1d1d!important;box-shadow:0 0 12px rgba(248,113,113,.18)}.linino .li-ic{background:#2a1414!important}
+.inores{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-bottom:10px}.inores div{background:var(--card);border:1px solid #262c33;border-radius:12px;padding:8px;text-align:center}.inores b{display:block;font-size:21px;color:#fff}.inores small{color:var(--mu);font-size:11.5px}
+.inofil{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px}.inofil span{border:1px solid #39414a;border-radius:99px;padding:6px 12px;font-size:13.5px;cursor:pointer;color:#cfd5db}.inofil span.on{background:var(--am);color:#1c1500;border-color:var(--am);font-weight:800}
+.inoc{background:var(--card);border:1px solid #262c33;border-left:4px solid #f87171;border-radius:14px;padding:11px 12px;margin-bottom:9px}
+.inoc .top{display:flex;justify-content:space-between;align-items:baseline;gap:8px}.inoc .cod{font-size:21px;font-weight:900;color:var(--am)}.inoc .hr{font-size:20px;font-weight:900;color:#f87171;white-space:nowrap}.inoc .hr small{font-size:12px;color:var(--mu);font-weight:600}
+.inoc .nm{color:var(--mu);font-size:13px}.inoc .mot{display:inline-block;margin-top:6px;background:#2a1414;border:1px solid #7f1d1d;color:#fca5a5;border-radius:7px;padding:2px 8px;font-size:12.5px;font-weight:700}
+.inoc .det{font-size:14px;color:#cfd5db;margin-top:6px;line-height:1.4}.inoc .det span{color:var(--mu);font-size:13px}
+.inoc .acc{display:flex;gap:6px;margin-top:9px}.inoc .acc .btn{margin-top:0;font-size:15px;padding:11px 12px;width:auto}
+.btn.b-v{background:#15803d;color:#fff;flex:1}
+.dlgc.hoja{border-top:2px solid #166534;max-height:88vh;overflow:auto}
 .eqlab{text-transform:none!important;font-size:14.5px;line-height:1.35}.eqlab b{color:#fff}.eqlab span{color:var(--mu);font-size:13.5px}
 .eqin{color:var(--am)!important;letter-spacing:.03em}
 .eqin::placeholder{color:#c9b98a;font-weight:500;text-transform:none}.eqcb.ab .eqin{border-color:var(--am)!important;border-radius:10px 10px 0 0}
@@ -458,7 +468,7 @@ const TABS=[];
 const FORMS=['MECANICO','LUBRICACION','LLANTAS','GETS','MNTTO_PREV','PENDIENTE'];
 function li(av,ic,t,sub,der,on){return `<div class="li" ${on?`onclick="${on}"`:''}><div class="av ${av}">${svg(ic)}</div><div class="tx"><b>${t}</b><small>${sub}</small></div>${der||''}<span class="chev">${svg('chev')}</span></div>`;}
 /* ═══════════════════════ NAVEGACIÓN ═══════════════════════ */
-function ir(p,raiz){salvarBorrador();S.eqAb=null;S.eqf='';if(p==='consulta'){S.cq=null;S.cqVer=null;}if(!raiz){S.pila.push(S.pant);hPush();}else S.pila=[];S.pant=p;if(!['hecho'].includes(p))S.F=nuevoF();pintar();$('main').scrollTop=0;if(FORMS.includes(p)){try{guardarCampos();}catch(_){}S.F._base=huella(S.F);recuperarBorrador(p);}}
+function ir(p,raiz){salvarBorrador();S.eqAb=null;S.eqf='';if(p==='consulta'){S.cq=null;S.cqVer=null;}if(p==='ino'){S.inoSel=null;S.inoMsg='';}if(!raiz){S.pila.push(S.pant);hPush();}else S.pila=[];S.pant=p;if(!['hecho'].includes(p))S.F=nuevoF();pintar();$('main').scrollTop=0;if(FORMS.includes(p)){try{guardarCampos();}catch(_){}S.F._base=huella(S.F);recuperarBorrador(p);}}
 function atras(){if(S.pila.length){salvarBorrador();S.pant=S.pila.pop();pintar();if(FORMS.includes(S.pant))recuperarBorrador(S.pant);}}
 /* ── registro en curso: se guarda en el celular al salir, al cerrar la app y mientras se escribe ── */
 S.BOR={};
@@ -525,7 +535,7 @@ function salirApp(){cerrarSalir();_saliendo=true;try{window.close();}catch(_){}h
 function nuevoF(){const yo=S.col&&!/SUPERV/.test(String(S.col.especialidad||'').toUpperCase())?[S.col.codigo]:[];return {tec:yo,ins:[],fotos:[],firma:[],ch:{}};}
 const TIT={cargando:'REPORTE',login:'Ingresar',alta:'Registro de colaborador',espera:'Cuenta en revisión',perfil:'Mis datos',home:'Inicio',reporte:'Reporte',
   MECANICO:'1 · Reporte mecánico',LUBRICACION:'2 · Lubricación',LLANTAS:'3 · Llantas',GETS:'4 · GETs',MNTTO_PREV:'5 · Mntto preventivo',PENDIENTE:'Nuevo pendiente',
-  pend:'Pendientes',pdet:'Detalle del pendiente',consulta:'Ficha del equipo',envios:'Envíos',hecho:'Registro guardado',mas:'Mi cuenta'};
+  pend:'Pendientes',ino:'Equipos inoperativos',pdet:'Detalle del pendiente',consulta:'Ficha del equipo',envios:'Envíos',hecho:'Registro guardado',mas:'Mi cuenta'};
 TIT.home='REPORTE MECÁNICO';TIT.reporte='Nuevo reporte';
 function pintar(){
   $('tit').textContent=TIT[S.pant]||'REPORTE';
@@ -644,7 +654,7 @@ function prepararParada(r){const e=eqDe(r.cod_sap);if(!e||S.F._edit)return true;
   const ab=paradaAbierta(e.cod_sap),est=r.estado_equipo;
   if(est==='INOPERATIVO'&&!ab){const ini=aIso(val('parIniF')||r.fecha,val('parIniH')||r.hora_ini);if(!ini){toast('Indica fecha y hora de inicio de la parada');return false;}
     const mot=valOtro('parMot');if(!mot){toast('Elige el motivo de la parada');return false;}
-    r._parada={id:uuid(),cod_sap:e.cod_sap,obra:r.obra,inicio:ini,fin:null,turnos:S.F.ch.parTur||'1 TURNO DÍA',motivo:mot,horas:null,abierta_por:S.col.codigo,reg_inicio:r.id};
+    r._parada={id:uuid(),cod_sap:e.cod_sap,obra:r.obra,inicio:ini,fin:null,turnos:S.F.ch.parTur||'1 TURNO DÍA',motivo:mot,detalle:[r.componente,r.descripcion,r.backlog].filter(Boolean).join(' · ').slice(0,200)||null,horas:null,abierta_por:S.col.codigo,reg_inicio:r.id};
     r.detalle={...(r.detalle||{}),parada:{id:r._parada.id,inicio:ini,motivo:mot,turnos:r._parada.turnos}};}
   else if(est==='OPERATIVO'&&ab){const fin=aIso(val('parFinF')||r.fecha,val('parFinH')||r.hora_fin||media(new Date()));
     if(!fin||new Date(fin)<=new Date(ab.inicio)){toast('La hora en que vuelve a operar debe ser posterior al inicio de la parada');return false;}
@@ -652,6 +662,50 @@ function prepararParada(r){const e=eqDe(r.cod_sap);if(!e||S.F._edit)return true;
     r._parada={...ab,fin,turnos:tur,horas:h,cerrada_por:S.col.codigo,reg_fin:r.id};
     r.detalle={...(r.detalle||{}),parada:{id:ab.id,inicio:ab.inicio,fin,motivo:ab.motivo,turnos:tur,horas:h}};}
   return true;}
+/* ── Consultar → Equipos inoperativos ── */
+function inoperativos(){const P=new Map();(S.PARS||[]).forEach(x=>P.set(x.id,x));parPend().forEach(x=>P.set(x.id,x));
+  return [...P.values()].filter(x=>!x.fin&&!x.anulado&&(!S.obra||!x.obra||x.obra===S.obra)).sort((a,b)=>String(a.inicio).localeCompare(String(b.inicio)));}
+async function refrescarParadas(){if(!S.online)return;try{const {data,error}=await sb.from('pdm_paradas').select('*').is('fin',null);if(!error){S.PARS=data||[];DB.set('par',S.PARS);if(S.pant==='ino'&&!S.inoSel)pintar();}}catch(_){}}
+function pantallaIno(){const L=inoperativos(),ahora=new Date().toISOString();S.inoFil=S.inoFil||'TODOS';
+  const mots=['TODOS',...new Set(L.map(p=>p.motivo||'—'))];if(!mots.includes(S.inoFil))S.inoFil='TODOS';
+  const V=L.filter(p=>S.inoFil==='TODOS'||(p.motivo||'—')===S.inoFil),tot=L.reduce((a,p)=>a+horasParada(p.inicio,ahora,p.turnos),0);
+  const dias=i=>{const d=Math.floor((Date.now()-new Date(i))/864e5);return d<=0?'hoy':d+(d===1?' día':' días');};
+  return `${S.inoMsg?`<div class="parbx verde" style="margin:0 0 10px">${S.inoMsg}</div>`:''}
+   <div class="inores"><div><b style="color:#f87171">${L.length}</b><small>equipos parados</small></div><div><b>${f1(tot)}</b><small>horas perdidas</small></div><div><b>${L.filter(p=>/REPUESTO/.test(p.motivo||'')).length}</b><small>por repuesto</small></div></div>
+   ${L.length>1?`<div class="inofil">${mots.map(m=>`<span class="${m===S.inoFil?'on':''}" onclick="S.inoFil='${esc(m)}';pintar()">${m==='TODOS'?'Todos':esc(m.toLowerCase())}</span>`).join('')}</div>`:''}
+   ${V.length?V.map(p=>{const e=eqDe(p.cod_sap)||{};return `<div class="inoc"><div class="top"><span class="cod">${esc(p.cod_sap)}</span><span class="hr">${f1(horasParada(p.inicio,ahora,p.turnos))} h <small>inop.</small></span></div>
+     <div class="nm">${esc([e.equipo,e.modelo].filter(Boolean).join(' '))}</div><span class="mot">${esc(p.motivo||'—')}</span>
+     <div class="det">${p.detalle?esc(p.detalle)+'<br>':''}<span>Desde ${fhTxt(p.inicio)} (${dias(p.inicio)}) · ${esc(p.turnos||'')}${p.abierta_por?' · reportó '+esc(p.abierta_por):''}</span></div>
+     <div class="acc"><button class="btn b-v" onclick="abrirCierre('${p.id}')">✓ Pasar a OPERATIVO</button><button class="btn b-g" onclick="verFichaIno('${esc(p.cod_sap)}')">Ver ficha</button></div></div>`;}).join('')
+     :`<div class="c dim" style="text-align:center;padding:26px 10px">✅ No hay equipos inoperativos${S.obra?' en '+esc(S.obra):''}.</div>`}
+   ${S.inoSel?hojaCierre():''}`;}
+function verFichaIno(c){ir('consulta');S.cq=c;pintar();}
+function abrirCierre(id){S.inoSel=id;S.inoMsg='';S.F.ch.parTur=null;S.F.cierreF=hoyIso();S.F.cierreH=media(new Date());S.F.cierreQ='';pintar();}
+function cerrarHoja(){S.inoSel=null;pintar();}
+function hojaCierre(){const p=inoperativos().find(x=>x.id===S.inoSel);if(!p)return '';if(S.F.ch.parTur==null)S.F.ch.parTur=p.turnos||'1 TURNO DÍA';
+  const fin=aIso(S.F.cierreF,S.F.cierreH),h=horasParada(p.inicio,fin,S.F.ch.parTur);
+  return `<div class="dlg" id="hojaIno" onclick="if(event.target===this)cerrarHoja()"><div class="dlgc hoja">
+   <b style="color:#4ade80">✓ ${esc(p.cod_sap)} vuelve a OPERATIVO</b><p>Inoperativo desde ${fhTxt(p.inicio)} · ${esc((p.motivo||'').toLowerCase())}</p>
+   <div class="r2"><div><label>Operativo desde</label><input type="date" data-k="cierreF" value="${esc(S.F.cierreF)}" onchange="guardarCampos();pintar()"></div><div><label>Hora</label><select class="hsel" data-k="cierreH" onchange="guardarCampos();pintar()">${horaOpts(S.F.cierreH,'')}</select></div></div>
+   <label>Turnos que trabaja</label>${chips('parTur',TURNOS_PAR)}
+   <label>Qué se hizo (opcional)</label><input class="up" data-k="cierreQ" value="${esc(S.F.cierreQ||'')}" placeholder="ej. se instaló el repuesto">
+   <label>Técnicos</label><div class="eqcb" id="tecCb" style="position:relative;z-index:4"><div class="eqin tecin" onclick="tglTecLst()"><span id="tecSel">${tecSelTxt()}</span></div><i onclick="event.stopPropagation();tglTecLst()">▼</i><div class="eqdrop" id="tecLst" style="display:none"></div></div>
+   <div class="parh" style="margin-top:12px">Horas inoperativas: <b>${f1(h)} h</b><small style="display:block;color:var(--mu);font-size:12.5px">${fhTxt(p.inicio)} → ${fin?fhTxt(fin):'—'} · 8 h efectivas por turno</small></div>
+   <div class="dlgb" style="margin-top:12px"><button class="btn b-g" onclick="cerrarHoja()">Cancelar</button><button class="btn b-v" onclick="confirmarCierre()">Cerrar parada</button></div></div></div>`;}
+async function confirmarCierre(){guardarCampos();const p=inoperativos().find(x=>x.id===S.inoSel);if(!p)return;
+  const fin=aIso(S.F.cierreF,S.F.cierreH);if(!fin||new Date(fin)<=new Date(p.inicio))return toast('La hora en que vuelve a operar debe ser posterior al inicio de la parada');
+  if(new Date(fin)>new Date(Date.now()+36e5))return toast('La hora de cierre no puede ser futura');
+  if(!S.F.tec.length)return toast('Elige al menos un técnico');
+  const tur=S.F.ch.parTur||p.turnos,h=horasParada(p.inicio,fin,tur),e=eqDe(p.cod_sap)||{},qq=up(S.F.cierreQ||'');
+  const r={id:uuid(),created_local:new Date().toISOString(),fecha:S.F.cierreF,hora_ini:S.F.cierreH,hora_fin:null,turno:null,obra:p.obra||e.cod_proyec||S.obra||null,cod_sap:p.cod_sap,maestro_id:e.id||null,
+    modulo:'MECANICO',especialidad:null,hrkm:null,hrkm_panel:null,tecnicos:S.F.tec.slice(),registrado_por:S.col.codigo,observacion:null,firma:null,insumos:null,backlog:null,backlog_estado:null,
+    estado_equipo:'OPERATIVO',trabajo:'PUESTA EN OPERACIÓN',sistema:null,descripcion:qq||null,
+    detalle:{parada:{id:p.id,inicio:p.inicio,fin,motivo:p.motivo,turnos:tur,horas:h}}};
+  const item={id:r.id,reg:r,fotos:[],enviado:false,error:null};await DB.poner(item);S.COLA.push(item);
+  guardarParada({...p,fin,turnos:tur,horas:h,cerrada_por:S.col.codigo,reg_fin:r.id});
+  S.inoSel=null;S.ult={reg:r,enviado:false};
+  S.inoMsg=`✓ <b>${esc(p.cod_sap)}</b> quedó OPERATIVO · ${f1(h)} h inoperativas. Se guardó en su historial. <span class="add" onclick="whatsapp(S.ult.reg)">📲 Enviar por WhatsApp</span>`;
+  pintar();if(S.online)sincronizar();}
 function guardarParada(p){if(!p)return;const L=parPend().filter(x=>x.id!==p.id);L.push(p);localStorage.setItem('par_pend',JSON.stringify(L));subirParadas();}
 async function subirParadas(){if(!S.online)return;const L=parPend();if(!L.length)return;const resto=[];
   for(const p of L){const {error}=await sb.from('pdm_paradas').upsert(p,{onConflict:'id'});if(error)resto.push(p);else{S.PARS=(S.PARS||[]).filter(x=>x.id!==p.id);if(!p.fin)S.PARS.push(p);}}
@@ -754,6 +808,7 @@ const P={
    ${gridReg(k=>`ir('${k}')`)}
    <div class="lblc">Consultar</div>
    <div class="lin" onclick="ir('consulta')"><span class="li-ic">${svg('bus')}</span><div><b>Ficha del equipo</b><small>horómetro, próximo PM, SOS, historial</small></div><span class="chev">${svg('chev')}</span></div>
+   ${(()=>{const n=inoperativos().length;return `<div class="lin ${n?'linino':''}" onclick="ir('ino')"><span class="li-ic">⛔</span><div><b>Equipos inoperativos</b><small>${n?'por repuesto, servicio o reparación':'todos operativos'}</small></div>${n?`<span class="badge">${n}</span>`:''}<span class="chev">${svg('chev')}</span></div>`;})()}
    <div class="lin" onclick="ir('pend')"><span class="li-ic">${svg('pin')}</span><div><b>Pendientes</b><small>backlog de los equipos de la obra</small></div><span class="badge" id="pendBadge" ${np?'':'style="display:none"'}>${np}</span><span class="chev">${svg('chev')}</span></div>
    <div class="lin" onclick="ir('envios')"><span class="li-ic">${svg('env')}</span><div><b>Envíos</b><small>${nq?nq+' por enviar':'todo sincronizado'}</small></div>${nq?`<span class="badge" style="background:#FFC20E;color:#1c1500">${nq}</span>`:''}<span class="chev">${svg('chev')}</span></div>
    <div class="hbt" style="margin-top:14px"><button class="btn b-g" onclick="ir('perfil')">Mis datos</button><button class="btn b-g" onclick="actualizar()">Actualizar</button><button class="btn b-g" onclick="salir()">Salir</button></div>
@@ -855,13 +910,14 @@ const P={
    <button class="btn b-n" onclick="sincronizar(true)" ${S.online?'':'disabled'}>Enviar ahora</button>
    <div class="dim" style="margin-top:6px">Los enviados se quedan aquí 7 días para reenviarlos por WhatsApp.</div>`;},
  consulta:()=>`<div class="c" style="position:relative;z-index:5"><label>Equipo</label>${eqCombo('cq')}</div><div id="cqRes"></div>`,
+ ino:()=>pantallaIno(),
  pdet:()=>`<div id="pdBox"><div class="c dim">${S.online?'Cargando…':'Sin señal'}</div></div>`,
  pend:()=>`<div class="c"><h4>📌 Pendientes · ${esc(S.obra||'todas las obras')}</h4><div id="pdRes" class="dim">${S.online?'Cargando…':'Sin señal: se muestran los últimos descargados.'}</div></div>
    <button class="btn b-g" onclick="ir('PENDIENTE')">+ Nuevo pendiente</button>`,
  perfil:()=>{if(S.col&&S.F.nombres==null){Object.assign(S.F,{nombres:S.col.nombres,ap_paterno:S.col.ap_paterno,ap_materno:S.col.ap_materno||'',obra:S.col.obra||'',especialidad:S.col.especialidad||'MECANICO'});}
   return P.alta();}
 };
-const AFTER={home:()=>cargarPend(),alta:()=>{prevCod();marcarVacios();if(!S.OBRAS)cargarObras();},perfil:()=>{prevCod();marcarVacios();if(!S.OBRAS)cargarObras();},consulta:()=>{if(S.cq)consultar();},pdet:()=>verPendiente(),pend:()=>cargarPend(),
+const AFTER={home:()=>cargarPend(),alta:()=>{prevCod();marcarVacios();if(!S.OBRAS)cargarObras();},perfil:()=>{prevCod();marcarVacios();if(!S.OBRAS)cargarObras();},consulta:()=>{if(S.cq)consultar();},ino:()=>refrescarParadas(),pdet:()=>verPendiente(),pend:()=>cargarPend(),
   MECANICO:fx,LUBRICACION:fx,LLANTAS:fx,GETS:fx,MNTTO_PREV:fx,PENDIENTE:()=>avisoDup()};
 function fx(){chkHr();avisoDup();}
 const MODN={MECANICO:'Reporte mecánico',LUBRICACION:'Lubricación',LLANTAS:'Llantas',GETS:'GETs',MNTTO_PREV:'Mntto preventivo',PENDIENTE:'Pendiente'};
