@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
 <meta charset="utf-8">
-<meta name="gllr-version" content="V.091126-4" data-pagina="REPORTE (app de campo)">
+<meta name="gllr-version" content="V.101126-1" data-pagina="REPORTE (app de campo)">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>REPORTE</title>
 <link rel="manifest" href="campo.webmanifest">
@@ -196,6 +196,10 @@ input.fill::placeholder{color:#c9b98a;-webkit-text-fill-color:#c9b98a;opacity:1;
 .hecho2{display:flex;gap:8px;margin-top:10px}.hecho2 .btn{margin-top:0;width:auto;font-size:15px;padding:11px 12px;white-space:nowrap}
 .btn.wa{flex:1;display:flex;align-items:center;justify-content:center;gap:8px}.btn.wa svg{width:18px;height:18px;fill:#fff}
 .btn.ed{flex:0 0 auto}
+.parbx{margin-top:8px;border-radius:12px;padding:10px 12px;font-size:14.5px}.parbx b{color:#fff}.parbx small{display:block;color:var(--mu);margin-top:6px;font-size:12.5px}
+.parbx.rojo{background:#2a1414;border:1px solid #7f1d1d}.parbx.rojo>b:first-child{color:#fca5a5}
+.parbx.verde{background:#11261a;border:1px solid #166534}.parbx.verde>b:first-child{color:#4ade80}
+.parbx label{margin-top:8px}.parh{margin-top:8px;font-size:16px}.parh b{color:#FFC20E;font-size:20px}
 .eqlab{text-transform:none!important;font-size:14.5px;line-height:1.35}.eqlab b{color:#fff}.eqlab span{color:var(--mu);font-size:13.5px}
 .eqin{color:var(--am)!important;letter-spacing:.03em}
 .eqin::placeholder{color:#c9b98a;font-weight:500;text-transform:none}.eqcb.ab .eqin{border-color:var(--am)!important;border-radius:10px 10px 0 0}
@@ -352,7 +356,7 @@ addEventListener('offline',()=>{S.online=false;pintarNet();});
 async function cargarCache(){
   const [eq,co,ma,df,pe,rc]=await Promise.all(['eq','col','mae','dsf','perfil','rec'].map(k=>DB.get(k).catch(()=>null)));
   S.EQ=eqActivos(eq||[]);S.COL=co||[];S.MAE=ma||[];S.REC=rc||[];if(df&&window.GLLR_DSF)GLLR_DSF.lista=df;if(pe)S.perfil=pe;
-  S.NEU=(await DB.get('neu').catch(()=>null))||{};
+  S.NEU=(await DB.get('neu').catch(()=>null))||{};S.PARS=(await DB.get('par').catch(()=>null))||[];
   S.COLA=await DB.cola().catch(()=>[]);
 }
 /* solo equipos MOVILIZADOS o EN TRÁNSITO (por movilizar); los desmovilizados y por desmovilizar no aparecen en ninguna lista */
@@ -370,6 +374,7 @@ async function refrescarDatos(){
     if(!eq.error){S.EQ=eqActivos(eq.data||[]);DB.set('eq',S.EQ);}
     if(!co.error){S.COL=co.data||[];DB.set('col',S.COL);}
     if(!ma.error){S.MAE=ma.data||[];DB.set('mae',S.MAE);subirMaePend();}
+    try{const {data:pa,error:pe}=await sb.from('pdm_paradas').select('*').is('fin',null);if(!pe){S.PARS=pa||[];DB.set('par',S.PARS);}subirParadas();}catch(_){}
     try{const [a,b,c]=await Promise.all([sb.from('neu_param_medida').select('medida'),sb.from('neu_param_marca').select('marca,medida'),sb.from('neu_param_modelo').select('marca,modelo,medida')]);
       S.NEU={med:a.error?(S.NEU.med||[]):a.data,mar:b.error?(S.NEU.mar||[]):b.data,mod:c.error?(S.NEU.mod||[]):c.data};DB.set('neu',S.NEU);}catch(_){}
     if(window.GLLR_DSF){await GLLR_DSF.cargar(sb);DB.set('dsf',GLLR_DSF.lista);}
@@ -545,7 +550,7 @@ function chips(k,arr,def,cls){ if(S.F.ch[k]==null&&def!=null)S.F.ch[k]=def;
   return `<div class="chips" data-ch="${k}">${arr.map(v=>`<span class="${S.F.ch[k]===v?'on':''} ${v==='OPERATIVO'?'op':v==='INOPERATIVO'?'in':v==='NOCHE'?'nt':''}" data-v="${esc(v)}">${esc(v)}</span>`).join('')}</div>`;}
 document.addEventListener('click',ev=>{const s=ev.target.closest('.chips span');if(!s)return;const box=s.parentElement,k=box.dataset.ch;if(!k)return;
   S.F.ch[k]=s.dataset.v;box.querySelectorAll('span').forEach(x=>x.classList.toggle('on',x===s));if(box.dataset.re!=null||RE_CH.includes(k)){guardarCampos();pintar();}});
-const RE_CH=['esp','trabLL','neuN','aplG'];
+const RE_CH=['esp','trabLL','neuN','aplG','estado','parTur'];
 /* lee los campos visibles a S.F para no perderlos al repintar */
 function guardarCampos(){document.querySelectorAll('[data-k]').forEach(i=>{S.F[i.dataset.k]=i.type==='checkbox'?i.checked:i.value;});}
 const val=k=>{const i=document.querySelector(`[data-k="${k}"]`);return i?(i.type==='checkbox'?i.checked:i.value):S.F[k];};
@@ -598,6 +603,59 @@ function chkHr(){const m=$('hrMsg');if(!m)return;const e=eqDe(S.F.eq),v=Number(v
   if(ult&&v<ult){m.className='warn';m.innerHTML=`⚠ Menor que la última lectura (${f0(ult)}). Revisa el número.`;}
   else if(ult&&v-ult>(e.contador==='Km'?3000:300)){m.className='warn';m.innerHTML=`⚠ Avanza ${f0(v-ult)} desde la última lectura: revisa el número.`;}
   else{m.className='dim';m.textContent=ult?`Avanza ${f0(v-ult)} desde la última lectura`:'';}}
+/* ══ PARADAS (horas inoperativas) ══
+   INOPERATIVO sin parada abierta → se abre (inicio + turnos + motivo).
+   OPERATIVO con parada abierta → se cierra (fin) y se calculan las horas.
+   Horas = tiempo dentro de los turnos que trabaja el equipo × 8/12
+   (turnos de 12 h con 8 h efectivas: cambio de guardia, almuerzo/cena). */
+const TURNOS_PAR=['1 TURNO DÍA','1 TURNO NOCHE','2 TURNOS'];
+const MOTIVOS_PAR=['REPARACIÓN EN CURSO','ESPERA DE REPUESTO','ESPERA DE PERSONAL / SERVICIO','ESPERA DE TRASLADO'];
+S.PARS=[];   // paradas abiertas (de la base) + las del celular aún no enviadas
+function parPend(){try{return JSON.parse(localStorage.getItem('par_pend')||'[]');}catch(_){return [];}}
+function paradaAbierta(cod){const P=new Map();(S.PARS||[]).forEach(x=>P.set(x.id,x));parPend().forEach(x=>P.set(x.id,x));
+  return [...P.values()].filter(x=>x.cod_sap===cod&&!x.fin).sort((a,b)=>String(b.inicio).localeCompare(String(a.inicio)))[0]||null;}
+const aIso=(f,h)=>{const d=new Date(`${f}T${(h||'00:00').slice(0,5)}:00`);return isNaN(d)?null:d.toISOString();};
+const fhTxt=iso=>{const d=new Date(iso);return isNaN(d)?'—':`${String(d.getDate()).padStart(2,'0')}/${String(d.getMonth()+1).padStart(2,'0')} ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;};
+const f1=n=>Number(n).toLocaleString('es-PE',{maximumFractionDigits:1});
+function horasParada(ini,fin,tur){const a=new Date(ini),b=new Date(fin);if(isNaN(a)||isNaN(b)||b<=a)return 0;
+  if(tur==='2 TURNOS')return Math.round((b-a)/36e5*8/12*10)/10;
+  let min=0;const d0=new Date(a);d0.setHours(0,0,0,0);d0.setDate(d0.getDate()-1);
+  for(let d=new Date(d0);d<b;d.setDate(d.getDate()+1)){const w0=new Date(d),w1=new Date(d);
+    if(tur==='1 TURNO NOCHE'){w0.setHours(19,0,0,0);w1.setDate(w1.getDate()+1);w1.setHours(7,0,0,0);}else{w0.setHours(7,0,0,0);w1.setHours(19,0,0,0);}
+    const x=Math.max(a,w0),y=Math.min(b,w1);if(y>x)min+=(y-x)/6e4;}
+  return Math.round(min/60*8/12*10)/10;}
+function parBox(){const e=eqDe(S.F.eq);if(!e||S.F._edit)return '';const ab=paradaAbierta(e.cod_sap),est=S.F.ch.estado||'OPERATIVO';
+  if(est==='INOPERATIVO'&&ab)return `<div class="parbx rojo"><b>⛔ Parada abierta desde ${fhTxt(ab.inicio)}</b><div>${esc(ab.motivo||'')} · ${esc(ab.turnos)} · lleva <b>${f1(horasParada(ab.inicio,new Date().toISOString(),ab.turnos))} h</b> inoperativas</div><small>Cuando el equipo vuelva a trabajar, registra con estado OPERATIVO para cerrarla.</small></div>`;
+  if(est==='INOPERATIVO'){if(S.F.ch.parTur==null)S.F.ch.parTur=S.F.ch.turno==='NOCHE'?'1 TURNO NOCHE':'1 TURNO DÍA';
+    return `<div class="parbx rojo"><b>⛔ Inicio de la parada</b>
+     <div class="r2"><div><label>Fecha</label><input type="date" data-k="parIniF" value="${esc(vF('parIniF',val('fecha')||hoyIso()))}"></div><div><label>Hora</label><select class="hsel" data-k="parIniH">${horaOpts(vF('parIniH',val('hini')||media(new Date())),'')}</select></div></div>
+     <label>Turnos que trabaja el equipo</label>${chips('parTur',TURNOS_PAR)}
+     <label>Motivo</label>${selOtro('parMot',MOTIVOS_PAR,'Escribe el motivo')}
+     <small>Las horas inoperativas se cuentan hasta que se registre el equipo OPERATIVO.</small></div>`;}
+  if(ab){if(S.F.ch.parTur==null)S.F.ch.parTur=ab.turnos;const fF=vF('parFinF',val('fecha')||hoyIso()),fH=vF('parFinH',val('hfin')||media(new Date()));
+    const h=horasParada(ab.inicio,aIso(fF,fH),S.F.ch.parTur);
+    return `<div class="parbx verde"><b>✅ Cierre de la parada</b><div>Inoperativo desde <b>${fhTxt(ab.inicio)}</b> · ${esc(ab.motivo||'')}</div>
+     <div class="r2"><div><label>Operativo desde (fecha)</label><input type="date" data-k="parFinF" value="${esc(fF)}" onchange="guardarCampos();pintar()"></div><div><label>Hora</label><select class="hsel" data-k="parFinH" onchange="guardarCampos();pintar()">${horaOpts(fH,'')}</select></div></div>
+     <label>Turnos que trabaja el equipo</label>${chips('parTur',TURNOS_PAR)}
+     <div class="parh">Horas inoperativas: <b>${f1(h)} h</b></div><small>Se cuentan 8 h efectivas por turno de 12 h.</small></div>`;}
+  return '';}
+/* se arma la parada al guardar; devuelve false si falta algo */
+function prepararParada(r){const e=eqDe(r.cod_sap);if(!e||S.F._edit||!['MECANICO','GETS','PENDIENTE'].includes(r.modulo))return true;
+  const ab=paradaAbierta(e.cod_sap),est=r.estado_equipo;
+  if(est==='INOPERATIVO'&&!ab){const ini=aIso(val('parIniF')||r.fecha,val('parIniH')||r.hora_ini);if(!ini){toast('Indica fecha y hora de inicio de la parada');return false;}
+    const mot=valOtro('parMot');if(!mot){toast('Elige el motivo de la parada');return false;}
+    r._parada={id:uuid(),cod_sap:e.cod_sap,obra:r.obra,inicio:ini,fin:null,turnos:S.F.ch.parTur||'1 TURNO DÍA',motivo:mot,horas:null,abierta_por:S.col.codigo,reg_inicio:r.id};
+    r.detalle={...(r.detalle||{}),parada:{id:r._parada.id,inicio:ini,motivo:mot,turnos:r._parada.turnos}};}
+  else if(est==='OPERATIVO'&&ab){const fin=aIso(val('parFinF')||r.fecha,val('parFinH')||r.hora_fin||media(new Date()));
+    if(!fin||new Date(fin)<=new Date(ab.inicio)){toast('La hora en que vuelve a operar debe ser posterior al inicio de la parada');return false;}
+    const tur=S.F.ch.parTur||ab.turnos,h=horasParada(ab.inicio,fin,tur);
+    r._parada={...ab,fin,turnos:tur,horas:h,cerrada_por:S.col.codigo,reg_fin:r.id};
+    r.detalle={...(r.detalle||{}),parada:{id:ab.id,inicio:ab.inicio,fin,motivo:ab.motivo,turnos:tur,horas:h}};}
+  return true;}
+function guardarParada(p){if(!p)return;const L=parPend().filter(x=>x.id!==p.id);L.push(p);localStorage.setItem('par_pend',JSON.stringify(L));subirParadas();}
+async function subirParadas(){if(!S.online)return;const L=parPend();if(!L.length)return;const resto=[];
+  for(const p of L){const {error}=await sb.from('pdm_paradas').upsert(p,{onConflict:'id'});if(error)resto.push(p);else{S.PARS=(S.PARS||[]).filter(x=>x.id!==p.id);if(!p.fin)S.PARS.push(p);}}
+  localStorage.setItem('par_pend',JSON.stringify(resto));DB.set('par',S.PARS);}
 /* ── listas de llantas (Configuración → Neumáticos) ── */
 const nrmK=v=>String(v||'').toUpperCase().replace(/\s+/g,'');
 function uniq(L){const m=new Map();L.forEach(v=>{v=String(v||'').trim().toUpperCase();if(v&&!m.has(nrmK(v)))m.set(nrmK(v),v);});return [...m.values()].sort();}
@@ -715,7 +773,7 @@ const P={
  MECANICO:()=>{const esps=['MECANICO','SOLDADOR','ELECTRICISTA'];const def=esps.includes(S.col.especialidad)?S.col.especialidad:'MECANICO';if(S.F.ch.esp==null)S.F.ch.esp=def;const e=S.F.ch.esp;
   return cabecera(true)+`<div class="c"><div class="sec">Reporte</div>
    <label>Tipo de intervención</label>${chips('esp',esps)}
-   <label>Estado del equipo</label>${chips('estado',['OPERATIVO','INOPERATIVO'],'OPERATIVO')}
+   <label>Estado del equipo</label>${chips('estado',['OPERATIVO','INOPERATIVO'],'OPERATIVO')}${parBox()}
    <label>Origen de la falla</label>${chips('origen',origenes())}
    <label>Sistema</label>${selOtro('sistema',MV('SISTEMA',e),'Escribe el sistema')}
    <label>Componente</label><input class="up" data-k="componente" value="${esc(vF('componente'))}" placeholder="PIEZA O PARTE INTERVENIDA">
@@ -764,7 +822,7 @@ const P={
    <label>Trabajo realizado</label>${chips('trabGet',['EVALUACION','CAMBIO','ROTACION'],'CAMBIO')}
    ${cuerpo}
    ${S.F.g.length?`<label style="margin-top:12px">Marca lo que se trabajó y su cantidad</label>${filas}`:''}
-   <label>Estado del equipo</label>${chips('estado',['OPERATIVO','INOPERATIVO'],'OPERATIVO')}
+   <label>Estado del equipo</label>${chips('estado',['OPERATIVO','INOPERATIVO'],'OPERATIVO')}${parBox()}
    <label>Trabajo pendiente (backlog)</label><input class="up" data-k="backlog" value="${esc(vF('backlog'))}" placeholder="OPCIONAL">
   </div>`+cierre();},
  MNTTO_PREV:()=>{const e=eqDe(S.F.eq);const T=MV('TAREA_PM');if(!S.F.tar)S.F.tar=T.map(()=>true);
@@ -777,7 +835,7 @@ const P={
   </div>`+insumos('INSUMO',null,'Insumos del PM')+cierre();},
  PENDIENTE:()=>cabecera(false)+`<div class="c"><div class="sec">Pendiente</div>
    <label>Descripción del trabajo pendiente</label><textarea class="up" rows="3" data-k="backlog">${esc(vF('backlog'))}</textarea>
-   <label>Estado del equipo</label>${chips('estado',['OPERATIVO','INOPERATIVO'],'OPERATIVO')}</div>`+cierre(),
+   <label>Estado del equipo</label>${chips('estado',['OPERATIVO','INOPERATIVO'],'OPERATIVO')}${parBox()}</div>`+cierre(),
  hecho:()=>`<div class="c" style="text-align:center"><div style="font-size:40px">${S.ult&&S.ult.enviado?'✅':'💾'}</div>
    <h4>${S.ult&&S.ult.enviado?'Registro enviado':'Guardado en el celular'}</h4>
    <div class="dim">${S.ult&&S.ult.enviado?'Ya está en la web (PARTE DIARIO MECÁNICO).':'Se enviará solo cuando haya señal.'}</div></div>
@@ -874,9 +932,11 @@ async function guardar(){
   if(!dup&&S.online){try{const {data}=await sb.from('pdm_registros').select('id,cod_sap,fecha,modulo,trabajo,tecnicos,registrado_por,hora_ini').eq('cod_sap',r.cod_sap).eq('fecha',r.fecha).eq('modulo',r.modulo).eq('anulado',false).limit(20);dup=(data||[]).find(igual);}catch(_){}}
   if(S.F._edit)dup=null;
   if(dup&&!confirm(`⚠ Ya existe un registro parecido:\n\n${r.cod_sap} · ${fd(r.fecha)} · ${MODN[r.modulo]} · ${r.trabajo||''}\nRegistrado por ${dup.registrado_por||'—'} con técnicos ${(dup.tecnicos||[]).join(', ')}${dup.hora_ini?' a las '+String(dup.hora_ini).slice(0,5):''}.\n\nSi fue el mismo trabajo, NO lo vuelvas a registrar (un registro sirve para todos los técnicos).\n\n¿Es un trabajo distinto y quieres guardarlo igual?`))return;
+  if(!prepararParada(r))return;const parNueva=r._parada||null;delete r._parada;
   const edit=S.F._edit||null;if(edit){const v=S.COLA.find(x=>x.id===edit);r.id=edit;if(v)r.created_local=v.reg.created_local;}
   const item={id:r.id,reg:r,fotos:S.F.fotos.map(f=>f.blob),enviado:false,error:null,edit:!!edit,F:(()=>{const b=borradorDe();delete b._edit;b._guardado=false;return b;})()};
   S.COLA=S.COLA.filter(x=>x.id!==r.id);await DB.poner(item);S.COLA.push(item);
+  guardarParada(parNueva);
   S.ult={reg:r,enviado:false};$('btnGuardar').disabled=true;
   S.F._guardado=true;await borrarBorrador(mod);
   if(S.online)await sincronizar();
@@ -912,6 +972,7 @@ async function sincronizar(manual){
     S.COLA=S.COLA.filter(x=>!(x.enviado&&new Date(x.enviado_en||0).getTime()<lim));
     DB.set('rec',S.REC);
   }finally{_sync=false;}
+  await subirParadas();
   if(ok&&S.pant!=='hecho')toast(`⇅ ${ok} registro(s) enviados`);
   if(err&&manual)toast(`${err} registro(s) no se pudieron enviar: revisa Envíos`,5000);
   if(['home','envios'].includes(S.pant))pintar();
@@ -943,6 +1004,7 @@ function textoWA(r,foto){
   L.push('∙ Trabajos realizados:');
   T.forEach(x=>L.push('   - '+x)); if(!T.length)L.push(' ');
   L.push(`∙ Estado: ${r.estado_equipo||'—'}`);
+  if(d.parada){const p=d.parada;L.push(p.fin?`∙ Parada: ${fhTxt(p.inicio)} → ${fhTxt(p.fin)} = ${f1(p.horas)} h inoperativas (${p.turnos})`:`∙ Parada desde: ${fhTxt(p.inicio)} · ${p.motivo} (${p.turnos})`);}
   L.push(`∙ Técnicos: ${(r.tecnicos||[]).join(', ')}`);
   return L.join('\n');
 }
@@ -999,7 +1061,7 @@ function tglEq(ctx){abrirEq(ctx,!$('eqCb').classList.contains('ab'));}
 function tocarEq(ctx){const i=$('eqIn');if(!$('eqCb').classList.contains('ab')){abrirEq(ctx,true);if(ctx==='f'&&i)i.placeholder='escribe el número (ej. 14)';return;}
   if(i&&i.readOnly){i.readOnly=false;i.placeholder='escribe código o tipo…';i.focus();}}
 function pickEq(ctx,c){S.eqAb=null;S.eqf='';if(ctx==='cq')return elegirCq(c);
-  guardarCampos();const e=eqDe(c);S.F.eq=c;S.F.eqTxt=c+' · '+(e&&e.equipo||'');pintar();}
+  guardarCampos();const e=eqDe(c);S.F.eq=c;S.F.eqTxt=c+' · '+(e&&e.equipo||'');S.F.ch.estado=paradaAbierta(c)?'INOPERATIVO':'OPERATIVO';S.F.ch.parTur=null;pintar();}
 document.addEventListener('click',ev=>{const cb=$('eqCb');if(cb&&cb.classList.contains('ab')&&!ev.target.closest('#eqCb'))abrirEq(cb.dataset.ctx,false);
   const tc=$('tecCb');if(tc&&tc.classList.contains('ab')&&!ev.target.closest('#tecCb'))tglTecLst(false);});
 function elegirCq(c){S.cq=c;S.cqVer=null;pintar();}
@@ -1016,6 +1078,7 @@ async function consultar(){const c=String(S.cq||'').split('·')[0].trim().toUppe
     <div class="stats"><div class="st"><span>${e.contador==='Km'?'Kilometraje':'Horómetro'}</span><b>${e.hrkm_actual!=null?f0(e.hrkm_actual)+' '+u:'—'}</b><small class="sub">fecha: ${e.fecha_lectura?fd(e.fecha_lectura):'—'}</small>${dsf?'<small class="pill p-a">⟲ desfase</small>':''}</div>
      <div class="st"><span>Próximo PM</span><b style="color:${rest==null?'inherit':rest<0?'#f87171':rest<(+e.frecuencia*0.1)?'#fbbf24':'#4ade80'}">${rest==null?'—':rest<0?'vencido '+f0(-rest):'faltan '+f0(rest)}</b>${rest==null?'':`<div class="pbar"><i style="width:${pct}%;background:${rest<0?'#ef4444':rest<(+e.frecuencia*0.1)?'#f59e0b':'#22c55e'}"></i></div>`}<small class="sub">Último servicio: ${e.hrkm_ult_mntto!=null&&e.hrkm_ult_mntto!==''?f0(e.hrkm_ult_mntto)+' '+u:'—'}</small></div>
      <div class="st tap ${S.cqVer==='sos'?'abierto':''}" onclick="verCq('sos')"><span>SOS aceite</span><b id="cqSos">…</b></div><div class="st tap ${S.cqVer==='pend'?'abierto':''}" onclick="verCq('pend')"><span>Pendientes</span><b id="cqPend">…</b></div></div></div>
+    ${(()=>{const ab=paradaAbierta(e.cod_sap);return ab?`<div class="parbx rojo" style="margin-top:10px"><b>⛔ Inoperativo desde ${fhTxt(ab.inicio)}</b><div>${esc(ab.motivo||'')} · ${esc(ab.turnos)} · lleva <b>${f1(horasParada(ab.inicio,new Date().toISOString(),ab.turnos))} h</b></div></div>`:'';})()}
     <div id="cqDet"></div>
     <div class="lblc">Historial</div><div id="cqL" class="tlx dim">${S.online?'Cargando…':''}</div>`;
   // pendientes abiertos del equipo
