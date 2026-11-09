@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
 <meta charset="utf-8">
-<meta name="gllr-version" content="V.101126-3" data-pagina="REPORTE (app de campo)">
+<meta name="gllr-version" content="V.101126-4" data-pagina="REPORTE (app de campo)">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>REPORTE</title>
 <link rel="manifest" href="campo.webmanifest">
@@ -654,13 +654,13 @@ function prepararParada(r){const e=eqDe(r.cod_sap);if(!e||S.F._edit)return true;
   const ab=paradaAbierta(e.cod_sap),est=r.estado_equipo;
   if(est==='INOPERATIVO'&&!ab){const ini=aIso(val('parIniF')||r.fecha,val('parIniH')||r.hora_ini);if(!ini){toast('Indica fecha y hora de inicio de la parada');return false;}
     const mot=valOtro('parMot');if(!mot){toast('Elige el motivo de la parada');return false;}
-    r._parada={id:uuid(),cod_sap:e.cod_sap,obra:r.obra,inicio:ini,fin:null,turnos:S.F.ch.parTur||'1 TURNO DÍA',motivo:mot,detalle:[r.componente,r.descripcion,r.backlog].filter(Boolean).join(' · ').slice(0,200)||null,horas:null,abierta_por:S.col.codigo,reg_inicio:r.id};
-    r.detalle={...(r.detalle||{}),parada:{id:r._parada.id,inicio:ini,motivo:mot,turnos:r._parada.turnos}};}
+    r._parada={id:uuid(),cod_sap:e.cod_sap,obra:r.obra,inicio:ini,fin:null,turnos:S.F.ch.parTur||'1 TURNO DÍA',motivo:mot,detalle:[r.descripcion,r.backlog].filter(Boolean).join(' · ').slice(0,200)||null,sistema:r.sistema||null,componente:r.componente||null,origen:r.origen_falla||null,hrkm_ini:r.hrkm??null,horas:null,abierta_por:S.col.codigo,reg_inicio:r.id};
+    r.detalle={...(r.detalle||{}),parada:{id:r._parada.id,inicio:ini,motivo:mot,turnos:r._parada.turnos,abre:true}};}
   else if(est==='OPERATIVO'&&ab){const fin=aIso(val('parFinF')||r.fecha,val('parFinH')||r.hora_fin||media(new Date()));
     if(!fin||new Date(fin)<=new Date(ab.inicio)){toast('La hora en que vuelve a operar debe ser posterior al inicio de la parada');return false;}
     const tur=S.F.ch.parTur||ab.turnos,h=horasParada(ab.inicio,fin,tur);
-    r._parada={...ab,fin,turnos:tur,horas:h,cerrada_por:S.col.codigo,reg_fin:r.id};
-    r.detalle={...(r.detalle||{}),parada:{id:ab.id,inicio:ab.inicio,fin,motivo:ab.motivo,turnos:tur,horas:h}};}
+    r._parada={...ab,fin,turnos:tur,horas:h,cerrada_por:S.col.codigo,reg_fin:r.id,hrkm_fin:r.hrkm??null};
+    r.detalle={...(r.detalle||{}),parada:{id:ab.id,inicio:ab.inicio,fin,motivo:ab.motivo,turnos:tur,horas:h,hrkm_ini:ab.hrkm_ini??null,reg_inicio:ab.reg_inicio||null,falla:ab.detalle||null,sistema:ab.sistema||null}};}
   return true;}
 /* ── Consultar → Equipos inoperativos ── */
 function inoperativos(){const P=new Map();(S.PARS||[]).forEach(x=>P.set(x.id,x));parPend().forEach(x=>P.set(x.id,x));
@@ -680,7 +680,13 @@ function pantallaIno(){const L=inoperativos(),ahora=new Date().toISOString();S.i
      :`<div class="c dim" style="text-align:center;padding:26px 10px">✅ No hay equipos inoperativos${S.obra?' en '+esc(S.obra):''}.</div>`}
    ${S.inoSel?hojaCierre():''}`;}
 function verFichaIno(c){ir('consulta');S.cq=c;pintar();}
-function abrirCierre(id){S.inoSel=id;S.inoMsg='';S.F.ch.parTur=null;S.F.cierreF=hoyIso();S.F.cierreH=media(new Date());S.F.cierreQ='';pintar();}
+function abrirCierre(id){S.inoSel=id;S.inoMsg='';S.F.ch.parTur=null;S.F.cierreF=hoyIso();S.F.cierreH=media(new Date());S.F.cierreQ='';
+  const p=inoperativos().find(x=>x.id===id),e=p&&eqDe(p.cod_sap);S.F.cierreHr=p&&p.hrkm_ini!=null?p.hrkm_ini:(e&&e.hrkm_actual!=null?e.hrkm_actual:'');pintar();
+  if(p&&(!p.sistema||p.hrkm_ini==null))regDeParada(p).then(r=>{if(!r||S.inoSel!==id)return;p.sistema=p.sistema||r.sistema;p.componente=p.componente||r.componente;p.origen=p.origen||r.origen_falla;
+    if(p.hrkm_ini==null&&r.hrkm!=null){p.hrkm_ini=r.hrkm;guardarCampos();if(S.F.cierreHr===''||S.F.cierreHr==null)S.F.cierreHr=r.hrkm;}if(!p.detalle)p.detalle=[r.descripcion,r.backlog].filter(Boolean).join(' · ')||null;guardarCampos();pintar();});}
+/* registro que abrió la parada (para traer sistema, horómetro y falla de paradas antiguas) */
+async function regDeParada(p){if(!p.reg_inicio)return null;const loc=S.COLA.map(x=>x.reg).concat(S.REC).find(x=>x.id===p.reg_inicio);if(loc)return loc;
+  if(!S.online)return null;try{const {data}=await sb.from('pdm_registros').select('id,sistema,componente,descripcion,backlog,hrkm,origen_falla').eq('id',p.reg_inicio).maybeSingle();return data;}catch(_){return null;}}
 function cerrarHoja(){S.inoSel=null;pintar();}
 function hojaCierre(){const p=inoperativos().find(x=>x.id===S.inoSel);if(!p)return '';if(S.F.ch.parTur==null)S.F.ch.parTur=p.turnos||'1 TURNO DÍA';
   const fin=aIso(S.F.cierreF,S.F.cierreH),h=horasParada(p.inicio,fin,S.F.ch.parTur);
@@ -688,6 +694,8 @@ function hojaCierre(){const p=inoperativos().find(x=>x.id===S.inoSel);if(!p)retu
    <b style="color:#4ade80">✓ ${esc(p.cod_sap)} vuelve a OPERATIVO</b><p>Inoperativo desde ${fhTxt(p.inicio)} · ${esc((p.motivo||'').toLowerCase())}</p>
    <div class="r2"><div><label>Operativo desde</label><input type="date" data-k="cierreF" value="${esc(S.F.cierreF)}" onchange="guardarCampos();pintar()"></div><div><label>Hora</label><select class="hsel" data-k="cierreH" onchange="guardarCampos();pintar()">${horaOpts(S.F.cierreH,'')}</select></div></div>
    <label>Turnos que trabaja</label>${chips('parTur',TURNOS_PAR)}
+   <div class="r2"><div><label>${(eqDe(p.cod_sap)||{}).contador==='Km'?'Kilometraje':'Horómetro'}</label><input type="number" inputmode="decimal" data-k="cierreHr" value="${esc(S.F.cierreHr??'')}"></div><div><label>Sistema</label><input value="${esc(p.sistema||'—')}" disabled></div></div>
+   ${p.detalle?`<div class="dim" style="margin-top:6px">Falla: ${esc(p.detalle)}${p.hrkm_ini!=null?' · al parar: '+f0(p.hrkm_ini):''}</div>`:''}
    <label>Qué se hizo (opcional)</label><input class="up" data-k="cierreQ" value="${esc(S.F.cierreQ||'')}" placeholder="ej. se instaló el repuesto">
    <label>Técnicos</label><div class="eqcb" id="tecCb" style="position:relative;z-index:4"><div class="eqin tecin" onclick="tglTecLst()"><span id="tecSel">${tecSelTxt()}</span></div><i onclick="event.stopPropagation();tglTecLst()">▼</i><div class="eqdrop" id="tecLst" style="display:none"></div></div>
    <div class="parh" style="margin-top:12px">Horas inoperativas: <b>${f1(h)} h</b><small style="display:block;color:var(--mu);font-size:12.5px">${fhTxt(p.inicio)} → ${fin?fhTxt(fin):'—'} · 8 h efectivas por turno</small></div>
@@ -696,13 +704,18 @@ async function confirmarCierre(){guardarCampos();const p=inoperativos().find(x=>
   const fin=aIso(S.F.cierreF,S.F.cierreH);if(!fin||new Date(fin)<=new Date(p.inicio))return toast('La hora en que vuelve a operar debe ser posterior al inicio de la parada');
   if(new Date(fin)>new Date(Date.now()+36e5))return toast('La hora de cierre no puede ser futura');
   if(!S.F.tec.length)return toast('Elige al menos un técnico');
+  const hr=S.F.cierreHr===''||S.F.cierreHr==null?null:Number(S.F.cierreHr);if(hr==null||isNaN(hr))return toast('Escribe el horómetro / kilometraje');
+  if(p.hrkm_ini!=null&&hr<+p.hrkm_ini)return toast(`El horómetro no puede ser menor al de la parada (${f0(p.hrkm_ini)})`);
+  const ri=(!p.sistema||!p.detalle)?await regDeParada(p):null;
   const tur=S.F.ch.parTur||p.turnos,h=horasParada(p.inicio,fin,tur),e=eqDe(p.cod_sap)||{},qq=up(S.F.cierreQ||'');
-  const r={id:uuid(),created_local:new Date().toISOString(),fecha:S.F.cierreF,hora_ini:S.F.cierreH,hora_fin:null,turno:null,obra:p.obra||e.cod_proyec||S.obra||null,cod_sap:p.cod_sap,maestro_id:e.id||null,
-    modulo:'MECANICO',especialidad:null,hrkm:null,hrkm_panel:null,tecnicos:S.F.tec.slice(),registrado_por:S.col.codigo,observacion:null,firma:null,insumos:null,backlog:null,backlog_estado:null,
-    estado_equipo:'OPERATIVO',trabajo:'PUESTA EN OPERACIÓN',sistema:null,descripcion:qq||null,
-    detalle:{parada:{id:p.id,inicio:p.inicio,fin,motivo:p.motivo,turnos:tur,horas:h}}};
+  const sis=p.sistema||(ri&&ri.sistema)||null,comp=p.componente||(ri&&ri.componente)||null,falla=p.detalle||(ri&&[ri.descripcion,ri.backlog].filter(Boolean).join(' · '))||null;
+  const hh=+String(S.F.cierreH).slice(0,2);
+  const r={id:uuid(),created_local:new Date().toISOString(),fecha:S.F.cierreF,hora_ini:S.F.cierreH,hora_fin:null,turno:hh>=7&&hh<19?'DIA':'NOCHE',obra:p.obra||e.cod_proyec||S.obra||null,cod_sap:p.cod_sap,maestro_id:e.id||null,
+    modulo:'MECANICO',especialidad:null,hrkm:hr,hrkm_panel:null,tecnicos:S.F.tec.slice(),registrado_por:S.col.codigo,observacion:qq||null,firma:null,insumos:null,backlog:null,backlog_estado:null,
+    estado_equipo:'OPERATIVO',trabajo:'PUESTA EN OPERACIÓN',sistema:sis,componente:comp,descripcion:falla,origen_falla:p.origen||(ri&&ri.origen_falla)||null,
+    detalle:{parada:{id:p.id,inicio:p.inicio,fin,motivo:p.motivo,turnos:tur,horas:h,hrkm_ini:p.hrkm_ini??null,reg_inicio:p.reg_inicio||null,falla,sistema:sis}}};
   const item={id:r.id,reg:r,fotos:[],enviado:false,error:null};await DB.poner(item);S.COLA.push(item);
-  guardarParada({...p,fin,turnos:tur,horas:h,cerrada_por:S.col.codigo,reg_fin:r.id});
+  guardarParada({...p,fin,turnos:tur,horas:h,cerrada_por:S.col.codigo,reg_fin:r.id,hrkm_fin:hr,sistema:sis,componente:comp,detalle:falla});
   S.inoSel=null;S.ult={reg:r,enviado:false};
   S.inoMsg=`✓ <b>${esc(p.cod_sap)}</b> quedó OPERATIVO · ${f1(h)} h inoperativas. Se guardó en su historial. <span class="add" onclick="whatsapp(S.ult.reg)">📲 Enviar por WhatsApp</span>`;
   pintar();if(S.online)sincronizar();}
@@ -1068,7 +1081,7 @@ function textoWA(r,foto){
   L.push('∙ Trabajos realizados:');
   T.forEach(x=>L.push('   - '+x)); if(!T.length)L.push(' ');
   L.push(`∙ Estado: ${r.estado_equipo||'—'}`);
-  if(d.parada){const p=d.parada;L.push(p.fin?`∙ Parada: ${fhTxt(p.inicio)} → ${fhTxt(p.fin)} = ${f1(p.horas)} h inoperativas (${p.turnos})`:`∙ Parada desde: ${fhTxt(p.inicio)} · ${p.motivo} (${p.turnos})`);}
+  if(d.parada){const p=d.parada;L.push(p.fin?`∙ Parada: ${fhTxt(p.inicio)} → ${fhTxt(p.fin)} = ${f1(p.horas)} h inoperativas (${p.turnos})${p.falla&&p.falla!==r.descripcion?'\n   - Falla: '+p.falla:''}`:`∙ Parada desde: ${fhTxt(p.inicio)} · ${p.motivo} (${p.turnos})`);}
   L.push(`∙ Técnicos: ${(r.tecnicos||[]).join(', ')}`);
   return L.join('\n');
 }

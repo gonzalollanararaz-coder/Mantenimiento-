@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
 <meta charset="utf-8">
-<meta name="gllr-version" content="V.091126-2" data-pagina="Parte diario mecánico">
+<meta name="gllr-version" content="V.101126-1" data-pagina="Parte diario mecánico">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Parte diario mecánico &mdash; UDE</title>
 <link rel="icon" href="favicon.ico" sizes="any">
@@ -61,6 +61,7 @@
   .fld{border:2px solid #c9ced4;border-radius:8px;height:36px;padding:0 10px;font:inherit;font-size:13.5px;text-transform:uppercase;background:#fff}
   .fld.vac{background:#FFF7D6;border-color:#F0B400}.fld:focus{outline:none;border-color:#4254A5;background:#fff}
   .chk{display:flex;gap:8px;align-items:center;font-weight:700;color:#334281;margin:4px 0 8px;cursor:pointer}.chk input{width:16px;height:16px}
+  .parw{font-size:11px;color:#B91C1C;margin-top:3px;white-space:nowrap}.parw.ok{color:#15803D}.parw.ab{font-weight:700}
 </style>
 </head>
 <body>
@@ -124,7 +125,22 @@ function consultaBase(){let q=sb.from('pdm_registros').select('*').eq('anulado',
   return q.order('fecha',{ascending:false}).order('hora_ini',{ascending:false});}
 async function buscar(p){pagina=p||0;pie.textContent='Buscando…';
   const {data,error}=await consultaBase().range(pagina*PASO,pagina*PASO+PASO-1);
-  if(error){v_reg_err(error);return;} REG=data||[]; pintarReg();}
+  if(error){v_reg_err(error);return;} REG=data||[]; await cargarParadas(); pintarReg();}
+/* paradas (horas inoperativas) ligadas a los registros: la que abre (INOPERATIVO) y la que cierra (vuelve a OPERATIVO) */
+let PARX={};
+async function cargarParadas(){PARX={};const ids=REG.map(r=>r.id);if(!ids.length)return;
+  try{const L=[];for(let i=0;i<ids.length;i+=100){const lote=ids.slice(i,i+100).join(',');
+      const {data,error}=await sb.from('pdm_paradas').select('*').or(`reg_inicio.in.(${lote}),reg_fin.in.(${lote})`).eq('anulado',false);if(error)return;L.push(...(data||[]));}
+    L.forEach(p=>{if(p.reg_inicio)PARX[p.reg_inicio]={p,rol:'abre'};if(p.reg_fin)PARX[p.reg_fin]={p,rol:'cierra'};});}catch(_){}}
+const fhP=iso=>{const d=new Date(iso);return isNaN(d)?'':`${String(d.getDate()).padStart(2,'0')}/${String(d.getMonth()+1).padStart(2,'0')} ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;};
+const f1=n=>Number(n).toLocaleString('es-PE',{maximumFractionDigits:1});
+function parTxt(r){const x=PARX[r.id];if(!x)return '';const p=x.p;
+  if(x.rol==='abre')return p.fin?`<div class="parw">⛔ parada hasta ${fhP(p.fin)} · <b>${f1(p.horas)} h</b></div>`:`<div class="parw ab">⛔ parada abierta desde ${fhP(p.inicio)}</div>`;
+  return `<div class="parw ok">✓ cierra parada del ${fhP(p.inicio)} · <b>${f1(p.horas)} h</b></div>`;}
+function parDet(r){const x=PARX[r.id];if(!x)return '';const p=x.p;
+  return `<b>Parada</b><span>${fhP(p.inicio)} → ${p.fin?fhP(p.fin):'<b style="color:#B91C1C">abierta</b>'}${p.horas!=null?` · <b>${f1(p.horas)} h inoperativas</b>`:''} · ${esc(p.turnos||'')}<br>
+   <span class="dim">${esc(p.motivo||'')}${p.sistema?' · '+esc(p.sistema):''}${p.componente?' · '+esc(p.componente):''}${p.detalle?' · falla: '+esc(p.detalle):''}<br>
+   HR/KM al parar: ${p.hrkm_ini!=null?f0(p.hrkm_ini):'—'} · al volver a operar: ${p.hrkm_fin!=null?f0(p.hrkm_fin):'—'} · abrió ${esc(p.abierta_por||'')}${p.cerrada_por?' · cerró '+esc(p.cerrada_por):''}</span></span>`;}
 function v_reg_err(e){document.getElementById('v-reg').innerHTML=`<div class="card vacio">No se pudo leer <b>pdm_registros</b>.<br>Si es la primera vez, ejecuta <b>pdm_tablas.sql</b> en Supabase.<br><span class="dim">${esc(e.message)}</span></div>`;pie.textContent='';}
 const insTxt=r=>(r.insumos||[]).map(x=>`${x.n}${x.q!=null?' '+x.q+' '+(x.u||''):''}`).join(' · ');
 function pintarReg(){
@@ -138,7 +154,7 @@ function pintarReg(){
      <td>${esc(r.obra||'')}</td><td class="mono"><b>${esc(r.cod_sap)}</b><br><span class="dim" style="font-family:inherit">${esc(e?e.equipo:'')}</span></td>
      <td class="r">${r.hrkm!=null?f0(r.hrkm):''}${r.hrkm_panel!=null?`<br><span class="pill p-a" title="Lectura de panel">⟲ ${f0(r.hrkm_panel)}</span>`:''}</td>
      <td>${esc(MODN[r.modulo]||r.modulo)}${r.especialidad?`<br><span class="dim">${esc(r.especialidad)}</span>`:''}</td><td>${esc(r.sistema||'')}</td><td>${esc(r.trabajo||'')}</td>
-     <td class="c">${r.estado_equipo?`<span class="pill ${r.estado_equipo==='INOPERATIVO'?'p-b':'p-ok'}">${esc(r.estado_equipo)}</span>`:''}</td>
+     <td class="c">${r.estado_equipo?`<span class="pill ${r.estado_equipo==='INOPERATIVO'?'p-b':'p-ok'}">${esc(r.estado_equipo)}</span>`:''}${parTxt(r)}</td>
      <td class="mono">${esc((r.tecnicos||[]).join(', '))}</td><td style="max-width:220px">${esc(insTxt(r))}</td>
      <td style="max-width:200px">${r.backlog?`<span class="pill ${r.backlog_estado==='CERRADO'?'p-g':'p-w'}">${r.backlog_estado==='CERRADO'?'cerrado':'abierto'}</span> ${esc(r.backlog)}`:''}</td><td class="c">${(r.fotos||[]).length||''}</td></tr>`;}).join('')
      ||`<tr><td colspan="14" class="vacio">Sin registros con estos filtros.</td></tr>`}</tbody></table></div>
@@ -164,7 +180,7 @@ async function detalle(r){const e=eqDe(r.cod_sap);
    <b>Hora</b><span>${esc(String(r.hora_ini||'').slice(0,5))}${r.hora_fin?' – '+esc(String(r.hora_fin).slice(0,5)):''}</span>
    <b>HR/KM</b><span>${r.hrkm!=null?f0(r.hrkm):'—'}${r.hrkm_panel!=null?' (panel '+f0(r.hrkm_panel)+')':''}</span>
    <b>Técnicos</b><span class="mono">${esc((r.tecnicos||[]).join(', '))} <span class="dim">· registró ${esc(r.registrado_por||'')}</span></span>
-   ${r.especialidad?`<b>Especialidad</b><span>${esc(r.especialidad)}</span>`:''}${r.estado_equipo?`<b>Estado</b><span>${esc(r.estado_equipo)}</span>`:''}
+   ${r.especialidad?`<b>Especialidad</b><span>${esc(r.especialidad)}</span>`:''}${r.estado_equipo?`<b>Estado</b><span>${esc(r.estado_equipo)}</span>`:''}${parDet(r)}
    ${r.sistema?`<b>Sistema</b><span>${esc(r.sistema)}</span>`:''}${r.componente?`<b>Componente</b><span>${esc(r.componente)}</span>`:''}
    ${r.descripcion?`<b>Falla</b><span>${esc(r.descripcion)}</span>`:''}${r.trabajo?`<b>Trabajo</b><span>${esc(r.trabajo)}</span>`:''}
    ${r.tipo_parada?`<b>Tipo de parada</b><span>${esc(r.tipo_parada)}</span>`:''}${r.origen_falla?`<b>Origen</b><span>${esc(r.origen_falla)}</span>`:''}${r.frente?`<b>Frente</b><span>${esc(r.frente)}</span>`:''}
