@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
 <meta charset="utf-8">
-<meta name="gllr-version" content="V.251026-1" data-pagina="Parte diario mecánico">
+<meta name="gllr-version" content="V.091126-1" data-pagina="Parte diario mecánico">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Parte diario mecánico &mdash; UDE</title>
 <link rel="icon" href="favicon.ico" sizes="any">
@@ -149,8 +149,10 @@ function pintarReg(){
 function firmaSVG(t){if(!t)return '<span class="dim">Sin firma</span>';
   return `<svg viewBox="0 0 300 100" width="300" height="100" style="border:1px dashed #c9ced6;border-radius:8px;background:#fff">${t.split('|').map(tr=>`<polyline points="${esc(tr)}" fill="none" stroke="#1F3864" stroke-width="2" stroke-linecap="round"/>`).join('')}</svg>`;}
 function detTxt(r){const d=r.detalle||{};
-  if(r.modulo==='LLANTAS')return `<table class="t" style="max-width:420px;margin-top:4px"><thead><tr><th class="c">Pos.</th><th class="r">Presión psi</th><th class="r">Cocada mm</th><th class="r">Torque N·m</th></tr></thead><tbody>${(d.posiciones||[]).map(p=>`<tr><td class="c">${p.pos}</td><td class="r">${p.presion??''}</td><td class="r">${p.cocada??''}</td><td class="r">${p.torque??''}</td></tr>`).join('')}</tbody></table>`
-    +(d.cambio?`<div style="margin-top:6px"><b>Llanta nueva:</b> P${d.cambio.pos||'?'} · ${esc([d.cambio.marca,d.cambio.medida,d.cambio.diseno,d.cambio.estado,d.cambio.serie].filter(Boolean).join(' · '))}</div>`:'');
+  if(r.modulo==='LLANTAS'){const P=d.posiciones||[],nuevo=P.some(p=>p.medida||p.marca||p.modelo);
+    return (nuevo?`<table class="t" style="max-width:520px;margin-top:4px"><thead><tr><th class="c">Pos.</th><th>Medida</th><th>Marca</th><th>Modelo</th><th class="r">Cocada mm</th></tr></thead><tbody>${P.map(p=>`<tr><td class="c">${p.pos}</td><td>${esc(p.medida||'')}</td><td>${esc(p.marca||'')}</td><td>${esc(p.modelo||'')}</td><td class="r">${p.cocada??''}</td></tr>`).join('')}</tbody></table>`
+    :`<table class="t" style="max-width:420px;margin-top:4px"><thead><tr><th class="c">Pos.</th><th class="r">Presión psi</th><th class="r">Cocada mm</th><th class="r">Torque N·m</th></tr></thead><tbody>${P.map(p=>`<tr><td class="c">${p.pos}</td><td class="r">${p.presion??''}</td><td class="r">${p.cocada??''}</td><td class="r">${p.torque??''}</td></tr>`).join('')}</tbody></table>`)
+    +(d.cambio?`<div style="margin-top:6px"><b>Llanta nueva:</b> P${d.cambio.pos||'?'} · ${esc([d.cambio.marca,d.cambio.medida,d.cambio.diseno,d.cambio.estado,d.cambio.serie].filter(Boolean).join(' · '))}</div>`:'');}
   if(r.modulo==='GETS')return `${esc(d.implemento||'')}<br>${(d.componentes||[]).map(c=>`• ${esc(c.n)}${c.cant!=null?' × '+c.cant:''}${c.desgaste!=null?' · desgaste '+c.desgaste+'%':''}`).join('<br>')}`;
   if(r.modulo==='MNTTO_PREV')return (d.tareas||[]).map(t=>'✔ '+esc(t)).join('<br>');
   if(r.modulo==='LUBRICACION')return esc(d.punto||'');

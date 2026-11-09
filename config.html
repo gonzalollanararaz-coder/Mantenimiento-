@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
 <meta charset="utf-8">
-<meta name="gllr-version" content="V.071126-1" data-pagina="Configuración">
+<meta name="gllr-version" content="V.091126-1" data-pagina="Configuración">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Configuración &mdash; UDE</title>
 <link rel="icon" href="favicon.ico" sizes="any">
@@ -110,7 +110,8 @@ const G=[
   {id:'neum',l:'Marcas (precio, cocada, h/mm)',u:['neu','eq'],tb:'neu_param_marca',key:'id',orden:'marca',cols:[{k:'marca',l:'Marca',t:'txt',up:1},{k:'medida',l:'Medida (vacío = todas)',t:'txt',up:1},{k:'precio',l:'Precio (USD)',t:'num'},{k:'cocada_nueva',l:'Cocada nueva (mm)',t:'num'},{k:'hmm_ref',l:'Horas por mm (ref.)',t:'num'}],d:'Vida esperada = (cocada nueva − retiro) × horas por mm.'},
   {id:'neud',l:'Medidas (cocada de retiro)',u:['neu','eq'],tb:'neu_param_medida',key:'id',orden:'medida',cols:[{k:'medida',l:'Medida',t:'txt',up:1},{k:'retiro_mm',l:'Retiro (mm)',t:'num'}],d:'Cocada mínima para retirar la llanta y proteger el casco.'},
   {id:'neupr',l:'Presiones recomendadas',u:['neu'],tb:'neu_param_presion',key:'id',orden:'medida',cols:[{k:'tipo_equipo',l:'Tipo de equipo (vacío = todos)',t:'txt',up:1},{k:'medida',l:'Medida',t:'txt',up:1},{k:'presion_obj',l:'Objetivo (psi)',t:'num'},{k:'presion_min',l:'Mínima (psi)',t:'num'},{k:'presion_max',l:'Máxima (psi)',t:'num'}],d:'Presión en frío. Solo se aplica con el control de presión activo.'},
-  pdm('MARCA_LLANTA','Marcas de llanta (app)',['pdm','app'])]},
+  pdm('MARCA_LLANTA','Marcas de llanta (app)',['pdm','app']),
+  {id:'neumo',l:'Modelos de llanta',u:['app','neu'],tb:'neu_param_modelo',key:'id',orden:'marca',cols:[{k:'marca',l:'Marca',t:'txt',up:1},{k:'modelo',l:'Modelo / diseño',t:'txt',up:1},{k:'medida',l:'Medida (opcional)',t:'txt',up:1}],d:'Modelos que la app REPORTE ofrece según la marca elegida. Los que un técnico escribe con OTRO se agregan solos.'}]},
  {g:'GETs',it:[
   pdm('GET','Componentes GET por familia',['pdm','app'],[{k:'familia',l:'Familia',t:'sel',o:FAMS},{k:'grupo',l:'Grupo GET',t:'txt',up:1},{k:'aplicacion',l:'Aplicación',t:'txt'},{k:'valor',l:'Componente',t:'txt',up:1},C_UND,C_ORD,C_ACT],
    'Herramientas de corte que ve cada tipo de equipo en la app (familia = letras 2 y 3 del código: EEX040 → EX).')]}];
