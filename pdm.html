@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
 <meta charset="utf-8">
-<meta name="gllr-version" content="V.091126-1" data-pagina="Parte diario mecánico">
+<meta name="gllr-version" content="V.091126-2" data-pagina="Parte diario mecánico">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Parte diario mecánico &mdash; UDE</title>
 <link rel="icon" href="favicon.ico" sizes="any">
@@ -241,7 +241,7 @@ const DOM_INT='@reporte-jjc.app';
 const esInt=e=>String(e||'').toLowerCase().endsWith(DOM_INT);
 const acceso=e=>esInt(e)?`<span class="pill p-a">ingresa con código ${esc(String(e).split('@')[0].toUpperCase())}</span>`:esc(e);
 const quien=e=>esInt(e)?'código '+String(e).split('@')[0].toUpperCase():e;
-const ESPS=['MECANICO','SOLDADOR','ELECTRICISTA','LUBRICADOR','LLANTERO','SUPERVISOR'];
+let ESPS=['MECANICO','SOLDADOR','ELECTRICISTA','LUBRICADOR','LLANTERO','SUPERVISOR'];   // se reemplaza con Configuración → Puestos de trabajo
 const obrasPdm=()=>[...new Set(EQ.map(x=>x.cod_proyec).filter(Boolean))].sort();
 const nomC=c=>[c.nombres,c.ap_paterno,c.ap_materno].filter(Boolean).join(' ');
 function codigoNuevo(n,p,m){const base=codigoBase(n,p),usados=COL.map(c=>c.codigo);if(!usados.includes(base))return base;
@@ -322,7 +322,7 @@ function modalCol(modo,c,u){
      <label>Nombres<input id="mcN" class="fld" value="${esc(pre.nombres)}"></label>
      <label>Ap. paterno<input id="mcP" class="fld" value="${esc(pre.ap_paterno)}"></label>
      <label>Ap. materno<input id="mcM" class="fld" value="${esc(pre.ap_materno)}"></label>
-     <label>Especialidad<select id="mcE" class="fld"><option value="">— elegir —</option>${ESPS.map(x=>`<option ${x===pre.especialidad?'selected':''}>${x}</option>`).join('')}</select></label>
+     <label>Puesto de trabajo<select id="mcE" class="fld"><option value="">— elegir —</option>${(pre.especialidad&&!ESPS.includes(pre.especialidad)?[...ESPS,pre.especialidad]:ESPS).map(x=>`<option ${x===pre.especialidad?'selected':''}>${x}</option>`).join('')}</select></label>
      <label>Obra<select id="mcO" class="fld"><option value="">— elegir —</option>${ob.map(x=>`<option ${x===pre.obra?'selected':''}>${esc(x)}</option>`).join('')}</select></label>
      ${modo==='editar'?`<label>Estado<select id="mcA" class="fld"><option value="1" ${c.activo!==false?'selected':''}>Activo</option><option value="0" ${c.activo===false?'selected':''}>Inactivo (ya no sale en la app)</option></select></label>`:''}
     </div><div class="hint" id="mcCod" style="margin:8px 0">${modo==='editar'?`Código: <b>${esc(c.codigo)}</b> <span class="dim">(no cambia, para no perder el historial)</span>`:'Código: —'}</div>`:''}
@@ -442,6 +442,7 @@ async function importarMae(f,C){if(!window.XLSX)return alert('No se cargó la li
 async function cargarListas(){const [e,c,m]=await Promise.all([sb.from('maestro').select('cod_sap,equipo,modelo,cod_proyec').order('cod_sap'),
     sb.from('pdm_colaboradores').select('*').order('ap_paterno'),sb.from('pdm_maestros').select('*')]);
   EQ=e.data||[];COL=c.data||[];MAE=m.data||[];
+  {const L=MAE.filter(x=>x.tipo==='ESPECIALIDAD'&&x.activo!==false).sort((a,b)=>(a.orden??999)-(b.orden??999)).map(x=>x.valor);if(L.length)ESPS=L;}
   const ov=fObra.value, obras=[...new Set(EQ.map(x=>x.cod_proyec).filter(Boolean))].sort();
   fObra.innerHTML='<option value="">Todas</option>'+obras.map(o=>`<option>${esc(o)}</option>`).join('');fObra.value=ov;}
 (async()=>{

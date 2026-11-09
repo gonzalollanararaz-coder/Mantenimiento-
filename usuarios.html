@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
 <meta charset="utf-8">
-<meta name="gllr-version" content="V.241026-2" data-pagina="Usuarios">
+<meta name="gllr-version" content="V.091126-1" data-pagina="Usuarios">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Usuarios &mdash; UDE</title>
 <link rel="icon" href="favicon.ico" sizes="any">
@@ -93,7 +93,9 @@ const DOM_INT='@reporte-jjc.app', esInt=e=>String(e||'').toLowerCase().endsWith(
 const ingTxt=e=>!e?'':esInt(e)?'código '+codDeMail(e):e;
 const clGen=()=>'JJC'+Math.floor(1000+Math.random()*9000);
 const codigoBase=(n,a)=>{const x=nrm(n).split(' ')[0]||'',y=nrm(a).replace(/[^A-Z]/g,'');return (x[0]||'')+y;};
-const ESPS=['MECANICO','SOLDADOR','ELECTRICISTA','LUBRICADOR','LLANTERO','SUPERVISOR'];
+const ESPS0=['MECANICO','SOLDADOR','ELECTRICISTA','LUBRICADOR','LLANTERO','SUPERVISOR'];
+let ESPS=ESPS0.slice();   // se reemplaza con Configuración → Puestos de trabajo
+const espsCon=v=>v&&!ESPS.includes(v)?[...ESPS,v]:ESPS;
 const PEST=[['pms','PM-S'],['comb','Combustible'],['sos','SOS'],['neu','Neumáticos'],['pdm','Parte diario mecánico'],['pendientes','Pendientes']];
 const PERF={campo:{t:'Técnico de campo',s:'solo app REPORTE',app:true,web:[],rol:'usuario'},sup:{t:'Supervisor',s:'app + Parte diario + Pendientes',app:true,web:['pdm','pendientes'],rol:'usuario'},
   ofi:{t:'Oficina / planner',s:'todas las pestañas web',app:false,web:PEST.map(p=>p[0]),rol:'usuario'},adm:{t:'Administrador',s:'todo, y gestiona usuarios',app:true,web:PEST.map(p=>p[0]),rol:'admin'}};
@@ -101,11 +103,12 @@ let yo=null, USR=[], PRO={}, COL=[], OBRAS=[], REP={}, R=[], selKey=null, errSql
 
 /* ═════════ carga ═════════ */
 async function cargar(){
-  const [u,p,c,m,g]=await Promise.all([sb.rpc('pdm_admin_usuarios'),sb.from('profiles').select('id,nombre,email,rol,estado,proyectos,paginas'),
-    sb.from('pdm_colaboradores').select('*').order('ap_paterno'),sb.from('maestro').select('cod_proyec'),
+  const [u,p,c,m,es,g]=await Promise.all([sb.rpc('pdm_admin_usuarios'),sb.from('profiles').select('id,nombre,email,rol,estado,proyectos,paginas'),
+    sb.from('pdm_colaboradores').select('*').order('ap_paterno'),sb.from('maestro').select('cod_proyec'),sb.from('pdm_maestros').select('valor,orden,activo').eq('tipo','ESPECIALIDAD'),
     sb.from('pdm_registros').select('tecnicos').gte('fecha',new Date(Date.now()-30*864e5).toISOString().slice(0,10)).eq('anulado',false).limit(20000)]);
   errSql=u.error?u.error.message:'';USR=u.data||[];PRO={};(p.data||[]).forEach(x=>PRO[x.id]=x);
   if(u.error)USR=(p.data||[]).map(x=>({id:x.id,email:x.email,nombre:x.nombre,rol:x.rol,estado:x.estado}));
+  if(!es.error&&es.data&&es.data.length)ESPS=es.data.filter(x=>x.activo!==false).sort((a,b)=>(a.orden??999)-(b.orden??999)).map(x=>x.valor);
   COL=c.data||[];OBRAS=[...new Set((m.data||[]).map(x=>x.cod_proyec).filter(Boolean))].sort();
   REP={};(g.data||[]).forEach(r=>(r.tecnicos||[]).forEach(t=>REP[t]=(REP[t]||0)+1));
   armar();pintar();if(selKey)abrir(selKey,true);}
@@ -160,14 +163,14 @@ function abrir(key,quieto){selKey=key;const r=R.find(x=>x.key===key);if(!r){cerr
   $('dTit').textContent=nomR(r);$('dSub').innerHTML=`${r.c?'<span class="cod">'+esc(r.c.codigo)+'</span> · ':''}${estP(e)}${ad?' <span class="pill a">admin</span>':''}`;
   const colSec=r.c?`<div class="sec"><h4>Datos del colaborador</h4><div class="fr">
      <label>Nombres<input data-c="nombres" value="${esc(pn)}"></label><label>Ap. paterno<input data-c="ap_paterno" value="${esc(pp)}"></label>
-     <label>Ap. materno<input data-c="ap_materno" value="${esc(pm)}"></label><label>Especialidad<select data-c="especialidad"><option value="">—</option>${ESPS.map(x=>`<option ${x===r.c.especialidad?'selected':''}>${x}</option>`).join('')}</select></label>
+     <label>Ap. materno<input data-c="ap_materno" value="${esc(pm)}"></label><label>Puesto de trabajo<select data-c="especialidad"><option value="">—</option>${espsCon(r.c.especialidad).map(x=>`<option ${x===r.c.especialidad?'selected':''}>${x}</option>`).join('')}</select></label>
      <label>Obra principal<select data-c="obra"><option value="">—</option>${[...new Set([...OBRAS,r.c.obra].filter(Boolean))].map(x=>`<option ${x===r.c.obra?'selected':''}>${esc(x)}</option>`).join('')}</select></label>
      <label>Estado<select data-c="activo"><option value="1" ${r.c.activo!==false?'selected':''}>Activo</option><option value="0" ${r.c.activo===false?'selected':''}>Inactivo (no sale en la app)</option></select></label></div>
      <div class="msg" style="margin-top:6px">Código <b class="cod">${esc(r.c.codigo)}</b>: no cambia, para no perder el historial. Se guarda al salir de cada casilla.</div></div>`
     :`<div class="sec"><h4>Código para los reportes</h4><div class="msg" style="margin-bottom:8px">Esta cuenta no tiene código. Sin código no puede firmar reportes en la app.</div>
      ${COL.some(c=>!c.user_id)?`<div class="fr" style="grid-template-columns:1fr"><label>Vincular con un colaborador que ya existe<select id="vinc" class="lc" style="text-transform:none"><option value="">— crear código nuevo con estos datos —</option>${COL.filter(c=>!c.user_id).map(c=>`<option value="${esc(c.codigo)}">${esc(c.codigo)} · ${esc([c.nombres,c.ap_paterno,c.ap_materno].filter(Boolean).join(' '))}</option>`).join('')}</select></label></div>`:''}
      <div class="fr" id="nuevoCod" style="margin-top:8px"><label>Nombres<input id="cN" value="${esc(pn)}"></label><label>Ap. paterno<input id="cP" value="${esc(pp)}"></label><label>Ap. materno<input id="cM" value="${esc(pm)}"></label>
-      <label>Especialidad<select id="cE"><option value="">—</option>${ESPS.map(x=>`<option>${x}</option>`).join('')}</select></label><label>Obra principal<select id="cO"><option value="">—</option>${OBRAS.map(x=>`<option>${esc(x)}</option>`).join('')}</select></label>
+      <label>Puesto de trabajo<select id="cE"><option value="">—</option>${ESPS.map(x=>`<option>${x}</option>`).join('')}</select></label><label>Obra principal<select id="cO"><option value="">—</option>${OBRAS.map(x=>`<option>${esc(x)}</option>`).join('')}</select></label>
       <label>Código<input id="cC" disabled></label></div><button class="btn u sm" id="cOk" style="margin-top:8px">Guardar código</button></div>`;
   const ingSec=r.u?`<div class="sec"><h4>Ingreso</h4><div style="font-size:13px;margin-bottom:8px">Ingresa con: <b>${esc(ingTxt(r.u.email))}</b> · último ingreso ${r.u.ultimo_ingreso?fd(r.u.ultimo_ingreso):'nunca'}</div>
      <div class="tg"><button class="btn sm" data-a="pwd">🔑 Nueva clave</button>${e==='bloq'?'<button class="btn sm" data-a="unb">Desbloquear</button>':e!=='pend'?'<button class="btn sm" data-a="blk">Bloquear</button>':''}<button class="btn sm r" data-a="del">Eliminar cuenta</button></div></div>`
@@ -196,7 +199,7 @@ function conectar(r){const B=$('dB');
     if($('vinc'))$('vinc').onchange=()=>{$('nuevoCod').style.opacity=$('vinc').value?.35:1;};
     $('cOk').onclick=async()=>{const v=$('vinc')&&$('vinc').value;
       if(v){const {error}=await sb.rpc('pdm_admin_vincular',{uid:r.u.id,p_codigo:v});if(error)return alert(error.message);}
-      else{const n=up($('cN').value),p=up($('cP').value);if(!n||!p)return alert('Escribe nombres y apellido paterno.');if(!$('cE').value||!$('cO').value)return alert('Elige especialidad y obra.');
+      else{const n=up($('cN').value),p=up($('cP').value);if(!n||!p)return alert('Escribe nombres y apellido paterno.');if(!$('cE').value||!$('cO').value)return alert('Elige puesto de trabajo y obra.');
         const fila={nombres:n,ap_paterno:p,ap_materno:up($('cM').value)||null,codigo:codigoNuevo(n,p,$('cM').value),especialidad:$('cE').value,obra:$('cO').value,user_id:r.u.id};
         const {error}=await sb.from('pdm_colaboradores').insert(fila);if(error)return alert(error.message);
         if(!obrasDe(r).length)await sb.from('profiles').update({proyectos:[fila.obra]}).eq('id',r.u.id);}
@@ -245,7 +248,7 @@ async function crearCuenta(email,clave,nombre,d,perfil,obra){
 /* nuevo usuario */
 function nuevo(){selKey=null;$('dTit').textContent='Nuevo usuario';$('dSub').textContent='colaborador + acceso (opcional)';
   $('dB').innerHTML=`<div class="sec"><h4>Datos del colaborador</h4><div class="fr"><label>Nombres<input id="nN"></label><label>Ap. paterno<input id="nP"></label><label>Ap. materno<input id="nM"></label>
-    <label>Especialidad<select id="nE"><option value="">— elegir —</option>${ESPS.map(x=>`<option>${x}</option>`).join('')}</select></label><label>Obra principal<select id="nO"><option value="">— elegir —</option>${OBRAS.map(x=>`<option>${esc(x)}</option>`).join('')}</select></label><label>Código<input id="nC" disabled></label></div></div>
+    <label>Puesto de trabajo<select id="nE"><option value="">— elegir —</option>${ESPS.map(x=>`<option>${x}</option>`).join('')}</select></label><label>Obra principal<select id="nO"><option value="">— elegir —</option>${OBRAS.map(x=>`<option>${esc(x)}</option>`).join('')}</select></label><label>Código<input id="nC" disabled></label></div></div>
    <div class="sec"><h4>Acceso</h4><label style="display:flex;gap:8px;align-items:center;font-weight:700;color:#334281;cursor:pointer"><input type="checkbox" id="nAcc" checked> Darle acceso (app y/o web)</label>
     <div id="nAccB"><div class="fr" style="margin-top:8px"><label>Correo (opcional)<input id="nCo" class="lc" type="email" placeholder="vacío = ingresa con código"></label><label>Clave temporal<input id="nK" class="lc" value="${clGen()}"></label></div>
     <div class="msg" style="margin:8px 0 4px">Perfil:</div><div class="prof">${Object.entries(PERF).map(([k,p])=>`<div class="${k==='campo'?'on':''}" data-np="${k}"><b>${p.t}</b><small>${p.s}</small></div>`).join('')}</div></div>
@@ -256,7 +259,7 @@ function nuevo(){selKey=null;$('dTit').textContent='Nuevo usuario';$('dSub').tex
   let npf='campo';$('dB').querySelectorAll('[data-np]').forEach(d=>d.onclick=()=>{npf=d.dataset.np;$('dB').querySelectorAll('[data-np]').forEach(x=>x.classList.toggle('on',x===d));});
   $('cerrar2').onclick=cerrar;
   $('nOk').onclick=async()=>{const n=up($('nN').value),p=up($('nP').value),m=up($('nM').value),e=$('nE').value,o=$('nO').value,acc=$('nAcc').checked;
-    if(!n||!p)return alert('Escribe nombres y apellido paterno.');if(!e||!o)return alert('Elige especialidad y obra.');
+    if(!n||!p)return alert('Escribe nombres y apellido paterno.');if(!e||!o)return alert('Elige puesto de trabajo y obra.');
     const mail=acc?$('nCo').value.trim().toLowerCase():'',clave=acc?$('nK').value.trim():'';
     if(acc&&mail&&!/^\S+@\S+\.\S+$/.test(mail))return alert('El correo no es válido.');if(acc&&clave.length<6)return alert('La clave debe tener al menos 6 caracteres.');
     const cod=codigoNuevo(n,p,m);$('nOk').disabled=true;$('nOk').textContent='Creando…';
