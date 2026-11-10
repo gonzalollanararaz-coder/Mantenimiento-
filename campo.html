@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
 <meta charset="utf-8">
-<meta name="gllr-version" content="V.101126-6" data-pagina="REPORTE (app de campo)">
+<meta name="gllr-version" content="V.101126-7" data-pagina="REPORTE (app de campo)">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>REPORTE</title>
 <link rel="manifest" href="campo.webmanifest">
@@ -68,12 +68,13 @@ input:focus,select:focus,textarea:focus{outline:2px solid #9DB0E8;border-color:#
 .fotos{display:flex;gap:8px;flex-wrap:wrap}
 .fotos div{width:72px;height:72px;border-radius:10px;background:#dfe3e8 center/cover;display:flex;align-items:center;justify-content:center;font-size:29.5px;color:#8b949e;cursor:pointer;position:relative}
 .fotos div i{position:absolute;right:-6px;top:-6px;background:#DC2626;color:#fff;border-radius:50%;width:20px;height:20px;font-size:14.5px;font-style:normal;display:flex;align-items:center;justify-content:center}
-canvas.firma{width:100%;height:210px;border:1px dashed #b8c0ca;border-radius:10px;background:#fff;touch-action:pan-y;display:block}
-canvas.firma.on{touch-action:none;border:2px solid #FFCD11}
-.fbar{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-top:8px}
-.fbar .add{margin-top:0}
-.fbtn{background:#FFCD11;color:#3B2E00;border-radius:10px;padding:10px 14px;font-weight:800;font-size:16px;cursor:pointer}
-.fbtn.on{background:#15803d;color:#fff}
+.dlgfull{position:fixed;inset:0;z-index:95;background:#14181d;display:flex;flex-direction:column;gap:10px;padding:14px;padding-top:calc(14px + env(safe-area-inset-top));padding-bottom:calc(14px + env(safe-area-inset-bottom));touch-action:none;overscroll-behavior:none}
+.dlgfull .pfh{display:flex;justify-content:space-between;align-items:baseline;color:#fff}
+.dlgfull .pfh b{font-size:19px}.dlgfull .pfh span{color:#FFCD11;font-weight:800}
+.dlgfull .pfc{flex:1;position:relative;min-height:0}
+.dlgfull canvas{position:absolute;inset:0;width:100%;height:100%;display:block;touch-action:none}
+.dlgfull .pfn{color:#9aa4ad;font-size:13.5px;text-align:center}
+.dlgfull .pfb{display:flex;gap:8px}.dlgfull .pfb .btn{margin-top:0;flex:1;padding:13px 8px;font-size:16.5px}
 .chasis{width:230px;margin:8px auto}.eje{display:flex;justify-content:space-between;align-items:center;margin:8px 0;position:relative}
 .eje:before{content:'';position:absolute;left:38px;right:38px;top:50%;height:4px;background:#c9ced6}
 .lado{display:flex;gap:3px;position:relative}
@@ -554,7 +555,7 @@ function pintar(){
   $('main').classList.toggle('full',['reporte','mas'].includes(S.pant));
   $('main').innerHTML=(P[S.pant]||(()=>''))();
   if(AFTER[S.pant])AFTER[S.pant]();
-  initFirma(); initUpper();
+  initUpper();
 }
 function marcarVacios(){document.querySelectorAll('select.fill').forEach(x=>{const f=()=>x.classList.toggle('sinval',!x.value);f();x.addEventListener('change',f);});}
 function initUpper(){document.querySelectorAll('input.up,textarea.up').forEach(i=>i.addEventListener('input',()=>{const p=i.selectionStart;i.value=i.value.toUpperCase();try{i.setSelectionRange(p,p);}catch(_){}}));}
@@ -782,11 +783,10 @@ function insumos(tipo,esp,tit){ const L=M(tipo,esp); const def=L[0];
    <span class="add" onclick="guardarCampos();S.F.ins.push({n:'',q:'',u:''});pintar()">+ agregar otro</span>
    <div class="dim">La unidad se pone sola según el insumo; se puede cambiar.</div></div>`;}
 function cambiaIns(i,v,tipo,esp){const m=M(tipo,esp||null).find(x=>x.valor===v);S.F.ins[i].o=v==='OTRO';S.F.ins[i].n=v==='OTRO'?'':v;if(m&&m.unidad)S.F.ins[i].u=m.unidad;else if(v==='NINGUNO')S.F.ins[i].u='';guardarCampos();pintar();}
-function cierre(){return `<div class="c"><div class="sec">Foto (opcional, máx. 3) y firma</div>
+function cierre(){return `<div class="c"><div class="sec">Foto (opcional, máx. 3)</div>
    <div class="fotos">${S.F.fotos.map((f,i)=>`<div style="background-image:url(${f.url})"><i onclick="event.stopPropagation();S.F.fotos.splice(${i},1);guardarCampos();pintar()">✕</i></div>`).join('')}${S.F.fotos.length<3?`<div onclick="guardarCampos();$('inFoto').click()">📷</div>`:''}</div>
    <label>Observación adicional</label><textarea class="up" rows="2" data-k="obs">${esc(vF('obs'))}</textarea>
-   <label>Firma de quien registra (${esc(S.col?S.col.codigo:'')})</label><canvas class="firma" id="firma"></canvas>
-   <div class="fbar"><span class="fbtn" id="btnFirma" onclick="firmaToggle()">✍ Activar firma</span><span class="add" onclick="S.F.firma=[];initFirma()">Borrar firma</span></div>
+   <div class="dim" style="margin-top:12px">✍ La firma se pide al pulsar Guardar.</div>
 </div>`;}
 /* fotos: se comprimen en el celular (máx. 1280 px, JPEG ~70%) */
 $('inFoto').onchange=async()=>{const f=$('inFoto').files[0];$('inFoto').value='';if(!f)return;
@@ -794,16 +794,35 @@ $('inFoto').onchange=async()=>{const f=$('inFoto').files[0];$('inFoto').value=''
 function comprimir(file){return new Promise((ok,ko)=>{const img=new Image();img.onload=()=>{const k=Math.min(1,1280/Math.max(img.width,img.height));
   const c=document.createElement('canvas');c.width=Math.round(img.width*k);c.height=Math.round(img.height*k);c.getContext('2d').drawImage(img,0,0,c.width,c.height);
   c.toBlob(b=>b?ok(b):ko(),'image/jpeg',0.7);URL.revokeObjectURL(img.src);};img.onerror=ko;img.src=URL.createObjectURL(file);});}
-/* firma: se guarda el trazo como texto liviano (no imagen) */
-function initFirma(){const c=$('firma');if(!c)return;const r=c.getBoundingClientRect();c.width=r.width;c.height=r.height;const x=c.getContext('2d');x.lineWidth=2.2;x.lineCap='round';x.strokeStyle='#1F3864';
-  const W=c.width,H=c.height;const dib=()=>{x.clearRect(0,0,W,H);if(!S.F.firma.length){x.save();x.fillStyle='#9aa3ad';x.font='15px sans-serif';x.textAlign='center';x.fillText(c.classList.contains('on')?'Firma aquí':'Firma bloqueada · toca ✍ Activar firma',W/2,H/2);x.restore();}S.F.firma.forEach(tr=>{x.beginPath();tr.forEach((p,i)=>{const X=p[0]/300*W,Y=p[1]/100*H;i?x.lineTo(X,Y):x.moveTo(X,Y);});x.stroke();});};dib();
-  let d=null;const pt=e=>{const b=c.getBoundingClientRect();return [Math.round((e.clientX-b.left)/b.width*300),Math.round((e.clientY-b.top)/b.height*100)];};
-  c.onpointerdown=e=>{if(!c.classList.contains('on'))return;c.setPointerCapture(e.pointerId);d=[pt(e)];S.F.firma.push(d);};
-  c.onpointermove=e=>{if(!d)return;const p=pt(e),q=d[d.length-1];if(Math.abs(p[0]-q[0])+Math.abs(p[1]-q[1])<2)return;d.push(p);dib();};
-  c.onpointerup=c.onpointercancel=()=>{d=null;};}
-function firmaToggle(){const c=$('firma'),b=$('btnFirma');if(!c||!b)return;const on=c.classList.toggle('on');
-  b.classList.toggle('on',on);b.textContent=on?'✔ Listo (bloquear)':'✍ Activar firma';
-  if(on)c.scrollIntoView({block:'center',behavior:'smooth'});initFirma();}
+/* firma: se pide al pulsar Guardar, en una pantalla aparte (así nunca estorba al desplazamiento).
+   El trazo se guarda como texto liviano en un recuadro de 300×100, que es como lo muestra el PDM. */
+function pedirFirma(){return new Promise(fin=>{
+  if(document.getElementById('pantFirma')){fin(false);return;}
+  S.F.firma=S.F.firma||[];const prev=S.F.firma.map(t=>t.map(p=>p.slice()));
+  const d=document.createElement('div');d.className='dlgfull';d.id='pantFirma';
+  d.innerHTML=`<div class="pfh"><b>Firma de quien registra</b><span>${esc(S.col?S.col.codigo:'')}</span></div>
+   <div class="pfc"><canvas id="firmaPant"></canvas></div>
+   <div class="pfn">Firma con el dedo dentro del recuadro blanco</div>
+   <div class="pfb"><button class="btn b-g" id="pfVol">Volver</button><button class="btn b-g" id="pfBor">Borrar</button><button class="btn b-v" id="pfOk">✔ Guardar</button></div>`;
+  document.body.appendChild(d);
+  const c=$('firmaPant'),x=c.getContext('2d');let W=0,H=0,fx=0,fy=0,fw=1,fh=1,tr=null;
+  const dib=()=>{x.clearRect(0,0,W,H);x.fillStyle='#fff';x.fillRect(fx,fy,fw,fh);
+    x.strokeStyle='#b8c0ca';x.lineWidth=1.5;x.setLineDash([6,4]);x.strokeRect(fx,fy,fw,fh);x.setLineDash([]);
+    x.lineWidth=2.2;x.lineCap='round';x.lineJoin='round';x.strokeStyle='#1F3864';
+    S.F.firma.forEach(t=>{x.beginPath();t.forEach((p,i)=>{const X=fx+p[0]/300*fw,Y=fy+p[1]/100*fh;i?x.lineTo(X,Y):x.moveTo(X,Y);});x.stroke();});};
+  const lay=()=>{const r=c.getBoundingClientRect();W=c.width=Math.round(r.width);H=c.height=Math.round(r.height);
+    fw=W-4;fh=fw/3;if(fh>H-4){fh=H-4;fw=fh*3;}fx=(W-fw)/2;fy=(H-fh)/2;dib();};
+  const k=(v,m)=>Math.max(0,Math.min(m,v));
+  const pt=e=>{const b=c.getBoundingClientRect();return [k(Math.round((e.clientX-b.left-fx)/fw*300),300),k(Math.round((e.clientY-b.top-fy)/fh*100),100)];};
+  c.onpointerdown=e=>{c.setPointerCapture(e.pointerId);tr=[pt(e)];S.F.firma.push(tr);};
+  c.onpointermove=e=>{if(!tr)return;const p=pt(e),q=tr[tr.length-1];if(Math.abs(p[0]-q[0])+Math.abs(p[1]-q[1])<1)return;tr.push(p);dib();};
+  c.onpointerup=c.onpointercancel=()=>{tr=null;};
+  const cerrar=v=>{window.removeEventListener('resize',lay);d.remove();fin(v);};
+  $('pfVol').onclick=()=>{S.F.firma=prev;cerrar(false);};
+  $('pfBor').onclick=()=>{S.F.firma=[];dib();};
+  $('pfOk').onclick=()=>{if(!S.F.firma.some(t=>t.length>1)&&!confirm('No hay firma dibujada.\n\n¿Guardar sin firma?'))return;cerrar(true);};
+  window.addEventListener('resize',lay);lay();
+});}
 const firmaTxt=()=>S.F.firma.filter(t=>t.length>1).map(t=>t.map(p=>p.join(',')).join(' ')).join('|');
 
 /* ═══════════════════════ PANTALLAS ═══════════════════════ */
@@ -1026,6 +1045,7 @@ async function guardar(){
   r.estado_equipo=r.estado_equipo||S.F.ch.estado||'OPERATIVO';
   if(['MECANICO','LLANTAS','GETS','PENDIENTE'].includes(mod))r.origen_falla=S.F.ch.origen||null;
   if(!prepararParada(r))return;const parNueva=r._parada||null;delete r._parada;
+  if(!(await pedirFirma()))return;r.firma=firmaTxt()||null;
   const edit=S.F._edit||null;if(edit){const v=S.COLA.find(x=>x.id===edit);r.id=edit;if(v)r.created_local=v.reg.created_local;}
   const item={id:r.id,reg:r,fotos:S.F.fotos.map(f=>f.blob),enviado:false,error:null,edit:!!edit,F:(()=>{const b=borradorDe();delete b._edit;b._guardado=false;return b;})()};
   S.COLA=S.COLA.filter(x=>x.id!==r.id);await DB.poner(item);S.COLA.push(item);
