@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
 <meta charset="utf-8">
-<meta name="gllr-version" content="V.101126-1" data-pagina="Parte diario mecánico">
+<meta name="gllr-version" content="V.101126-2" data-pagina="Parte diario mecánico">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Parte diario mecánico &mdash; UDE</title>
 <link rel="icon" href="favicon.ico" sizes="any">
@@ -163,7 +163,8 @@ function pintarReg(){
   pie.textContent=`${L.length} registro(s)${pagina?' · página '+(pagina+1):''} · se consulta solo lo filtrado (${PASO} por página)`;
 }
 function firmaSVG(t){if(!t)return '<span class="dim">Sin firma</span>';
-  return `<svg viewBox="0 0 300 100" width="300" height="100" style="border:1px dashed #c9ced6;border-radius:8px;background:#fff">${t.split('|').map(tr=>`<polyline points="${esc(tr)}" fill="none" stroke="#1F3864" stroke-width="2" stroke-linecap="round"/>`).join('')}</svg>`;}
+  const h=Math.max(...t.split(/[ |]/).map(p=>+p.split(',')[1]||0))>100?200:100;
+  return `<svg viewBox="0 0 300 ${h}" width="300" height="${h}" style="border:1px dashed #c9ced6;border-radius:8px;background:#fff">${t.split('|').map(tr=>`<polyline points="${esc(tr)}" fill="none" stroke="#1F3864" stroke-width="2" stroke-linecap="round"/>`).join('')}</svg>`;}
 function detTxt(r){const d=r.detalle||{};
   if(r.modulo==='LLANTAS'){const P=d.posiciones||[],nuevo=P.some(p=>p.medida||p.marca||p.modelo);
     return (nuevo?`<table class="t" style="max-width:520px;margin-top:4px"><thead><tr><th class="c">Pos.</th><th>Medida</th><th>Marca</th><th>Modelo</th><th class="r">Cocada mm</th></tr></thead><tbody>${P.map(p=>`<tr><td class="c">${p.pos}</td><td>${esc(p.medida||'')}</td><td>${esc(p.marca||'')}</td><td>${esc(p.modelo||'')}</td><td class="r">${p.cocada??''}</td></tr>`).join('')}</tbody></table>`

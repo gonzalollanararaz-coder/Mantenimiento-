@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
 <meta charset="utf-8">
-<meta name="gllr-version" content="V.101126-7" data-pagina="REPORTE (app de campo)">
+<meta name="gllr-version" content="V.101126-8" data-pagina="REPORTE (app de campo)">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>REPORTE</title>
 <link rel="manifest" href="campo.webmanifest">
@@ -795,7 +795,7 @@ function comprimir(file){return new Promise((ok,ko)=>{const img=new Image();img.
   const c=document.createElement('canvas');c.width=Math.round(img.width*k);c.height=Math.round(img.height*k);c.getContext('2d').drawImage(img,0,0,c.width,c.height);
   c.toBlob(b=>b?ok(b):ko(),'image/jpeg',0.7);URL.revokeObjectURL(img.src);};img.onerror=ko;img.src=URL.createObjectURL(file);});}
 /* firma: se pide al pulsar Guardar, en una pantalla aparte (así nunca estorba al desplazamiento).
-   El trazo se guarda como texto liviano en un recuadro de 300×100, que es como lo muestra el PDM. */
+   El trazo se guarda como texto liviano en un recuadro de 300×200; el PDM lo muestra con la misma proporción. */
 function pedirFirma(){return new Promise(fin=>{
   if(document.getElementById('pantFirma')){fin(false);return;}
   S.F.firma=S.F.firma||[];const prev=S.F.firma.map(t=>t.map(p=>p.slice()));
@@ -809,11 +809,11 @@ function pedirFirma(){return new Promise(fin=>{
   const dib=()=>{x.clearRect(0,0,W,H);x.fillStyle='#fff';x.fillRect(fx,fy,fw,fh);
     x.strokeStyle='#b8c0ca';x.lineWidth=1.5;x.setLineDash([6,4]);x.strokeRect(fx,fy,fw,fh);x.setLineDash([]);
     x.lineWidth=2.2;x.lineCap='round';x.lineJoin='round';x.strokeStyle='#1F3864';
-    S.F.firma.forEach(t=>{x.beginPath();t.forEach((p,i)=>{const X=fx+p[0]/300*fw,Y=fy+p[1]/100*fh;i?x.lineTo(X,Y):x.moveTo(X,Y);});x.stroke();});};
+    S.F.firma.forEach(t=>{x.beginPath();t.forEach((p,i)=>{const X=fx+p[0]/300*fw,Y=fy+p[1]/200*fh;i?x.lineTo(X,Y):x.moveTo(X,Y);});x.stroke();});};
   const lay=()=>{const r=c.getBoundingClientRect();W=c.width=Math.round(r.width);H=c.height=Math.round(r.height);
-    fw=W-4;fh=fw/3;if(fh>H-4){fh=H-4;fw=fh*3;}fx=(W-fw)/2;fy=(H-fh)/2;dib();};
+    fw=W-4;fh=fw*2/3;if(fh>H-4){fh=H-4;fw=fh*1.5;}fx=(W-fw)/2;fy=(H-fh)/2;dib();};
   const k=(v,m)=>Math.max(0,Math.min(m,v));
-  const pt=e=>{const b=c.getBoundingClientRect();return [k(Math.round((e.clientX-b.left-fx)/fw*300),300),k(Math.round((e.clientY-b.top-fy)/fh*100),100)];};
+  const pt=e=>{const b=c.getBoundingClientRect();return [k(Math.round((e.clientX-b.left-fx)/fw*300),300),k(Math.round((e.clientY-b.top-fy)/fh*200),200)];};
   c.onpointerdown=e=>{c.setPointerCapture(e.pointerId);tr=[pt(e)];S.F.firma.push(tr);};
   c.onpointermove=e=>{if(!tr)return;const p=pt(e),q=tr[tr.length-1];if(Math.abs(p[0]-q[0])+Math.abs(p[1]-q[1])<1)return;tr.push(p);dib();};
   c.onpointerup=c.onpointercancel=()=>{tr=null;};
