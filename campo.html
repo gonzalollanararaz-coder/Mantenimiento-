@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
 <meta charset="utf-8">
-<meta name="gllr-version" content="V.101126-5" data-pagina="REPORTE (app de campo)">
+<meta name="gllr-version" content="V.101126-6" data-pagina="REPORTE (app de campo)">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>REPORTE</title>
 <link rel="manifest" href="campo.webmanifest">
@@ -68,7 +68,12 @@ input:focus,select:focus,textarea:focus{outline:2px solid #9DB0E8;border-color:#
 .fotos{display:flex;gap:8px;flex-wrap:wrap}
 .fotos div{width:72px;height:72px;border-radius:10px;background:#dfe3e8 center/cover;display:flex;align-items:center;justify-content:center;font-size:29.5px;color:#8b949e;cursor:pointer;position:relative}
 .fotos div i{position:absolute;right:-6px;top:-6px;background:#DC2626;color:#fff;border-radius:50%;width:20px;height:20px;font-size:14.5px;font-style:normal;display:flex;align-items:center;justify-content:center}
-canvas.firma{width:100%;height:210px;border:1px dashed #b8c0ca;border-radius:10px;background:#fff;touch-action:none;display:block}
+canvas.firma{width:100%;height:210px;border:1px dashed #b8c0ca;border-radius:10px;background:#fff;touch-action:pan-y;display:block}
+canvas.firma.on{touch-action:none;border:2px solid #FFCD11}
+.fbar{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-top:8px}
+.fbar .add{margin-top:0}
+.fbtn{background:#FFCD11;color:#3B2E00;border-radius:10px;padding:10px 14px;font-weight:800;font-size:16px;cursor:pointer}
+.fbtn.on{background:#15803d;color:#fff}
 .chasis{width:230px;margin:8px auto}.eje{display:flex;justify-content:space-between;align-items:center;margin:8px 0;position:relative}
 .eje:before{content:'';position:absolute;left:38px;right:38px;top:50%;height:4px;background:#c9ced6}
 .lado{display:flex;gap:3px;position:relative}
@@ -780,7 +785,8 @@ function cambiaIns(i,v,tipo,esp){const m=M(tipo,esp||null).find(x=>x.valor===v);
 function cierre(){return `<div class="c"><div class="sec">Foto (opcional, máx. 3) y firma</div>
    <div class="fotos">${S.F.fotos.map((f,i)=>`<div style="background-image:url(${f.url})"><i onclick="event.stopPropagation();S.F.fotos.splice(${i},1);guardarCampos();pintar()">✕</i></div>`).join('')}${S.F.fotos.length<3?`<div onclick="guardarCampos();$('inFoto').click()">📷</div>`:''}</div>
    <label>Observación adicional</label><textarea class="up" rows="2" data-k="obs">${esc(vF('obs'))}</textarea>
-   <label>Firma de quien registra (${esc(S.col?S.col.codigo:'')})</label><canvas class="firma" id="firma"></canvas><span class="add" onclick="S.F.firma=[];initFirma()">Borrar firma</span>
+   <label>Firma de quien registra (${esc(S.col?S.col.codigo:'')})</label><canvas class="firma" id="firma"></canvas>
+   <div class="fbar"><span class="fbtn" id="btnFirma" onclick="firmaToggle()">✍ Activar firma</span><span class="add" onclick="S.F.firma=[];initFirma()">Borrar firma</span></div>
 </div>`;}
 /* fotos: se comprimen en el celular (máx. 1280 px, JPEG ~70%) */
 $('inFoto').onchange=async()=>{const f=$('inFoto').files[0];$('inFoto').value='';if(!f)return;
@@ -790,11 +796,14 @@ function comprimir(file){return new Promise((ok,ko)=>{const img=new Image();img.
   c.toBlob(b=>b?ok(b):ko(),'image/jpeg',0.7);URL.revokeObjectURL(img.src);};img.onerror=ko;img.src=URL.createObjectURL(file);});}
 /* firma: se guarda el trazo como texto liviano (no imagen) */
 function initFirma(){const c=$('firma');if(!c)return;const r=c.getBoundingClientRect();c.width=r.width;c.height=r.height;const x=c.getContext('2d');x.lineWidth=2.2;x.lineCap='round';x.strokeStyle='#1F3864';
-  const W=c.width,H=c.height;const dib=()=>{x.clearRect(0,0,W,H);S.F.firma.forEach(tr=>{x.beginPath();tr.forEach((p,i)=>{const X=p[0]/300*W,Y=p[1]/100*H;i?x.lineTo(X,Y):x.moveTo(X,Y);});x.stroke();});};dib();
+  const W=c.width,H=c.height;const dib=()=>{x.clearRect(0,0,W,H);if(!S.F.firma.length){x.save();x.fillStyle='#9aa3ad';x.font='15px sans-serif';x.textAlign='center';x.fillText(c.classList.contains('on')?'Firma aquí':'Firma bloqueada · toca ✍ Activar firma',W/2,H/2);x.restore();}S.F.firma.forEach(tr=>{x.beginPath();tr.forEach((p,i)=>{const X=p[0]/300*W,Y=p[1]/100*H;i?x.lineTo(X,Y):x.moveTo(X,Y);});x.stroke();});};dib();
   let d=null;const pt=e=>{const b=c.getBoundingClientRect();return [Math.round((e.clientX-b.left)/b.width*300),Math.round((e.clientY-b.top)/b.height*100)];};
-  c.onpointerdown=e=>{c.setPointerCapture(e.pointerId);d=[pt(e)];S.F.firma.push(d);};
+  c.onpointerdown=e=>{if(!c.classList.contains('on'))return;c.setPointerCapture(e.pointerId);d=[pt(e)];S.F.firma.push(d);};
   c.onpointermove=e=>{if(!d)return;const p=pt(e),q=d[d.length-1];if(Math.abs(p[0]-q[0])+Math.abs(p[1]-q[1])<2)return;d.push(p);dib();};
   c.onpointerup=c.onpointercancel=()=>{d=null;};}
+function firmaToggle(){const c=$('firma'),b=$('btnFirma');if(!c||!b)return;const on=c.classList.toggle('on');
+  b.classList.toggle('on',on);b.textContent=on?'✔ Listo (bloquear)':'✍ Activar firma';
+  if(on)c.scrollIntoView({block:'center',behavior:'smooth'});initFirma();}
 const firmaTxt=()=>S.F.firma.filter(t=>t.length>1).map(t=>t.map(p=>p.join(',')).join(' ')).join('|');
 
 /* ═══════════════════════ PANTALLAS ═══════════════════════ */
