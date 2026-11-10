@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
 <meta charset="utf-8">
-<meta name="gllr-version" content="V.101126-4" data-pagina="REPORTE (app de campo)">
+<meta name="gllr-version" content="V.101126-5" data-pagina="REPORTE (app de campo)">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>REPORTE</title>
 <link rel="manifest" href="campo.webmanifest">
@@ -634,15 +634,22 @@ function horasParada(ini,fin,tur){const a=new Date(ini),b=new Date(fin);if(isNaN
     if(tur==='1 TURNO NOCHE'){w0.setHours(19,0,0,0);w1.setDate(w1.getDate()+1);w1.setHours(7,0,0,0);}else{w0.setHours(7,0,0,0);w1.setHours(19,0,0,0);}
     const x=Math.max(a,w0),y=Math.min(b,w1);if(y>x)min+=(y-x)/6e4;}
   return Math.round(min/60*8/12*10)/10;}
+/* fecha/hora de la parada: siguen a la fecha y horas del registro, salvo que el técnico las cambie a mano */
+function parDef(k){const man=S.F._man&&S.F._man[k];if(man){const v=val(k);if(v)return v;}
+  const f=val('fecha')||S.F.fecha||hoyIso();
+  return k==='parIniF'||k==='parFinF'?f:k==='parIniH'?(val('hini')||media(new Date())):(val('hfin')||val('hini')||media(new Date()));}
+document.addEventListener('change',ev=>{const k=ev.target&&ev.target.dataset&&ev.target.dataset.k;if(!k||!FORMS.includes(S.pant))return;
+  if(['parIniF','parIniH','parFinF','parFinH'].includes(k)){(S.F._man=S.F._man||{})[k]=true;return;}
+  if(['fecha','hini','hfin'].includes(k)&&document.querySelector('[data-k^="parIni"],[data-k^="parFin"]')){guardarCampos();pintar();}},true);
 function parBox(){const e=eqDe(S.F.eq);if(!e||S.F._edit)return '';const ab=paradaAbierta(e.cod_sap),est=S.F.ch.estado||'OPERATIVO';
   if(est==='INOPERATIVO'&&ab)return `<div class="parbx rojo"><b>⛔ Parada abierta desde ${fhTxt(ab.inicio)}</b><div>${esc(ab.motivo||'')} · ${esc(ab.turnos)} · lleva <b>${f1(horasParada(ab.inicio,new Date().toISOString(),ab.turnos))} h</b> inoperativas</div><small>Cuando el equipo vuelva a trabajar, registra con estado OPERATIVO para cerrarla.</small></div>`;
   if(est==='INOPERATIVO'){if(S.F.ch.parTur==null)S.F.ch.parTur=S.F.ch.turno==='NOCHE'?'1 TURNO NOCHE':'1 TURNO DÍA';
     return `<div class="parbx rojo"><b>⛔ Inicio de la parada</b>
-     <div class="r2"><div><label>Fecha</label><input type="date" data-k="parIniF" value="${esc(vF('parIniF',val('fecha')||hoyIso()))}"></div><div><label>Hora</label><select class="hsel" data-k="parIniH">${horaOpts(vF('parIniH',val('hini')||media(new Date())),'')}</select></div></div>
+     <div class="r2"><div><label>Fecha</label><input type="date" data-k="parIniF" value="${esc(parDef('parIniF'))}"></div><div><label>Hora</label><select class="hsel" data-k="parIniH">${horaOpts(parDef('parIniH'),'')}</select></div></div>
      <label>Turnos que trabaja el equipo</label>${chips('parTur',TURNOS_PAR)}
      <label>Motivo</label>${selOtro('parMot',MOTIVOS_PAR,'Escribe el motivo')}
      <small>Las horas inoperativas se cuentan hasta que se registre el equipo OPERATIVO.</small></div>`;}
-  if(ab){if(S.F.ch.parTur==null)S.F.ch.parTur=ab.turnos;const fF=vF('parFinF',val('fecha')||hoyIso()),fH=vF('parFinH',val('hfin')||media(new Date()));
+  if(ab){if(S.F.ch.parTur==null)S.F.ch.parTur=ab.turnos;const fF=parDef('parFinF'),fH=parDef('parFinH');
     const h=horasParada(ab.inicio,aIso(fF,fH),S.F.ch.parTur);
     return `<div class="parbx verde"><b>✅ Cierre de la parada</b><div>Inoperativo desde <b>${fhTxt(ab.inicio)}</b> · ${esc(ab.motivo||'')}</div>
      <div class="r2"><div><label>Operativo desde (fecha)</label><input type="date" data-k="parFinF" value="${esc(fF)}" onchange="guardarCampos();pintar()"></div><div><label>Hora</label><select class="hsel" data-k="parFinH" onchange="guardarCampos();pintar()">${horaOpts(fH,'')}</select></div></div>
@@ -652,11 +659,11 @@ function parBox(){const e=eqDe(S.F.eq);if(!e||S.F._edit)return '';const ab=parad
 /* se arma la parada al guardar; devuelve false si falta algo */
 function prepararParada(r){const e=eqDe(r.cod_sap);if(!e||S.F._edit)return true;
   const ab=paradaAbierta(e.cod_sap),est=r.estado_equipo;
-  if(est==='INOPERATIVO'&&!ab){const ini=aIso(val('parIniF')||r.fecha,val('parIniH')||r.hora_ini);if(!ini){toast('Indica fecha y hora de inicio de la parada');return false;}
+  if(est==='INOPERATIVO'&&!ab){const ini=aIso(parDef('parIniF'),parDef('parIniH'));if(!ini){toast('Indica fecha y hora de inicio de la parada');return false;}
     const mot=valOtro('parMot');if(!mot){toast('Elige el motivo de la parada');return false;}
     r._parada={id:uuid(),cod_sap:e.cod_sap,obra:r.obra,inicio:ini,fin:null,turnos:S.F.ch.parTur||'1 TURNO DÍA',motivo:mot,detalle:[r.descripcion,r.backlog].filter(Boolean).join(' · ').slice(0,200)||null,sistema:r.sistema||null,componente:r.componente||null,origen:r.origen_falla||null,hrkm_ini:r.hrkm??null,horas:null,abierta_por:S.col.codigo,reg_inicio:r.id};
     r.detalle={...(r.detalle||{}),parada:{id:r._parada.id,inicio:ini,motivo:mot,turnos:r._parada.turnos,abre:true}};}
-  else if(est==='OPERATIVO'&&ab){const fin=aIso(val('parFinF')||r.fecha,val('parFinH')||r.hora_fin||media(new Date()));
+  else if(est==='OPERATIVO'&&ab){const fin=aIso(parDef('parFinF'),parDef('parFinH'));
     if(!fin||new Date(fin)<=new Date(ab.inicio)){toast('La hora en que vuelve a operar debe ser posterior al inicio de la parada');return false;}
     const tur=S.F.ch.parTur||ab.turnos,h=horasParada(ab.inicio,fin,tur);
     r._parada={...ab,fin,turnos:tur,horas:h,cerrada_por:S.col.codigo,reg_fin:r.id,hrkm_fin:r.hrkm??null};
