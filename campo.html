@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
 <meta charset="utf-8">
-<meta name="gllr-version" content="V.101126-8" data-pagina="REPORTE (app de campo)">
+<meta name="gllr-version" content="V.101126-9" data-pagina="REPORTE (app de campo)">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>REPORTE</title>
 <link rel="manifest" href="campo.webmanifest">
@@ -210,6 +210,12 @@ input.fill::placeholder{color:#c9b98a;-webkit-text-fill-color:#c9b98a;opacity:1;
 .inores{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-bottom:10px}.inores div{background:var(--card);border:1px solid #262c33;border-radius:12px;padding:8px;text-align:center}.inores b{display:block;font-size:21px;color:#fff}.inores small{color:var(--mu);font-size:11.5px}
 .inofil{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px}.inofil span{border:1px solid #39414a;border-radius:99px;padding:6px 12px;font-size:13.5px;cursor:pointer;color:#cfd5db}.inofil span.on{background:var(--am);color:#1c1500;border-color:var(--am);font-weight:800}
 .inoc{background:var(--card);border:1px solid #262c33;border-left:4px solid #f87171;border-radius:14px;padding:11px 12px;margin-bottom:9px}
+.sgc{background:var(--card);border:1px solid #262c33;border-radius:14px;padding:10px 12px;margin-bottom:8px}.sgc.tot{border-color:#3a434d}
+.sgc .t{display:flex;justify-content:space-between;align-items:baseline;gap:8px;margin-bottom:7px}.sgc .t b{font-size:15px}.sgc .t small{color:var(--mu);font-size:12.5px}.sgc .t span{font-weight:800;color:var(--am)}
+.sgs{display:flex;gap:4px}.sgs div{flex:1;min-width:0;text-align:center;border-radius:8px;padding:5px 0 3px;font-size:14px;font-weight:800}
+.sgs div small{display:block;font-size:9.5px;font-weight:600;color:var(--mu);margin-top:1px}
+.sgs .n{background:#16301f;color:#4ade80}.sgs .x{background:#3a1c1c;color:#f87171}.sgs .hoy{outline:2px solid var(--am)}
+.sgs.t14 div{font-size:12.5px;padding:4px 0 2px}.sgs.t14 div small{font-size:8.5px}
 .inoc .top{display:flex;justify-content:space-between;align-items:baseline;gap:8px}.inoc .cod{font-size:21px;font-weight:900;color:var(--am)}.inoc .hr{font-size:20px;font-weight:900;color:#f87171;white-space:nowrap}.inoc .hr small{font-size:12px;color:var(--mu);font-weight:600}
 .inoc .nm{color:var(--mu);font-size:13px}.inoc .mot{display:inline-block;margin-top:6px;background:#2a1414;border:1px solid #7f1d1d;color:#fca5a5;border-radius:7px;padding:2px 8px;font-size:12.5px;font-weight:700}
 .inoc .det{font-size:14px;color:#cfd5db;margin-top:6px;line-height:1.4}.inoc .det span{color:var(--mu);font-size:13px}
@@ -541,7 +547,7 @@ function salirApp(){cerrarSalir();_saliendo=true;try{window.close();}catch(_){}h
 function nuevoF(){const yo=S.col&&!/SUPERV/.test(String(S.col.especialidad||'').toUpperCase())?[S.col.codigo]:[];return {tec:yo,ins:[],fotos:[],firma:[],ch:{}};}
 const TIT={cargando:'REPORTE',login:'Ingresar',alta:'Registro de colaborador',espera:'Cuenta en revisión',perfil:'Mis datos',home:'Inicio',reporte:'Reporte',
   MECANICO:'1 · Reporte mecánico',LUBRICACION:'2 · Lubricación',LLANTAS:'3 · Llantas',GETS:'4 · GETs',MNTTO_PREV:'5 · Mntto preventivo',PENDIENTE:'Nuevo pendiente',
-  pend:'Pendientes',ino:'Equipos inoperativos',pdet:'Detalle del pendiente',consulta:'Ficha del equipo',envios:'Envíos',hecho:'Registro guardado',mas:'Mi cuenta'};
+  pend:'Pendientes',seg:'Seguimiento de reportes',ino:'Equipos inoperativos',pdet:'Detalle del pendiente',consulta:'Ficha del equipo',envios:'Envíos',hecho:'Registro guardado',mas:'Mi cuenta'};
 TIT.home='REPORTE MECÁNICO';TIT.reporte='Nuevo reporte';
 function pintar(){
   $('tit').textContent=TIT[S.pant]||'REPORTE';
@@ -858,6 +864,7 @@ const P={
    <div class="lin" onclick="ir('consulta')"><span class="li-ic">${svg('bus')}</span><div><b>Ficha del equipo</b><small>horómetro, próximo PM, SOS, historial</small></div><span class="chev">${svg('chev')}</span></div>
    ${(()=>{const n=inoperativos().length;return `<div class="lin ${n?'linino':''}" onclick="ir('ino')"><span class="li-ic">⛔</span><div><b>Equipos inoperativos</b><small>${n?'por repuesto, servicio o reparación':'todos operativos'}</small></div>${n?`<span class="badge">${n}</span>`:''}<span class="chev">${svg('chev')}</span></div>`;})()}
    <div class="lin" onclick="ir('pend')"><span class="li-ic">${svg('pin')}</span><div><b>Pendientes</b><small>backlog de los equipos de la obra</small></div><span class="badge" id="pendBadge" ${np?'':'style="display:none"'}>${np}</span><span class="chev">${svg('chev')}</span></div>
+   <div class="lin" onclick="ir('seg')"><span class="li-ic">📊</span><div><b>Seguimiento de reportes</b><small>reportes por técnico · últimos días</small></div><span class="chev">${svg('chev')}</span></div>
    <div class="lin" onclick="ir('envios')"><span class="li-ic">${svg('env')}</span><div><b>Envíos</b><small>${nq?nq+' por enviar':'todo sincronizado'}</small></div>${nq?`<span class="badge" style="background:#FFC20E;color:#1c1500">${nq}</span>`:''}<span class="chev">${svg('chev')}</span></div>
    <div class="hbt" style="margin-top:14px"><button class="btn b-g" onclick="ir('perfil')">Mis datos</button><button class="btn b-g" onclick="actualizar()">Actualizar</button><button class="btn b-g" onclick="salir()">Salir</button></div>
    <div class="ver">${VERSION} · ${S.EQ.length} equipos · ${S.COL.length} colaboradores</div>`;},
@@ -962,10 +969,13 @@ const P={
  pdet:()=>`<div id="pdBox"><div class="c dim">${S.online?'Cargando…':'Sin señal'}</div></div>`,
  pend:()=>`<div class="c"><h4>📌 Pendientes · ${esc(S.obra||'todas las obras')}</h4><div id="pdRes" class="dim">${S.online?'Cargando…':'Sin señal: se muestran los últimos descargados.'}</div></div>
    <button class="btn b-g" onclick="ir('PENDIENTE')">+ Nuevo pendiente</button>`,
+ seg:()=>{const k=S.segK||'7';return `<div class="inofil">${[['7','7 días'],['14','14 días']].map(([v,t])=>`<span class="${v===k?'on':''}" onclick="S.segK='${v}';pintar()">${t}</span>`).join('')}</div>
+   <div class="dim" style="margin:-2px 0 10px;font-size:12.5px">Reportes por técnico · ${esc(S.obra||'todas las obras')}. Cada registro donde figura suma 1 · X = sin reportes.</div>
+   <div id="sgRes" class="dim">${S.online?'Cargando…':'Sin señal: se muestra lo último descargado.'}</div>`;},
  perfil:()=>{if(S.col&&S.F.nombres==null){Object.assign(S.F,{nombres:S.col.nombres,ap_paterno:S.col.ap_paterno,ap_materno:S.col.ap_materno||'',obra:S.col.obra||'',especialidad:S.col.especialidad||'MECANICO'});}
   return P.alta();}
 };
-const AFTER={home:()=>cargarPend(),alta:()=>{prevCod();marcarVacios();if(!S.OBRAS)cargarObras();},perfil:()=>{prevCod();marcarVacios();if(!S.OBRAS)cargarObras();},consulta:()=>{if(S.cq)consultar();},ino:()=>refrescarParadas(),pdet:()=>verPendiente(),pend:()=>cargarPend(),
+const AFTER={home:()=>cargarPend(),alta:()=>{prevCod();marcarVacios();if(!S.OBRAS)cargarObras();},perfil:()=>{prevCod();marcarVacios();if(!S.OBRAS)cargarObras();},consulta:()=>{if(S.cq)consultar();},ino:()=>refrescarParadas(),pdet:()=>verPendiente(),pend:()=>cargarPend(),seg:()=>cargarSeg(),
   MECANICO:fx,LUBRICACION:fx,LLANTAS:fx,GETS:fx,MNTTO_PREV:fx,PENDIENTE:()=>avisoDup()};
 function fx(){chkHr();avisoDup();}
 const MODN={MECANICO:'Reporte mecánico',LUBRICACION:'Lubricación',LLANTAS:'Llantas',GETS:'GETs',MNTTO_PREV:'Mntto preventivo',PENDIENTE:'Pendiente'};
@@ -1212,6 +1222,24 @@ async function consultar(){const c=String(S.cq||'').split('·')[0].trim().toUppe
   if(S.online){const {data}=await sb.from('pdm_registros').select('id,fecha,modulo,especialidad,trabajo,sistema,tecnicos,backlog').eq('cod_sap',e.cod_sap).eq('anulado',false).order('fecha',{ascending:false}).limit(20);if(data)regs=data;}
   if(!$('cqL'))return;
   $('cqL').className='tlx';$('cqL').innerHTML=regs.length?regs.slice(0,20).map(r=>`<div>${esc(MODN[r.modulo]||r.modulo)} · ${esc(String(r.trabajo||r.sistema||'').toLowerCase())}${r.backlog?' 📌':''}<br><small>${fd(r.fecha)} · ${esc(espDe(r))} · ${esc((r.tecnicos||[]).join(', '))}</small></div>`).join(''):'<span class="dim">Sin registros.</span>';}
+/* ── Consultar → Seguimiento de reportes por técnico (últimos 7 o 14 días) ── */
+const SEGD=['D','L','M','M','J','V','S'];
+async function cargarSeg(){const box=$('sgRes'),n=+(S.segK||'7'),h=new Date(),iso=d=>new Date(d.getTime()-d.getTimezoneOffset()*60000).toISOString().slice(0,10);
+  const dias=[];for(let i=n-1;i>=0;i--)dias.push(iso(new Date(h.getTime()-i*86400000)));
+  const key='seg_'+(S.obra||'todas')+'_'+n;let M=await DB.get(key).catch(()=>null);
+  if(S.online){try{let L=[];for(let d=0;;d+=1000){let q=sb.from('pdm_registros').select('fecha,tecnicos').eq('anulado',false).gte('fecha',dias[0]).lte('fecha',dias[n-1]);if(S.obra)q=q.eq('obra',S.obra);
+      const {data,error}=await q.range(d,d+999);if(error)throw error;L=L.concat(data||[]);if(!data||data.length<1000)break;}
+    M={};L.forEach(r=>(r.tecnicos||[]).forEach(t=>{const m=M[t]=M[t]||{};m[r.fecha]=(m[r.fecha]||0)+1;}));DB.set(key,M).catch(()=>{});}catch(_){}}
+  if(S.pant!=='seg'||!$('sgRes'))return;
+  if(!M){$('sgRes').innerHTML='Sin datos descargados todavía.';return;}
+  const T=(S.COL||[]).filter(c=>!esSup(c)&&(!S.obra||c.obra===S.obra)).sort((a,b)=>String(a.codigo).localeCompare(String(b.codigo)));
+  const hoy=iso(h),cls=n>7?'sgs t14':'sgs',celdas=f=>dias.map(d=>{const v=f(d),dw=SEGD[new Date(d+'T12:00:00').getDay()]+d.slice(8);return `<div class="${v?'n':'x'} ${d===hoy?'hoy':''}">${v||'X'}<small>${dw}</small></div>`;}).join('');
+  const tot=d=>T.reduce((s,c)=>s+((M[c.codigo]||{})[d]||0),0);
+  $('sgRes').className='';
+  $('sgRes').innerHTML=(T.length?T.map(c=>{const m=M[c.codigo]||{},suma=dias.reduce((s,d)=>s+(m[d]||0),0);
+      return `<div class="sgc"><div class="t"><div><b>${esc(c.codigo)}</b>${S.col&&c.codigo===S.col.codigo?' <small>· tú</small>':''}<br><small>${esc([String(c.nombres||'').split(' ')[0],c.ap_paterno].filter(Boolean).join(' '))}</small></div><span>${suma}</span></div><div class="${cls}">${celdas(d=>m[d]||0)}</div></div>`;}).join('')
+      +`<div class="sgc tot"><div class="t"><b>Total del día</b><span>${dias.reduce((s,d)=>s+tot(d),0)}</span></div><div class="${cls}">${celdas(tot)}</div></div>`
+    :'<div class="dim">No hay colaboradores registrados en esta obra.</div>');}
 async function cargarPend(){const box=$('pdRes');let L=(await DB.get('pend').catch(()=>null))||[];
   if(S.online){let q=sb.from('pdm_registros').select('id,fecha,cod_sap,backlog,tecnicos,registrado_por,obra,estado_equipo').eq('backlog_estado','ABIERTO').eq('anulado',false).order('fecha',{ascending:false}).limit(150);
     if(S.obra)q=q.eq('obra',S.obra);const {data,error}=await q;if(!error){L=data||[];DB.set('pend',L);}}

@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
 <meta charset="utf-8">
-<meta name="gllr-version" content="V.101126-2" data-pagina="Parte diario mecánico">
+<meta name="gllr-version" content="V.101126-3" data-pagina="Parte diario mecánico">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Parte diario mecánico &mdash; UDE</title>
 <link rel="icon" href="favicon.ico" sizes="any">
@@ -62,6 +62,58 @@
   .fld.vac{background:#FFF7D6;border-color:#F0B400}.fld:focus{outline:none;border-color:#4254A5;background:#fff}
   .chk{display:flex;gap:8px;align-items:center;font-weight:700;color:#334281;margin:4px 0 8px;cursor:pointer}.chk input{width:16px;height:16px}
   .parw{font-size:11px;color:#B91C1C;margin-top:3px;white-space:nowrap}.parw.ok{color:#15803D}.parw.ab{font-weight:700}
+  /* ── filtros y vista compacta (V.101126-9) ── */
+  .fb{background:#fff;border-bottom:1px solid var(--line);padding:7px 16px 6px;flex-shrink:0}
+  .fr{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:6px}.fr:last-child{margin-bottom:0}
+  .fr input[type=date],.fr input#fTxt{border:1px solid var(--line);border-radius:9px;height:28px;padding:0 8px;font:inherit;font-size:12px}
+  .fr input#fTxt{width:230px}.fr .lb{font-size:10px;font-weight:800;color:#98a2ad;text-transform:uppercase;letter-spacing:.4px}
+  .chs{display:inline-flex;gap:4px;flex-wrap:wrap}
+  .chs button,.vsw button{border:1px solid var(--line);background:#fff;border-radius:999px;height:26px;padding:0 11px;font:inherit;font-size:12px;cursor:pointer;color:#4a535c;white-space:nowrap}
+  .chs button:hover,.vsw button:hover{background:#f4f6fb}
+  .chs button.on{background:#E6E9F7;border-color:#B9C0E6;color:#334281;font-weight:700}
+  .vsw{display:inline-flex;gap:4px;align-items:center;font-size:10px;font-weight:800;color:#98a2ad;text-transform:uppercase}
+  .vsw button.on{background:#1F3864;border-color:#1F3864;color:#fff;font-weight:700}
+  .kpi{border:1px solid var(--line);background:#fff;border-radius:10px;height:30px;padding:0 14px;font:inherit;font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.3px;cursor:pointer;display:inline-flex;gap:8px;align-items:center}
+  .kpi b{font-size:17px;letter-spacing:0}
+  .kpi.k-b{color:#B91C1C}.kpi.k-w{color:#8A6A00}
+  .kpi.k-b.on{background:#B91C1C;border-color:#B91C1C;color:#fff}.kpi.k-w.on{background:#E0A800;border-color:#E0A800;color:#3B2E00}
+  .ms-b{height:28px!important;font-size:12px!important}.ms-b.on{background:#E6E9F7;border-color:#B9C0E6;color:#334281;font-weight:700}.ms-n{font-weight:800}
+  .msp{position:fixed;z-index:200;width:240px;background:#fff;border:1px solid #c9ced4;border-radius:10px;box-shadow:0 10px 30px rgba(0,0,0,.22);padding:8px}
+  .msp .msq{width:100%;border:1px solid var(--line);border-radius:8px;height:28px;padding:0 8px;font:inherit;font-size:12px;margin-bottom:6px}
+  .msp .msa{display:flex;justify-content:space-between;font-size:11px;margin-bottom:4px}.msp .msa a{color:#4254A5;cursor:pointer}
+  .msp .mso{max-height:260px;overflow:auto}.msp .mso label{display:flex;gap:7px;align-items:center;padding:3px 4px;font-size:12px;cursor:pointer;border-radius:6px}.msp .mso label:hover{background:#f4f6fb}
+  .tag{background:#eef0f6;border-radius:8px;padding:2px 8px;font-size:11.5px;color:#334281;cursor:pointer;white-space:nowrap}.tag:hover{background:#e0e4f2}
+  .tw{overflow:auto;background:#fff;border:1px solid var(--line);border-radius:12px;max-height:60vh}
+  table.tc{border-collapse:separate;border-spacing:0;table-layout:fixed;font-size:12px;background:#fff}
+  table.tc th,table.tc td{white-space:nowrap}
+  table.tc tr.g1 th{position:sticky;top:0;z-index:4;height:22px;background:#1F3864;color:#fff;font-size:10.5px;letter-spacing:.5px;text-transform:uppercase;text-align:left;padding:0 8px;cursor:pointer;border-left:2px solid #0f1f3f;user-select:none}
+  table.tc tr.g1 th:hover{background:#2a4a85}
+  table.tc tr.g2 th{position:sticky;top:22px;z-index:3;background:linear-gradient(180deg,#7B87C0 0%,#4254A5 60%,#334281 100%);color:#fff;font-size:9.5px;text-transform:uppercase;letter-spacing:.3px;padding:4px 6px;text-align:left;overflow:hidden;text-overflow:ellipsis}
+  table.tc td{height:22px;padding:1px 6px;border-bottom:1px solid #eef1f4;overflow:hidden;text-overflow:ellipsis;line-height:18px}
+  table.tc td.c,table.tc th.c{text-align:center}table.tc td.r,table.tc th.r{text-align:right}
+  table.tc tbody tr:hover td{background:#f3f8ff;cursor:pointer}
+  table.tc .fz{position:sticky;background:#fff;z-index:2}table.tc th.fz{z-index:5}
+  table.tc tbody tr:hover td.fz{background:#f3f8ff}
+  table.tc .pill{padding:0 7px;font-size:10px;line-height:15px}
+  table.tc td.ac{padding:0;text-align:center}
+  .del{border:none;background:none;cursor:pointer;font-size:12px;opacity:.35;padding:2px 4px;border-radius:6px}tr:hover .del{opacity:1}.del:hover{background:#fde4e4}
+  #tip{position:fixed;display:none;z-index:300;max-width:460px;background:#1c232b;color:#fff;font-size:12px;line-height:1.45;padding:6px 10px;border-radius:8px;box-shadow:0 6px 20px rgba(0,0,0,.3);pointer-events:none;white-space:pre-wrap;word-break:break-word}
+  .secg{background:#fff;border:1px solid var(--line);border-radius:12px;margin-bottom:8px;overflow:hidden}
+  .sgh{display:flex;gap:10px;align-items:center;padding:7px 12px;background:#f4f6fa;cursor:pointer;user-select:none}.sgh:hover{background:#eceff6}
+  .sgh b{font-size:13px;color:#1F3864}.sgh .n{font-size:11.5px;color:var(--muted)}
+  .toast{position:fixed;left:50%;bottom:44px;transform:translateX(-50%);background:#1c232b;color:#fff;border-radius:10px;padding:9px 16px;font-size:12.5px;z-index:400;display:flex;gap:14px;align-items:center;box-shadow:0 8px 26px rgba(0,0,0,.35)}
+  .toast button{background:none;border:none;color:#FFCD11;font:inherit;font-weight:700;cursor:pointer}
+  .act:disabled{opacity:.4;cursor:default}
+  table.sg{border-collapse:separate;border-spacing:0;font-size:12.5px;background:#fff}
+  table.sg th,table.sg td{border-bottom:1px solid #eef1f4;padding:4px 6px;text-align:center;min-width:42px}
+  table.sg th{background:linear-gradient(180deg,#7B87C0 0%,#4254A5 60%,#334281 100%);color:#fff;font-size:11px;position:sticky;top:0;z-index:2}
+  table.sg th small{display:block;font-size:9px;font-weight:600;opacity:.8;text-transform:uppercase}
+  table.sg th.dom{background:#6b747d}table.sg th.hoy{background:#1F3864;box-shadow:inset 0 -3px 0 #FFCD11}
+  table.sg td.n{background:#eaf7ee;color:#0F7A33;font-weight:800;cursor:pointer}table.sg td.n:hover{background:#d4f0dc}
+  table.sg td.x{background:#fdecec;color:#B91C1C;font-weight:800}
+  table.sg td.nm{text-align:left;position:sticky;left:0;background:#fff;z-index:1;min-width:190px;white-space:nowrap}
+  table.sg td.tt{background:#f4f6fa;font-weight:800;color:#1F3864}
+  table.sg tr.tot td{background:#f4f6fa;font-weight:800;color:#1F3864}
 </style>
 </head>
 <body>
@@ -69,24 +121,41 @@
 <script>if(window.self!==window.top){document.getElementById('topbar').style.display='none';}</script>
 <div id="subnav">
   <button data-v="reg" class="on">&#128221; Registros</button>
+  <button data-v="seg">&#128202; Seguimiento</button>
   <button data-v="pen">&#128204; Pendientes</button>
   <button data-v="col" class="hide">&#128119; Colaboradores</button>
   <button data-v="mae">&#9881; Datos maestros ↗</button>
 </div>
-<div class="toolbar" id="tbReg">
-  <label>Obra<select id="fObra"><option value="">Todas</option></select></label>
-  <label>Desde<input type="date" id="fDesde"></label>
-  <label>Hasta<input type="date" id="fHasta"></label>
-  <label>Módulo<select id="fMod"><option value="">Todos</option><option value="MECANICO">Reporte mecánico</option><option value="LUBRICACION">Lubricación</option><option value="LLANTAS">Llantas</option><option value="GETS">GETs</option><option value="MNTTO_PREV">Mntto preventivo</option><option value="PENDIENTE">Pendiente</option></select></label>
-  <label>Equipo<input id="fEq" placeholder="Cód. SAP" style="width:110px;text-transform:uppercase"></label>
-  <label>Técnico<input id="fTec" placeholder="Código" style="width:100px;text-transform:uppercase"></label>
-  <button class="act util" id="btnBuscar">&#128269; Buscar</button>
-  <div class="spacer"></div>
-  <button class="act util" id="btnXls">&#8681; Excel</button>
-  <button class="act util" id="btnRec" title="Recargar">&#8635;</button>
+<div class="fb" id="tbReg">
+  <div class="fr">
+    <input id="fTxt" placeholder="Buscar equipo, falla, trabajo…">
+    <span class="lb">Periodo</span>
+    <span class="chs" id="chPer"><button data-p="0">Hoy</button><button data-p="1">Ayer</button><button data-p="7" class="on">7 días</button><button data-p="30">30 días</button><button data-p="m">Mes</button></span>
+    <input type="date" id="fDesde"><span class="dim">→</span><input type="date" id="fHasta">
+    <div class="spacer"></div>
+    <button class="kpi k-b" id="kInop" title="Filtrar solo registros inoperativos">Inoperativos <b id="nInop">0</b></button>
+    <button class="kpi k-w" id="kPen" title="Filtrar solo registros con pendiente abierto">Pendientes <b id="nPen">0</b></button>
+  </div>
+  <div class="fr">
+    <span class="lb">Intervención</span><span class="chs" id="chTipo"></span>
+    <div class="spacer"></div>
+    <span id="msBar" class="chs"></span>
+    <button class="act sm" id="btnLimp" title="Borrar todos los filtros">✕ Limpiar</button>
+  </div>
+  <div class="fr">
+    <span class="vsw">Vista <button data-vr="tabla" class="on">Tabla</button><button data-vr="agr">Agrupada</button></span>
+    <span class="vsw hide" id="gbBox">Agrupar por <select id="gbSel" style="height:26px;border:1px solid var(--line);border-radius:8px;font:inherit;font-size:12px"><option value="dia">Día</option><option value="eq">Equipo</option><option value="obra">Obra</option><option value="tec">Técnico</option></select>
+      <button id="btnExp">Expandir todo</button><button id="btnCon">Contraer todo</button></span>
+    <span id="tags" class="chs"></span>
+    <div class="spacer"></div>
+    <button class="act util" id="btnUndo" title="Deshacer (Ctrl+Z)" disabled>↶ Deshacer <b id="nUndo"></b></button>
+    <button class="act util" id="btnXls">&#8681; Excel</button>
+    <button class="act util" id="btnRec" title="Recargar">&#8635;</button>
+  </div>
 </div>
 <div id="wrap">
   <section id="v-reg"></section>
+  <section id="v-seg" class="hide"></section>
   <section id="v-pen" class="hide"></section>
   <section id="v-col" class="hide"></section>
   <section id="v-mae" class="hide"></section>
@@ -111,27 +180,268 @@ const esAdmin=()=>perfil&&perfil.rol==='admin';
 const eqDe=c=>EQ.find(e=>e.cod_sap===c)||null;
 
 /* ── pestañas ── */
-document.querySelectorAll('#subnav button').forEach(b=>b.onclick=()=>{vista=b.dataset.v;
-  document.querySelectorAll('#subnav button').forEach(x=>x.classList.toggle('on',x===b));
-  ['reg','pen','col','mae'].forEach(k=>document.getElementById('v-'+k).classList.toggle('hide',k!==vista));
-  tbReg.classList.toggle('hide',vista!=='reg'); pintar();});
-function pintar(){({reg:pintarReg,pen:pintarPen,col:pintarCol,mae:pintarMae})[vista]();}
+document.querySelectorAll('#subnav button').forEach(b=>b.onclick=()=>irVista(b.dataset.v));
+function irVista(k){vista=k;
+  document.querySelectorAll('#subnav button').forEach(x=>x.classList.toggle('on',x.dataset.v===k));
+  ['reg','seg','pen','col','mae'].forEach(z=>document.getElementById('v-'+z).classList.toggle('hide',z!==k));
+  tbReg.classList.toggle('hide',k!=='reg'); pintar();}
+function pintar(){({reg:pintarReg,seg:pintarSeg,pen:pintarPen,col:pintarCol,mae:pintarMae})[vista]();}
 
-/* ═══════════ REGISTROS ═══════════ */
-function consultaBase(){let q=sb.from('pdm_registros').select('*').eq('anulado',false);
-  if(fObra.value)q=q.eq('obra',fObra.value); if(fDesde.value)q=q.gte('fecha',fDesde.value); if(fHasta.value)q=q.lte('fecha',fHasta.value);
-  if(fMod.value)q=q.eq('modulo',fMod.value); if(fEq.value.trim())q=q.ilike('cod_sap','%'+fEq.value.trim()+'%');
-  if(fTec.value.trim())q=q.contains('tecnicos',[up(fTec.value)]);
-  return q.order('fecha',{ascending:false}).order('hora_ini',{ascending:false});}
+/* ═══════════ REGISTROS · filtros ═══════════ */
+const ORIG3=['FALLA DE OPERACIÓN','TIEMPO DE SERVICIO','SIN PARADA'];
+const TIPOSF=[['MEC','Mecánico'],['ELE','Eléctrico'],['SOL','Soldadura'],['LUB','Lubricación'],['LLA','Llantas'],['GET','GETs'],['PM','PM'],['PEN','Pendiente']];
+const TIPOF={MEC:'and(modulo.eq.MECANICO,or(especialidad.is.null,especialidad.not.in.(ELECTRICISTA,SOLDADOR)))',ELE:'and(modulo.eq.MECANICO,especialidad.eq.ELECTRICISTA)',SOL:'and(modulo.eq.MECANICO,especialidad.eq.SOLDADOR)',
+  LUB:'modulo.eq.LUBRICACION',LLA:'modulo.eq.LLANTAS',GET:'modulo.eq.GETS',PM:'modulo.eq.MNTTO_PREV',PEN:'modulo.eq.PENDIENTE'};
+const MSD=[['obra','Obra'],['eq','Equipo'],['tec','Técnico'],['est','Estado'],['ori','Origen de la falla']];
+const FIL={obra:new Set(),eq:new Set(),tec:new Set(),est:new Set(),ori:new Set(),tipos:new Set(),kInop:false,kPen:false,txt:''};
+let CNT={inop:0,pen:0}, PER='7', VREG='tabla', GB='dia', AGMODE=null, SEC={};
+const pad=n=>String(n).padStart(2,'0');
+const nomC2=c=>[c.nombres,c.ap_paterno,c.ap_materno].filter(Boolean).join(' ');
+function msOpts(id){
+  if(id==='obra')return [...new Set(EQ.map(x=>x.cod_proyec).filter(Boolean))].sort().map(o=>({v:o,t:o}));
+  if(id==='eq')return EQ.map(e=>({v:e.cod_sap,t:e.cod_sap+' · '+(e.equipo||'')}));
+  if(id==='tec')return COL.filter(c=>c.activo!==false).map(c=>({v:c.codigo,t:c.codigo+' · '+nomC2(c)}));
+  if(id==='est')return [{v:'OPERATIVO',t:'Operativo'},{v:'INOPERATIVO',t:'Inoperativo'}];
+  return ORIG3.map(o=>({v:o,t:o}));}
+function armarMS(){
+  msBar.innerHTML=MSD.map(([id,l])=>`<span class="ms" data-id="${id}"><button class="act ms-b"><span>${l}</span><b class="ms-n"></b> ▾</button></span>`).join('');
+  msBar.querySelectorAll('.ms-b').forEach(b=>b.onclick=ev=>{ev.stopPropagation();abrirMS(b.closest('.ms').dataset.id,b);});
+  pintarFil();}
+const cerrarMS=()=>{const d=document.getElementById('msp');if(d)d.remove();};
+document.addEventListener('click',cerrarMS);
+function abrirMS(id,btn){cerrarMS();const L=msOpts(id),S=FIL[id],r=btn.getBoundingClientRect();
+  const d=document.createElement('div');d.className='msp';d.id='msp';d.style.left=Math.max(6,Math.min(r.left,innerWidth-250))+'px';d.style.top=(r.bottom+4)+'px';
+  d.innerHTML=`<input class="msq" placeholder="Buscar…"><div class="msa"><a data-a="all">Marcar los visibles</a><a data-a="none">Ninguno</a></div><div class="mso"></div>`;
+  document.body.appendChild(d);
+  const lista=()=>{const q=nrm(d.querySelector('.msq').value),o=d.querySelector('.mso');
+    o.innerHTML=L.filter(x=>!q||nrm(x.t).includes(q)).map(x=>`<label><input type="checkbox" value="${esc(x.v)}" ${S.has(x.v)?'checked':''}>${esc(x.t)}</label>`).join('')||'<div class="dim" style="padding:8px">Sin opciones</div>';
+    o.querySelectorAll('input').forEach(c=>c.onchange=()=>{c.checked?S.add(c.value):S.delete(c.value);pintarFil();buscarD();});};
+  d.querySelector('.msq').oninput=lista;lista();d.querySelector('.msq').focus();
+  d.querySelector('[data-a=none]').onclick=()=>{S.clear();lista();pintarFil();buscarD();};
+  d.querySelector('[data-a=all]').onclick=()=>{d.querySelectorAll('.mso input').forEach(c=>S.add(c.value));lista();pintarFil();buscarD();};
+  d.onclick=e=>e.stopPropagation();}
+function pintarFil(){
+  MSD.forEach(([id])=>{const b=document.querySelector(`.ms[data-id="${id}"] .ms-b`);if(!b)return;const n=FIL[id].size;b.classList.toggle('on',n>0);b.querySelector('.ms-n').textContent=n?` (${n})`:'';});
+  chTipo.querySelectorAll('button').forEach(b=>b.classList.toggle('on',FIL.tipos.has(b.dataset.t)));
+  chPer.querySelectorAll('button').forEach(b=>b.classList.toggle('on',b.dataset.p===PER));
+  kInop.classList.toggle('on',FIL.kInop);kPen.classList.toggle('on',FIL.kPen);
+  const T=[];MSD.forEach(([id,l])=>{if(FIL[id].size)T.push([id,`${l}: ${[...FIL[id]].slice(0,3).join(', ')}${FIL[id].size>3?' +'+(FIL[id].size-3):''}`]);});
+  if(FIL.txt)T.push(['txt','Texto: '+FIL.txt]);
+  tags.innerHTML=T.map(([k,t])=>`<span class="tag" data-k="${k}" title="Quitar este filtro">${esc(t)} ✕</span>`).join('');
+  tags.querySelectorAll('.tag').forEach(x=>x.onclick=()=>{const k=x.dataset.k;if(k==='txt'){FIL.txt='';fTxt.value='';}else FIL[k].clear();pintarFil();buscarD();});}
+function periodo(k){const h=new Date();
+  if(k==='m'){fDesde.value=isoDe(new Date(h.getFullYear(),h.getMonth(),1));fHasta.value=isoDe(h);}
+  else if(k==='1'){fDesde.value=fHasta.value=isoDe(new Date(h.getTime()-86400000));}
+  else if(k==='0'){fDesde.value=fHasta.value=isoDe(h);}
+  else{fHasta.value=isoDe(h);fDesde.value=isoDe(new Date(h.getTime()-(+k-1)*86400000));}
+  PER=String(k);pintarFil();buscarD();}
+let _bt=null;const buscarD=()=>{clearTimeout(_bt);_bt=setTimeout(()=>buscar(0),250);};
+function iniciarUI(){
+  chTipo.innerHTML=TIPOSF.map(([k,t])=>`<button data-t="${k}">${t}</button>`).join('');
+  chTipo.querySelectorAll('button').forEach(b=>b.onclick=()=>{FIL.tipos.has(b.dataset.t)?FIL.tipos.delete(b.dataset.t):FIL.tipos.add(b.dataset.t);pintarFil();buscarD();});
+  chPer.querySelectorAll('button').forEach(b=>b.onclick=()=>periodo(b.dataset.p));
+  [fDesde,fHasta].forEach(i=>i.onchange=()=>{PER='';pintarFil();buscarD();});
+  fTxt.oninput=()=>{FIL.txt=fTxt.value.trim();pintarFil();buscarD();};
+  kInop.onclick=()=>{FIL.kInop=!FIL.kInop;pintarFil();buscar(0);};
+  kPen.onclick=()=>{FIL.kPen=!FIL.kPen;pintarFil();buscar(0);};
+  btnLimp.onclick=()=>{MSD.forEach(([id])=>FIL[id].clear());FIL.tipos.clear();FIL.kInop=FIL.kPen=false;FIL.txt='';fTxt.value='';periodo('7');};
+  document.querySelectorAll('[data-vr]').forEach(b=>b.onclick=()=>{VREG=b.dataset.vr;document.querySelectorAll('[data-vr]').forEach(x=>x.classList.toggle('on',x===b));gbBox.classList.toggle('hide',VREG!=='agr');pintarReg();});
+  gbSel.onchange=()=>{GB=gbSel.value;AGMODE=null;SEC={};pintarReg();};
+  btnExp.onclick=()=>{AGMODE='open';SEC={};pintarReg();};btnCon.onclick=()=>{AGMODE='closed';SEC={};pintarReg();};
+  btnUndo.onclick=deshacer;btnRec.onclick=()=>{cargarListas().then(()=>buscar(pagina));};btnXls.onclick=exportarXls;
+  window.addEventListener('resize',ajustaAlto);}
+
+/* ═══════════ REGISTROS · consulta ═══════════ */
+function aplicarFiltros(q,sinKpi){
+  if(fDesde.value)q=q.gte('fecha',fDesde.value);if(fHasta.value)q=q.lte('fecha',fHasta.value);
+  if(FIL.obra.size)q=q.in('obra',[...FIL.obra]);if(FIL.eq.size)q=q.in('cod_sap',[...FIL.eq]);
+  if(FIL.tec.size)q=q.overlaps('tecnicos',[...FIL.tec]);
+  if(FIL.est.size)q=q.in('estado_equipo',[...FIL.est]);if(FIL.ori.size)q=q.in('origen_falla',[...FIL.ori]);
+  if(FIL.tipos.size)q=q.or([...FIL.tipos].map(k=>TIPOF[k]).join(','));
+  const t=FIL.txt.replace(/[,()*%\\]/g,' ').trim();
+  if(t)q=q.or(['cod_sap','descripcion','trabajo','sistema','componente','observacion'].map(c=>`${c}.ilike.*${t}*`).join(','));
+  if(!sinKpi){if(FIL.kInop)q=q.eq('estado_equipo','INOPERATIVO');
+    if(FIL.kPen)q=q.not('backlog','is',null).or('backlog_estado.is.null,backlog_estado.neq.CERRADO');}
+  return q;}
+const consultaBase=()=>aplicarFiltros(sb.from('pdm_registros').select('*').eq('anulado',false)).order('fecha',{ascending:false}).order('hora_ini',{ascending:false});
 async function buscar(p){pagina=p||0;pie.textContent='Buscando…';
   const {data,error}=await consultaBase().range(pagina*PASO,pagina*PASO+PASO-1);
-  if(error){v_reg_err(error);return;} REG=data||[]; await cargarParadas(); pintarReg();}
+  if(error){v_reg_err(error);return;} REG=data||[]; await cargarParadas(); pintarReg(); conteos();}
+async function conteos(){
+  const base=()=>aplicarFiltros(sb.from('pdm_registros').select('id',{count:'exact',head:true}).eq('anulado',false),true);
+  try{const [a,b]=await Promise.all([base().eq('estado_equipo','INOPERATIVO'),base().not('backlog','is',null).or('backlog_estado.is.null,backlog_estado.neq.CERRADO')]);
+    CNT={inop:a.count||0,pen:b.count||0};}catch(_){}
+  nInop.textContent=CNT.inop;nPen.textContent=CNT.pen;}
+
+/* ═══════════ REGISTROS · datos de cada fila ═══════════ */
+const dtF=(iso,full)=>{if(!iso)return'';const d=new Date(iso);return isNaN(d)?'':`${pad(d.getDate())}/${pad(d.getMonth()+1)}/${full?d.getFullYear():String(d.getFullYear()).slice(2)}`;};
+const dtH=iso=>{if(!iso)return'';const d=new Date(iso);return isNaN(d)?'':`${pad(d.getHours())}:${pad(d.getMinutes())}`;};
+const hhmm=h=>{if(h==null||!isFinite(h)||h<0)return'';const m=Math.round(h*60);return `${Math.floor(m/60)}:${pad(m%60)}`;};
+const tipoDe=r=>{const m=r.modulo;if(m==='MECANICO'){const e=nrm(r.especialidad);return /ELECT/.test(e)?'ELÉCTRICO':/SOLD/.test(e)?'SOLDADURA':'MECÁNICO';}
+  return {LUBRICACION:'LUBRICACIÓN',LLANTAS:'LLANTAS (NEUMÁTICOS)',GETS:'HERRAM. CORTE (GETS)',MNTTO_PREV:'PM (PREVENTIVO)',PENDIENTE:'PENDIENTE'}[m]||m||'';};
+function fila(r,PM){const x=(PM||PARX)[r.id],p=x?x.p:null,e=eqDe(r.cod_sap)||{};let hrs='',curso=false;
+  if(p){if(p.fin){hrs=hhmm(p.horas!=null?+p.horas:(new Date(p.fin)-new Date(p.inicio))/3600000);}else{hrs=hhmm((Date.now()-new Date(p.inicio))/3600000);curso=true;}}
+  return {r,e,p,hrs,curso};}
+const pillEst=r=>r.estado_equipo?`<span class="pill ${r.estado_equipo==='INOPERATIVO'?'p-b':'p-ok'}">${esc(r.estado_equipo)}</span>`:'';
+const pillPen=r=>r.backlog?`<span class="pill ${r.backlog_estado==='CERRADO'?'p-g':'p-w'}">${r.backlog_estado==='CERRADO'?'cerrado':'abierto'}</span> ${esc(r.backlog)}`:'';
+const GORDR=['reg','eq','int','par','det','com'];
+const GN={reg:'Registro',eq:'Equipo',int:'Intervención',par:'Parada',det:'Detalle',com:'Complemento'};
+const COLS=[
+ {k:'fecha',g:'reg',l:'Fecha',w:64,key:1,v:f=>fd(f.r.fecha)},
+ {k:'obra',g:'reg',l:'Obra',w:60,v:f=>f.r.obra||''},
+ {k:'equipo',g:'eq',l:'Equipo',w:126,v:f=>f.e.equipo||''},
+ {k:'cod',g:'eq',l:'Código',w:68,key:1,mono:1,v:f=>f.r.cod_sap||''},
+ {k:'marca',g:'eq',l:'Marca',w:86,v:f=>f.e.marca||''},
+ {k:'modelo',g:'eq',l:'Modelo',w:100,v:f=>f.e.modelo||''},
+ {k:'placa',g:'eq',l:'Placa/serie',w:104,mono:1,v:f=>f.e.serie_placa||''},
+ {k:'hrkm',g:'eq',l:'HR/KM',w:74,r:1,h:f=>(f.r.hrkm!=null?f0(f.r.hrkm):'')+(f.r.hrkm_panel!=null?` <span class="pill p-a" title="Lectura de panel ${f0(f.r.hrkm_panel)}">⟲</span>`:'')},
+ {k:'pers',g:'int',l:'Personal',w:132,key:1,mono:1,v:f=>(f.r.tecnicos||[]).join(', ')},
+ {k:'tipo',g:'int',l:'Tipo de intervención',w:136,v:f=>tipoDe(f.r)},
+ {k:'orig',g:'int',l:'Origen de la falla',w:136,v:f=>f.r.origen_falla||''},
+ {k:'est',g:'int',l:'Estado',w:92,c:1,h:f=>pillEst(f.r)},
+ {k:'tur',g:'par',l:'Turno parada',w:104,v:f=>f.p?(f.p.turnos||''):''},
+ {k:'fi',g:'par',l:'F. inicio',w:66,v:f=>f.p?dtF(f.p.inicio):''},
+ {k:'hi',g:'par',l:'Hora ini.',w:56,c:1,v:f=>f.p?dtH(f.p.inicio):''},
+ {k:'ff',g:'par',l:'F. fin',w:66,v:f=>f.p?dtF(f.p.fin):''},
+ {k:'hf',g:'par',l:'Hora fin',w:56,c:1,v:f=>f.p?dtH(f.p.fin):''},
+ {k:'hrs',g:'par',l:'Hrs reparación',w:84,r:1,key:1,h:f=>f.hrs?(f.curso?`<span style="color:#B91C1C;font-weight:700" title="Parada abierta: tiempo transcurrido">⏱ ${f.hrs}</span>`:`<b>${f.hrs}</b>`):''},
+ {k:'desc',g:'det',l:'Descripción de parada',w:230,key:1,v:f=>f.r.descripcion||(f.p&&f.p.detalle)||''},
+ {k:'acc',g:'det',l:'Acciones correctivas',w:230,v:f=>f.r.trabajo||''},
+ {k:'obs',g:'det',l:'Observaciones',w:210,v:f=>f.r.observacion||''},
+ {k:'pen',g:'det',l:'Pendiente',w:170,h:f=>pillPen(f.r)},
+ {k:'sis',g:'com',l:'Sistema',w:120,key:1,v:f=>f.r.sistema||''},
+ {k:'comp',g:'com',l:'Componente',w:130,v:f=>f.r.componente||''},
+ {k:'ins',g:'com',l:'Insumos',w:190,v:f=>insTxt(f.r)},
+ {k:'fot',g:'com',l:'Fotos',w:46,c:1,v:f=>(f.r.fotos||[]).length||''}];
+let GCOL=(()=>{try{return JSON.parse(localStorage.getItem('pdm_gcol')||'null')||{com:true};}catch(_){return {com:true};}})();
+const guardarG=()=>{try{localStorage.setItem('pdm_gcol',JSON.stringify(GCOL));}catch(_){}};
+function celda(c,f,off){const html=c.h?c.h(f):esc(c.v(f));
+  const cls=['tx',c.c?'c':'',c.r?'r':'',c.mono?'mono':'',c.k==='fecha'?'fz':''].filter(Boolean).join(' ');
+  return `<td class="${cls}"${c.k==='fecha'?` style="left:${off}px"`:''}>${html}</td>`;}
+function ajustaAlto(){const t=document.getElementById('tw');if(!t)return;t.style.maxHeight=Math.max(240,innerHeight-t.getBoundingClientRect().top-36)+'px';}
+
+/* ═══════════ REGISTROS · vista tabla (por defecto) ═══════════ */
+function pintarReg(){
+  const v=document.getElementById('v-reg'),sc=v.querySelector('.tw'),sl=sc?sc.scrollLeft:0,st=sc?sc.scrollTop:0,ad=esAdmin(),off=ad?28:0;
+  const pagBtn=`<div style="display:flex;gap:8px;justify-content:center;margin-top:8px">${pagina?`<button class="act" onclick="buscar(${pagina-1})">‹ Anteriores</button>`:''}${REG.length===PASO?`<button class="act" onclick="buscar(${pagina+1})">Siguientes ›</button>`:''}</div>`;
+  if(VREG==='agr'){pintarAgr(v,pagBtn);}
+  else{
+    const F=REG.map(r=>fila(r)),cols=COLS.filter(c=>!GCOL[c.g]||c.key),w=cols.reduce((s,c)=>s+c.w,0)+off;
+    const g1=GORDR.map(g=>{const n=cols.filter(c=>c.g===g).length;return n?`<th class="gh" colspan="${n}" data-g="${g}" title="Clic para ${GCOL[g]?'mostrar todas las columnas':'contraer'}">${GCOL[g]?'▸':'▾'} ${GN[g]}</th>`:'';}).join('');
+    const g2=cols.map(c=>`<th class="${[c.c?'c':'',c.r?'r':'',c.k==='fecha'?'fz':''].filter(Boolean).join(' ')}"${c.k==='fecha'?` style="left:${off}px"`:''} title="${esc(c.l)}">${c.l}</th>`).join('');
+    const body=F.map((f,i)=>`<tr data-i="${i}">${ad?`<td class="ac fz" style="left:0"><button class="del" title="Eliminar registro (Ctrl+Z lo deshace)" data-d="${i}">🗑</button></td>`:''}${cols.map(c=>celda(c,f,off)).join('')}</tr>`).join('')
+      ||`<tr><td colspan="${cols.length+(ad?1:0)}" class="vacio">Sin registros con estos filtros.</td></tr>`;
+    v.innerHTML=`<div class="tw" id="tw"><table class="tc" style="width:${w}px"><colgroup>${ad?'<col style="width:28px">':''}${cols.map(c=>`<col style="width:${c.w}px">`).join('')}</colgroup>
+      <thead><tr class="g1">${ad?'<th class="fz" style="left:0"></th>':''}${g1}</tr><tr class="g2">${ad?'<th class="fz" style="left:0"></th>':''}${g2}</tr></thead><tbody>${body}</tbody></table></div>${pagBtn}`;
+    v.querySelectorAll('.gh').forEach(h=>h.onclick=()=>{GCOL[h.dataset.g]=!GCOL[h.dataset.g];guardarG();pintarReg();});
+    v.querySelectorAll('tr[data-i]').forEach(tr=>tr.onclick=()=>detalle(REG[+tr.dataset.i]));
+    v.querySelectorAll('.del').forEach(b=>b.onclick=ev=>{ev.stopPropagation();borrarReg(REG[+b.dataset.d]);});
+  }
+  const t=v.querySelector('.tw');if(t){ajustaAlto();t.scrollLeft=sl;t.scrollTop=st;}
+  pie.textContent=`${REG.length} registro(s)${pagina?' · página '+(pagina+1):''} · clic en una fila abre el detalle · se consulta solo lo filtrado (${PASO} por página)`;
+}
+/* ═══════════ REGISTROS · vista agrupada ═══════════ */
+const diaTxt=iso=>{const d=new Date(iso+'T12:00:00');if(isNaN(d))return iso;const s=d.toLocaleDateString('es-PE',{weekday:'long',day:'numeric',month:'short'});return s.charAt(0).toUpperCase()+s.slice(1);};
+const nombreTec=c=>{const x=COL.find(z=>z.codigo===c);return x?nomC2(x):'';};
+function pintarAgr(v,pagBtn){
+  const ad=esAdmin(),G=new Map(),add=(k,lab,f)=>{if(!G.has(k))G.set(k,{k,lab,L:[]});G.get(k).L.push(f);};
+  REG.map(r=>fila(r)).forEach(f=>{const r=f.r;
+    if(GB==='dia')add(r.fecha,diaTxt(r.fecha),f);
+    else if(GB==='eq')add(r.cod_sap,`${r.cod_sap} · ${f.e.equipo||''} ${[f.e.marca,f.e.modelo].filter(Boolean).join(' ')}`,f);
+    else if(GB==='obra')add(r.obra||'—',r.obra||'Sin obra',f);
+    else (r.tecnicos&&r.tecnicos.length?r.tecnicos:['—']).forEach(t=>add(t,t==='—'?'Sin técnico':t+(nombreTec(t)?' · '+nombreTec(t):''),f));});
+  const S=[...G.values()].sort(GB==='dia'?(a,b)=>String(b.k).localeCompare(String(a.k)):(a,b)=>String(a.k).localeCompare(String(b.k)));
+  const AC=[...(GB==='dia'?[]:[{l:'Fecha',w:64,v:f=>fd(f.r.fecha)}]),{l:'Hora',w:54,c:1,v:f=>String(f.r.hora_ini||'').slice(0,5)},{l:'Código',w:70,mono:1,v:f=>f.r.cod_sap},{l:'Equipo',w:130,v:f=>f.e.equipo||''},
+    {l:'Tipo de intervención',w:138,v:f=>tipoDe(f.r)},{l:'Descripción de parada',w:240,v:f=>f.r.descripcion||(f.p&&f.p.detalle)||''},{l:'Acciones correctivas',w:230,v:f=>f.r.trabajo||''},
+    {l:'Estado',w:92,c:1,h:f=>pillEst(f.r)},{l:'Hrs rep.',w:62,r:1,h:f=>f.hrs?(f.curso?`⏱ ${f.hrs}`:`<b>${f.hrs}</b>`):''},{l:'Personal',w:130,mono:1,v:f=>(f.r.tecnicos||[]).join(', ')},{l:'Pendiente',w:170,h:f=>pillPen(f.r)}];
+  const w=AC.reduce((s,c)=>s+c.w,0)+(ad?28:0);let idx=0;
+  const secs=S.map((s,n)=>{const abierto=SEC[s.k]!==undefined?SEC[s.k]:(AGMODE?AGMODE==='open':n===0);
+    const inop=s.L.filter(f=>f.r.estado_equipo==='INOPERATIVO').length,pen=s.L.filter(f=>f.r.backlog&&f.r.backlog_estado!=='CERRADO').length;
+    const rows=abierto?`<div style="overflow:auto"><table class="tc" style="width:${w}px"><colgroup>${ad?'<col style="width:28px">':''}${AC.map(c=>`<col style="width:${c.w}px">`).join('')}</colgroup>
+      <thead><tr class="g2">${ad?'<th></th>':''}${AC.map(c=>`<th class="${[c.c?'c':'',c.r?'r':''].join(' ')}" style="position:static">${c.l}</th>`).join('')}</tr></thead>
+      <tbody>${s.L.map(f=>{const i=REG.indexOf(f.r);return `<tr data-i="${i}">${ad?`<td class="ac"><button class="del" data-d="${i}" title="Eliminar registro (Ctrl+Z lo deshace)">🗑</button></td>`:''}${AC.map(c=>`<td class="${['tx',c.c?'c':'',c.r?'r':'',c.mono?'mono':''].filter(Boolean).join(' ')}">${c.h?c.h(f):esc(c.v(f))}</td>`).join('')}</tr>`;}).join('')}</tbody></table></div>`:'';
+    return `<div class="secg"><div class="sgh" data-k="${esc(s.k)}" data-n="${n}"><span>${abierto?'▾':'▸'}</span><b>${esc(s.lab)}</b><span class="n">${s.L.length} registro(s)</span><div class="spacer"></div>${inop?`<span class="pill p-b">${inop} inoperativo(s)</span>`:''}${pen?`<span class="pill p-w">${pen} pendiente(s)</span>`:''}</div>${rows}</div>`;}).join('');
+  v.innerHTML=(secs||'<div class="card vacio">Sin registros con estos filtros.</div>')+pagBtn;
+  v.querySelectorAll('.sgh').forEach(h=>h.onclick=()=>{const k=h.dataset.k,n=+h.dataset.n,ab=SEC[k]!==undefined?SEC[k]:(AGMODE?AGMODE==='open':n===0);SEC[k]=!ab;pintarReg();});
+  v.querySelectorAll('tr[data-i]').forEach(tr=>tr.onclick=()=>detalle(REG[+tr.dataset.i]));
+  v.querySelectorAll('.del').forEach(b=>b.onclick=ev=>{ev.stopPropagation();borrarReg(REG[+b.dataset.d]);});}
+
+/* ── texto completo al pasar el cursor por una celda recortada ── */
+const tip=document.createElement('div');tip.id='tip';document.body.appendChild(tip);
+const posTip=ev=>{const w=tip.offsetWidth,h=tip.offsetHeight;tip.style.left=Math.max(6,Math.min(ev.clientX+14,innerWidth-w-8))+'px';tip.style.top=(ev.clientY+18+h>innerHeight?ev.clientY-h-10:ev.clientY+18)+'px';};
+document.addEventListener('mouseover',ev=>{const td=ev.target.closest&&ev.target.closest('#v-reg td.tx');
+  if(!td||td.scrollWidth<=td.clientWidth+1||!td.textContent.trim()){tip.style.display='none';return;}
+  tip.textContent=td.textContent.trim();tip.style.display='block';posTip(ev);});
+document.addEventListener('mousemove',ev=>{if(tip.style.display==='block')posTip(ev);});
+document.addEventListener('scroll',()=>{tip.style.display='none';},true);
+
+/* ── eliminar registro (se marca como anulado, no se pierde) y deshacer ── */
+const UNDO=[];
+function aviso(txt,conUndo){document.querySelectorAll('.toast').forEach(t=>t.remove());
+  const d=document.createElement('div');d.className='toast';d.innerHTML=`<span>${esc(txt)}</span>${conUndo?'<button>↶ Deshacer</button>':''}`;document.body.appendChild(d);
+  if(conUndo)d.querySelector('button').onclick=()=>{d.remove();deshacer();};setTimeout(()=>d.remove(),8000);}
+function pintarUndo(){btnUndo.disabled=!UNDO.length;nUndo.textContent=UNDO.length?`(${UNDO.length})`:'';}
+async function borrarReg(r){if(!r)return;const x=PARX[r.id];
+  if(!confirm(`¿Eliminar este registro?\n\n${r.cod_sap} · ${fd(r.fecha)} · ${MODN[r.modulo]||r.modulo}`+(x?`\n\nOjo: está ligado a una parada (${x.rol==='abre'?'la abre':'la cierra'}); la parada no se modifica.`:'')+'\n\nSe puede deshacer con Ctrl+Z.'))return;
+  const {error}=await sb.from('pdm_registros').update({anulado:true}).eq('id',r.id);if(error)return alert(error.message);
+  UNDO.push({id:r.id,t:`${r.cod_sap} · ${fd(r.fecha)}`});REG=REG.filter(z=>z.id!==r.id);pintarReg();conteos();pintarUndo();aviso(`Registro ${r.cod_sap} eliminado`,true);}
+async function deshacer(){const u=UNDO.pop();if(!u)return aviso('No hay nada que deshacer');
+  const {error}=await sb.from('pdm_registros').update({anulado:false}).eq('id',u.id);if(error){UNDO.push(u);return alert(error.message);}
+  pintarUndo();aviso(`Restaurado: ${u.t}`);buscar(pagina);}
+document.addEventListener('keydown',ev=>{if(!(ev.ctrlKey||ev.metaKey)||ev.shiftKey||String(ev.key).toLowerCase()!=='z')return;
+  const t=ev.target;if(t&&/^(INPUT|TEXTAREA|SELECT)$/.test(t.tagName)&&t.type!=='checkbox')return;if(vista!=='reg')return;ev.preventDefault();deshacer();});
+
+/* ═══════════ SEGUIMIENTO de reportes por técnico ═══════════ */
+let SEG={k:'7',obra:''};
+const SEGD=['D','L','M','M','J','V','S'];
+async function pintarSeg(){const v=document.getElementById('v-seg'),h=new Date(),hoy=isoDe(h);
+  let n=+SEG.k;if(SEG.k==='m')n=h.getDate();
+  const dias=[];for(let i=n-1;i>=0;i--)dias.push(isoDe(new Date(h.getTime()-i*86400000)));
+  const obras=[...new Set(EQ.map(x=>x.cod_proyec).filter(Boolean))].sort();
+  const ctl=`<div class="fr" style="margin-bottom:10px"><span class="lb">Obra</span><select id="sgObra" style="height:28px;border:1px solid var(--line);border-radius:9px;font:inherit;font-size:12px"><option value="">Todas</option>${obras.map(o=>`<option ${o===SEG.obra?'selected':''}>${esc(o)}</option>`).join('')}</select>
+    <span class="lb">Periodo</span><span class="chs" id="sgPer">${[['7','7 días'],['14','14 días'],['30','30 días'],['m','Mes actual']].map(([k,t])=>`<button data-k="${k}" class="${k===SEG.k?'on':''}">${t}</button>`).join('')}</span>
+    <div class="spacer"></div><span class="dim" style="font-size:11.5px">Cada registro en que el técnico figura como personal suma 1 · X = sin reportes · clic en un número abre sus registros</span></div>`;
+  v.innerHTML=ctl+'<div class="card vacio">Cargando…</div>';
+  const enlaza=()=>{sgObra.onchange=()=>{SEG.obra=sgObra.value;pintarSeg();};document.querySelectorAll('#sgPer button').forEach(b=>b.onclick=()=>{SEG.k=b.dataset.k;pintarSeg();});};enlaza();
+  let L=[];for(let d=0;;d+=1000){let q=sb.from('pdm_registros').select('fecha,tecnicos,obra').eq('anulado',false).gte('fecha',dias[0]).lte('fecha',hoy);if(SEG.obra)q=q.eq('obra',SEG.obra);
+    const {data,error}=await q.range(d,d+999);if(error){v.innerHTML=ctl+`<div class="card vacio">${esc(error.message)}</div>`;enlaza();return;}L=L.concat(data||[]);if(!data||data.length<1000)break;}
+  const M={};L.forEach(r=>(r.tecnicos||[]).forEach(t=>{const m=M[t]=M[t]||{};m[r.fecha]=(m[r.fecha]||0)+1;}));
+  const esSup=c=>/SUPERV/.test(nrm(c.especialidad));
+  const T=COL.filter(c=>c.activo!==false&&!esSup(c)&&(!SEG.obra||c.obra===SEG.obra)).map(c=>({cod:c.codigo,nom:[c.nombres,c.ap_paterno].filter(Boolean).join(' ')}));
+  Object.keys(M).forEach(cod=>{if(!T.some(t=>t.cod===cod)&&!COL.some(c=>c.codigo===cod&&esSup(c)))T.push({cod,nom:'(no figura en colaboradores)'});});
+  T.sort((a,b)=>String(a.cod).localeCompare(String(b.cod)));
+  const colTot=dias.map(d=>T.reduce((s,t)=>s+((M[t.cod]||{})[d]||0),0));
+  const cab=dias.map(d=>{const dt=new Date(d+'T12:00:00');return `<th class="${dt.getDay()===0?'dom':''} ${d===hoy?'hoy':''}">${d.slice(8)}<small>${SEGD[dt.getDay()]}</small></th>`;}).join('');
+  const filas=T.map(t=>{const m=M[t.cod]||{};let tot=0;
+    const c=dias.map(d=>{const k=m[d]||0;tot+=k;return k?`<td class="n" data-t="${esc(t.cod)}" data-d="${d}">${k}</td>`:`<td class="x">X</td>`;}).join('');
+    return `<tr><td class="nm"><b class="mono">${esc(t.cod)}</b> <span class="dim">${esc(t.nom)}</span></td>${c}<td class="tt">${tot}</td></tr>`;}).join('');
+  v.innerHTML=ctl+`<div class="tw" style="max-height:none"><table class="sg"><thead><tr><th style="text-align:left;position:sticky;left:0;z-index:3">Colaborador</th>${cab}<th>Total</th></tr></thead>
+    <tbody>${filas||'<tr><td class="vacio" colspan="'+(dias.length+2)+'">Sin colaboradores para esta obra.</td></tr>'}<tr class="tot"><td class="nm" style="background:#f4f6fa">Total del día</td>${colTot.map(x=>`<td>${x}</td>`).join('')}<td>${colTot.reduce((a,b)=>a+b,0)}</td></tr></tbody></table></div>`;
+  enlaza();
+  v.querySelectorAll('td.n').forEach(td=>td.onclick=()=>{FIL.tec.clear();FIL.tec.add(td.dataset.t);fDesde.value=fHasta.value=td.dataset.d;PER='';pintarFil();irVista('reg');buscar(0);});
+  pie.textContent=`Seguimiento · ${T.length} colaborador(es) · ${dias.length} día(s) · ${L.length} registro(s)`;}
+
+/* ═══════════ EXCEL (campos del parte diario) ═══════════ */
+async function exportarXls(){if(!window.XLSX)return alert('No se cargó la librería de Excel.');
+  pie.textContent='Preparando Excel…';let out=[],d=0;
+  for(;;){const {data,error}=await consultaBase().range(d,d+999);if(error){alert(error.message);return;}out=out.concat(data||[]);if(!data||data.length<1000||out.length>=20000)break;d+=1000;}
+  const PM=await mapaParadas(out.map(r=>r.id));
+  const rows=out.map(r=>{const f=fila(r,PM),p=f.p;return {'FECHA':r.fecha,'OBRA':r.obra,'EQUIPO':f.e.equipo||'','CÓDIGO':r.cod_sap,'MARCA':f.e.marca||'','MODELO':f.e.modelo||'','PLACA/SERIE':f.e.serie_placa||'',
+    'HOROMETRO / KILOMETRAJE':r.hrkm,'HR/KM PANEL':r.hrkm_panel,'PERSONAL':(r.tecnicos||[]).join(', '),'TURNO PARADA':p?p.turnos||'':'','TIPO DE INTERVENCION':tipoDe(r),'ORIGEN DE LA FALLA':r.origen_falla||'',
+    'FECHA INICIO PARADA':p?dtF(p.inicio,1):'','HORA INICIO':p?dtH(p.inicio):'','FECHA FIN PARADA':p?dtF(p.fin,1):'','HORA FIN':p?dtH(p.fin):'','HRS REPARACION (HH:MM)':f.hrs,
+    'ESTADO':r.estado_equipo||'','DESCRIPCION DE PARADA':r.descripcion||(p&&p.detalle)||'','ACCIONES CORRECTIVAS':r.trabajo||'','OBSERVACIONES':r.observacion||'',
+    'SISTEMA':r.sistema||'','COMPONENTE':r.componente||'','INSUMOS':insTxt(r),'PENDIENTE':r.backlog||'','ESTADO PENDIENTE':r.backlog_estado||'','REGISTRADO POR':r.registrado_por||'','FOTOS':(r.fotos||[]).length,'DETALLE':JSON.stringify(r.detalle||{})};});
+  const ws=XLSX.utils.json_to_sheet(rows),wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,ws,'PARTE DIARIO');
+  XLSX.writeFile(wb,`Parte_diario_mecanico_${fDesde.value||''}_${fHasta.value||''}.xlsx`);pie.textContent=`${rows.length} fila(s) exportadas`;}
+
 /* paradas (horas inoperativas) ligadas a los registros: la que abre (INOPERATIVO) y la que cierra (vuelve a OPERATIVO) */
 let PARX={};
-async function cargarParadas(){PARX={};const ids=REG.map(r=>r.id);if(!ids.length)return;
+async function mapaParadas(ids){const M={};if(!ids.length)return M;
   try{const L=[];for(let i=0;i<ids.length;i+=100){const lote=ids.slice(i,i+100).join(',');
-      const {data,error}=await sb.from('pdm_paradas').select('*').or(`reg_inicio.in.(${lote}),reg_fin.in.(${lote})`).eq('anulado',false);if(error)return;L.push(...(data||[]));}
-    L.forEach(p=>{if(p.reg_inicio)PARX[p.reg_inicio]={p,rol:'abre'};if(p.reg_fin)PARX[p.reg_fin]={p,rol:'cierra'};});}catch(_){}}
+      const {data,error}=await sb.from('pdm_paradas').select('*').or(`reg_inicio.in.(${lote}),reg_fin.in.(${lote})`).eq('anulado',false);if(error)return M;L.push(...(data||[]));}
+    L.forEach(p=>{if(p.reg_inicio)M[p.reg_inicio]={p,rol:'abre'};if(p.reg_fin)M[p.reg_fin]={p,rol:'cierra'};});}catch(_){}
+  return M;}
+async function cargarParadas(){PARX=await mapaParadas(REG.map(r=>r.id));}
 const fhP=iso=>{const d=new Date(iso);return isNaN(d)?'':`${String(d.getDate()).padStart(2,'0')}/${String(d.getMonth()+1).padStart(2,'0')} ${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`;};
 const f1=n=>Number(n).toLocaleString('es-PE',{maximumFractionDigits:1});
 function parTxt(r){const x=PARX[r.id];if(!x)return '';const p=x.p;
@@ -143,25 +453,6 @@ function parDet(r){const x=PARX[r.id];if(!x)return '';const p=x.p;
    HR/KM al parar: ${p.hrkm_ini!=null?f0(p.hrkm_ini):'—'} · al volver a operar: ${p.hrkm_fin!=null?f0(p.hrkm_fin):'—'} · abrió ${esc(p.abierta_por||'')}${p.cerrada_por?' · cerró '+esc(p.cerrada_por):''}</span></span>`;}
 function v_reg_err(e){document.getElementById('v-reg').innerHTML=`<div class="card vacio">No se pudo leer <b>pdm_registros</b>.<br>Si es la primera vez, ejecuta <b>pdm_tablas.sql</b> en Supabase.<br><span class="dim">${esc(e.message)}</span></div>`;pie.textContent='';}
 const insTxt=r=>(r.insumos||[]).map(x=>`${x.n}${x.q!=null?' '+x.q+' '+(x.u||''):''}`).join(' · ');
-function pintarReg(){
-  const v=document.getElementById('v-reg'), L=REG;
-  const n=t=>L.filter(r=>r.modulo===t).length, inop=L.filter(r=>r.estado_equipo==='INOPERATIVO').length, eqs=new Set(L.map(r=>r.cod_sap)).size;
-  v.innerHTML=`<div class="tiles"><div class="tile"><div class="l">Registros (página)</div><div class="v">${L.length}</div></div><div class="tile"><div class="l">Equipos</div><div class="v">${eqs}</div></div>
-    <div class="tile"><div class="l">Rep. mecánico</div><div class="v">${n('MECANICO')}</div></div><div class="tile"><div class="l">Lubricación</div><div class="v">${n('LUBRICACION')}</div></div>
-    <div class="tile"><div class="l">Llantas · GETs · PM</div><div class="v">${n('LLANTAS')} · ${n('GETS')} · ${n('MNTTO_PREV')}</div></div><div class="tile"><div class="l">Inoperativos</div><div class="v" style="color:${inop?'#B91C1C':''}">${inop}</div></div></div>
-   <div class="card" style="padding:0;overflow:auto"><table class="t"><thead><tr><th>Fecha</th><th class="c">Turno</th><th class="c">Hora</th><th>Obra</th><th>Equipo</th><th class="r">HR/KM</th><th>Módulo</th><th>Sistema</th><th>Trabajo</th><th class="c">Estado</th><th>Técnicos</th><th>Insumos</th><th>Pendiente</th><th class="c">📷</th></tr></thead>
-   <tbody>${L.map((r,i)=>{const e=eqDe(r.cod_sap);return `<tr data-i="${i}"><td>${fd(r.fecha)}</td><td class="c">${esc(r.turno||'')}</td><td class="c">${esc(String(r.hora_ini||'').slice(0,5))}${r.hora_fin?'–'+esc(String(r.hora_fin).slice(0,5)):''}</td>
-     <td>${esc(r.obra||'')}</td><td class="mono"><b>${esc(r.cod_sap)}</b><br><span class="dim" style="font-family:inherit">${esc(e?e.equipo:'')}</span></td>
-     <td class="r">${r.hrkm!=null?f0(r.hrkm):''}${r.hrkm_panel!=null?`<br><span class="pill p-a" title="Lectura de panel">⟲ ${f0(r.hrkm_panel)}</span>`:''}</td>
-     <td>${esc(MODN[r.modulo]||r.modulo)}${r.especialidad?`<br><span class="dim">${esc(r.especialidad)}</span>`:''}</td><td>${esc(r.sistema||'')}</td><td>${esc(r.trabajo||'')}</td>
-     <td class="c">${r.estado_equipo?`<span class="pill ${r.estado_equipo==='INOPERATIVO'?'p-b':'p-ok'}">${esc(r.estado_equipo)}</span>`:''}${parTxt(r)}</td>
-     <td class="mono">${esc((r.tecnicos||[]).join(', '))}</td><td style="max-width:220px">${esc(insTxt(r))}</td>
-     <td style="max-width:200px">${r.backlog?`<span class="pill ${r.backlog_estado==='CERRADO'?'p-g':'p-w'}">${r.backlog_estado==='CERRADO'?'cerrado':'abierto'}</span> ${esc(r.backlog)}`:''}</td><td class="c">${(r.fotos||[]).length||''}</td></tr>`;}).join('')
-     ||`<tr><td colspan="14" class="vacio">Sin registros con estos filtros.</td></tr>`}</tbody></table></div>
-   <div style="display:flex;gap:8px;justify-content:center">${pagina?`<button class="act" onclick="buscar(${pagina-1})">‹ Anteriores</button>`:''}${L.length===PASO?`<button class="act" onclick="buscar(${pagina+1})">Siguientes ›</button>`:''}</div>`;
-  v.querySelectorAll('tr[data-i]').forEach(tr=>tr.onclick=()=>detalle(REG[+tr.dataset.i]));
-  pie.textContent=`${L.length} registro(s)${pagina?' · página '+(pagina+1):''} · se consulta solo lo filtrado (${PASO} por página)`;
-}
 function firmaSVG(t){if(!t)return '<span class="dim">Sin firma</span>';
   const h=Math.max(...t.split(/[ |]/).map(p=>+p.split(',')[1]||0))>100?200:100;
   return `<svg viewBox="0 0 300 ${h}" width="300" height="${h}" style="border:1px dashed #c9ced6;border-radius:8px;background:#fff">${t.split('|').map(tr=>`<polyline points="${esc(tr)}" fill="none" stroke="#1F3864" stroke-width="2" stroke-linecap="round"/>`).join('')}</svg>`;}
@@ -176,7 +467,7 @@ function detTxt(r){const d=r.detalle||{};
   return '';}
 async function detalle(r){const e=eqDe(r.cod_sap);
   document.body.insertAdjacentHTML('beforeend',`<div class="modal" id="md"><div class="mc"><div class="mh"><h3>${esc(MODN[r.modulo]||r.modulo)} · ${esc(r.cod_sap)} · ${fd(r.fecha)}</h3><div class="spacer"></div>
-   ${esAdmin()?'<button class="act rojo" id="mdAnu">Anular</button>':''}<button class="act" id="mdX">Cerrar</button></div><div class="mb">
+   ${esAdmin()?'<button class="act rojo" id="mdAnu">Eliminar</button>':''}<button class="act" id="mdX">Cerrar</button></div><div class="mb">
    <div class="kv"><b>Equipo</b><span>${esc(r.cod_sap)} · ${esc(e?e.equipo+' '+(e.modelo||''):'')}</span><b>Obra · turno</b><span>${esc(r.obra||'')} · ${esc(r.turno||'')}</span>
    <b>Hora</b><span>${esc(String(r.hora_ini||'').slice(0,5))}${r.hora_fin?' – '+esc(String(r.hora_fin).slice(0,5)):''}</span>
    <b>HR/KM</b><span>${r.hrkm!=null?f0(r.hrkm):'—'}${r.hrkm_panel!=null?' (panel '+f0(r.hrkm_panel)+')':''}</span>
@@ -191,28 +482,15 @@ async function detalle(r){const e=eqDe(r.cod_sap);
    <b>Registrado</b><span class="dim">${esc(new Date(r.created_at).toLocaleString('es-PE'))} · id ${esc(r.id)}</span></div></div></div></div>`);
   const cerrar=()=>{const m=document.getElementById('md');if(m)m.remove();};
   mdX.onclick=cerrar; md.addEventListener('click',ev=>{if(ev.target.id==='md')cerrar();});
-  if(document.getElementById('mdAnu'))mdAnu.onclick=async()=>{if(!confirm('¿Anular este registro? Deja de figurar en los listados.'))return;
-    const {error}=await sb.from('pdm_registros').update({anulado:true}).eq('id',r.id);if(error)return alert(error.message);cerrar();buscar(pagina);};
+  if(document.getElementById('mdAnu'))mdAnu.onclick=async()=>{cerrar();await borrarReg(r);};
   if((r.fotos||[]).length){const urls=await Promise.all(r.fotos.map(p=>sb.storage.from('pdm-fotos').createSignedUrl(p,3600).then(x=>x.data&&x.data.signedUrl).catch(()=>null)));
     const box=document.getElementById('mdF');if(box)box.innerHTML=urls.map(u=>u?`<a href="${esc(u)}" target="_blank"><img src="${esc(u)}"></a>`:'<span class="dim">no disponible</span>').join('');}
 }
-btnBuscar.onclick=()=>buscar(0); btnRec.onclick=()=>{cargarListas().then(()=>buscar(pagina));};
-[fObra,fMod].forEach(s=>s.onchange=()=>buscar(0));
-[fEq,fTec,fDesde,fHasta].forEach(i=>i.addEventListener('keydown',ev=>{if(ev.key==='Enter')buscar(0);}));
-btnXls.onclick=async()=>{pie.textContent='Preparando Excel…';let out=[],d=0;
-  for(;;){const {data,error}=await consultaBase().range(d,d+999);if(error){alert(error.message);return;}out=out.concat(data||[]);if(!data||data.length<1000||out.length>=20000)break;d+=1000;}
-  const rows=out.map(r=>({'FECHA':r.fecha,'TURNO':r.turno,'HORA INICIO':String(r.hora_ini||'').slice(0,5),'HORA FIN':String(r.hora_fin||'').slice(0,5),'OBRA':r.obra,'COD SAP':r.cod_sap,
-    'EQUIPO':(eqDe(r.cod_sap)||{}).equipo||'','HR/KM':r.hrkm,'HR/KM PANEL':r.hrkm_panel,'MODULO':MODN[r.modulo]||r.modulo,'ESPECIALIDAD':r.especialidad,'ESTADO':r.estado_equipo,
-    'SISTEMA':r.sistema,'COMPONENTE':r.componente,'FALLA':r.descripcion,'TRABAJO':r.trabajo,'TIPO PARADA':r.tipo_parada,'ORIGEN':r.origen_falla,'FRENTE':r.frente,
-    'INSUMOS':insTxt(r),'DETALLE':JSON.stringify(r.detalle||{}),'OBSERVACION':r.observacion,'PENDIENTE':r.backlog,'ESTADO PENDIENTE':r.backlog_estado,
-    'TECNICOS':(r.tecnicos||[]).join(', '),'REGISTRADO POR':r.registrado_por,'FOTOS':(r.fotos||[]).length}));
-  const ws=XLSX.utils.json_to_sheet(rows),wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,ws,'PARTE DIARIO');
-  XLSX.writeFile(wb,`Parte_diario_mecanico_${fObra.value||'todas'}_${fDesde.value||''}_${fHasta.value||''}.xlsx`);pie.textContent=`${rows.length} fila(s) exportadas`;};
 
 /* ═══════════ PENDIENTES ═══════════ */
 async function pintarPen(){const v=document.getElementById('v-pen');v.innerHTML='<div class="card vacio">Cargando…</div>';
   let q=sb.from('pdm_registros').select('id,fecha,obra,cod_sap,backlog,backlog_estado,backlog_cerrado_en,tecnicos,registrado_por,estado_equipo,modulo').not('backlog','is',null).eq('anulado',false).order('fecha',{ascending:false}).limit(500);
-  if(fObra.value)q=q.eq('obra',fObra.value);
+  if(FIL.obra.size)q=q.in('obra',[...FIL.obra]);
   const {data,error}=await q;if(error){v.innerHTML=`<div class="card vacio">${esc(error.message)}</div>`;return;}
   const A=(data||[]).filter(x=>x.backlog_estado!=='CERRADO'),C=(data||[]).filter(x=>x.backlog_estado==='CERRADO').slice(0,50);
   const fila=(p,ab)=>`<tr><td>${fd(p.fecha)}</td><td>${esc(p.obra||'')}</td><td class="mono"><b>${esc(p.cod_sap)}</b></td><td>${esc(p.backlog)}</td><td class="c">${p.estado_equipo==='INOPERATIVO'?'<span class="pill p-b">INOPERATIVO</span>':''}</td><td class="mono">${esc(p.registrado_por||'')}</td><td>${esc(MODN[p.modulo]||'')}</td>
@@ -456,12 +734,11 @@ async function importarMae(f,C){if(!window.XLSX)return alert('No se cargó la li
   alert(err.length?`Importado con ${err.length} error(es):\n${[...new Set(err)].slice(0,3).join('\n')}`:'✓ Lista importada.');}
 
 /* ═══════════ INICIO ═══════════ */
-async function cargarListas(){const [e,c,m]=await Promise.all([sb.from('maestro').select('cod_sap,equipo,modelo,cod_proyec').order('cod_sap'),
+async function cargarListas(){const [e,c,m]=await Promise.all([sb.from('maestro').select('cod_sap,equipo,modelo,cod_proyec,marca,serie_placa,familia').order('cod_sap'),
     sb.from('pdm_colaboradores').select('*').order('ap_paterno'),sb.from('pdm_maestros').select('*')]);
   EQ=e.data||[];COL=c.data||[];MAE=m.data||[];
   {const L=MAE.filter(x=>x.tipo==='ESPECIALIDAD'&&x.activo!==false).sort((a,b)=>(a.orden??999)-(b.orden??999)).map(x=>x.valor);if(L.length)ESPS=L;}
-  const ov=fObra.value, obras=[...new Set(EQ.map(x=>x.cod_proyec).filter(Boolean))].sort();
-  fObra.innerHTML='<option value="">Todas</option>'+obras.map(o=>`<option>${esc(o)}</option>`).join('');fObra.value=ov;}
+  armarMS();}
 (async()=>{
   const {data:{session}}=await sb.auth.getSession();
   if(!session){document.body.innerHTML='<div style="padding:60px;text-align:center"><h2 style="font-size:18px">Sesión no iniciada</h2><p style="color:#6b747d">Ingresa en la página principal.</p></div>';return;}
@@ -469,7 +746,7 @@ async function cargarListas(){const [e,c,m]=await Promise.all([sb.from('maestro'
   perfil=p||{};who.textContent=(perfil.nombre||session.user.email)+' · '+(perfil.rol||'');
   if(perfil.estado!=='aprobado'||(perfil.rol!=='admin'&&!(Array.isArray(perfil.paginas)&&perfil.paginas.includes('pdm')))){
     document.body.innerHTML='<div style="padding:60px;text-align:center;font-family:sans-serif"><h2 style="font-size:18px;margin-bottom:10px">Sin acceso a Parte diario mecánico</h2><p style="color:#6b747d">Un administrador debe habilitarte esta pestaña desde Usuarios.</p></div>';return;}
-  const h=new Date(); fHasta.value=isoDe(h); fDesde.value=isoDe(new Date(h.getTime()-30*86400000));
+  iniciarUI(); periodo('7'); clearTimeout(_bt);
   await cargarListas(); await buscar(0);
 })();
 </script>
