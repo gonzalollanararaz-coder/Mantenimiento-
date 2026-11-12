@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
 <meta charset="utf-8">
-<meta name="gllr-version" content="V.101126-11" data-pagina="REPORTE (app de campo)">
+<meta name="gllr-version" content="V.101126-12" data-pagina="REPORTE (app de campo)">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>REPORTE</title>
 <link rel="manifest" href="campo.webmanifest">
@@ -1103,31 +1103,49 @@ setInterval(()=>{if(S.online&&S.COLA.some(x=>!x.enviado))sincronizar();},60000);
 
 /* ═══════════════════════ WHATSAPP ═══════════════════════ */
 function nombreCol(c){const x=colDe(c);return x?c:c;}
+/* Texto del reporte para WhatsApp: pocos íconos (solo el del estado), títulos en negrita (*así*) y orden de lectura:
+   qué falla → qué se hizo → con qué → cómo quedó el equipo → quién → parada y pendiente. */
+const ACR_WA=new Set(['EP','PM','GET','GETS','ECM','ECU','ABS','LED','GPS','DPF','EGR','SCR','DEF','PTO','SAE','API','ISO','AC','DC','SAP','GLP','SOS']);
+/* los textos se guardan en mayúsculas y sin tilde: se les devuelve la tilde en las palabras más comunes */
+const TILDE_WA={SUSPENSION:'suspensión',HIDRAULICO:'hidráulico',HIDRAULICA:'hidráulica',HIDRAULICOS:'hidráulicos',EVALUACION:'evaluación',REPARACION:'reparación',INSPECCION:'inspección',ELECTRICO:'eléctrico',ELECTRICA:'eléctrica',
+  MECANICO:'mecánico',MECANICA:'mecánica',TRANSMISION:'transmisión',DIRECCION:'dirección',REFRIGERACION:'refrigeración',CAMION:'camión',ADMISION:'admisión',NEUMATICO:'neumático',NEUMATICOS:'neumáticos',BATERIA:'batería',
+  ILUMINACION:'iluminación',LUBRICACION:'lubricación',PRESION:'presión',OPERACION:'operación',INSTALACION:'instalación',REVISION:'revisión',ALINEACION:'alineación',CALIBRACION:'calibración',REGULACION:'regulación',GRUA:'grúa',DIAGNOSTICO:'diagnóstico',ROTACION:'rotación',SUSTITUCION:'sustitución'};
+const capWA=s=>{s=String(s||'').trim();if(!s)return '';let primero=true;
+  return s.split(/(\s+)/).map(w=>{if(!w.trim())return w;const nucleo=w.replace(/[^A-Za-zÁÉÍÓÚÑÜáéíóúñü0-9]/g,'');
+    let o=(/\d/.test(w)||ACR_WA.has(nucleo.toUpperCase()))?w:w.toLowerCase();
+    if(TILDE_WA[nucleo.toUpperCase()])o=o.replace(nucleo.toLowerCase(),TILDE_WA[nucleo.toUpperCase()]);
+    if(primero){primero=false;o=o.charAt(0).toUpperCase()+o.slice(1);}return o;}).join('');};
+const TIT_WA={MECANICO:'REPORTE MECÁNICO',LUBRICACION:'LUBRICACIÓN',LLANTAS:'LLANTAS (NEUMÁTICOS)',GETS:'HERRAMIENTAS DE CORTE (GETS)',MNTTO_PREV:'MANTENIMIENTO PREVENTIVO (PM)',PENDIENTE:'PENDIENTE REGISTRADO'};
 function textoWA(r,foto){
-  const e=eqDe(r.cod_sap)||{}, d=r.detalle||{}, T=[];
-  const hh=v=>String(v||'').slice(0,5);
-  // trabajos realizados (según el área)
-  const t0=[r.trabajo,r.modulo==='MECANICO'&&r.sistema?'('+r.sistema+(r.componente?' · '+r.componente:'')+')':''].filter(Boolean).join(' ');
-  if(r.modulo!=='MNTTO_PREV'&&t0)T.push(t0);
-  if(r.descripcion)T.push('Falla: '+r.descripcion);
-  if(r.modulo==='LUBRICACION'&&d.punto)T.push('Punto: '+d.punto);
-  if(r.modulo==='LLANTAS'){(d.posiciones||[]).forEach(q=>T.push(`P${q.pos}: ${[q.medida,q.marca,q.modelo].filter(Boolean).join(' · ')}${q.cocada!=null?' · '+q.cocada+' mm':''}${q.presion!=null?' · '+q.presion+' psi':''}`));
-    if(d.cambio&&(d.cambio.marca||d.cambio.medida||d.cambio.diseno||d.cambio.serie||d.cambio.pos))T.push(`Llanta nueva P${d.cambio.pos||'?'}: ${[d.cambio.marca,d.cambio.medida,d.cambio.diseno,d.cambio.estado].filter(Boolean).join(' · ')}${d.cambio.serie?' · S/N '+d.cambio.serie:''}`);}
-  if(r.modulo==='GETS'){if(d.implemento)T.push('Aplicación: '+d.implemento);(d.componentes||[]).forEach(c=>T.push(`${c.n}${c.cant!=null?' × '+c.cant:''}${c.desgaste!=null?' · desgaste '+c.desgaste+'%':''}`));}
-  if(r.modulo==='MNTTO_PREV'){if(r.trabajo)T.push(r.trabajo);(d.tareas||[]).forEach(x=>T.push(x));}
-  if(r.insumos&&r.insumos.length)T.push('Insumos: '+r.insumos.map(x=>`${x.n}${x.q!=null&&x.q!==''?' '+x.q+' '+(x.u||''):''}`.trim()).join(', '));
-  if(r.observacion)T.push('Obs.: '+r.observacion);
-  const L=[];
-  L.push(`∙ Equipo: ${r.cod_sap}`);
-  L.push(`∙ ${e.contador==='Km'?'Kilometraje':'Horómetro'}: ${r.hrkm!=null?f0(r.hrkm):'—'}`);
-  L.push(`∙ Fecha: ${fd(r.fecha)}`);
-  L.push(`∙ Hora: ${hh(r.hora_ini)}${r.hora_fin?' – '+hh(r.hora_fin):''}`);
-  L.push(' ');
-  L.push('∙ Trabajos realizados:');
-  T.forEach(x=>L.push('   - '+x)); if(!T.length)L.push(' ');
-  L.push(`∙ Estado: ${r.estado_equipo||'—'}`);
-  if(d.parada){const p=d.parada;L.push(p.fin?`∙ Parada: ${fhTxt(p.inicio)} → ${fhTxt(p.fin)} = ${f1(p.horas)} h inoperativas (${p.turnos})${p.falla&&p.falla!==r.descripcion?'\n   - Falla: '+p.falla:''}`:`∙ Parada desde: ${fhTxt(p.inicio)} · ${p.motivo} (${p.turnos})`);}
-  L.push(`∙ Técnicos: ${(r.tecnicos||[]).join(', ')}`);
+  const e=eqDe(r.cod_sap)||{}, d=r.detalle||{}, km=e.contador==='Km', hh=v=>String(v||'').slice(0,5), B=[];
+  const add=(k,v)=>{if(v)B.push(`*${k}:* ${v}`);};
+  const falla=r.descripcion||(d.parada&&d.parada.falla)||'';
+  if(r.modulo==='MECANICO'||r.modulo==='LUBRICACION')add('Sistema',[capWA(r.sistema),capWA(r.componente)].filter(Boolean).join(' · '));
+  if(r.modulo==='LUBRICACION')add('Punto',capWA(d.punto));
+  if(r.modulo==='GETS')add('Aplicación',capWA(d.implemento));
+  add('Falla',capWA(falla));
+  if(r.modulo==='MNTTO_PREV')add('Mantenimiento',capWA(r.trabajo));
+  else if(r.modulo!=='PENDIENTE')add('Trabajo realizado',capWA(r.trabajo));
+  if(r.modulo==='LLANTAS'){(d.posiciones||[]).forEach(q=>B.push(`*P${q.pos}:* ${[q.medida,q.marca,q.modelo].filter(Boolean).join(' · ')}${q.cocada!=null?' · cocada '+q.cocada+' mm':''}${q.presion!=null?' · '+q.presion+' psi':''}`));
+    const c=d.cambio;if(c&&(c.marca||c.medida||c.diseno||c.serie||c.pos))B.push(`*Llanta nueva P${c.pos||'?'}:* ${[c.marca,c.medida,c.diseno,c.estado].filter(Boolean).join(' · ')}${c.serie?' · S/N '+c.serie:''}`);}
+  if(r.modulo==='GETS'&&(d.componentes||[]).length){B.push('*Componentes:*');d.componentes.forEach(c=>B.push(`- ${capWA(c.n)}${c.cant!=null?' × '+c.cant:''}${c.desgaste!=null?' · desgaste '+c.desgaste+'%':''}`));}
+  if(r.modulo==='MNTTO_PREV'&&(d.tareas||[]).length){B.push('*Tareas ejecutadas:*');d.tareas.forEach(x=>B.push('- '+capWA(x)));}
+  if(r.insumos&&r.insumos.length)add('Insumos',r.insumos.map(x=>{const u=String(x.u||'');return `${capWA(x.n)}${x.q!=null&&x.q!==''?' × '+x.q+(u?' '+(/^[A-Z]{2,}$/.test(u)?u.toLowerCase():u):''):''}`;}).join(', '));
+  add('Observación',capWA(r.observacion));
+  const L=[`*${TIT_WA[r.modulo]||'REPORTE'}*`,
+    `*${r.cod_sap}*${[capWA(e.equipo),e.marca,e.modelo].filter(Boolean).length?' · '+[capWA(e.equipo),e.marca,e.modelo].filter(Boolean).join(' '):''}`,
+    `· Fecha: ${fd(r.fecha)}`,
+    `· ${km?'Kilometraje':'Horómetro'}: ${r.hrkm!=null?f0(r.hrkm)+(km?' km':' h'):'—'}`,
+    `· Hora ${r.hora_fin?'inicio-fin':'inicio'}: ${hh(r.hora_ini)}${r.hora_fin?'–'+hh(r.hora_fin):''}`];
+  if(B.length){L.push('');B.forEach(x=>L.push(x));}
+  L.push('');
+  L.push(`*Estado final:* ${r.estado_equipo||'—'}${r.estado_equipo==='OPERATIVO'?' 🟢':r.estado_equipo==='INOPERATIVO'?' 🔴':''}`);
+  L.push(`*Técnicos:* ${(r.tecnicos||[]).join(', ')}`);
+  const p=d.parada;
+  if(p){if(p.fin){const m=Math.max(0,Math.round((new Date(p.fin)-new Date(p.inicio))/60000));L.push(`*Parada:* ${fhTxt(p.inicio)} → ${fhTxt(p.fin)} (${Math.floor(m/60)}:${String(m%60).padStart(2,'0')} h)`);}
+    else L.push(`*Parado desde:* ${fhTxt(p.inicio)}`);}
+  if(r.backlog)L.push(`*Pendiente:* ${capWA(r.backlog)}`);
+  if(/^https?:/.test(foto||''))L.push(`*Foto:* ${foto}`);
   return L.join('\n');
 }
 const _furl=new Map();
