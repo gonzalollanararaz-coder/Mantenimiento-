@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
 <meta charset="utf-8">
-<meta name="gllr-version" content="V.101126-9" data-pagina="REPORTE (app de campo)">
+<meta name="gllr-version" content="V.101126-11" data-pagina="REPORTE (app de campo)">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>REPORTE</title>
 <link rel="manifest" href="campo.webmanifest">
@@ -791,7 +791,6 @@ function insumos(tipo,esp,tit){ const L=M(tipo,esp); const def=L[0];
 function cambiaIns(i,v,tipo,esp){const m=M(tipo,esp||null).find(x=>x.valor===v);S.F.ins[i].o=v==='OTRO';S.F.ins[i].n=v==='OTRO'?'':v;if(m&&m.unidad)S.F.ins[i].u=m.unidad;else if(v==='NINGUNO')S.F.ins[i].u='';guardarCampos();pintar();}
 function cierre(){return `<div class="c"><div class="sec">Foto (opcional, máx. 3)</div>
    <div class="fotos">${S.F.fotos.map((f,i)=>`<div style="background-image:url(${f.url})"><i onclick="event.stopPropagation();S.F.fotos.splice(${i},1);guardarCampos();pintar()">✕</i></div>`).join('')}${S.F.fotos.length<3?`<div onclick="guardarCampos();$('inFoto').click()">📷</div>`:''}</div>
-   <label>Observación adicional</label><textarea class="up" rows="2" data-k="obs">${esc(vF('obs'))}</textarea>
    <div class="dim" style="margin-top:12px">✍ La firma se pide al pulsar Guardar.</div>
 </div>`;}
 /* fotos: se comprimen en el celular (máx. 1280 px, JPEG ~70%) */
@@ -1023,7 +1022,7 @@ async function guardar(){
   if(hr!=null&&window.GLLR_DSF&&GLLR_DSF.de(e.cod_sap).length){const c=GLLR_DSF.convertir(e.cod_sap,fecha,hr,e,'reporte');if(c.tipo==='panel'){hrPanel=hr;hr=c.v;}}
   const r={id:uuid(),created_local:new Date().toISOString(),fecha,hora_ini:val('hini')||null,hora_fin:val('hfin')||null,turno:S.F.ch.turno||null,
     obra:e.cod_proyec||S.obra||null,cod_sap:e.cod_sap,maestro_id:e.id||null,modulo:mod,especialidad:null,hrkm:hr,hrkm_panel:hrPanel,
-    tecnicos:S.F.tec.slice(),registrado_por:S.col.codigo,observacion:up(val('obs'))||null,firma:firmaTxt()||null,detalle:{},insumos:null,
+    tecnicos:S.F.tec.slice(),registrado_por:S.col.codigo,observacion:(S.F._edit&&S.F.obs)||null,firma:firmaTxt()||null,detalle:{},insumos:null,
     backlog:up(val('backlog'))||null};
   r.backlog_estado=r.backlog?'ABIERTO':null;
   const insL=S.F.ins.filter(x=>x.n&&x.n!=='NINGUNO'&&x.n!=='OTRO').map(x=>({n:up(x.n),q:x.q===''?null:Number(x.q),u:x.u||null}));
@@ -1058,7 +1057,7 @@ async function guardar(){
   if(!(await pedirFirma()))return;r.firma=firmaTxt()||null;
   const edit=S.F._edit||null;if(edit){const v=S.COLA.find(x=>x.id===edit);r.id=edit;if(v)r.created_local=v.reg.created_local;}
   const item={id:r.id,reg:r,fotos:S.F.fotos.map(f=>f.blob),enviado:false,error:null,edit:!!edit,F:(()=>{const b=borradorDe();delete b._edit;b._guardado=false;return b;})()};
-  S.COLA=S.COLA.filter(x=>x.id!==r.id);await DB.poner(item);S.COLA.push(item);
+  S.COLA=S.COLA.filter(x=>x.id!==r.id);await DB.poner(item);S.COLA.push(item);_collage.delete(r.id);_collageOk.delete(r.id);prepararCollage(r);
   guardarParada(parNueva);
   S.ult={reg:r,enviado:false};$('btnGuardar').disabled=true;
   S.F._guardado=true;await borrarBorrador(mod);
@@ -1134,13 +1133,44 @@ function textoWA(r,foto){
 const _furl=new Map();
 function fotosDe(r){const it=S.COLA.find(x=>x.id===r.id);return (it&&it.fotos||[]).filter(Boolean).map(b=>{if(!_furl.has(b))_furl.set(b,URL.createObjectURL(b));return _furl.get(b);});}
 function nFotos(r){const n=fotosDe(r).length;return n?(n===1?'adjunta':n+' adjuntas'):'';}
+/* varias fotos → UNA sola imagen (collage), para que WhatsApp mande un solo mensaje con un solo texto */
+function layoutCollage(n,vert){const W=1600,G=8,m=(a,b)=>Math.floor((a-b)/2);
+  if(n===2)return vert?{W,H:1200,cells:[[0,0,m(W,G),1200],[m(W,G)+G,0,m(W,G),1200]]}:{W,H:2008,cells:[[0,0,W,1000],[0,1008,W,1000]]};
+  if(n===3)return vert?{W,H:1200,cells:[[0,0,1056,1200],[1064,0,536,m(1200,G)],[1064,m(1200,G)+G,536,m(1200,G)]]}
+    :{W,H:1608,cells:[[0,0,W,1000],[0,1008,m(W,G),600],[m(W,G)+G,1008,m(W,G),600]]};
+  if(n===4)return {W,H:1200,cells:[[0,0,m(W,G),m(1200,G)],[m(W,G)+G,0,m(W,G),m(1200,G)],[0,m(1200,G)+G,m(W,G),m(1200,G)],[m(W,G)+G,m(1200,G)+G,m(W,G),m(1200,G)]]};
+  const c=3,cw=Math.floor((W-G*(c-1))/c),ch=Math.round(cw*1.25),rows=Math.ceil(n/c);
+  return {W,H:rows*ch+(rows-1)*G,cells:Array.from({length:n},(_,i)=>[(i%c)*(cw+G),Math.floor(i/c)*(ch+G),cw,ch])};}
+const cargaImg=async b=>{try{if(window.createImageBitmap)return await createImageBitmap(b);}catch(_){}
+  return new Promise(ok=>{const u=URL.createObjectURL(b),i=new Image();i.onload=()=>{ok(i);setTimeout(()=>URL.revokeObjectURL(u),3000);};i.onerror=()=>ok(null);i.src=u;});};
+const dimImg=i=>({w:i.naturalWidth||i.width,h:i.naturalHeight||i.height});
+async function armarCollage(blobs){
+  const I=(await Promise.all(blobs.map(cargaImg))).filter(Boolean);if(I.length<2)throw new Error('no se pudieron leer las fotos');
+  const vert=I.reduce((s,i)=>{const d=dimImg(i);return s+d.w/d.h;},0)/I.length<1;     // fotos mayormente verticales o apaisadas
+  const L=layoutCollage(I.length,vert),c=document.createElement('canvas');c.width=L.W;c.height=L.H;const x=c.getContext('2d');if(!x)throw new Error('sin lienzo');
+  x.fillStyle='#fff';x.fillRect(0,0,L.W,L.H);
+  I.forEach((im,k)=>{const [cx,cy,cw,ch]=L.cells[k],{w:iw,h:ih}=dimImg(im),sc=Math.max(cw/iw,ch/ih),sw=cw/sc,sh=ch/sc;
+    x.drawImage(im,(iw-sw)/2,(ih-sh)/2,sw,sh,cx,cy,cw,ch);if(im.close)im.close();});
+  const out=await new Promise(ok=>c.toBlob(ok,'image/jpeg',0.86));if(!out)throw new Error('no se pudo generar la imagen');return out;}
+/* El collage se arma por adelantado (al guardar o al abrir el registro) para que, al pulsar "Enviar por WhatsApp",
+   el menú Compartir se abra al instante: si se espera demasiado, el celular lo bloquea y salen las fotos sueltas. */
+const _collage=new Map(), _collageOk=new Map();
+const nomFoto=r=>`${r.cod_sap}_${fd(r.fecha).replace(/\//g,'-')}`;
+function prepararCollage(r){const it=S.COLA.find(x=>x.id===r.id),blobs=(it&&it.fotos||[]).filter(Boolean);
+  if(blobs.length<2)return null;if(_collage.has(r.id))return _collage.get(r.id);
+  const p=armarCollage(blobs).then(b=>{const f=new File([b],`${nomFoto(r)}_fotos.jpg`,{type:'image/jpeg'});_collageOk.set(r.id,f);return f;})
+    .catch(e=>{_collage.delete(r.id);S.collErr=String(e&&e.message||e);return null;});
+  _collage.set(r.id,p);return p;}
 async function whatsapp(r){
   const it=S.COLA.find(x=>x.id===r.id), blobs=(it&&it.fotos||[]).filter(Boolean);
-  const files=blobs.map((b,i)=>new File([b],`${r.cod_sap}_${fd(r.fecha).replace(/\//g,'-')}_${i+1}.jpg`,{type:'image/jpeg'}));
-  // 1) celular moderno: menú Compartir con texto + fotos (elige WhatsApp)
+  let files=blobs.length?[new File([blobs[0]],`${nomFoto(r)}_1.jpg`,{type:'image/jpeg'})]:[];
+  if(blobs.length>1){let f=_collageOk.get(r.id)||null;
+    if(!f){toast('Armando el collage de fotos…');f=await prepararCollage(r);}
+    if(f)files=[f];else toast('No se pudo armar el collage'+(S.collErr?' ('+S.collErr+')':'')+': se envía solo la 1.ª foto',4500);}
+  // 1) celular moderno: menú Compartir con texto + foto/collage (elige WhatsApp)
   if(files.length&&navigator.canShare&&navigator.canShare({files})){
-    const txt=textoWA(r,files.length===1?'adjunta':files.length+' adjuntas');
-    try{await navigator.clipboard.writeText(txt);}catch(_){}
+    const txt=textoWA(r,'adjunta');
+    try{if(navigator.clipboard)navigator.clipboard.writeText(txt).catch(()=>{});}catch(_){}
     try{await navigator.share({files,text:txt});return;}catch(e){if(e&&e.name==='AbortError')return;}}
   // 2) sin opción de adjuntar: enlace a la foto (válido 7 días) o aviso
   let foto='';
@@ -1149,7 +1179,7 @@ async function whatsapp(r){
   window.open('https://wa.me/?text='+encodeURIComponent(textoWA(r,foto)),'_blank');}
 function tglGet(i,v){guardarCampos();const x=S.F.g[i];x.on=v;if(v&&!x.q)x.q='1';if(!v)x.q='';pintar();}
 function regEn(mod,cod){ir(mod);const e=eqDe(cod);if(e){S.F.eq=e.cod_sap;S.F.eqTxt=e.cod_sap+' · '+(e.equipo||'');pintar();}}
-function verReg(id){const it=S.COLA.find(x=>x.id===id);if(!it)return;S.ult={reg:it.reg,enviado:!!it.enviado};ir('hecho');}
+function verReg(id){const it=S.COLA.find(x=>x.id===id);if(!it)return;prepararCollage(it.reg);S.ult={reg:it.reg,enviado:!!it.enviado};ir('hecho');}
 function whatsappId(id){const it=S.COLA.find(x=>x.id===id);if(it)whatsapp(it.reg);}
 
 /* ═══════════════════════ CONSULTA Y PENDIENTES ═══════════════════════ */
