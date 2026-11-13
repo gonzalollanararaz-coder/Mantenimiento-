@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
 <meta charset="utf-8">
-<meta name="gllr-version" content="V.101126-12" data-pagina="REPORTE (app de campo)">
+<meta name="gllr-version" content="V.101126-13" data-pagina="REPORTE (app de campo)">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>REPORTE</title>
 <link rel="manifest" href="campo.webmanifest">
@@ -325,6 +325,7 @@ select.hsel{font-size:19px;font-weight:700;text-align:center}
 <div id="pie" class="hide"><button onclick="pedirDescartar()" style="color:#f87171">✕ Descartar</button><button class="g" id="btnGuardar" onclick="guardar()">Guardar</button></div>
 <div class="toast" id="toast"></div>
 <input type="file" id="inFoto" accept="image/*" capture="environment" class="hide">
+<input type="file" id="inFotoG" accept="image/*" multiple class="hide">
 
 <script>
 /* ═══════════════════════ CONFIGURACIÓN ═══════════════════════ */
@@ -366,7 +367,9 @@ const DB=(()=>{let db=null;
 const S={user:null,perfil:null,col:null,obra:'',EQ:[],COL:[],MAE:[],REC:[],COLA:[],NEU:{},pant:'cargando',pila:[],F:{},online:navigator.onLine};
 const M=(tipo,esp)=>S.MAE.filter(m=>m.tipo===tipo&&m.activo!==false&&(!esp||!m.especialidad||m.especialidad===esp)).sort((a,b)=>(a.orden||0)-(b.orden||0));
 const MV=(tipo,esp)=>M(tipo,esp).map(m=>m.valor);
-const eqDe=c=>S.EQ.find(e=>e.cod_sap===c)||null;
+/* OTRO = equipo que no está en el Maestro: solo queda como registro (sin parada, sin horómetro del Maestro, sin PM) */
+const EQ_OTRO={cod_sap:'OTRO',equipo:'EQUIPO NO REGISTRADO',marca:'',modelo:'',cod_proyec:null,contador:'Hr',hrkm_actual:null,fecha_lectura:null,id:null,otro:true};
+const eqDe=c=>c==='OTRO'?EQ_OTRO:(S.EQ.find(e=>e.cod_sap===c)||null);
 const colDe=c=>S.COL.find(x=>x.codigo===c)||null;
 
 /* ═══════════════════════ RED ═══════════════════════ */
@@ -518,7 +521,7 @@ function pedirDescartar(){if(document.getElementById('dlgSalir'))return;const d=
 async function descartar(){cerrarSalir();const m=S.pant,ed=S.F._edit;S.F._guardado=true;if(!ed)await borrarBorrador(m);toast(ed?'Edición cancelada: el registro queda como estaba':'Registro descartado');ir('home',true);}
 /* aviso temprano de trabajo ya registrado: mismo equipo, fecha y tipo de registro */
 const _dupC={};
-async function avisoDup(){const box=$('dupAv');if(!box||!S.F.eq)return;const mod=S.pant,fe=val('fecha')||hoyIso(),key=mod+'|'+S.F.eq+'|'+fe;
+async function avisoDup(){const box=$('dupAv');if(!box||!S.F.eq||S.F.eq==='OTRO')return;const mod=S.pant,fe=val('fecha')||hoyIso(),key=mod+'|'+S.F.eq+'|'+fe;
   const mismo=x=>x.id!==S.F._edit&&x.cod_sap===S.F.eq&&x.fecha===fe&&x.modulo===mod;
   let L=S.COLA.map(x=>x.reg).filter(mismo).concat(S.REC.filter(mismo));
   if(S.online){if(!_dupC[key]){try{const {data}=await sb.from('pdm_registros').select('id,cod_sap,fecha,modulo,trabajo,sistema,tecnicos,registrado_por,hora_ini').eq('cod_sap',S.F.eq).eq('fecha',fe).eq('modulo',mod).eq('anulado',false).limit(10);_dupC[key]=data||[];}catch(_){_dupC[key]=[];}}
@@ -583,10 +586,11 @@ function cabecera(conHr){
   const e=eqDe(S.F.eq), ahora=new Date(), hh=ahora.toTimeString().slice(0,5);
   if(S.F.ch.turno==null)S.F.ch.turno=(ahora.getHours()>=7&&ahora.getHours()<19)?'DIA':'NOCHE';
   return `<div class="c"><div class="sec">Equipo y tiempo</div>
-   <label class="eqlab">${e?`<b>${esc(e.equipo||tipoEq(e))}</b> / ${esc(e.marca||'—')} / ${esc(e.modelo||'—')}<br><span>último ${e.contador==='Km'?'KM':'HR'}: <b>${e.hrkm_actual!=null?f0(e.hrkm_actual):'—'}</b>${e.fecha_lectura?' ('+fd(e.fecha_lectura)+')':''}</span>`:'Equipo'}</label>
+   <label class="eqlab">${e&&e.otro?'<b>Equipo no registrado</b><br><span>solo queda como registro en la tabla</span>':e?`<b>${esc(e.equipo||tipoEq(e))}</b> / ${esc(e.marca||'—')} / ${esc(e.modelo||'—')}<br><span>último ${e.contador==='Km'?'KM':'HR'}: <b>${e.hrkm_actual!=null?f0(e.hrkm_actual):'—'}</b>${e.fecha_lectura?' ('+fd(e.fecha_lectura)+')':''}</span>`:'Equipo'}</label>
    <div style="position:relative;z-index:6">${eqCombo('f')}</div><div id="dupAv"></div>
+   ${e&&e.otro?`<label>Descripción del equipo (tipo, marca, modelo, placa)</label><input class="up" data-k="otroDesc" value="${esc(vF('otroDesc'))}" placeholder="Ej.: CAMIONETA HILUX PLACA ABC-123">`:''}
    <div id="eqInfo" hidden></div>
-   ${conHr?`<label>${e&&e.contador==='Km'?'Kilometraje':'Horómetro'} del tablero</label><input type="number" inputmode="numeric" data-k="hr" value="${esc(vF('hr'))}" oninput="chkHr()"><div id="hrMsg" class="dim"></div>`:''}
+   ${conHr?`<label>${e&&e.otro?'Horómetro / kilometraje (opcional)':(e&&e.contador==='Km'?'Kilometraje':'Horómetro')+' del tablero'}</label><input type="number" inputmode="numeric" data-k="hr" value="${esc(vF('hr'))}" oninput="chkHr()"><div id="hrMsg" class="dim"></div>`:''}
    <div class="r2"><div><label>Fecha</label><input type="date" data-k="fecha" value="${esc(vF('fecha',hoyIso()))}"></div><div><label>Turno</label>${chips('turno',['DIA','NOCHE'])}</div></div>
    <div class="r2"><div><label>Hora inicio</label><select class="hsel" data-k="hini">${horaOpts(vF('hini',media(ahora)),'')}</select></div><div><label>Hora fin</label><select class="hsel" data-k="hfin">${horaOpts(vF('hfin'),'— : —')}</select></div></div>
    <label>Técnicos (un solo trabajo, un registro)</label>
@@ -653,7 +657,7 @@ function parDef(k){const man=S.F._man&&S.F._man[k];if(man){const v=val(k);if(v)r
 document.addEventListener('change',ev=>{const k=ev.target&&ev.target.dataset&&ev.target.dataset.k;if(!k||!FORMS.includes(S.pant))return;
   if(['parIniF','parIniH','parFinF','parFinH'].includes(k)){(S.F._man=S.F._man||{})[k]=true;return;}
   if(['fecha','hini','hfin'].includes(k)&&document.querySelector('[data-k^="parIni"],[data-k^="parFin"]')){guardarCampos();pintar();}},true);
-function parBox(){const e=eqDe(S.F.eq);if(!e||S.F._edit)return '';const ab=paradaAbierta(e.cod_sap),est=S.F.ch.estado||'OPERATIVO';
+function parBox(){const e=eqDe(S.F.eq);if(!e||e.otro||S.F._edit)return '';const ab=paradaAbierta(e.cod_sap),est=S.F.ch.estado||'OPERATIVO';
   if(est==='INOPERATIVO'&&ab)return `<div class="parbx rojo"><b>⛔ Parada abierta desde ${fhTxt(ab.inicio)}</b><div>${esc(ab.motivo||'')} · ${esc(ab.turnos)} · lleva <b>${f1(horasParada(ab.inicio,new Date().toISOString(),ab.turnos))} h</b> inoperativas</div><small>Cuando el equipo vuelva a trabajar, registra con estado OPERATIVO para cerrarla.</small></div>`;
   if(est==='INOPERATIVO'){if(S.F.ch.parTur==null)S.F.ch.parTur=S.F.ch.turno==='NOCHE'?'1 TURNO NOCHE':'1 TURNO DÍA';
     return `<div class="parbx rojo"><b>⛔ Inicio de la parada</b>
@@ -669,7 +673,7 @@ function parBox(){const e=eqDe(S.F.eq);if(!e||S.F._edit)return '';const ab=parad
      <div class="parh">Horas inoperativas: <b>${f1(h)} h</b></div><small>Se cuentan 8 h efectivas por turno de 12 h.</small></div>`;}
   return '';}
 /* se arma la parada al guardar; devuelve false si falta algo */
-function prepararParada(r){const e=eqDe(r.cod_sap);if(!e||S.F._edit)return true;
+function prepararParada(r){const e=eqDe(r.cod_sap);if(!e||e.otro||S.F._edit)return true;
   const ab=paradaAbierta(e.cod_sap),est=r.estado_equipo;
   if(est==='INOPERATIVO'&&!ab){const ini=aIso(parDef('parIniF'),parDef('parIniH'));if(!ini){toast('Indica fecha y hora de inicio de la parada');return false;}
     const mot=valOtro('parMot');if(!mot){toast('Elige el motivo de la parada');return false;}
@@ -790,12 +794,16 @@ function insumos(tipo,esp,tit){ const L=M(tipo,esp); const def=L[0];
    <div class="dim">La unidad se pone sola según el insumo; se puede cambiar.</div></div>`;}
 function cambiaIns(i,v,tipo,esp){const m=M(tipo,esp||null).find(x=>x.valor===v);S.F.ins[i].o=v==='OTRO';S.F.ins[i].n=v==='OTRO'?'':v;if(m&&m.unidad)S.F.ins[i].u=m.unidad;else if(v==='NINGUNO')S.F.ins[i].u='';guardarCampos();pintar();}
 function cierre(){return `<div class="c"><div class="sec">Foto (opcional, máx. 3)</div>
-   <div class="fotos">${S.F.fotos.map((f,i)=>`<div style="background-image:url(${f.url})"><i onclick="event.stopPropagation();S.F.fotos.splice(${i},1);guardarCampos();pintar()">✕</i></div>`).join('')}${S.F.fotos.length<3?`<div onclick="guardarCampos();$('inFoto').click()">📷</div>`:''}</div>
+   <div class="fotos">${S.F.fotos.map((f,i)=>`<div style="background-image:url(${f.url})"><i onclick="event.stopPropagation();S.F.fotos.splice(${i},1);guardarCampos();pintar()">✕</i></div>`).join('')}${S.F.fotos.length<3?`<div onclick="guardarCampos();$('inFoto').click()" title="Tomar foto">📷</div><div onclick="guardarCampos();$('inFotoG').click()" title="Elegir de la galería del celular">🖼️</div>`:''}</div><div class="dim" style="font-size:11.5px;margin-top:4px">📷 Tomar foto · 🖼️ Elegir de la galería</div>
    <div class="dim" style="margin-top:12px">✍ La firma se pide al pulsar Guardar.</div>
 </div>`;}
 /* fotos: se comprimen en el celular (máx. 1280 px, JPEG ~70%) */
-$('inFoto').onchange=async()=>{const f=$('inFoto').files[0];$('inFoto').value='';if(!f)return;
-  try{const b=await comprimir(f);S.F.fotos.push({blob:b,url:URL.createObjectURL(b)});pintar();toast(`📷 Foto lista (${Math.round(b.size/1024)} KB)`);}catch(e){toast('No se pudo leer la foto');}};
+async function agregarFotos(files){let n=0;
+  for(const f of files){if(S.F.fotos.length>=3){toast('Máximo 3 fotos');break;}
+    try{const b=await comprimir(f);S.F.fotos.push({blob:b,url:URL.createObjectURL(b)});n++;}catch(e){toast('No se pudo leer una foto');}}
+  if(n){pintar();toast(`📷 ${n} foto${n>1?'s':''} lista${n>1?'s':''}`);}}
+$('inFoto').onchange=async()=>{const fs=[...$('inFoto').files];$('inFoto').value='';await agregarFotos(fs);};
+$('inFotoG').onchange=async()=>{const fs=[...$('inFotoG').files];$('inFotoG').value='';await agregarFotos(fs);};
 function comprimir(file){return new Promise((ok,ko)=>{const img=new Image();img.onload=()=>{const k=Math.min(1,1280/Math.max(img.width,img.height));
   const c=document.createElement('canvas');c.width=Math.round(img.width*k);c.height=Math.round(img.height*k);c.getContext('2d').drawImage(img,0,0,c.width,c.height);
   c.toBlob(b=>b?ok(b):ko(),'image/jpeg',0.7);URL.revokeObjectURL(img.src);};img.onerror=ko;img.src=URL.createObjectURL(file);});}
@@ -917,8 +925,8 @@ const P={
    <label>Origen de la falla</label>${chips('origen',origenes())}
    <label>Trabajo pendiente (backlog)</label><input class="up" data-k="backlog" value="${esc(vF('backlog'))}" placeholder="OPCIONAL">
   </div>`+cierre();},
- GETS:()=>{const e=eqDe(S.F.eq), fam=e?String(e.cod_sap).slice(1,3).toUpperCase():'';
-  const CON=M('GET').filter(m=>m.familia), L=CON.filter(m=>m.familia===fam);
+ GETS:()=>{const e=eqDe(S.F.eq), fam=e&&!e.otro?String(e.cod_sap).slice(1,3).toUpperCase():'';
+  const CON=e&&e.otro?[]:M('GET').filter(m=>m.familia), L=CON.filter(m=>m.familia===fam);
   let cuerpo='';
   if(!CON.length){ // lista antigua sin familias: se muestran todos
     const G=MV('GET');if(S.F.gk!=='*'){S.F.gk='*';S.F.g=G.map(n=>({n,gr:'',q:'',on:false}));}
@@ -1015,10 +1023,11 @@ async function guardar(){
   guardarCampos();
   const mod=S.pant, e=eqDe(S.F.eq);
   if(!e)return toast('Elige el equipo');
+  if(e.otro&&!up(val('otroDesc')))return toast('Describe el equipo (tipo, marca, modelo o placa)');
   if(!S.F.tec.length)return toast('Elige al menos un técnico');
   const fecha=val('fecha')||hoyIso();
   let hr=val('hr')===''||val('hr')==null?null:Number(val('hr')), hrPanel=null;
-  if(mod!=='PENDIENTE'&&hr==null)return toast('Escribe el horómetro / kilometraje');
+  if(mod!=='PENDIENTE'&&hr==null&&!e.otro)return toast('Escribe el horómetro / kilometraje');
   if(hr!=null&&window.GLLR_DSF&&GLLR_DSF.de(e.cod_sap).length){const c=GLLR_DSF.convertir(e.cod_sap,fecha,hr,e,'reporte');if(c.tipo==='panel'){hrPanel=hr;hr=c.v;}}
   const r={id:uuid(),created_local:new Date().toISOString(),fecha,hora_ini:val('hini')||null,hora_fin:val('hfin')||null,turno:S.F.ch.turno||null,
     obra:e.cod_proyec||S.obra||null,cod_sap:e.cod_sap,maestro_id:e.id||null,modulo:mod,especialidad:null,hrkm:hr,hrkm_panel:hrPanel,
@@ -1049,10 +1058,11 @@ async function guardar(){
   const igual=x=>x.id!==(S.F._edit||r.id)&&x.cod_sap===r.cod_sap&&x.fecha===r.fecha&&x.modulo===r.modulo&&(x.trabajo||'')===(r.trabajo||'')&&(x.tecnicos||[]).some(t=>r.tecnicos.includes(t));
   let dup=S.COLA.map(x=>x.reg).find(igual)||S.REC.find(igual);
   if(!dup&&S.online){try{const {data}=await sb.from('pdm_registros').select('id,cod_sap,fecha,modulo,trabajo,tecnicos,registrado_por,hora_ini').eq('cod_sap',r.cod_sap).eq('fecha',r.fecha).eq('modulo',r.modulo).eq('anulado',false).limit(20);dup=(data||[]).find(igual);}catch(_){}}
-  if(S.F._edit)dup=null;
+  if(S.F._edit||e.otro)dup=null;
   if(dup&&!confirm(`⚠ Ya existe un registro parecido:\n\n${r.cod_sap} · ${fd(r.fecha)} · ${MODN[r.modulo]} · ${r.trabajo||''}\nRegistrado por ${dup.registrado_por||'—'} con técnicos ${(dup.tecnicos||[]).join(', ')}${dup.hora_ini?' a las '+String(dup.hora_ini).slice(0,5):''}.\n\nSi fue el mismo trabajo, NO lo vuelvas a registrar (un registro sirve para todos los técnicos).\n\n¿Es un trabajo distinto y quieres guardarlo igual?`))return;
   r.estado_equipo=r.estado_equipo||S.F.ch.estado||'OPERATIVO';
   if(['MECANICO','LLANTAS','GETS','PENDIENTE'].includes(mod))r.origen_falla=S.F.ch.origen||null;
+  if(e.otro)r.detalle={...(r.detalle||{}),otro:{desc:up(val('otroDesc'))}};
   if(!prepararParada(r))return;const parNueva=r._parada||null;delete r._parada;
   if(!(await pedirFirma()))return;r.firma=firmaTxt()||null;
   const edit=S.F._edit||null;if(edit){const v=S.COLA.find(x=>x.id===edit);r.id=edit;if(v)r.created_local=v.reg.created_local;}
@@ -1133,10 +1143,11 @@ function textoWA(r,foto){
   if(r.insumos&&r.insumos.length)add('Insumos',r.insumos.map(x=>{const u=String(x.u||'');return `${capWA(x.n)}${x.q!=null&&x.q!==''?' × '+x.q+(u?' '+(/^[A-Z]{2,}$/.test(u)?u.toLowerCase():u):''):''}`;}).join(', '));
   add('Observación',capWA(r.observacion));
   const L=[`*${TIT_WA[r.modulo]||'REPORTE'}*`,
-    `*${r.cod_sap}*${[capWA(e.equipo),e.marca,e.modelo].filter(Boolean).length?' · '+[capWA(e.equipo),e.marca,e.modelo].filter(Boolean).join(' '):''}`,
+    r.cod_sap==='OTRO'?`*OTRO*${d.otro&&d.otro.desc?' · '+capWA(d.otro.desc):''}`:`*${r.cod_sap}*${[capWA(e.equipo),e.marca,e.modelo].filter(Boolean).length?' · '+[capWA(e.equipo),e.marca,e.modelo].filter(Boolean).join(' '):''}`,
     `· Fecha: ${fd(r.fecha)}`,
     `· ${km?'Kilometraje':'Horómetro'}: ${r.hrkm!=null?f0(r.hrkm)+(km?' km':' h'):'—'}`,
     `· Hora ${r.hora_fin?'inicio-fin':'inicio'}: ${hh(r.hora_ini)}${r.hora_fin?'–'+hh(r.hora_fin):''}`];
+  if(r.cod_sap==='OTRO'&&r.hrkm==null)L.splice(3,1);
   if(B.length){L.push('');B.forEach(x=>L.push(x));}
   L.push('');
   L.push(`*Estado final:* ${r.estado_equipo||'—'}${r.estado_equipo==='OPERATIVO'?' 🟢':r.estado_equipo==='INOPERATIVO'?' 🔴':''}`);
@@ -1218,9 +1229,10 @@ function eqCombo(ctx,ph){const sel=eqSel(ctx),e=sel?eqDe(sel):null,ab=S.eqAb===c
    <div class="eqdrop" id="eqLst" style="${ab?'':'display:none'}">${ab?eqGrupos(ctx):''}</div></div>`;}
 function eqGrupos(ctx){const q=nrm(S.eqf||''),sel=eqSel(ctx);const G={};
   if(ctx==='f'){const Q=String(S.eqf||'').toUpperCase().trim(),L=eqObra().filter(x=>!Q||String(x.cod_sap).toUpperCase().includes(Q)).sort((a,b)=>a.cod_sap.localeCompare(b.cod_sap));
-    if(!L.length)return '<div class="dim" style="padding:10px">Ningún código coincide</div>';
+    const otroR=(!Q||'OTRO'.includes(Q)||!L.length)?`<div class="eqr ${sel==='OTRO'?'on':''}" style="border-top:1px dashed #3a434d;font-style:italic" onclick="event.stopPropagation();pickEq('f','OTRO')">OTRO · equipo que no está en la lista</div>`:'';
+    if(!L.length)return '<div class="dim" style="padding:10px">Ningún código coincide</div>'+otroR;
     const mk=c=>{const i=Q?c.toUpperCase().indexOf(Q):-1;return i<0?esc(c):esc(c.slice(0,i))+'<b>'+esc(c.slice(i,i+Q.length))+'</b>'+esc(c.slice(i+Q.length));};
-    return L.map(x=>`<div class="eqr ${sel===x.cod_sap?'on':''}" onclick="event.stopPropagation();pickEq('f','${esc(x.cod_sap)}')">${mk(x.cod_sap)}</div>`).join('');}
+    return L.map(x=>`<div class="eqr ${sel===x.cod_sap?'on':''}" onclick="event.stopPropagation();pickEq('f','${esc(x.cod_sap)}')">${mk(x.cod_sap)}</div>`).join('')+otroR;}
   eqObra().filter(x=>!q||nrm(x.cod_sap+' '+tipoEq(x)+' '+(x.equipo||'')).includes(q)).forEach(x=>{const t=tipoEq(x);(G[t]=G[t]||[]).push(x);});
   const K=Object.keys(G).sort();if(!K.length)return '<div class="dim" style="padding:8px">Sin equipos.</div>';
   return K.map(t=>`<div class="eqg">${esc(t)} <small>(${String(G[t].length).padStart(2,'0')})</small></div><div class="eqc">${G[t].sort((a,b)=>a.cod_sap.localeCompare(b.cod_sap)).map(x=>`<span class="${sel===x.cod_sap?'on':''}" onclick="event.stopPropagation();pickEq('${ctx}','${esc(x.cod_sap)}')">${esc(x.cod_sap)}</span>`).join('')}</div>`).join('');}
@@ -1272,6 +1284,9 @@ async function consultar(){const c=String(S.cq||'').split('·')[0].trim().toUppe
   $('cqL').className='tlx';$('cqL').innerHTML=regs.length?regs.slice(0,20).map(r=>`<div>${esc(MODN[r.modulo]||r.modulo)} · ${esc(String(r.trabajo||r.sistema||'').toLowerCase())}${r.backlog?' 📌':''}<br><small>${fd(r.fecha)} · ${esc(espDe(r))} · ${esc((r.tecnicos||[]).join(', '))}</small></div>`).join(''):'<span class="dim">Sin registros.</span>';}
 /* ── Consultar → Seguimiento de reportes por técnico (últimos 7 o 14 días) ── */
 const SEGD=['D','L','M','M','J','V','S'];
+/* puestos que aparecen en el seguimiento: los marcados en Configuración → Puestos de trabajo (sin esa columna: todos menos supervisores) */
+const enSegApp=c=>{const L=S.MAE.filter(m=>m.tipo==='ESPECIALIDAD');if(!L.some(m=>'seguimiento' in m))return !esSup(c);
+  return L.some(m=>m.seguimiento===true&&nrm(m.valor)===nrm(c.especialidad));};
 async function cargarSeg(){const box=$('sgRes'),n=+(S.segK||'7'),h=new Date(),iso=d=>new Date(d.getTime()-d.getTimezoneOffset()*60000).toISOString().slice(0,10);
   const dias=[];for(let i=n-1;i>=0;i--)dias.push(iso(new Date(h.getTime()-i*86400000)));
   const key='seg_'+(S.obra||'todas')+'_'+n;let M=await DB.get(key).catch(()=>null);
@@ -1280,7 +1295,7 @@ async function cargarSeg(){const box=$('sgRes'),n=+(S.segK||'7'),h=new Date(),is
     M={};L.forEach(r=>(r.tecnicos||[]).forEach(t=>{const m=M[t]=M[t]||{};m[r.fecha]=(m[r.fecha]||0)+1;}));DB.set(key,M).catch(()=>{});}catch(_){}}
   if(S.pant!=='seg'||!$('sgRes'))return;
   if(!M){$('sgRes').innerHTML='Sin datos descargados todavía.';return;}
-  const T=(S.COL||[]).filter(c=>!esSup(c)&&(!S.obra||c.obra===S.obra)).sort((a,b)=>String(a.codigo).localeCompare(String(b.codigo)));
+  const T=(S.COL||[]).filter(c=>enSegApp(c)&&(!S.obra||c.obra===S.obra)).sort((a,b)=>String(a.codigo).localeCompare(String(b.codigo)));
   const hoy=iso(h),cls=n>7?'sgs t14':'sgs',celdas=f=>dias.map(d=>{const v=f(d),dw=SEGD[new Date(d+'T12:00:00').getDay()]+d.slice(8);return `<div class="${v?'n':'x'} ${d===hoy?'hoy':''}">${v||'X'}<small>${dw}</small></div>`;}).join('');
   const tot=d=>T.reduce((s,c)=>s+((M[c.codigo]||{})[d]||0),0);
   $('sgRes').className='';

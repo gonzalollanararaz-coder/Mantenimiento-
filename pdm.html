@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
 <meta charset="utf-8">
-<meta name="gllr-version" content="V.101126-3" data-pagina="Parte diario mecánico">
+<meta name="gllr-version" content="V.101126-4" data-pagina="Parte diario mecánico">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Parte diario mecánico &mdash; UDE</title>
 <link rel="icon" href="favicon.ico" sizes="any">
@@ -130,7 +130,7 @@
   <div class="fr">
     <input id="fTxt" placeholder="Buscar equipo, falla, trabajo…">
     <span class="lb">Periodo</span>
-    <span class="chs" id="chPer"><button data-p="0">Hoy</button><button data-p="1">Ayer</button><button data-p="7" class="on">7 días</button><button data-p="30">30 días</button><button data-p="m">Mes</button></span>
+    <span class="chs" id="chPer"><button data-p="0">Hoy</button><button data-p="1">Ayer</button><button data-p="7" class="on">7 días</button><button data-p="30">30 días</button><button data-p="m">Mes</button><button data-p="all">Todo</button></span>
     <input type="date" id="fDesde"><span class="dim">→</span><input type="date" id="fHasta">
     <div class="spacer"></div>
     <button class="kpi k-b" id="kInop" title="Filtrar solo registros inoperativos">Inoperativos <b id="nInop">0</b></button>
@@ -178,6 +178,8 @@ let perfil=null, EQ=[], COL=[], MAE=[], REG=[], vista='reg', tipoSel='SISTEMA', 
 const PASO=200;
 const esAdmin=()=>perfil&&perfil.rol==='admin';
 const eqDe=c=>EQ.find(e=>e.cod_sap===c)||null;
+/* equipo que no está en el Maestro: la app lo guarda como OTRO y su descripción va en el detalle */
+const eqDeR=r=>eqDe(r.cod_sap)||(r.cod_sap==='OTRO'?{equipo:(r.detalle&&r.detalle.otro&&r.detalle.otro.desc)||'EQUIPO NO REGISTRADO',marca:'',modelo:'',serie_placa:''}:null);
 
 /* ── pestañas ── */
 document.querySelectorAll('#subnav button').forEach(b=>b.onclick=()=>irVista(b.dataset.v));
@@ -199,7 +201,7 @@ const pad=n=>String(n).padStart(2,'0');
 const nomC2=c=>[c.nombres,c.ap_paterno,c.ap_materno].filter(Boolean).join(' ');
 function msOpts(id){
   if(id==='obra')return [...new Set(EQ.map(x=>x.cod_proyec).filter(Boolean))].sort().map(o=>({v:o,t:o}));
-  if(id==='eq')return EQ.map(e=>({v:e.cod_sap,t:e.cod_sap+' · '+(e.equipo||'')}));
+  if(id==='eq')return [{v:'OTRO',t:'OTRO · equipos no registrados'},...EQ.map(e=>({v:e.cod_sap,t:e.cod_sap+' · '+(e.equipo||'')}))];
   if(id==='tec')return COL.filter(c=>c.activo!==false).map(c=>({v:c.codigo,t:c.codigo+' · '+nomC2(c)}));
   if(id==='est')return [{v:'OPERATIVO',t:'Operativo'},{v:'INOPERATIVO',t:'Inoperativo'}];
   return ORIG3.map(o=>({v:o,t:o}));}
@@ -230,7 +232,8 @@ function pintarFil(){
   tags.innerHTML=T.map(([k,t])=>`<span class="tag" data-k="${k}" title="Quitar este filtro">${esc(t)} ✕</span>`).join('');
   tags.querySelectorAll('.tag').forEach(x=>x.onclick=()=>{const k=x.dataset.k;if(k==='txt'){FIL.txt='';fTxt.value='';}else FIL[k].clear();pintarFil();buscarD();});}
 function periodo(k){const h=new Date();
-  if(k==='m'){fDesde.value=isoDe(new Date(h.getFullYear(),h.getMonth(),1));fHasta.value=isoDe(h);}
+  if(k==='all'){fDesde.value='';fHasta.value='';}   // todo el historial
+  else if(k==='m'){fDesde.value=isoDe(new Date(h.getFullYear(),h.getMonth(),1));fHasta.value=isoDe(h);}
   else if(k==='1'){fDesde.value=fHasta.value=isoDe(new Date(h.getTime()-86400000));}
   else if(k==='0'){fDesde.value=fHasta.value=isoDe(h);}
   else{fHasta.value=isoDe(h);fDesde.value=isoDe(new Date(h.getTime()-(+k-1)*86400000));}
@@ -279,7 +282,7 @@ const dtH=iso=>{if(!iso)return'';const d=new Date(iso);return isNaN(d)?'':`${pad
 const hhmm=h=>{if(h==null||!isFinite(h)||h<0)return'';const m=Math.round(h*60);return `${Math.floor(m/60)}:${pad(m%60)}`;};
 const tipoDe=r=>{const m=r.modulo;if(m==='MECANICO'){const e=nrm(r.especialidad);return /ELECT/.test(e)?'ELÉCTRICO':/SOLD/.test(e)?'SOLDADURA':'MECÁNICO';}
   return {LUBRICACION:'LUBRICACIÓN',LLANTAS:'LLANTAS (NEUMÁTICOS)',GETS:'HERRAM. CORTE (GETS)',MNTTO_PREV:'PM (PREVENTIVO)',PENDIENTE:'PENDIENTE'}[m]||m||'';};
-function fila(r,PM){const x=(PM||PARX)[r.id],p=x?x.p:null,e=eqDe(r.cod_sap)||{};let hrs='',curso=false;
+function fila(r,PM){const x=(PM||PARX)[r.id],p=x?x.p:null,e=eqDeR(r)||{};let hrs='',curso=false;
   if(p){if(p.fin){hrs=hhmm(p.horas!=null?+p.horas:(new Date(p.fin)-new Date(p.inicio))/3600000);}else{hrs=hhmm((Date.now()-new Date(p.inicio))/3600000);curso=true;}}
   return {r,e,p,hrs,curso};}
 const pillEst=r=>r.estado_equipo?`<span class="pill ${r.estado_equipo==='INOPERATIVO'?'p-b':'p-ok'}">${esc(r.estado_equipo)}</span>`:'';
@@ -392,6 +395,9 @@ document.addEventListener('keydown',ev=>{if(!(ev.ctrlKey||ev.metaKey)||ev.shiftK
   const t=ev.target;if(t&&/^(INPUT|TEXTAREA|SELECT)$/.test(t.tagName)&&t.type!=='checkbox')return;if(vista!=='reg')return;ev.preventDefault();deshacer();});
 
 /* ═══════════ SEGUIMIENTO de reportes por técnico ═══════════ */
+/* puestos que aparecen en el seguimiento: los marcados en Configuración → Puestos de trabajo (sin esa columna: todos menos supervisores) */
+const segFn=()=>{const L=MAE.filter(x=>x.tipo==='ESPECIALIDAD');if(!L.some(x=>'seguimiento' in x))return c=>!/SUPERV/.test(nrm(c.especialidad));
+  const P=new Set(L.filter(x=>x.seguimiento===true).map(x=>nrm(x.valor)));return c=>P.has(nrm(c.especialidad));};
 let SEG={k:'7',obra:''};
 const SEGD=['D','L','M','M','J','V','S'];
 async function pintarSeg(){const v=document.getElementById('v-seg'),h=new Date(),hoy=isoDe(h);
@@ -400,15 +406,15 @@ async function pintarSeg(){const v=document.getElementById('v-seg'),h=new Date()
   const obras=[...new Set(EQ.map(x=>x.cod_proyec).filter(Boolean))].sort();
   const ctl=`<div class="fr" style="margin-bottom:10px"><span class="lb">Obra</span><select id="sgObra" style="height:28px;border:1px solid var(--line);border-radius:9px;font:inherit;font-size:12px"><option value="">Todas</option>${obras.map(o=>`<option ${o===SEG.obra?'selected':''}>${esc(o)}</option>`).join('')}</select>
     <span class="lb">Periodo</span><span class="chs" id="sgPer">${[['7','7 días'],['14','14 días'],['30','30 días'],['m','Mes actual']].map(([k,t])=>`<button data-k="${k}" class="${k===SEG.k?'on':''}">${t}</button>`).join('')}</span>
-    <div class="spacer"></div><span class="dim" style="font-size:11.5px">Cada registro en que el técnico figura como personal suma 1 · X = sin reportes · clic en un número abre sus registros</span></div>`;
+    <div class="spacer"></div><span class="dim" style="font-size:11.5px">Cada registro en que el técnico figura como personal suma 1 · X = sin reportes · clic en un número abre sus registros · los puestos incluidos se marcan en Configuración → Puestos de trabajo</span></div>`;
   v.innerHTML=ctl+'<div class="card vacio">Cargando…</div>';
   const enlaza=()=>{sgObra.onchange=()=>{SEG.obra=sgObra.value;pintarSeg();};document.querySelectorAll('#sgPer button').forEach(b=>b.onclick=()=>{SEG.k=b.dataset.k;pintarSeg();});};enlaza();
   let L=[];for(let d=0;;d+=1000){let q=sb.from('pdm_registros').select('fecha,tecnicos,obra').eq('anulado',false).gte('fecha',dias[0]).lte('fecha',hoy);if(SEG.obra)q=q.eq('obra',SEG.obra);
     const {data,error}=await q.range(d,d+999);if(error){v.innerHTML=ctl+`<div class="card vacio">${esc(error.message)}</div>`;enlaza();return;}L=L.concat(data||[]);if(!data||data.length<1000)break;}
   const M={};L.forEach(r=>(r.tecnicos||[]).forEach(t=>{const m=M[t]=M[t]||{};m[r.fecha]=(m[r.fecha]||0)+1;}));
-  const esSup=c=>/SUPERV/.test(nrm(c.especialidad));
-  const T=COL.filter(c=>c.activo!==false&&!esSup(c)&&(!SEG.obra||c.obra===SEG.obra)).map(c=>({cod:c.codigo,nom:[c.nombres,c.ap_paterno].filter(Boolean).join(' ')}));
-  Object.keys(M).forEach(cod=>{if(!T.some(t=>t.cod===cod)&&!COL.some(c=>c.codigo===cod&&esSup(c)))T.push({cod,nom:'(no figura en colaboradores)'});});
+  const enSeg=segFn();
+  const T=COL.filter(c=>c.activo!==false&&enSeg(c)&&(!SEG.obra||c.obra===SEG.obra)).map(c=>({cod:c.codigo,nom:[c.nombres,c.ap_paterno].filter(Boolean).join(' ')}));
+  Object.keys(M).forEach(cod=>{if(!T.some(t=>t.cod===cod)&&!COL.some(c=>c.codigo===cod&&!enSeg(c)))T.push({cod,nom:'(no figura en colaboradores)'});});
   T.sort((a,b)=>String(a.cod).localeCompare(String(b.cod)));
   const colTot=dias.map(d=>T.reduce((s,t)=>s+((M[t.cod]||{})[d]||0),0));
   const cab=dias.map(d=>{const dt=new Date(d+'T12:00:00');return `<th class="${dt.getDay()===0?'dom':''} ${d===hoy?'hoy':''}">${d.slice(8)}<small>${SEGD[dt.getDay()]}</small></th>`;}).join('');
@@ -465,7 +471,7 @@ function detTxt(r){const d=r.detalle||{};
   if(r.modulo==='MNTTO_PREV')return (d.tareas||[]).map(t=>'✔ '+esc(t)).join('<br>');
   if(r.modulo==='LUBRICACION')return esc(d.punto||'');
   return '';}
-async function detalle(r){const e=eqDe(r.cod_sap);
+async function detalle(r){const e=eqDeR(r);
   document.body.insertAdjacentHTML('beforeend',`<div class="modal" id="md"><div class="mc"><div class="mh"><h3>${esc(MODN[r.modulo]||r.modulo)} · ${esc(r.cod_sap)} · ${fd(r.fecha)}</h3><div class="spacer"></div>
    ${esAdmin()?'<button class="act rojo" id="mdAnu">Eliminar</button>':''}<button class="act" id="mdX">Cerrar</button></div><div class="mb">
    <div class="kv"><b>Equipo</b><span>${esc(r.cod_sap)} · ${esc(e?e.equipo+' '+(e.modelo||''):'')}</span><b>Obra · turno</b><span>${esc(r.obra||'')} · ${esc(r.turno||'')}</span>

@@ -72,11 +72,12 @@ const ESPS=['','MECANICO','SOLDADOR','ELECTRICISTA'], UNDS=['','UND','GAL','L','
 const FAMS=['EX','CF','TO','MN','PR','MC'];
 /* columnas de las listas de pdm_maestros */
 const C_VAL={k:'valor',l:'Valor',t:'txt',up:1}, C_ORD={k:'orden',l:'Orden',t:'num'}, C_ACT={k:'activo',l:'Activo',t:'bool'};
+const C_SEG={k:'seguimiento',l:'En seguimiento',t:'bool'};
 const C_ESP={k:'especialidad',l:'Especialidad',t:'sel',o:ESPS}, C_UND={k:'unidad',l:'Unidad',t:'sel',o:UNDS};
 const pdm=(tipo,l,u,cols,d)=>({id:'pdm_'+tipo,l,u,tb:'pdm_maestros',key:'id',filtro:{tipo},cols:cols||[C_VAL,C_ORD,C_ACT],d:d||'Lista de la app REPORTE. Desactivar oculta el valor en la app y lo conserva en los registros antiguos.'});
 const G=[
  {g:'Generales',it:[
-  pdm('ESPECIALIDAD','Puestos de trabajo',['pdm','app'],null,'Lista «Puesto de trabajo» del registro de la app REPORTE (y especialidades del parte diario). Desactivar oculta el valor y lo conserva en los registros antiguos.'),
+  pdm('ESPECIALIDAD','Puestos de trabajo',['pdm','app'],[C_VAL,C_ORD,C_ACT,C_SEG],'Lista «Puesto de trabajo» del registro de la app REPORTE (y especialidades del parte diario). Desactivar oculta el valor y lo conserva en los registros antiguos. «En seguimiento»: marca los puestos cuyos colaboradores aparecen en Seguimiento de reportes (web y app).'),
   pdm('UNIDAD','Unidades de medida',['pdm','app']),
   pdm('FRENTE','Frentes de trabajo',['pdm','app']),
   {id:'alt',l:'Obras · nombre y altitud',u:['sos','app'],tb:'sos_altitud_obra',key:'proyecto',cols:[{k:'proyecto',l:'Obra',t:'txt',up:1},{k:'nombre',l:'Nombre de la obra',t:'txt',up:1},{k:'altitud',l:'Altitud (m.s.n.m.)',t:'num'}],d:'Nombre y altitud de cada obra. La app REPORTE muestra «P-0171 / NOMBRE» solo para las obras que tienen equipos activos (no desmovilizados) en Equipos; SOS usa la altitud.'}]},
