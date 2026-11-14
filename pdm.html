@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
 <meta charset="utf-8">
-<meta name="gllr-version" content="V.101126-4" data-pagina="Parte diario mecánico">
+<meta name="gllr-version" content="V.101126-5" data-pagina="Parte diario mecánico">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Parte diario mecánico &mdash; UDE</title>
 <link rel="icon" href="favicon.ico" sizes="any">
@@ -101,6 +101,15 @@
   .secg{background:#fff;border:1px solid var(--line);border-radius:12px;margin-bottom:8px;overflow:hidden}
   .sgh{display:flex;gap:10px;align-items:center;padding:7px 12px;background:#f4f6fa;cursor:pointer;user-select:none}.sgh:hover{background:#eceff6}
   .sgh b{font-size:13px;color:#1F3864}.sgh .n{font-size:11.5px;color:var(--muted)}
+  .ed2{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px 14px;margin-bottom:10px}
+  .ed2 label,.edh+div label{font-size:10px;font-weight:800;color:#6b747d;text-transform:uppercase;letter-spacing:.3px;display:block;margin-bottom:2px}
+  .ed2 input,.ed2 select,.ed2 textarea{width:100%;border:1px solid var(--line);border-radius:8px;padding:5px 8px;font:inherit;font-size:12.5px;background:#fff}
+  .ed2 input:focus,.ed2 select:focus,.ed2 textarea:focus{outline:2px solid #B9C0E6}
+  .edh{font-size:11px;font-weight:800;color:#fff;background:#1F3864;border-radius:6px;padding:3px 10px;margin:10px 0 8px;text-transform:uppercase;letter-spacing:.5px}
+  .edt{display:flex;flex-wrap:wrap;gap:4px 8px;max-height:110px;overflow:auto;border:1px solid var(--line);border-radius:8px;padding:6px}
+  .edc{display:inline-flex!important;gap:5px;align-items:center;font-size:12px!important;text-transform:none!important;font-weight:500!important;color:#222!important;margin:0!important;padding:2px 6px;border-radius:6px;cursor:pointer}.edc:hover{background:#f4f6fb}
+  .edhr{border:1px dashed var(--line);border-radius:8px;padding:5px 8px;font-size:12.5px;min-height:30px}
+  .edb{border:none;background:none;cursor:pointer;font-size:13px;opacity:.35;padding:2px 3px;border-radius:6px}tr:hover .edb{opacity:1}.edb:hover{background:#e6e9f7}
   .toast{position:fixed;left:50%;bottom:44px;transform:translateX(-50%);background:#1c232b;color:#fff;border-radius:10px;padding:9px 16px;font-size:12.5px;z-index:400;display:flex;gap:14px;align-items:center;box-shadow:0 8px 26px rgba(0,0,0,.35)}
   .toast button{background:none;border:none;color:#FFCD11;font:inherit;font-weight:700;cursor:pointer}
   .act:disabled{opacity:.4;cursor:default}
@@ -325,20 +334,21 @@ function ajustaAlto(){const t=document.getElementById('tw');if(!t)return;t.style
 
 /* ═══════════ REGISTROS · vista tabla (por defecto) ═══════════ */
 function pintarReg(){
-  const v=document.getElementById('v-reg'),sc=v.querySelector('.tw'),sl=sc?sc.scrollLeft:0,st=sc?sc.scrollTop:0,ad=esAdmin(),off=ad?28:0;
+  const v=document.getElementById('v-reg'),sc=v.querySelector('.tw'),sl=sc?sc.scrollLeft:0,st=sc?sc.scrollTop:0,ad=esAdmin(),off=ad?50:0;
   const pagBtn=`<div style="display:flex;gap:8px;justify-content:center;margin-top:8px">${pagina?`<button class="act" onclick="buscar(${pagina-1})">‹ Anteriores</button>`:''}${REG.length===PASO?`<button class="act" onclick="buscar(${pagina+1})">Siguientes ›</button>`:''}</div>`;
   if(VREG==='agr'){pintarAgr(v,pagBtn);}
   else{
     const F=REG.map(r=>fila(r)),cols=COLS.filter(c=>!GCOL[c.g]||c.key),w=cols.reduce((s,c)=>s+c.w,0)+off;
     const g1=GORDR.map(g=>{const n=cols.filter(c=>c.g===g).length;return n?`<th class="gh" colspan="${n}" data-g="${g}" title="Clic para ${GCOL[g]?'mostrar todas las columnas':'contraer'}">${GCOL[g]?'▸':'▾'} ${GN[g]}</th>`:'';}).join('');
     const g2=cols.map(c=>`<th class="${[c.c?'c':'',c.r?'r':'',c.k==='fecha'?'fz':''].filter(Boolean).join(' ')}"${c.k==='fecha'?` style="left:${off}px"`:''} title="${esc(c.l)}">${c.l}</th>`).join('');
-    const body=F.map((f,i)=>`<tr data-i="${i}">${ad?`<td class="ac fz" style="left:0"><button class="del" title="Eliminar registro (Ctrl+Z lo deshace)" data-d="${i}">🗑</button></td>`:''}${cols.map(c=>celda(c,f,off)).join('')}</tr>`).join('')
+    const body=F.map((f,i)=>`<tr data-i="${i}">${ad?`<td class="ac fz" style="left:0"><button class="edb" title="Editar registro" data-ed="${i}">✎</button><button class="del" title="Eliminar registro (Ctrl+Z lo deshace)" data-d="${i}">🗑</button></td>`:''}${cols.map(c=>celda(c,f,off)).join('')}</tr>`).join('')
       ||`<tr><td colspan="${cols.length+(ad?1:0)}" class="vacio">Sin registros con estos filtros.</td></tr>`;
-    v.innerHTML=`<div class="tw" id="tw"><table class="tc" style="width:${w}px"><colgroup>${ad?'<col style="width:28px">':''}${cols.map(c=>`<col style="width:${c.w}px">`).join('')}</colgroup>
+    v.innerHTML=`<div class="tw" id="tw"><table class="tc" style="width:${w}px"><colgroup>${ad?'<col style="width:50px">':''}${cols.map(c=>`<col style="width:${c.w}px">`).join('')}</colgroup>
       <thead><tr class="g1">${ad?'<th class="fz" style="left:0"></th>':''}${g1}</tr><tr class="g2">${ad?'<th class="fz" style="left:0"></th>':''}${g2}</tr></thead><tbody>${body}</tbody></table></div>${pagBtn}`;
     v.querySelectorAll('.gh').forEach(h=>h.onclick=()=>{GCOL[h.dataset.g]=!GCOL[h.dataset.g];guardarG();pintarReg();});
     v.querySelectorAll('tr[data-i]').forEach(tr=>tr.onclick=()=>detalle(REG[+tr.dataset.i]));
     v.querySelectorAll('.del').forEach(b=>b.onclick=ev=>{ev.stopPropagation();borrarReg(REG[+b.dataset.d]);});
+    v.querySelectorAll('.edb').forEach(b=>b.onclick=ev=>{ev.stopPropagation();editarReg(REG[+b.dataset.ed]);});
   }
   const t=v.querySelector('.tw');if(t){ajustaAlto();t.scrollLeft=sl;t.scrollTop=st;}
   pie.textContent=`${REG.length} registro(s)${pagina?' · página '+(pagina+1):''} · clic en una fila abre el detalle · se consulta solo lo filtrado (${PASO} por página)`;
@@ -357,17 +367,18 @@ function pintarAgr(v,pagBtn){
   const AC=[...(GB==='dia'?[]:[{l:'Fecha',w:64,v:f=>fd(f.r.fecha)}]),{l:'Hora',w:54,c:1,v:f=>String(f.r.hora_ini||'').slice(0,5)},{l:'Código',w:70,mono:1,v:f=>f.r.cod_sap},{l:'Equipo',w:130,v:f=>f.e.equipo||''},
     {l:'Tipo de intervención',w:138,v:f=>tipoDe(f.r)},{l:'Descripción de parada',w:240,v:f=>f.r.descripcion||(f.p&&f.p.detalle)||''},{l:'Acciones correctivas',w:230,v:f=>f.r.trabajo||''},
     {l:'Estado',w:92,c:1,h:f=>pillEst(f.r)},{l:'Hrs rep.',w:62,r:1,h:f=>f.hrs?(f.curso?`⏱ ${f.hrs}`:`<b>${f.hrs}</b>`):''},{l:'Personal',w:130,mono:1,v:f=>(f.r.tecnicos||[]).join(', ')},{l:'Pendiente',w:170,h:f=>pillPen(f.r)}];
-  const w=AC.reduce((s,c)=>s+c.w,0)+(ad?28:0);let idx=0;
+  const w=AC.reduce((s,c)=>s+c.w,0)+(ad?50:0);let idx=0;
   const secs=S.map((s,n)=>{const abierto=SEC[s.k]!==undefined?SEC[s.k]:(AGMODE?AGMODE==='open':n===0);
     const inop=s.L.filter(f=>f.r.estado_equipo==='INOPERATIVO').length,pen=s.L.filter(f=>f.r.backlog&&f.r.backlog_estado!=='CERRADO').length;
-    const rows=abierto?`<div style="overflow:auto"><table class="tc" style="width:${w}px"><colgroup>${ad?'<col style="width:28px">':''}${AC.map(c=>`<col style="width:${c.w}px">`).join('')}</colgroup>
+    const rows=abierto?`<div style="overflow:auto"><table class="tc" style="width:${w}px"><colgroup>${ad?'<col style="width:50px">':''}${AC.map(c=>`<col style="width:${c.w}px">`).join('')}</colgroup>
       <thead><tr class="g2">${ad?'<th></th>':''}${AC.map(c=>`<th class="${[c.c?'c':'',c.r?'r':''].join(' ')}" style="position:static">${c.l}</th>`).join('')}</tr></thead>
-      <tbody>${s.L.map(f=>{const i=REG.indexOf(f.r);return `<tr data-i="${i}">${ad?`<td class="ac"><button class="del" data-d="${i}" title="Eliminar registro (Ctrl+Z lo deshace)">🗑</button></td>`:''}${AC.map(c=>`<td class="${['tx',c.c?'c':'',c.r?'r':'',c.mono?'mono':''].filter(Boolean).join(' ')}">${c.h?c.h(f):esc(c.v(f))}</td>`).join('')}</tr>`;}).join('')}</tbody></table></div>`:'';
+      <tbody>${s.L.map(f=>{const i=REG.indexOf(f.r);return `<tr data-i="${i}">${ad?`<td class="ac"><button class="edb" data-ed="${i}" title="Editar registro">✎</button><button class="del" data-d="${i}" title="Eliminar registro (Ctrl+Z lo deshace)">🗑</button></td>`:''}${AC.map(c=>`<td class="${['tx',c.c?'c':'',c.r?'r':'',c.mono?'mono':''].filter(Boolean).join(' ')}">${c.h?c.h(f):esc(c.v(f))}</td>`).join('')}</tr>`;}).join('')}</tbody></table></div>`:'';
     return `<div class="secg"><div class="sgh" data-k="${esc(s.k)}" data-n="${n}"><span>${abierto?'▾':'▸'}</span><b>${esc(s.lab)}</b><span class="n">${s.L.length} registro(s)</span><div class="spacer"></div>${inop?`<span class="pill p-b">${inop} inoperativo(s)</span>`:''}${pen?`<span class="pill p-w">${pen} pendiente(s)</span>`:''}</div>${rows}</div>`;}).join('');
   v.innerHTML=(secs||'<div class="card vacio">Sin registros con estos filtros.</div>')+pagBtn;
   v.querySelectorAll('.sgh').forEach(h=>h.onclick=()=>{const k=h.dataset.k,n=+h.dataset.n,ab=SEC[k]!==undefined?SEC[k]:(AGMODE?AGMODE==='open':n===0);SEC[k]=!ab;pintarReg();});
   v.querySelectorAll('tr[data-i]').forEach(tr=>tr.onclick=()=>detalle(REG[+tr.dataset.i]));
-  v.querySelectorAll('.del').forEach(b=>b.onclick=ev=>{ev.stopPropagation();borrarReg(REG[+b.dataset.d]);});}
+  v.querySelectorAll('.del').forEach(b=>b.onclick=ev=>{ev.stopPropagation();borrarReg(REG[+b.dataset.d]);});
+  v.querySelectorAll('.edb').forEach(b=>b.onclick=ev=>{ev.stopPropagation();editarReg(REG[+b.dataset.ed]);});}
 
 /* ── texto completo al pasar el cursor por una celda recortada ── */
 const tip=document.createElement('div');tip.id='tip';document.body.appendChild(tip);
@@ -387,10 +398,13 @@ function pintarUndo(){btnUndo.disabled=!UNDO.length;nUndo.textContent=UNDO.lengt
 async function borrarReg(r){if(!r)return;const x=PARX[r.id];
   if(!confirm(`¿Eliminar este registro?\n\n${r.cod_sap} · ${fd(r.fecha)} · ${MODN[r.modulo]||r.modulo}`+(x?`\n\nOjo: está ligado a una parada (${x.rol==='abre'?'la abre':'la cierra'}); la parada no se modifica.`:'')+'\n\nSe puede deshacer con Ctrl+Z.'))return;
   const {error}=await sb.from('pdm_registros').update({anulado:true}).eq('id',r.id);if(error)return alert(error.message);
-  UNDO.push({id:r.id,t:`${r.cod_sap} · ${fd(r.fecha)}`});REG=REG.filter(z=>z.id!==r.id);pintarReg();conteos();pintarUndo();aviso(`Registro ${r.cod_sap} eliminado`,true);}
+  UNDO.push({k:'del',id:r.id,t:`${r.cod_sap} · ${fd(r.fecha)}`});REG=REG.filter(z=>z.id!==r.id);pintarReg();conteos();pintarUndo();aviso(`Registro ${r.cod_sap} eliminado`,true);}
 async function deshacer(){const u=UNDO.pop();if(!u)return aviso('No hay nada que deshacer');
-  const {error}=await sb.from('pdm_registros').update({anulado:false}).eq('id',u.id);if(error){UNDO.push(u);return alert(error.message);}
-  pintarUndo();aviso(`Restaurado: ${u.t}`);buscar(pagina);}
+  let er=null;
+  if(u.k==='edit'){er=(await sb.from('pdm_registros').update(u.prev).eq('id',u.id)).error;if(!er&&u.pid)er=(await sb.from('pdm_paradas').update(u.pprev).eq('id',u.pid)).error;}
+  else er=(await sb.from('pdm_registros').update({anulado:false}).eq('id',u.id)).error;
+  if(er){UNDO.push(u);return alert(er.message);}
+  pintarUndo();aviso(u.k==='edit'?`Edición deshecha: ${u.t}`:`Restaurado: ${u.t}`);buscar(pagina);}
 document.addEventListener('keydown',ev=>{if(!(ev.ctrlKey||ev.metaKey)||ev.shiftKey||String(ev.key).toLowerCase()!=='z')return;
   const t=ev.target;if(t&&/^(INPUT|TEXTAREA|SELECT)$/.test(t.tagName)&&t.type!=='checkbox')return;if(vista!=='reg')return;ev.preventDefault();deshacer();});
 
@@ -426,6 +440,86 @@ async function pintarSeg(){const v=document.getElementById('v-seg'),h=new Date()
   enlaza();
   v.querySelectorAll('td.n').forEach(td=>td.onclick=()=>{FIL.tec.clear();FIL.tec.add(td.dataset.t);fDesde.value=fHasta.value=td.dataset.d;PER='';pintarFil();irVista('reg');buscar(0);});
   pie.textContent=`Seguimiento · ${T.length} colaborador(es) · ${dias.length} día(s) · ${L.length} registro(s)`;}
+
+/* ═══════════ EDITAR UN REGISTRO (solo administrador): corregir o completar datos que faltan ═══════════ */
+const aIsoE=v=>{if(!v)return null;const d=new Date(v);return isNaN(d)?null:d.toISOString();};
+const lclE=iso=>{if(!iso)return'';const d=new Date(iso);return isNaN(d)?'':`${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;};
+const upE=s=>{s=String(s??'').trim().toUpperCase();return s||null;};
+const mismoE=(a,b)=>JSON.stringify(a??null)===JSON.stringify(b??null);
+const TURNOS_PAR=['1 TURNO DÍA','1 TURNO NOCHE','2 TURNOS'];
+/* horas inoperativas: solo se cuenta el tiempo dentro del turno del equipo y se aplica 8/12 (igual que en la app) */
+function horasParadaE(ini,fin,tur){const a=new Date(ini),b=new Date(fin);if(isNaN(a)||isNaN(b)||b<=a)return 0;
+  if(tur==='2 TURNOS')return Math.round((b-a)/36e5*8/12*10)/10;
+  let min=0;const d0=new Date(a);d0.setHours(0,0,0,0);d0.setDate(d0.getDate()-1);
+  for(let d=new Date(d0);d<b;d.setDate(d.getDate()+1)){const w0=new Date(d),w1=new Date(d);
+    if(tur==='1 TURNO NOCHE'){w0.setHours(19,0,0,0);w1.setDate(w1.getDate()+1);w1.setHours(7,0,0,0);}else{w0.setHours(7,0,0,0);w1.setHours(19,0,0,0);}
+    const x=Math.max(a,w0),y=Math.min(b,w1);if(y>x)min+=(y-x)/6e4;}
+  return Math.round(min/60*8/12*10)/10;}
+function editarReg(r){if(!r||!esAdmin())return;cerrarMS();
+  const x=PARX[r.id],p=x?x.p:null,d=r.detalle||{};
+  const I=(k,v,t,ex)=>`<input type="${t||'text'}" data-e="${k}" value="${esc(v??'')}" ${ex||''}>`;
+  const S2=(k,v,opts,vacio)=>`<select data-e="${k}">${vacio===false?'':'<option value=""></option>'}${[...new Set([...opts,v].filter(z=>z!=null&&z!==''))].map(o=>`<option ${String(o)===String(v??'')?'selected':''}>${esc(o)}</option>`).join('')}</select>`;
+  const F=(l,h,c)=>`<div${c?` style="grid-column:${c}"`:''}><label>${l}</label>${h}</div>`;
+  const obras=[...new Set(EQ.map(z=>z.cod_proyec).filter(Boolean))].sort();
+  const act=COL.filter(c=>c.activo!==false),pres=new Set(r.tecnicos||[]);
+  const tecs=[...act,...(r.tecnicos||[]).filter(c=>!act.some(z=>z.codigo===c)).map(c=>({codigo:c,nombres:'',ap_paterno:''}))]
+    .sort((a,b)=>(pres.has(b.codigo)-pres.has(a.codigo))||String(a.codigo).localeCompare(String(b.codigo)));
+  document.body.insertAdjacentHTML('beforeend',`<div class="modal" id="ed"><div class="mc" style="max-width:860px"><div class="mh"><h3>✎ Editar registro · ${esc(MODN[r.modulo]||r.modulo)} · ${esc(r.cod_sap)} · ${fd(r.fecha)}</h3><div class="spacer"></div>
+    <button class="act" id="edX">Cancelar</button><button class="act pri" id="edOk">Guardar cambios</button></div><div class="mb">
+    <div class="edh">Registro</div><div class="ed2">
+     ${F('Fecha',I('fecha',r.fecha,'date'))}${F('Hora inicio',I('hora_ini',String(r.hora_ini||'').slice(0,5),'time'))}${F('Hora fin',I('hora_fin',String(r.hora_fin||'').slice(0,5),'time'))}
+     ${F('Turno',S2('turno',r.turno,['DIA','NOCHE']))}${F('Obra',S2('obra',r.obra,obras))}
+     ${F('Equipo (código)',I('cod_sap',r.cod_sap,'text','list="edEq" class="up"')+`<datalist id="edEq"><option value="OTRO">${EQ.map(e=>`<option value="${esc(e.cod_sap)}">`).join('')}</datalist>`)}
+     ${F('HR / KM',I('hrkm',r.hrkm,'number','step="any"'))}${F('Especialidad (puesto)',S2('especialidad',r.especialidad,ESPS))}
+     ${F('Descripción del equipo (solo OTRO)',I('otro',(d.otro&&d.otro.desc)||'','text','class="up"'))}
+     <div style="grid-column:1/-1"><label>Técnicos</label><div class="edt">${tecs.map(c=>`<label class="edc"><input type="checkbox" data-te value="${esc(c.codigo)}" ${pres.has(c.codigo)?'checked':''}> <b>${esc(c.codigo)}</b> <span class="dim">${esc([String(c.nombres||'').split(' ')[0],c.ap_paterno].filter(Boolean).join(' '))}</span></label>`).join('')}</div></div></div>
+    <div class="edh">Falla y trabajo</div><div class="ed2">
+     ${F('Estado',S2('estado_equipo',r.estado_equipo,['OPERATIVO','INOPERATIVO']))}${F('Origen de la falla',S2('origen_falla',r.origen_falla,ORIG3))}${F('Sistema',I('sistema',r.sistema,'text','class="up"'))}
+     ${F('Componente',I('componente',r.componente,'text','class="up"'))}${F('Acciones correctivas (trabajo)',I('trabajo',r.trabajo,'text','class="up"'),'span 2')}
+     ${F('Descripción de parada / falla',`<textarea data-e="descripcion" rows="2" class="up">${esc(r.descripcion||'')}</textarea>`,'1/-1')}
+     ${F('Observaciones',`<textarea data-e="observacion" rows="2" class="up">${esc(r.observacion||'')}</textarea>`,'1/-1')}
+     ${F('Pendiente',I('backlog',r.backlog,'text','class="up"'),'span 2')}${F('Estado del pendiente',S2('backlog_estado',r.backlog_estado,['ABIERTO','CERRADO']))}</div>
+    ${p?`<div class="edh">Parada ${x.rol==='abre'?'(la abre este registro)':'(la cierra este registro)'}</div><div class="ed2">
+     ${F('Inicio',I('pini',lclE(p.inicio),'datetime-local'))}${F('Fin (vacío = sigue abierta)',I('pfin',lclE(p.fin),'datetime-local'))}${F('Turno parada',S2('ptur',p.turnos,TURNOS_PAR,false))}
+     ${F('Motivo',I('pmot',p.motivo,'text','class="up"'),'span 2')}<div><label>Horas</label><div id="edHrs" class="edhr"></div></div></div>`:''}
+    <div class="dim" style="margin-top:10px;font-size:11.5px">Los cambios quedan anotados en el historial del registro. Se pueden deshacer con Ctrl+Z.${(d.historial||[]).length?` · Editado ${d.historial.length} vez/veces (última: ${dtF(d.historial[d.historial.length-1].en,1)} por ${esc(d.historial[d.historial.length-1].por||'')})`:''}</div>
+    </div></div></div>`);
+  const q=k=>document.querySelector(`#ed [data-e="${k}"]`),cerrar=()=>document.getElementById('ed').remove();
+  const calc=()=>{const b=document.getElementById('edHrs');if(!b)return;const i=aIsoE(q('pini').value),f=aIsoE(q('pfin').value);
+    b.innerHTML=!i?'—':!f?'<span style="color:#B91C1C">parada abierta</span>':new Date(f)<=new Date(i)?'<span style="color:#B91C1C">el fin debe ser posterior al inicio</span>':`<b>${f1(horasParadaE(i,f,q('ptur').value))} h</b> inoperativas<br><span class="dim">${hhmm((new Date(f)-new Date(i))/36e5)} corridas</span>`;};
+  if(p){['pini','pfin','ptur'].forEach(k=>q(k).onchange=calc);calc();}
+  edX.onclick=cerrar;
+  edOk.onclick=async()=>{
+    const gv=k=>{const e=q(k);return e?e.value:'';},hh=v=>v?String(v).slice(0,5)+':00':null;
+    const T=[...document.querySelectorAll('#ed [data-te]:checked')].map(c=>c.value);
+    const n={fecha:gv('fecha')||null,hora_ini:hh(gv('hora_ini')),hora_fin:hh(gv('hora_fin')),turno:gv('turno')||null,obra:gv('obra')||null,cod_sap:upE(gv('cod_sap')),hrkm:gv('hrkm')===''?null:Number(gv('hrkm')),
+      especialidad:gv('especialidad')||null,estado_equipo:gv('estado_equipo')||null,origen_falla:gv('origen_falla')||null,sistema:upE(gv('sistema')),componente:upE(gv('componente')),trabajo:upE(gv('trabajo')),
+      descripcion:upE(gv('descripcion')),observacion:upE(gv('observacion')),backlog:upE(gv('backlog')),backlog_estado:gv('backlog_estado')||null};
+    if(!n.fecha)return alert('La fecha es obligatoria.');if(!n.cod_sap)return alert('El código del equipo es obligatorio.');if(n.hrkm!=null&&!isFinite(n.hrkm))return alert('HR/KM no es un número válido.');
+    if(n.cod_sap!=='OTRO'&&!eqDe(n.cod_sap)&&n.cod_sap!==r.cod_sap&&!confirm(`El código ${n.cod_sap} no está en el Maestro de equipos. ¿Guardar igual?`))return;
+    if(!n.backlog)n.backlog_estado=null;else if(!n.backlog_estado)n.backlog_estado='ABIERTO';
+    const cambios=[],upd={},prev={};
+    Object.keys(n).forEach(k=>{const o=k==='hora_ini'||k==='hora_fin'?(r[k]?String(r[k]).slice(0,5)+':00':null):r[k];if(!mismoE(o,n[k])){upd[k]=n[k];prev[k]=r[k]===undefined?null:r[k];cambios.push(k);}});
+    const t0=[...(r.tecnicos||[])].sort(),t1=[...T].sort();if(!mismoE(t0,t1)){upd.tecnicos=T;prev.tecnicos=r.tecnicos||[];cambios.push('tecnicos');}
+    if(upd.backlog_estado!==undefined||upd.backlog!==undefined){if(n.backlog_estado==='CERRADO'&&r.backlog_estado!=='CERRADO'){upd.backlog_cerrado_en=new Date().toISOString();prev.backlog_cerrado_en=r.backlog_cerrado_en||null;}
+      else if(n.backlog_estado!=='CERRADO'&&r.backlog_cerrado_en){upd.backlog_cerrado_en=null;prev.backlog_cerrado_en=r.backlog_cerrado_en;}}
+    let dnuevo={...(d||{})};const otroN=upE(gv('otro'));
+    if(n.cod_sap==='OTRO'){if(!mismoE((d.otro&&d.otro.desc)||null,otroN)){dnuevo.otro={desc:otroN};cambios.push('equipo OTRO');}}
+    let pupd=null,pprev=null;
+    if(p){const ni=aIsoE(gv('pini')),nf=aIsoE(gv('pfin')),nt=gv('ptur'),nm=upE(gv('pmot'));
+      if(!ni)return alert('El inicio de la parada es obligatorio.');if(nf&&new Date(nf)<=new Date(ni))return alert('El fin de la parada debe ser posterior al inicio.');
+      const nh=nf?horasParadaE(ni,nf,nt):null;
+      if(!mismoE(new Date(p.inicio).toISOString(),ni)||!mismoE(p.fin?new Date(p.fin).toISOString():null,nf)||p.turnos!==nt||!mismoE(p.motivo||null,nm)){
+        pupd={inicio:ni,fin:nf,turnos:nt,motivo:nm,horas:nh};pprev={inicio:p.inicio,fin:p.fin,turnos:p.turnos,motivo:p.motivo,horas:p.horas};cambios.push('parada');}}
+    if(!cambios.length){cerrar();return aviso('Sin cambios');}
+    const hist={en:new Date().toISOString(),por:(perfil&&(perfil.nombre||perfil.email))||'admin',campos:cambios};
+    const dprev=JSON.parse(JSON.stringify(d||{}));dnuevo.historial=[...(d.historial||[]),hist];upd.detalle=dnuevo;prev.detalle=dprev;
+    edOk.disabled=true;
+    let er=(await sb.from('pdm_registros').update(upd).eq('id',r.id)).error;
+    if(!er&&pupd)er=(await sb.from('pdm_paradas').update(pupd).eq('id',p.id)).error;
+    if(er){edOk.disabled=false;return alert('No se pudo guardar: '+er.message);}
+    UNDO.push({k:'edit',id:r.id,t:`${n.cod_sap} · ${fd(n.fecha)} (edición)`,prev,pid:pupd?p.id:null,pprev});pintarUndo();
+    cerrar();aviso(`Registro ${n.cod_sap} actualizado`,true);buscar(pagina);};}
 
 /* ═══════════ EXCEL (campos del parte diario) ═══════════ */
 async function exportarXls(){if(!window.XLSX)return alert('No se cargó la librería de Excel.');
@@ -473,7 +567,7 @@ function detTxt(r){const d=r.detalle||{};
   return '';}
 async function detalle(r){const e=eqDeR(r);
   document.body.insertAdjacentHTML('beforeend',`<div class="modal" id="md"><div class="mc"><div class="mh"><h3>${esc(MODN[r.modulo]||r.modulo)} · ${esc(r.cod_sap)} · ${fd(r.fecha)}</h3><div class="spacer"></div>
-   ${esAdmin()?'<button class="act rojo" id="mdAnu">Eliminar</button>':''}<button class="act" id="mdX">Cerrar</button></div><div class="mb">
+   ${esAdmin()?'<button class="act" id="mdEd">✎ Editar</button><button class="act rojo" id="mdAnu">Eliminar</button>':''}<button class="act" id="mdX">Cerrar</button></div><div class="mb">
    <div class="kv"><b>Equipo</b><span>${esc(r.cod_sap)} · ${esc(e?e.equipo+' '+(e.modelo||''):'')}</span><b>Obra · turno</b><span>${esc(r.obra||'')} · ${esc(r.turno||'')}</span>
    <b>Hora</b><span>${esc(String(r.hora_ini||'').slice(0,5))}${r.hora_fin?' – '+esc(String(r.hora_fin).slice(0,5)):''}</span>
    <b>HR/KM</b><span>${r.hrkm!=null?f0(r.hrkm):'—'}${r.hrkm_panel!=null?' (panel '+f0(r.hrkm_panel)+')':''}</span>
@@ -489,6 +583,7 @@ async function detalle(r){const e=eqDeR(r);
   const cerrar=()=>{const m=document.getElementById('md');if(m)m.remove();};
   mdX.onclick=cerrar; md.addEventListener('click',ev=>{if(ev.target.id==='md')cerrar();});
   if(document.getElementById('mdAnu'))mdAnu.onclick=async()=>{cerrar();await borrarReg(r);};
+  if(document.getElementById('mdEd'))mdEd.onclick=()=>{cerrar();editarReg(r);};
   if((r.fotos||[]).length){const urls=await Promise.all(r.fotos.map(p=>sb.storage.from('pdm-fotos').createSignedUrl(p,3600).then(x=>x.data&&x.data.signedUrl).catch(()=>null)));
     const box=document.getElementById('mdF');if(box)box.innerHTML=urls.map(u=>u?`<a href="${esc(u)}" target="_blank"><img src="${esc(u)}"></a>`:'<span class="dim">no disponible</span>').join('');}
 }
