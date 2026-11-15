@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8">
-<meta name="gllr-version" content="V.091126-2" data-pagina="Equipos">
+<meta name="gllr-version" content="V.101126-14" data-pagina="Equipos">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Control de Mantenimiento — UDE</title>
 <link rel="icon" href="favicon.ico" sizes="any">
@@ -1023,6 +1023,12 @@ function stSlug(s){return String(s||'').normalize('NFD').replace(/[\u0300-\u036f
 const ESTADOS=["Movilizado","Por movil.","Por desmov.","Desmoviliz."];
 /* ¿está fuera de obra? "TRANS. DESM." NO cuenta: sigue en obra, solo en tránsito de salida */
 function esDesmov(s){return /^DESMOVILIZ/.test(stSlug(s));}
+/* Equipo DESMOVILIZADO: sus DATOS ACTUALES y su CONTROL DE HORAS Y MNTTO se ven en blanco, no se calculan y las cargas
+   (reporte de combustible, horómetros y fechas) no los tocan. Los valores NO se borran de la base: al volver a
+   Movilizado / Por movil. reaparecen los últimos datos guardados de ese equipo. */
+const ACT_KEYS=new Set(['hrkm_actual','fecha_lectura','hr_dia','contador']);
+const CTRL_KEYS=new Set(['_proximo','_restante','_alerta','_fprox','_sem','_alertamntto']);
+const ocultoDesmov=(e,k)=>!!e&&esDesmov(e.status)&&(ACT_KEYS.has(k)||CTRL_KEYS.has(k));
 /* los dos tránsitos se ordenan junto a los movilizados; se conservan los nombres antiguos */
 /* 1er nivel de orden: los tres estados visibles cuentan como uno solo
    (MOVILIZADO, TRANS. MOV. y TRANS. DESM.); DESMOVILIZ. va al final. */
@@ -1108,6 +1114,7 @@ function roundToFreq(V,F){
 }
 function mant(e){
   if(e.__mant)return e.__mant;              // caché: se recalcula solo al editar el equipo
+  if(esDesmov(e.status))return (e.__mant={proy:0,proximo:0,restante:0,est:"na",fprox:"",sem:"",fproxDate:null});   // desmovilizado: no se calcula
   const H=hoy0(),freq=+e.frecuencia||0,pmr=roundToFreq(+e.hrkm_ult_mntto||0,freq),act=+e.hrkm_actual||0,hd=+e.hr_dia||0;
   let proy=act; if(e.fecha_lectura){const dd=Math.max(0,dias(H,new Date(e.fecha_lectura)));proy=act+dd*hd;}
   const proximo=freq?(pmr+freq):0; const restante=proximo-proy;
@@ -1229,9 +1236,9 @@ function cellCls(e,k,type,isFrz){
   if(k==='cod_sap')cls+=' sap-'+stSlug(e.status);
   if(type==='okfalta'&&e[k])cls+=(e[k]==='OK'?' of-ok':e[k]==='FALTA'?' of-falta':'');
   if(type==='de'){const s=docState(e[k]);if(e[k]&&e[k]!=='N.A.'&&(s==='bad'||s==='warn'))cls+=' exp-'+s;}
-  if(k==='fecha_lectura'&&staleLectura(e[k]))cls+=' stale';
+  if(k==='fecha_lectura'&&!ocultoDesmov(e,k)&&staleLectura(e[k]))cls+=' stale';
   if(k==='hrkm_ult_mntto'||k==='fecha_ult_mntto'||k==='frecuencia')cls+=' ult';
-  if(k==='contador'&&e.contador)cls+=' cont-'+e.contador;
+  if(k==='contador'&&e.contador&&!ocultoDesmov(e,k))cls+=' cont-'+e.contador;
   if(COL_INI[k])cls+=' ini-bloque ini-'+COL_INI[k];
   return cls;
 }
@@ -1773,7 +1780,7 @@ function indexRows(){
 }
 /* ---- helpers de visualización ---- */
 function fmtDate(v){if(!v)return"";const p=String(v).split("-");return p.length===3?`${p[2]}/${p[1]}/${p[0].slice(2)}`:String(v);}
-function dispVal(e,k,type){const v=e[k];
+function dispVal(e,k,type){if(ocultoDesmov(e,k))return "";const v=e[k];
   if(k==='hrkm_actual'&&v!=null&&v!==''&&desfDe(e.cod_sap).length)return Number(v).toLocaleString('es-PE')+dsfMarca(e);
   if(type==='pct')return(v==null||v==='')?"":v+"%";
   if(type==='n')return(v==null||v==='')?"":Number(v).toLocaleString('es-PE');
@@ -1781,6 +1788,7 @@ function dispVal(e,k,type){const v=e[k];
   if(type==='d')return fmtDate(v);
   return v==null?"":esc(v);}
 function calcHTML(e,k,c){
+  if(esDesmov(e.status))return "";
   if(k==='_alertamntto'){const a=alertaMntto(e);return a?`<span class="pill ${a==='MNTTO'?'bad':'warn'}">${a}</span>`:"";}
   const map={_proximo:c.proximo?c.proximo.toLocaleString():"—",_restante:c.est==="na"?"—":c.restante.toLocaleString(),_alerta:`<span class="pill ${c.est}">${ETI[c.est]}</span>`,_fprox:c.fprox||"—",_sem:c.sem||"—"};
   return map[k];
@@ -1815,7 +1823,7 @@ function applyFilters(){
       else if(kpiFiltro==='docw'&&docsWorst(e)!=='warn')ok=false;
     }
     if(ok)for(const [k,v,vals] of cf){
-      const crudo = k==='_alerta'?m._alerta : k==='_sem'?m._sem : k==='_alertamntto'?m._alertamntto : String(e[k]??"");
+      const crudo = k==='_alerta'?m._alerta : k==='_sem'?m._sem : k==='_alertamntto'?m._alertamntto : ocultoDesmov(e,k)?"":String(e[k]??"");
       if(vals){
         const t=String(crudo).trim();
         if(!(vals.has(t)||vals.has(t.toLowerCase())||vals.has(t.toUpperCase())
@@ -1923,7 +1931,7 @@ thead.addEventListener("input",ev=>{
     clearTimeout(window._stT); window._stT=setTimeout(()=>{
       cuerpo.querySelectorAll('td[data-k="fecha_lectura"]').forEach(td=>{
         const e=getE(idDe(td)); if(!e)return;
-        td.classList.toggle("stale",staleLectura(e.fecha_lectura));});
+        td.classList.toggle("stale",staleLectura(ocultoDesmov(e,'fecha_lectura')?null:e.fecha_lectura));});
     },120);
     return;
   }
@@ -1993,6 +2001,10 @@ async function deshacer(){
       const e=datos.find(x=>x.id==a.id);
       await offEscribir(sb,'maestro','update',{id_fila:a.id,datos:{[a.k]:a.old}});
       if(e){e[a.k]=a.old; delete e.__mant;} render();
+    }else if(a.type==='fill'){
+      const e=datos.find(x=>x.id==a.id);
+      await offEscribir(sb,'maestro','update',{id_fila:a.id,datos:a.antes});
+      if(e){Object.assign(e,a.antes); delete e.__mant;} render();
     }else if(a.type==='add'){
       await sb.from("maestro").delete().eq("id",a.id);
       datos=datos.filter(x=>x.id!=a.id); render();
@@ -2040,6 +2052,7 @@ btnExcel.onclick=()=>{
       const c=mant(e);
       const row=flat.map(col=>{
         if(col.k==='_idx')return idx+1;
+        if(ocultoDesmov(e,col.k))return "";
         if(col.tipo==='c'){const m={_proximo:c.proximo||"",_restante:c.est==="na"?"":c.restante,_alerta:ETI[c.est],_fprox:c.fprox||"",_sem:c.sem||""};return m[col.k];}
         return e[col.k]??"";
       });
@@ -2058,6 +2071,7 @@ cuerpo.addEventListener("dblclick",ev=>{
   const td=ev.target.closest('td[data-k]'); if(!td||td.dataset.editing)return;
   const id=idDe(td),k=td.dataset.k,type=tipoDe(td);
   const e=getE(id); if(!e)return;
+  if(ocultoDesmov(e,k)){appFoot.textContent='Equipo desmovilizado: estos datos están en blanco y no se editan. Cámbialo a Movilizado o Por movil. para verlos de nuevo.';setTimeout(()=>{if(/desmovilizado/.test(appFoot.textContent))appFoot.textContent="Doble clic en una celda para editar · los cambios se guardan solos.";},5000);return;}
   const cur=e[k]??"";
   let ctrl;
   if(type==='cont') ctrl=`<select>${["","Hr","Km"].map(o=>`<option ${cur===o?"selected":""}>${o}</option>`).join("")}</select>`;
@@ -2110,9 +2124,9 @@ function commitEdit(td,val){
   e[k]=val; delete e.__mant; delete td.dataset.editing; redrawCell(td,e);
   if(!changed)return;
   pushUndo({type:'edit',id,k,old});
-  guardar(id,k,val,old);
+  guardar(id,k,val,old).then(()=>{ if(k==='cod_sap'&&val&&!old)autoRellenarEquipo(id); });
   if(["frecuencia","hrkm_ult_mntto","hrkm_actual","hr_dia","fecha_lectura"].includes(k)) redrawCalc(id,td.closest("tr"));
-  if(['status','cod_proyec','familia','cod_sap'].includes(k)){ buildBody(); applyFilters(); return; }  // estos campos cambian el orden
+  if(['status','cod_proyec','familia','cod_sap'].includes(k)){ buildBody(); applyFilters(); if(k==='status')resumen(); return; }  // estos campos cambian el orden
   const tr=td.closest('tr'); if(tr){
     const sapTd=tr.querySelector('td[data-k="cod_sap"]'); if(sapTd)redrawCell(sapTd,e);
     if(tr._meta)Object.assign(tr._meta,rowMeta(e,tr));
@@ -2152,6 +2166,26 @@ async function guardar(id,k,val,old_){
     else appFoot.textContent="Doble clic en una celda para editar · los cambios se guardan solos.";
   },1200);
 }
+/* Al escribir el Cód. SAP de un equipo nuevo se copia toda la fila del último registro de ese mismo equipo.
+   No se copian: el proyecto (se edita), el status (el equipo entra de nuevo a obra), los datos de la desmovilización
+   anterior ni los campos técnicos de la base (id, fechas de registro). */
+const NO_COPIAR=new Set(['id','updated_at','cod_sap','cod_proyec','status','fecha_desmov','hrkm_salida','nivel_comb_sal','chk_salida','inf_salida','ubic_salida']);
+async function autoRellenarEquipo(id){
+  const e=getE(id); if(!e||!e.cod_sap)return;
+  const sap=String(e.cod_sap).trim().toUpperCase();
+  const otras=datos.filter(x=>String(x.id)!==String(e.id)&&String(x.cod_sap||'').trim().toUpperCase()===sap);
+  if(!otras.length)return;
+  const src=otras.sort((a,b)=>String(b.fecha_lectura||'').localeCompare(String(a.fecha_lectura||''))||String(b.updated_at||'').localeCompare(String(a.updated_at||'')))[0];
+  const dat={},antes={};
+  [...new Set(CAMPOS.split(','))].forEach(k=>{if(NO_COPIAR.has(k))return;const v=src[k];if(v==null||v==='')return;if((e[k]??null)!==v){dat[k]=v;antes[k]=e[k]??null;}});
+  if(!Object.keys(dat).length)return;
+  const r=await offEscribir(sb,'maestro','update',{id_fila:id,datos:dat});
+  if(r.error){alert('No se pudieron copiar los datos de '+e.cod_sap+': '+r.error.message);return;}
+  Object.assign(e,dat); delete e.__mant; OFF.guardar('maestro_full',datos);
+  pushUndo({type:'fill',id,antes});
+  render();
+  appFoot.textContent=`Se copiaron los últimos datos de ${e.cod_sap} (de ${src.cod_proyec||'otro proyecto'}). Revisa el proyecto y edítalo si hace falta.`;
+  setTimeout(()=>{if(/Se copiaron/.test(appFoot.textContent))appFoot.textContent="Doble clic en una celda para editar · los cambios se guardan solos.";},8000);}
 btnAdd.onclick=async()=>{
   const nuevo={equipo:"NUEVO EQUIPO",status:"MOVILIZADO",frecuencia:250};
   if(perfil.rol!=="admin" && Array.isArray(perfil.proyectos) && perfil.proyectos.length) nuevo.cod_proyec=perfil.proyectos[0];
@@ -2596,8 +2630,9 @@ function horLeerFilas(filas,idx,fila0){
 function horEmparejar(regs){
   const porSap=new Map(), porSerie=new Map();
   datos.forEach(e=>{
-    const s=horClave(e.cod_sap); if(s&&!porSap.has(s))porSap.set(s,e);
-    const p=horClave(e.serie_placa); if(p&&!porSerie.has(p))porSerie.set(p,e);
+    // si un mismo código tiene una fila desmovilizada y otra en obra, la carga usa la que está en obra
+    const s=horClave(e.cod_sap); if(s&&(!porSap.has(s)||(esDesmov(porSap.get(s).status)&&!esDesmov(e.status))))porSap.set(s,e);
+    const p=horClave(e.serie_placa); if(p&&(!porSerie.has(p)||(esDesmov(porSerie.get(p).status)&&!esDesmov(e.status))))porSerie.set(p,e);
   });
   return regs.map(r=>{
     let e=null,via='';
@@ -2836,7 +2871,7 @@ function dsfAbrir(){
     for(const e of eqs){
       const dat={};
       const fl=e.fecha_lectura?String(e.fecha_lectura).slice(0,10):dsfHoyIso();
-      if(e.hrkm_actual!=null&&e.hrkm_actual!==''&&fl>=f&&+e.hrkm_actual<hm){
+      if(!esDesmov(e.status)&&e.hrkm_actual!=null&&e.hrkm_actual!==''&&fl>=f&&+e.hrkm_actual<hm){
         const nv=+e.hrkm_actual+desfaseEn(e.cod_sap,fl);
         if(confirm(`${e.cod_sap} (${e.cod_proyec||''}): el HR/KM actual ${fmtNum(+e.hrkm_actual)} parece del panel.\n¿Convertirlo a ${fmtNum(nv)} horas máquina?`))dat.hrkm_actual=nv;
       }
@@ -3008,7 +3043,7 @@ function horCorregir(regs,nomArchivo,seguir){
 
 /* ═══════════ PASO 2 · confirmación y guardado ═══════════ */
 function horAnalizar(regs){
-  const hoy=hoy0(), R={aplicar:[],iguales:[],sinEquipo:[],despachos:0,repetidos:0};
+  const hoy=hoy0(), R={aplicar:[],iguales:[],sinEquipo:[],desmov:[],despachos:0,repetidos:0};
   const vistas=new Set();
   for(const r of regs){
     r.lecturas.forEach(l=>{
@@ -3018,6 +3053,7 @@ function horAnalizar(regs){
       if(vistas.has(k))R.repetidos++; else vistas.add(k);
     });
     if(!r.e){R.sinEquipo.push(r);continue;}
+    if(esDesmov(r.e.status)){R.desmov.push(r);continue;}        // desmovilizado: no se actualiza su horómetro, fecha ni HR/día
     const buenas=r.lecturas.filter(l=>!l.descartar&&horVal(l)!=null);
     if(!buenas.length)continue;
     const ult=buenas[buenas.length-1];
@@ -3071,6 +3107,8 @@ function horPanel(R,regs,nomArchivo,modo){
     <div class="hbody">
       <h4>Equipos <small>(el HR/KM tachado no se toca: el Maestro ya tiene un dato igual o más reciente${soloHoro?'':' · el HR/día sí se recalcula'})</small></h4>
       ${R.aplicar.length?`<table class="htb"><thead><tr><th></th><th>Cód. SAP</th><th>Equipo</th><th>HR/KM</th><th>Nuevo</th><th>F. lectura</th><th>Cont.</th>${soloHoro?'':'<th>HR/día</th><th>Nuevo</th>'}<th>Lect.</th><th>Encontrado por</th><th>Obs.</th></tr></thead><tbody>${R.aplicar.map(fila).join('')}</tbody></table>`:'<p class="hvac">— ninguno —</p>'}
+      ${R.desmov&&R.desmov.length?`<h4>Desmovilizados <small>(no se actualizan sus horas)</small></h4>
+        <p class="hvac">${R.desmov.map(o=>esc(o.e.cod_sap)).join(' · ')}</p>`:''}
       ${R.sinEquipo.length?`<h4 class="r">No están en Equipos <small>(sus despachos no se guardan)</small></h4>
         <p class="hvac">${R.sinEquipo.map(o=>esc(o.cod)).join(' · ')}</p>`:''}
     </div></div></div>`);
@@ -3458,6 +3496,7 @@ pintarAvisos();
    valores que existen de verdad en esa columna con su cuenta. */
 function valorCol(e,k){
   // las tres columnas calculadas no viven en el equipo: se derivan al vuelo
+  if(ocultoDesmov(e,k))  return '';
   if(k==='_alerta')      return (ETI[mant(e).est]||'');
   if(k==='_sem')         return String(mant(e).sem||'');
   if(k==='_alertamntto') return (alertaMntto(e)||'');
