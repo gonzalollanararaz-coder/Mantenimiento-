@@ -96,7 +96,7 @@ const codigoBase=(n,a)=>{const x=nrm(n).split(' ')[0]||'',y=nrm(a).replace(/[^A-
 const ESPS0=['MECANICO','SOLDADOR','ELECTRICISTA','LUBRICADOR','LLANTERO','SUPERVISOR'];
 let ESPS=ESPS0.slice();   // se reemplaza con Configuración → Puestos de trabajo
 const espsCon=v=>v&&!ESPS.includes(v)?[...ESPS,v]:ESPS;
-const PEST=[['pms','PM-S'],['comb','Combustible'],['sos','SOS'],['neu','Neumáticos'],['pdm','Parte diario mecánico'],['pendientes','Pendientes']];
+const PEST=[['tab','Tablero'],['pms','PM-S'],['comb','Combustible'],['sos','SOS'],['neu','Neumáticos'],['pdm','Parte diario mecánico'],['pendientes','Pendientes']];
 const PERF={campo:{t:'Técnico de campo',s:'solo app REPORTE',app:true,web:[],rol:'usuario'},sup:{t:'Supervisor',s:'app + Parte diario + Pendientes',app:true,web:['pdm','pendientes'],rol:'usuario'},
   ofi:{t:'Oficina / planner',s:'todas las pestañas web',app:false,web:PEST.map(p=>p[0]),rol:'usuario'},adm:{t:'Administrador',s:'todo, y gestiona usuarios',app:true,web:PEST.map(p=>p[0]),rol:'admin'}};
 let yo=null, USR=[], PRO={}, COL=[], OBRAS=[], REP={}, R=[], selKey=null, errSql='';

@@ -1,0 +1,303 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="gllr-version" content="V.101126-16" data-pagina="Tablero">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Tablero de obras &mdash; UDE</title>
+<link rel="icon" href="favicon.ico" sizes="any">
+<meta name="theme-color" content="#1c232b">
+<script src="supabase.js"></script>
+<style>
+  :root{--steel:#1c232b;--amber:#FFCD11;--line:#dfe3e7;--ink:#1a1d21;--muted:#6b747d;--bg:#f4f6f8;--navy:#1F3864;--ok:#1a9d4b;--warn:#E0A800;--bad:#d64545;--acc:#4254A5;--gray:#b8c0ca;--card:#fff}
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;background:var(--bg);color:var(--ink);font-size:14px;display:flex;flex-direction:column;height:100vh;overflow:hidden}
+  .hide{display:none!important}.mono{font-family:"SF Mono",ui-monospace,monospace}.dim{color:var(--muted)}.spacer{flex:1}
+  #subnav{display:flex;align-items:center;gap:4px;background:#fff;border-bottom:1px solid var(--line);padding:0 16px;flex-shrink:0}
+  #subnav button.t{border:none;background:none;padding:12px 14px;font:inherit;font-size:13px;cursor:pointer;color:#4a535c;border-bottom:3px solid transparent}
+  #subnav button.t.on{color:var(--ink);font-weight:700;border-bottom-color:var(--amber)}
+  #subnav .act{margin-left:8px}
+  .act{border:1px solid var(--line);background:#fff;border-radius:9px;height:28px;padding:0 12px;font:inherit;font-size:12px;cursor:pointer;color:#3a434d}.act:hover{background:#f4f6fb}
+  #wrap{flex:1;overflow:auto;padding:14px 16px 40px}
+  footer{flex-shrink:0;padding:4px 16px;font-size:11.5px;color:var(--muted);background:#fff;border-top:1px solid var(--line)}
+  .kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin-bottom:14px}
+  .kpi{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:10px 14px}.kpi small{display:block;font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.3px}
+  .kpi b{font-size:26px;font-weight:700;line-height:1.15}.kpi span{font-size:11.5px;color:var(--muted);display:block}
+  .bar{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-bottom:10px;font-size:12px}
+  .chip{border:1px solid var(--line);background:#fff;border-radius:999px;height:26px;padding:0 12px;font:inherit;font-size:12px;cursor:pointer;color:#4a535c;white-space:nowrap}.chip:hover{background:#f4f6fb}
+  .chip.on{background:#E6E9F7;border-color:#B9C0E6;color:#334281;font-weight:700}
+  .bar input[type=search],.bar select{height:28px;border:1px solid var(--line);border-radius:9px;padding:0 10px;font:inherit;font-size:12px;background:#fff}
+  .lb{font-size:10px;font-weight:800;color:#98a2ad;text-transform:uppercase;letter-spacing:.4px}
+  .res{display:flex;height:10px;border-radius:5px;overflow:hidden;margin:4px 0 6px;background:#e9edf1}
+  .leg{display:flex;flex-wrap:wrap;gap:14px;font-size:12px;color:#4a535c;margin-bottom:12px}.leg i{display:inline-block;width:9px;height:9px;border-radius:50%;margin-right:5px}
+  .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:12px}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:13px 14px;cursor:pointer;transition:box-shadow .12s,transform .12s}.card:hover{box-shadow:0 6px 18px rgba(31,56,100,.14);transform:translateY(-1px)}
+  .card .t{display:flex;align-items:flex-start;gap:8px;margin-bottom:10px}.card .t b{font-size:14px;display:block}.card .t small{font-size:11.5px;color:var(--muted)}
+  .pl{margin-left:auto;font-size:11px;padding:2px 9px;border-radius:999px;white-space:nowrap;font-weight:700}
+  .p-ok{background:#e3f6ea;color:#0F7A33}.p-warn{background:#fff3cd;color:#8A6A00}.p-bad{background:#fde4e4;color:#B91C1C}.p-na{background:#eef0f2;color:#6b747d}
+  .card .b{display:flex;align-items:center;gap:14px}.card .m{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;flex:1;text-align:center}.card .m span{display:block;font-size:10.5px;color:var(--muted)}.card .m b{font-size:19px;font-weight:700}
+  .card .f{margin-top:10px;font-size:11.5px;color:var(--muted)}
+  .box{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:10px 12px;margin-bottom:12px}.box h3{font-size:12.5px;margin-bottom:6px;color:var(--navy)}
+  .cols{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:12px;margin-bottom:12px}.cols .box{margin-bottom:0}
+  svg{display:block;max-width:100%;height:auto}svg text{font-size:11px;fill:#6b747d;font-family:inherit}
+  table.tb{width:100%;border-collapse:collapse;font-size:12.5px}
+  table.tb th{background:linear-gradient(180deg,#7B87C0 0%,#4254A5 60%,#334281 100%);color:#fff;font-size:10.5px;text-transform:uppercase;letter-spacing:.3px;text-align:left;padding:5px 8px;position:sticky;top:0;white-space:nowrap}
+  table.tb th.s{cursor:pointer}table.tb td{padding:4px 8px;border-bottom:1px solid #eef1f4;white-space:nowrap}table.tb tr.cl{cursor:pointer}table.tb tr.cl:hover td{background:#f3f8ff}
+  .r{text-align:right}.c{text-align:center}.tw{overflow:auto;max-width:100%}
+  .dot{display:inline-block;width:9px;height:9px;border-radius:50%;margin-right:6px}
+  .dbar{height:7px;border-radius:4px;background:#e9edf1;min-width:70px}.dbar i{display:block;height:100%;border-radius:4px}
+  .fh{display:flex;flex-wrap:wrap;align-items:center;gap:10px;margin-bottom:10px}.fh h2{font-size:19px}
+  .tabs{display:flex;flex-wrap:wrap;gap:16px;border-bottom:1px solid var(--line);margin-bottom:12px}.tabs button{border:none;background:none;padding:6px 0;font:inherit;font-size:13px;cursor:pointer;color:#6b747d;border-bottom:3px solid transparent}.tabs button.on{color:var(--ink);font-weight:700;border-bottom-color:var(--acc)}
+  .att{display:flex;align-items:center;gap:10px;padding:6px 0;border-bottom:1px solid #eef1f4;font-size:12.5px}.att b{min-width:62px}.att .pl{margin-left:auto}
+  .vacio{padding:26px;text-align:center;color:var(--muted)}
+  .nota{font-size:11.5px;color:var(--muted);margin-top:8px}
+  @media print{#subnav,footer,.noprint,.tabs{display:none!important}body{height:auto;overflow:visible;background:#fff}#wrap{overflow:visible;padding:0}.box,.kpi{break-inside:avoid}}
+</style>
+</head>
+<body>
+<div id="subnav">
+  <button class="t on" data-v="obras">&#127959; Obras</button>
+  <button class="t" data-v="analisis">&#128202; An&aacute;lisis</button>
+  <div class="spacer"></div>
+  <span class="dim" id="upd" style="font-size:11.5px"></span>
+  <button class="act" id="btnRec" title="Recargar los datos">&#8635; Actualizar</button>
+</div>
+<div id="wrap"><div class="vacio">Cargando…</div></div>
+<footer id="pie">Cargando…</footer>
+
+<script>
+const CFG=(()=>{try{return JSON.parse(localStorage.getItem('gllr_sbcfg')||'null')}catch(_){return null}})();
+if(!CFG||!CFG.url){document.body.innerHTML='<div style="padding:60px;text-align:center;font-family:sans-serif"><h2 style="font-size:18px">Abre primero la página principal</h2></div>';throw new Error('sin configuracion');}
+const sb=window.supabase.createClient(CFG.url,CFG.key);
+const esc=s=>String(s??"").replace(/&/g,"&amp;").replace(/"/g,"&quot;").replace(/</g,"&lt;");
+const nrm=s=>String(s??'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toUpperCase().replace(/\s+/g,' ').trim();
+const f0=n=>Number(n).toLocaleString('es-PE',{maximumFractionDigits:0});
+const fd=v=>{if(!v)return'';const p=String(v).slice(0,10).split('-');return p.length===3?`${p[2]}/${p[1]}/${p[0].slice(2)}`:String(v);};
+const isoDe=d=>new Date(d.getTime()-d.getTimezoneOffset()*60000).toISOString().slice(0,10);
+const pad=n=>String(n).padStart(2,'0');
+
+/* ── Umbrales del semáforo de obra (se afinan aquí; luego pueden pasar a Configuración) ── */
+const UMB={critDisp:80,atenDisp:90,critPm:0.15,atenPm:0.05,critPmMin:3};   // disponibilidad en %; fracción de equipos con PM vencido; mínimo de PM vencidos para ser crítica
+const DOCS=['certif_operat','soat','poliza','rev_tec','tarjeta_circ'];
+const DOCN={certif_operat:'Certif. oper.',soat:'SOAT',poliza:'Póliza',rev_tec:'Rev. téc.',tarjeta_circ:'T. circ.'};
+
+/* ── reglas de la pestaña Equipos (mismas fórmulas) ── */
+const stSlug=s=>String(s||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toUpperCase().replace(/[^A-Z0-9]+/g,'-').replace(/^-+|-+$/g,'');
+const esDesmov=s=>/^DESMOVILIZ/.test(stSlug(s));
+const hoy0=()=>{const d=new Date();d.setHours(0,0,0,0);return d;};
+const dias=(a,b)=>Math.round((a-b)/86400000);
+function roundToFreq(V,F){V=Number(V)||0;F=Number(F)||0;if(F<=0)return Math.round(V);const L=Math.floor(V/F)*F,U=L+F,band=F*0.2;if((V-L)<band)return L;if((U-V)<=band)return U;const idx=Math.floor((V-L)/band+0.5);return L+idx*band;}
+function mant(e){const H=hoy0(),freq=+e.frecuencia||0,pmr=roundToFreq(+e.hrkm_ult_mntto||0,freq),act=+e.hrkm_actual||0,hd=+e.hr_dia||0;
+  let proy=act;if(e.fecha_lectura){const dd=Math.max(0,dias(H,new Date(e.fecha_lectura)));proy=act+dd*hd;}
+  const proximo=freq?(pmr+freq):0,restante=proximo-proy;let est='na';const margen=Math.max(freq*0.15,25);
+  if(freq)est=restante<=0?'bad':(restante<=margen?'warn':'ok');
+  let fprox='';if(hd>0&&freq){const dd=Math.floor(restante/hd)+1;fprox=isoDe(new Date(H.getTime()+dd*86400000));}
+  return {proy:Math.round(proy),proximo:Math.round(proximo),restante:Math.round(restante),est,fprox};}
+const docState=v=>{if(!v||isNaN(new Date(v)))return'na';const d=dias(new Date(v),hoy0());return d<=7?'bad':d<=15?'warn':'ok';};
+function docsWorst(e){let w='na';for(const f of DOCS){if(!e[f])continue;const s=docState(e[f]);if(s==='na')continue;if(s==='bad')return'bad';if(s==='warn')w='warn';else if(w==='na')w='ok';}return w;}
+
+let perfil=null, M=[], PA=[], PE=[], OB=[], TOT={}, vista='obras', obraSel=null, tabF='res';
+const FA={obra:'',est:new Set(['OPERATIVO','INOPERATIVO'])};      // filtros de Análisis
+const FP={soloActivas:true,orden:'peor',q:''};                     // filtros de la portada
+let ordenA={k:'n',dir:-1}, verTodosDocs=false, qEq='';
+
+/* ═════════ carga ═════════ */
+async function todo(mk){let out=[];for(let d=0;;d+=1000){const {data,error}=await mk().range(d,d+999);if(error)throw error;out=out.concat(data||[]);if(!data||data.length<1000)break;}return out;}
+async function cargar(){
+  pie.textContent='Cargando datos…';
+  try{
+    const desde=isoDe(new Date(Date.now()-75*86400000));
+    [M,PA,PE]=await Promise.all([
+      todo(()=>sb.from('maestro').select('id,status,cod_proyec,familia,cod_sap,equipo,marca,modelo,contador,hrkm_actual,fecha_lectura,hr_dia,hrkm_ult_mntto,fecha_ult_mntto,frecuencia,certif_operat,soat,poliza,rev_tec,tarjeta_circ,inf_ingreso,inf_salida,chk_ingreso').order('cod_sap')),
+      todo(()=>sb.from('pdm_paradas').select('id,cod_sap,obra,inicio,fin,horas,turnos,motivo').eq('anulado',false).or(`fin.is.null,fin.gte.${desde}`)),
+      todo(()=>sb.from('pendientes').select('id,estatus,proyecto,equipo_sap,equipo,falla,prioridad,estado,fecha_compromiso').order('id'))]);
+  }catch(e){wrap.innerHTML=`<div class="vacio">No se pudieron cargar los datos: ${esc(e.message||e)}</div>`;pie.textContent='Error de carga';return;}
+  calcular();upd.textContent='Actualizado '+pad(new Date().getHours())+':'+pad(new Date().getMinutes());pintar();}
+
+/* ═════════ cálculo por obra ═════════ */
+function calcular(){
+  const abiertas=PA.filter(p=>!p.fin);
+  const pendAb=PE.filter(p=>p.estado!=='Completado');
+  const inopSap=new Set([...abiertas.map(p=>nrm(p.cod_sap)),...pendAb.filter(p=>p.estatus==='Inoperativo').map(p=>nrm(p.equipo_sap))]);
+  const por=new Map();
+  M.filter(e=>String(e.cod_proyec||'').trim()&&String(e.cod_sap||'').trim()).forEach(e=>{const k=String(e.cod_proyec).trim();if(!por.has(k))por.set(k,[]);por.get(k).push(e);});
+  OB=[...por.entries()].map(([obra,eq])=>{
+    const en=eq.filter(e=>!esDesmov(e.status)),des=eq.filter(e=>esDesmov(e.status));
+    const info=en.map(e=>({e,m:mant(e),inop:inopSap.has(nrm(e.cod_sap)),docs:docsWorst(e)}));
+    const sap=new Set(en.map(e=>nrm(e.cod_sap)));
+    const n=en.length,inop=info.filter(x=>x.inop).length,pmBad=info.filter(x=>x.m.est==='bad').length,pmWarn=info.filter(x=>x.m.est==='warn').length;
+    const disp=n?Math.round((n-inop)/n*100):null;
+    const o={obra,eq,en,des,info,n,nDes:des.length,inop,disp,pmBad,pmWarn,
+      docsBad:info.filter(x=>x.docs==='bad').length,docsWarn:info.filter(x=>x.docs==='warn').length,
+      infFalta:en.filter(e=>String(e.inf_ingreso||'').toUpperCase()==='FALTA').length,infSalFalta:des.filter(e=>String(e.inf_salida||'').toUpperCase()==='FALTA').length,
+      paradas:abiertas.filter(p=>sap.has(nrm(p.cod_sap))),
+      pend:pendAb.filter(p=>String(p.proyecto||'').trim()===obra||sap.has(nrm(p.equipo_sap))),sap};
+    o.urg=o.pend.filter(p=>p.prioridad==='Urgente').length;
+    o.est=!n?'na':(disp<UMB.critDisp||(pmBad>=UMB.critPmMin&&pmBad/n>=UMB.critPm))?'bad':(disp<UMB.atenDisp||pmBad/n>=UMB.atenPm)?'warn':'ok';
+    return o;});
+  const act=OB.filter(o=>o.n>0),sum=k=>act.reduce((s,o)=>s+o[k],0);
+  TOT={obras:act.length,n:sum('n'),inop:sum('inop'),paradas:act.reduce((s,o)=>s+o.paradas.length,0),pmBad:sum('pmBad'),infFalta:sum('infFalta'),urg:sum('urg'),
+    pendAb:act.reduce((s,o)=>s+o.pend.length,0),docsBad:sum('docsBad'),
+    bad:act.filter(o=>o.est==='bad').length,warn:act.filter(o=>o.est==='warn').length,ok:act.filter(o=>o.est==='ok').length};
+  TOT.disp=TOT.n?Math.round((TOT.n-TOT.inop)/TOT.n*100):null;
+}
+const COLP={ok:'var(--ok)',warn:'var(--warn)',bad:'var(--bad)',na:'var(--gray)'},ETQ={ok:'En regla',warn:'Atención',bad:'Crítica',na:'Sin equipos'};
+const pillCls=e=>({ok:'p-ok',warn:'p-warn',bad:'p-bad',na:'p-na'})[e]||'p-na';
+const colDisp=d=>d==null?'var(--gray)':d<UMB.critDisp?'var(--bad)':d<UMB.atenDisp?'var(--warn)':'var(--ok)';
+
+/* ═════════ piezas gráficas (SVG) ═════════ */
+function anillo(p,col,sz=64){const r=24,c=2*Math.PI*r,v=p==null?0:Math.max(0,Math.min(100,p));
+  return `<svg width="${sz}" height="${sz}" viewBox="0 0 64 64" role="img"><title>Disponibilidad ${p==null?'—':p+'%'}</title><circle cx="32" cy="32" r="${r}" fill="none" stroke="#e9edf1" stroke-width="7"/>${v?`<circle cx="32" cy="32" r="${r}" fill="none" stroke="${col}" stroke-width="7" stroke-dasharray="${(c*v/100).toFixed(1)} ${c.toFixed(1)}" transform="rotate(-90 32 32)" stroke-linecap="${v>=100?'butt':'round'}"/>`:''}<text x="32" y="36" text-anchor="middle" style="font-size:13px;font-weight:700;fill:#1a1d21">${p==null?'—':p+'%'}</text></svg>`;}
+function barrasH(rows,partes,{etiq=96,ancho=300}={}){   // rows:[{lab,v:[n1,n2..],tip}] · partes:[{c,n}]
+  const mx=Math.max(1,...rows.map(r=>r.v.reduce((a,b)=>a+b,0))),W=ancho-etiq-34,h=20;let y=4,s='';
+  rows.forEach(r=>{let x=etiq;const tot=r.v.reduce((a,b)=>a+b,0);
+    s+=`<text x="${etiq-6}" y="${y+12}" text-anchor="end">${esc(String(r.lab).slice(0,16))}</text>`;
+    r.v.forEach((v,i)=>{if(v>0){const w=Math.max(2,v/mx*W);s+=`<rect x="${x}" y="${y+2}" width="${w.toFixed(1)}" height="13" rx="2" fill="${partes[i].c}"><title>${esc(r.lab)} · ${partes[i].n}: ${f0(v)}</title></rect>`;x+=w;}});
+    s+=`<text x="${x+4}" y="${y+12}">${f0(tot)}</text>`;y+=h;});
+  return `<svg viewBox="0 0 ${ancho} ${y+4}" role="img"><title>Gráfico de barras</title>${s}</svg>`;}
+function dona(partes,centro){const tot=partes.reduce((a,p)=>a+p.v,0)||1,r=38,c=2*Math.PI*r;let off=0,s='';
+  partes.forEach(p=>{const l=p.v/tot*c;if(p.v>0){s+=`<circle cx="70" cy="62" r="${r}" fill="none" stroke="${p.c}" stroke-width="16" stroke-dasharray="${l.toFixed(1)} ${(c-l).toFixed(1)}" stroke-dashoffset="${(-off).toFixed(1)}"><title>${p.n}: ${f0(p.v)}</title></circle>`;off+=l;}});
+  const lg=partes.map((p,i)=>`<rect x="150" y="${24+i*24}" width="10" height="10" rx="2" fill="${p.c}"/><text x="166" y="${33+i*24}">${p.n} ${f0(p.v)}</text>`).join('');
+  return `<svg viewBox="0 0 300 124" role="img"><title>Estado de los equipos</title><g transform="rotate(-90 70 62)">${s}</g><text x="70" y="67" text-anchor="middle" style="font-size:16px;font-weight:700;fill:#1a1d21">${centro}</text>${lg}</svg>`;}
+function linea(pts,{min=70,max=100,meta=null}={}){const W=300,H=100,x0=34,x1=292,y0=10,y1=84,n=pts.length;if(n<2)return '';
+  const X=i=>x0+(x1-x0)*i/(n-1),Y=v=>y1-(Math.max(min,Math.min(max,v))-min)/(max-min)*(y1-y0);
+  const g=[max,Math.round((min+max)/2),min].map(v=>`<line x1="${x0}" y1="${Y(v)}" x2="${x1}" y2="${Y(v)}" stroke="#e3e6e9"/><text x="0" y="${Y(v)+4}">${v}%</text>`).join('');
+  const m=meta!=null?`<line x1="${x0}" y1="${Y(meta)}" x2="${x1}" y2="${Y(meta)}" stroke="#98a2ad" stroke-dasharray="4 4"/>`:'';
+  const poly=pts.map((p,i)=>`${X(i).toFixed(1)},${Y(p.v).toFixed(1)}`).join(' ');
+  return `<svg viewBox="0 0 ${W} ${H}" role="img"><title>Disponibilidad diaria</title>${g}${m}<polyline fill="none" stroke="var(--acc)" stroke-width="2" stroke-linejoin="round" stroke-linecap="round" points="${poly}"/><circle cx="${X(n-1)}" cy="${Y(pts[n-1].v)}" r="4" fill="var(--acc)" stroke="#fff" stroke-width="2"/><text x="${x0}" y="${H-2}">${fd(pts[0].d)}</text><text x="${x1}" y="${H-2}" text-anchor="end">${fd(pts[n-1].d)}</text></svg>`;}
+function tendencia(o,dias_=30){const pts=[],hoy=hoy0();
+  for(let i=dias_-1;i>=0;i--){const d0=new Date(hoy.getTime()-i*86400000),d1=new Date(d0.getTime()+86400000-1);const s=new Set();
+    PA.forEach(p=>{if(!o.sap.has(nrm(p.cod_sap)))return;const a=new Date(p.inicio),b=p.fin?new Date(p.fin):null;if(a<=d1&&(!b||b>=d0))s.add(nrm(p.cod_sap));});
+    pts.push({d:isoDe(d0),v:o.n?Math.round((o.n-s.size)/o.n*1000)/10:100});}
+  return pts;}
+
+/* ═════════ navegación ═════════ */
+document.querySelectorAll('#subnav .t').forEach(b=>b.onclick=()=>{vista=b.dataset.v;obraSel=null;pintar();});
+btnRec.onclick=cargar;
+function pintar(){document.querySelectorAll('#subnav .t').forEach(b=>b.classList.toggle('on',b.dataset.v===vista));
+  if(vista==='analisis')return pintarAnalisis();if(obraSel)return pintarFicha();pintarObras();wrap.scrollTop=0;}
+function abrirObra(k){obraSel=k;tabF='res';qEq='';verTodosDocs=false;pintarFicha();wrap.scrollTop=0;}
+function kpisGlobales(){return `<div class="kpis">
+  <div class="kpi"><small>Obras activas</small><b>${TOT.obras}</b></div>
+  <div class="kpi"><small>Equipos en obra</small><b>${f0(TOT.n)}</b></div>
+  <div class="kpi"><small>Disponibilidad</small><b style="color:${colDisp(TOT.disp)}">${TOT.disp==null?'—':TOT.disp+'%'}</b><span>${f0(TOT.inop)} inoperativos</span></div>
+  <div class="kpi"><small>Paradas abiertas</small><b style="color:${TOT.paradas?'#8A6A00':'inherit'}">${f0(TOT.paradas)}</b></div>
+  <div class="kpi"><small>PM vencidos</small><b style="color:${TOT.pmBad?'var(--bad)':'inherit'}">${f0(TOT.pmBad)}</b></div>
+  <div class="kpi"><small>Inf. ingreso faltan</small><b style="color:${TOT.infFalta?'#8A6A00':'inherit'}">${f0(TOT.infFalta)}</b></div></div>`;}
+
+/* ═════════ PORTADA: tarjetas por obra ═════════ */
+function pintarObras(){
+  let L=OB.slice();if(FP.soloActivas)L=L.filter(o=>o.n>0);
+  const q=nrm(FP.q);if(q)L=L.filter(o=>nrm(o.obra).includes(q));
+  const rk={bad:0,warn:1,ok:2,na:3};
+  L.sort(FP.orden==='peor'?(a,b)=>rk[a.est]-rk[b.est]||(a.disp??101)-(b.disp??101)||b.n-a.n:(a,b)=>String(a.obra).localeCompare(String(b.obra)));
+  const tot=Math.max(1,TOT.bad+TOT.warn+TOT.ok);
+  const cards=L.map(o=>`<div class="card" data-o="${esc(o.obra)}"><div class="t"><div><b>${esc(o.obra)}</b><small>${f0(o.n)} equipos en obra${o.nDes?' · '+o.nDes+' desmoviliz.':''}</small></div><span class="pl ${pillCls(o.est)}">${ETQ[o.est]}</span></div>
+    <div class="b">${anillo(o.disp,COLP[o.est]==='var(--gray)'?'var(--gray)':colDisp(o.disp))}
+      <div class="m"><div><b>${o.paradas.length}</b><span>paradas</span></div><div><b style="color:${o.pmBad?'var(--bad)':'inherit'}">${o.pmBad}</b><span>PM venc.</span></div><div><b>${o.infFalta}</b><span>inf. falta</span></div></div></div>
+    <div class="f">${o.pend.length?o.pend.length+' pendiente(s)'+(o.urg?' · '+o.urg+' urgente(s)':''):'Sin pendientes abiertos'}</div></div>`).join('');
+  wrap.innerHTML=kpisGlobales()+`
+    <div class="bar"><b style="font-size:15px">Estatus de obras</b><div class="spacer"></div>
+      <input type="search" id="fq" placeholder="Buscar obra…" value="${esc(FP.q)}">
+      <button class="chip ${FP.soloActivas?'on':''}" data-a="act">Activas ${TOT.obras}</button><button class="chip ${FP.soloActivas?'':'on'}" data-a="todas">Todas ${OB.length}</button>
+      <button class="chip" data-a="ord">Orden: ${FP.orden==='peor'?'peor estatus primero':'A–Z'}</button></div>
+    <div class="res" title="Obras por estatus"><div style="width:${TOT.bad/tot*100}%;background:var(--bad)"></div><div style="width:${TOT.warn/tot*100}%;background:var(--warn)"></div><div style="width:${TOT.ok/tot*100}%;background:var(--ok)"></div></div>
+    <div class="leg"><span><i style="background:var(--bad)"></i>${TOT.bad} críticas</span><span><i style="background:var(--warn)"></i>${TOT.warn} en atención</span><span><i style="background:var(--ok)"></i>${TOT.ok} en regla</span></div>
+    <div class="grid">${cards||'<div class="vacio">No hay obras con estos filtros.</div>'}</div>
+    <div class="nota">Estatus: <b>crítica</b> si la disponibilidad es menor de ${UMB.critDisp}% o si tiene ${UMB.critPmMin} o más PM vencidos que son ${Math.round(UMB.critPm*100)}% o más de sus equipos; <b>atención</b> si la disponibilidad es menor de ${UMB.atenDisp}% o ${Math.round(UMB.atenPm*100)}% o más de sus equipos tienen el PM vencido. Los equipos desmovilizados no cuentan.</div>`;
+  wrap.querySelectorAll('.card').forEach(c=>c.onclick=()=>abrirObra(c.dataset.o));
+  fq.oninput=()=>{FP.q=fq.value;const p=fq.selectionStart;pintarObras();const n=document.getElementById('fq');n.focus();try{n.setSelectionRange(p,p);}catch(_){}};
+  wrap.querySelectorAll('[data-a]').forEach(b=>b.onclick=()=>{const a=b.dataset.a;if(a==='act')FP.soloActivas=true;else if(a==='todas')FP.soloActivas=false;else FP.orden=FP.orden==='peor'?'az':'peor';pintarObras();});
+  pie.textContent=`${L.length} obra(s) · clic en una tarjeta para ver su ficha`;}
+
+/* ═════════ FICHA DE OBRA ═════════ */
+const pillEst=e=>`<span class="pl ${pillCls(e)}" style="margin-left:0">${ETQ[e]||e}</span>`;
+const pmPill=e=>({bad:'<span class="pl p-bad" style="margin:0">Vencido</span>',warn:'<span class="pl p-warn" style="margin:0">Próximo</span>',ok:'<span class="pl p-ok" style="margin:0">En regla</span>',na:'<span class="dim">—</span>'})[e];
+function pintarFicha(){
+  const o=OB.find(x=>x.obra===obraSel);if(!o){obraSel=null;return pintarObras();}
+  const tabs=[['res','Resumen'],['eq','Equipos'],['mn','Mantenimiento'],['dc','Documentos']];
+  wrap.innerHTML=`<div class="fh"><button class="act noprint" id="volver">← Obras</button><h2>${esc(o.obra)}</h2>${pillEst(o.est)}<div class="spacer"></div><button class="act noprint" id="imp">🖨 Ficha PDF</button></div>
+    <div class="tabs">${tabs.map(([k,t])=>`<button data-t="${k}" class="${tabF===k?'on':''}">${t}</button>`).join('')}</div><div id="fc"></div>`;
+  volver.onclick=()=>{obraSel=null;pintar();};imp.onclick=()=>window.print();
+  wrap.querySelectorAll('.tabs button').forEach(b=>b.onclick=()=>{tabF=b.dataset.t;pintarFicha();});
+  fc.innerHTML=({res:fichaResumen,eq:fichaEquipos,mn:fichaMant,dc:fichaDocs})[tabF](o);
+  if(tabF==='eq'){const q=document.getElementById('qeq');if(q){q.oninput=()=>{qEq=q.value;const p=q.selectionStart;pintarFicha();const n=document.getElementById('qeq');n.focus();try{n.setSelectionRange(p,p);}catch(_){}};}}
+  if(tabF==='dc'){const b=document.getElementById('vt');if(b)b.onclick=()=>{verTodosDocs=!verTodosDocs;pintarFicha();};}
+  pie.textContent=`${o.obra} · ${f0(o.n)} equipos en obra · datos al ${fd(isoDe(new Date()))}`;}
+function fichaResumen(o){
+  const atn=[];o.info.forEach(x=>{if(x.inop)atn.push([0,x.e,'Inoperativo','p-bad']);if(x.m.est==='bad')atn.push([1,x.e,`PM vencido (${f0(x.m.restante)} ${x.e.contador==='Km'?'km':'h'})`,'p-warn']);else if(x.m.est==='warn')atn.push([2,x.e,`PM próximo (faltan ${f0(x.m.restante)})`,'p-warn']);if(x.docs==='bad')atn.push([3,x.e,'Documento por vencer o vencido','p-warn']);});
+  atn.sort((a,b)=>a[0]-b[0]);
+  const op=o.n-o.inop;
+  return `<div class="kpis"><div class="kpi"><small>Equipos en obra</small><b>${f0(o.n)}</b><span>${o.nDes} desmovilizados</span></div>
+    <div class="kpi"><small>Disponibilidad</small><b style="color:${colDisp(o.disp)}">${o.disp==null?'—':o.disp+'%'}</b></div>
+    <div class="kpi"><small>Paradas abiertas</small><b>${o.paradas.length}</b></div>
+    <div class="kpi"><small>PM vencidos</small><b style="color:${o.pmBad?'var(--bad)':'inherit'}">${o.pmBad}</b><span>${o.pmWarn} próximos</span></div>
+    <div class="kpi"><small>Pendientes abiertos</small><b>${o.pend.length}</b><span>${o.urg} urgentes</span></div>
+    <div class="kpi"><small>Inf. ingreso faltan</small><b>${o.infFalta}</b><span>${o.infSalFalta} inf. salida</span></div></div>
+    <div class="cols"><div class="box"><h3>Disponibilidad de la obra · últimos 30 días</h3>${o.n?linea(tendencia(o),{min:70,max:100,meta:UMB.atenDisp}):'<div class="vacio">Sin equipos en obra</div>'}<div class="nota">Aproximada: usa las paradas registradas en el parte diario y los equipos actuales de la obra.</div></div>
+    <div class="box"><h3>Estado de los equipos</h3>${dona([{n:'Operativo',v:op,c:'var(--ok)'},{n:'Inoperativo',v:o.inop,c:'var(--bad)'},{n:'Desmoviliz.',v:o.nDes,c:'var(--gray)'}],o.n?o.disp+'%':'—')}</div></div>
+    <div class="box"><h3>Equipos que requieren atención (${atn.length})</h3>${atn.slice(0,15).map(a=>`<div class="att"><b class="mono">${esc(a[1].cod_sap)}</b><span>${esc(a[1].equipo||'')}</span><span class="pl ${a[3]}">${esc(a[2])}</span></div>`).join('')||'<div class="vacio">Nada urgente: todos los equipos de la obra están al día.</div>'}${atn.length>15?`<div class="nota">y ${atn.length-15} más en las pestañas Equipos y Mantenimiento.</div>`:''}</div>`;}
+function fichaEquipos(o){
+  const q=nrm(qEq),L=o.info.filter(x=>!q||nrm([x.e.cod_sap,x.e.equipo,x.e.marca,x.e.modelo].join(' ')).includes(q));
+  return `<div class="bar"><input type="search" id="qeq" placeholder="Buscar equipo…" value="${esc(qEq)}"><span class="dim">${L.length} de ${o.n} equipos en obra</span></div>
+   <div class="tw"><table class="tb"><thead><tr><th>Código</th><th>Equipo</th><th>Marca</th><th>Modelo</th><th>Status</th><th class="r">HR/KM</th><th class="c">Estado</th><th class="c">PM</th><th class="c">Docs</th></tr></thead><tbody>
+   ${L.map(x=>`<tr><td class="mono"><b>${esc(x.e.cod_sap)}</b></td><td>${esc(x.e.equipo||'')}</td><td>${esc(x.e.marca||'')}</td><td>${esc(x.e.modelo||'')}</td><td>${esc(x.e.status||'')}</td><td class="r">${x.e.hrkm_actual!=null?f0(x.e.hrkm_actual):''}</td>
+    <td class="c">${x.inop?'<span class="pl p-bad" style="margin:0">Inoperativo</span>':'<span class="pl p-ok" style="margin:0">Operativo</span>'}</td><td class="c">${pmPill(x.m.est)}</td><td class="c">${x.docs==='na'?'<span class="dim">—</span>':pmPill(x.docs).replace('Vencido','Vencido o por vencer')}</td></tr>`).join('')||'<tr><td colspan="9" class="vacio">Sin equipos.</td></tr>'}</tbody></table></div>`;}
+function fichaMant(o){
+  const L=o.info.filter(x=>x.m.est!=='na').sort((a,b)=>a.m.restante-b.m.restante);
+  const hoy=Date.now();
+  return `<div class="box"><h3>Programa de PM (${L.length} equipos con frecuencia)</h3><div class="tw"><table class="tb"><thead><tr><th>Código</th><th>Equipo</th><th class="r">HR/KM actual</th><th class="r">Próx. PM</th><th class="r">Restante</th><th class="c">Alerta</th><th>Próx. fecha</th></tr></thead><tbody>
+   ${L.map(x=>`<tr><td class="mono"><b>${esc(x.e.cod_sap)}</b></td><td>${esc(x.e.equipo||'')}</td><td class="r">${f0(x.m.proy)}</td><td class="r">${f0(x.m.proximo)}</td><td class="r" style="${x.m.est==='bad'?'color:#B91C1C;font-weight:700':''}">${f0(x.m.restante)}</td><td class="c">${pmPill(x.m.est)}</td><td>${fd(x.m.fprox)}</td></tr>`).join('')||'<tr><td colspan="7" class="vacio">Sin equipos con frecuencia de PM.</td></tr>'}</tbody></table></div></div>
+   <div class="cols"><div class="box"><h3>Paradas abiertas (${o.paradas.length})</h3>${o.paradas.map(p=>`<div class="att"><b class="mono">${esc(p.cod_sap)}</b><span>${esc(p.motivo||'')}</span><span class="pl p-bad">desde ${fd(p.inicio)} · ${f0((hoy-new Date(p.inicio))/36e5)} h</span></div>`).join('')||'<div class="vacio">Sin paradas abiertas.</div>'}</div>
+   <div class="box"><h3>Pendientes abiertos (${o.pend.length})</h3>${o.pend.map(p=>`<div class="att"><b class="mono">${esc(p.equipo_sap||'')}</b><span>${esc(String(p.falla||'').slice(0,70))}</span><span class="pl ${p.prioridad==='Urgente'?'p-bad':p.prioridad==='Media'?'p-warn':'p-na'}">${esc(p.prioridad||'')} · ${esc(p.estado||'')}</span></div>`).join('')||'<div class="vacio">Sin pendientes abiertos.</div>'}</div></div>`;}
+function fichaDocs(o){
+  const rk={bad:0,warn:1,ok:2,na:3};let L=o.info.filter(x=>x.docs!=='na').sort((a,b)=>rk[a.docs]-rk[b.docs]||String(a.e.cod_sap).localeCompare(String(b.e.cod_sap)));
+  if(!verTodosDocs)L=L.filter(x=>x.docs==='bad'||x.docs==='warn');
+  const cel=(e,k)=>{const v=e[k];if(!v)return '<td class="c dim">—</td>';if(v==='N.A.')return '<td class="c dim">N.A.</td>';const s=docState(v);return `<td class="c"><span class="pl ${s==='bad'?'p-bad':s==='warn'?'p-warn':'p-ok'}" style="margin:0">${fd(v)}</span></td>`;};
+  return `<div class="bar"><button class="chip" id="vt">${verTodosDocs?'Ver solo los que requieren atención':'Ver todos los equipos'}</button><span class="dim">Rojo: vence en 7 días o ya venció · Amarillo: vence en 15 días</span></div>
+   <div class="tw"><table class="tb"><thead><tr><th>Código</th><th>Equipo</th>${DOCS.map(d=>`<th class="c">${DOCN[d]}</th>`).join('')}</tr></thead><tbody>
+   ${L.map(x=>`<tr><td class="mono"><b>${esc(x.e.cod_sap)}</b></td><td>${esc(x.e.equipo||'')}</td>${DOCS.map(d=>cel(x.e,d)).join('')}</tr>`).join('')||'<tr><td colspan="7" class="vacio">Ningún documento por vencer en esta obra.</td></tr>'}</tbody></table></div>`;}
+
+/* ═════════ ANÁLISIS ═════════ */
+function pintarAnalisis(){
+  const obras=OB.filter(o=>o.n>0).sort((a,b)=>String(a.obra).localeCompare(String(b.obra)));
+  const sel=FA.obra?obras.filter(o=>o.obra===FA.obra):obras;
+  const cuenta=o=>({op:FA.est.has('OPERATIVO')?o.n-o.inop:0,inop:FA.est.has('INOPERATIVO')?o.inop:0,des:FA.est.has('DESMOVILIZ')?o.nDes:0});
+  const R=sel.map(o=>({o,...cuenta(o)}));
+  const stack=R.slice().sort((a,b)=>(b.op+b.inop+b.des)-(a.op+a.inop+a.des)).slice(0,12);
+  const par=sel.slice().sort((a,b)=>(b.paradas.length+b.pend.length)-(a.paradas.length+a.pend.length)).slice(0,10);
+  const S={op:R.reduce((s,r)=>s+r.op,0),inop:R.reduce((s,r)=>s+r.inop,0),des:R.reduce((s,r)=>s+r.des,0)};
+  const filas=R.slice().sort((a,b)=>{const g=r=>({n:r.o.n,disp:r.o.disp??-1,par:r.o.paradas.length,pm:r.o.pmBad,inf:r.o.infFalta,doc:r.o.docsBad,obra:r.o.obra})[ordenA.k];const x=g(a),y=g(b);return (typeof x==='string'?x.localeCompare(y):x-y)*ordenA.dir;});
+  const th=(k,l,cl='')=>`<th class="s ${cl}" data-k="${k}">${l}${ordenA.k===k?(ordenA.dir<0?' ▾':' ▴'):''}</th>`;
+  wrap.innerHTML=kpisGlobales()+`
+   <div class="bar"><span class="lb">Obra</span><select id="fo"><option value="">Todas</option>${obras.map(o=>`<option ${o.obra===FA.obra?'selected':''}>${esc(o.obra)}</option>`).join('')}</select>
+     <span class="lb">Estado del equipo</span>
+     <button class="chip ${FA.est.has('OPERATIVO')?'on':''}" data-e="OPERATIVO">Operativo</button><button class="chip ${FA.est.has('INOPERATIVO')?'on':''}" data-e="INOPERATIVO">Inoperativo</button><button class="chip ${FA.est.has('DESMOVILIZ')?'on':''}" data-e="DESMOVILIZ">Desmoviliz.</button></div>
+   <div class="cols">
+    <div class="box"><h3>Equipos por obra</h3>${stack.length?barrasH(stack.map(r=>({lab:r.o.obra,v:[r.op,r.inop,r.des]})),[{c:'var(--acc)',n:'Operativo'},{c:'var(--bad)',n:'Inoperativo'},{c:'var(--gray)',n:'Desmoviliz.'}]):'<div class="vacio">Sin datos</div>'}</div>
+    <div class="box"><h3>Paradas y pendientes por obra</h3>${par.length?barrasH(par.map(o=>({lab:o.obra,v:[o.paradas.length,o.pend.length]})),[{c:'var(--warn)',n:'Paradas'},{c:'var(--acc)',n:'Pendientes'}]):'<div class="vacio">Sin datos</div>'}</div>
+    <div class="box"><h3>Estado de los equipos</h3>${dona([{n:'Operativo',v:S.op,c:'var(--ok)'},{n:'Inoperativo',v:S.inop,c:'var(--bad)'},{n:'Desmoviliz.',v:S.des,c:'var(--gray)'}],(S.op+S.inop)?Math.round(S.op/(S.op+S.inop)*100)+'%':'—')}</div></div>
+   <div class="box"><h3>Estatus por obra <span class="dim" style="font-weight:400">· clic en el título para ordenar · clic en la fila para abrir la ficha</span></h3><div class="tw"><table class="tb"><thead><tr>${th('obra','Obra')}${th('n','Equipos','r')}${th('disp','Disponibilidad')}${th('par','Paradas','r')}${th('pm','PM venc.','r')}${th('inf','Inf. ingreso','r')}${th('doc','Docs venc.','r')}<th>Estatus</th></tr></thead><tbody>
+    ${filas.map(r=>{const o=r.o;return `<tr class="cl" data-o="${esc(o.obra)}"><td><b>${esc(o.obra)}</b></td><td class="r">${f0(o.n)}</td><td><div style="display:flex;align-items:center;gap:8px"><div class="dbar" style="flex:1"><i style="width:${o.disp||0}%;background:${colDisp(o.disp)}"></i></div><span>${o.disp==null?'—':o.disp+'%'}</span></div></td><td class="r">${o.paradas.length}</td><td class="r" style="${o.pmBad?'color:#B91C1C;font-weight:700':''}">${o.pmBad}</td><td class="r">${o.infFalta}</td><td class="r">${o.docsBad}</td><td>${pillEst(o.est)}</td></tr>`;}).join('')||'<tr><td colspan="8" class="vacio">Sin obras.</td></tr>'}</tbody></table></div></div>`;
+  fo.onchange=()=>{FA.obra=fo.value;pintarAnalisis();};
+  wrap.querySelectorAll('[data-e]').forEach(b=>b.onclick=()=>{const e=b.dataset.e;FA.est.has(e)?FA.est.delete(e):FA.est.add(e);pintarAnalisis();});
+  wrap.querySelectorAll('th.s').forEach(h=>h.onclick=()=>{const k=h.dataset.k;ordenA=ordenA.k===k?{k,dir:-ordenA.dir}:{k,dir:k==='obra'?1:-1};pintarAnalisis();});
+  wrap.querySelectorAll('tr.cl').forEach(r=>r.onclick=()=>{vista='obras';abrirObra(r.dataset.o);pintar();});
+  pie.textContent=`${sel.length} obra(s) en el análisis`;}
+
+/* ═════════ arranque ═════════ */
+(async()=>{
+  const {data:{session}}=await sb.auth.getSession();
+  if(!session){document.body.innerHTML='<div style="padding:60px;text-align:center"><h2 style="font-size:18px">Sesión no iniciada</h2><p style="color:#6b747d">Ingresa en la página principal.</p></div>';return;}
+  const {data:p}=await sb.from('profiles').select('id,nombre,rol,estado,paginas').eq('id',session.user.id).single();
+  perfil=p||{};
+  if(perfil.estado!=='aprobado'||(perfil.rol!=='admin'&&!(Array.isArray(perfil.paginas)&&perfil.paginas.includes('tab')))){
+    document.body.innerHTML='<div style="padding:60px;text-align:center;font-family:sans-serif"><h2 style="font-size:18px;margin-bottom:10px">Sin acceso al Tablero</h2><p style="color:#6b747d">Un administrador debe habilitarte esta pestaña desde Usuarios.</p></div>';return;}
+  await cargar();
+  setInterval(()=>{if(!document.hidden&&!obraSel)cargar();},5*60*1000);
+})();
+</script>
+<style>.ver-pag{position:fixed;right:8px;bottom:4px;font:600 10px/1.3 -apple-system,"Segoe UI",Roboto,sans-serif;color:#8a939c;background:rgba(255,255,255,.88);border:1px solid #e3e6e9;padding:1px 7px;border-radius:6px;z-index:9000;pointer-events:none}</style>
+<script>(function(){var m=document.querySelector('meta[name="gllr-version"]');if(!m)return;var d=document.createElement('div');d.id='verPag';d.className='ver-pag';d.textContent=(m.getAttribute('data-pagina')||'')+' · '+m.content;document.body.appendChild(d);})();</script>
+</body>
+</html>

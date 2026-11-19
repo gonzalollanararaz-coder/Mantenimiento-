@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8">
-<meta name="gllr-version" content="V.101126-14" data-pagina="Equipos">
+<meta name="gllr-version" content="V.101126-16" data-pagina="Equipos">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Control de Mantenimiento — UDE</title>
 <link rel="icon" href="favicon.ico" sizes="any">
@@ -658,6 +658,7 @@
     <div class="userbox"><span id="offEstado" class="off-chip"></span><span class="who" id="who"></span><button id="btnOut">Cerrar sesión</button></div>
   </header>
   <nav>
+    <button id="tabTab" data-tab="tab">Tablero</button>
     <button class="on" id="tabEq" data-tab="eq">Equipos</button>
     <button id="tabPms" data-tab="pms">PM-S</button>
     <button id="tabComb" data-tab="comb">Combustible</button>
@@ -722,6 +723,7 @@
        misma pestaña del navegador, mismo criterio que Equipos/Usuarios.
        Se cargan solo la primera vez que se visitan; después, cambiar
        entre ellas es solo mostrar/ocultar, nunca una recarga nueva. -->
+  <section id="paneFrame_tab" class="paneFrame hide"></section>
   <section id="paneFrame_pms" class="paneFrame hide"></section>
   <section id="paneFrame_comb" class="paneFrame hide"></section>
   <section id="paneFrame_sos" class="paneFrame hide"></section>
@@ -1002,6 +1004,7 @@ const FCALC=['_alerta','_sem','_alertamntto']; // columnas calculadas con filtro
 /* Pestañas que se pueden habilitar por usuario.
    Para agregar una nueva basta con sumarla aquí y en la fila de pestañas. */
 const PAGINAS=[
+  {k:'tab',   lab:'Tablero',     arch:'tablero.html'},
   {k:'pms',   lab:'PM-S',        arch:'pms.html'},
   {k:'comb',  lab:'Combustible', arch:'combustible.html'},
   {k:'sos',   lab:'SOS',         arch:'sos.html'},
@@ -2339,7 +2342,7 @@ async function programarSeleccion(){
    misma página — igual que Equipos/Usuarios ya lo hacían. Se cargan la
    primera vez que se visitan; después, cambiar de pestaña es solo
    mostrar/ocultar (nunca hay una segunda carga ni una ventana aparte). */
-const IFRAME_PAGINAS={pms:'pms.html',comb:'combustible.html',sos:'sos.html',neu:'neumaticos.html',pdm:'pdm.html',users:'usuarios.html',cfg:'config.html'};
+const IFRAME_PAGINAS={tab:'tablero.html',pms:'pms.html',comb:'combustible.html',sos:'sos.html',neu:'neumaticos.html',pdm:'pdm.html',users:'usuarios.html',cfg:'config.html'};
 /* abre ⚙ Configuración en una lista concreta (lo llaman las pestañas con su botón "⚙ Configurar") */
 function irConfig(id){mostrarPanel('cfg');const f=_iframes.cfg;if(!f)return;const ir=()=>{try{f.contentWindow.abrirLista(id);}catch(_){}};
   if(f.contentWindow&&f.contentWindow.abrirLista)ir();else f.addEventListener('load',()=>setTimeout(ir,800),{once:true});}
