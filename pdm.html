@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
 <meta charset="utf-8">
-<meta name="gllr-version" content="V.101126-5" data-pagina="Parte diario mecánico">
+<meta name="gllr-version" content="V.101126-6" data-pagina="Parte diario mecánico">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Parte diario mecánico &mdash; UDE</title>
 <link rel="icon" href="favicon.ico" sizes="any">
@@ -428,7 +428,7 @@ async function pintarSeg(){const v=document.getElementById('v-seg'),h=new Date()
   const M={};L.forEach(r=>(r.tecnicos||[]).forEach(t=>{const m=M[t]=M[t]||{};m[r.fecha]=(m[r.fecha]||0)+1;}));
   const enSeg=segFn();
   const T=COL.filter(c=>c.activo!==false&&enSeg(c)&&(!SEG.obra||c.obra===SEG.obra)).map(c=>({cod:c.codigo,nom:[c.nombres,c.ap_paterno].filter(Boolean).join(' ')}));
-  Object.keys(M).forEach(cod=>{if(!T.some(t=>t.cod===cod)&&!COL.some(c=>c.codigo===cod&&!enSeg(c)))T.push({cod,nom:'(no figura en colaboradores)'});});
+  Object.keys(M).forEach(cod=>{if(!/^OTRO:/.test(cod)&&!T.some(t=>t.cod===cod)&&!COL.some(c=>c.codigo===cod&&!enSeg(c)))T.push({cod,nom:'(no figura en colaboradores)'});});
   T.sort((a,b)=>String(a.cod).localeCompare(String(b.cod)));
   const colTot=dias.map(d=>T.reduce((s,t)=>s+((M[t.cod]||{})[d]||0),0));
   const cab=dias.map(d=>{const dt=new Date(d+'T12:00:00');return `<th class="${dt.getDay()===0?'dom':''} ${d===hoy?'hoy':''}">${d.slice(8)}<small>${SEGD[dt.getDay()]}</small></th>`;}).join('');

@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
 <meta charset="utf-8">
-<meta name="gllr-version" content="V.101126-13" data-pagina="REPORTE (app de campo)">
+<meta name="gllr-version" content="V.101126-17" data-pagina="REPORTE (app de campo)">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>REPORTE</title>
 <link rel="manifest" href="campo.webmanifest">
@@ -605,11 +605,26 @@ function horaOpts(sel,ph){sel=String(sel||'').slice(0,5);const L=[];for(let h=0;
 const esSup=c=>/SUPERV/.test(String(c.especialidad||'').toUpperCase());
 function tecsObra(){return S.COL.filter(c=>!esSup(c)&&(!S.obra||String(c.obra||'').toUpperCase()===String(S.obra).toUpperCase())).sort((a,b)=>String(a.ap_paterno).localeCompare(String(b.ap_paterno)));}
 function tecSelTxt(){return S.F.tec.length?S.F.tec.map(c=>`<b class="tg">${esc(c)}</b>`).join(' '):'<span style="color:#c9b98a;font-weight:500">— elegir técnicos —</span>';}
-function tecLista(){const L=tecsObra(),ex=S.F.tec.filter(c=>!L.some(x=>x.codigo===c)).map(c=>S.COL.find(x=>x.codigo===c)||{codigo:c,nombres:'',ap_paterno:''});
-  const T=[...ex,...L];if(!T.length)return '<div class="dim" style="padding:8px">No hay técnicos registrados en esta obra.</div>';
+/* OTRO: personal que no está en Colaboradores (taller tercero, representante de la marca). Se guarda como «OTRO: NOMBRE». */
+const esOtroTec=c=>/^OTRO:/.test(String(c));
+const nombreOtro=c=>String(c).replace(/^OTRO:\s*/,'');
+function tecLista(){const L=tecsObra(),ex=S.F.tec.filter(c=>!esOtroTec(c)&&!L.some(x=>x.codigo===c)).map(c=>S.COL.find(x=>x.codigo===c)||{codigo:c,nombres:'',ap_paterno:''});
+  const T=[...ex,...L],otros=S.F.tec.filter(esOtroTec);
+  const otroHtml=`<div class="eqg" style="margin-top:12px">OTRO · TALLER TERCERO O REPRESENTANTE</div>
+   ${otros.map((c,i)=>`<div class="tecr on" onclick="event.stopPropagation();quitarOtroTec(${i})"><span class="ck">✓</span><div><b>${esc(nombreOtro(c))}</b><small>Externo · toca para quitar</small></div></div>`).join('')}
+   <div style="display:flex;gap:8px;margin-top:6px" onclick="event.stopPropagation()"><input id="otroTec" class="eqin" style="flex:1;text-transform:uppercase" autocomplete="off" placeholder="Nombre o empresa (varios: separa con coma)" onkeydown="if(event.key==='Enter'){event.preventDefault();addOtroTec();}"><span class="pill p-w" style="cursor:pointer;padding:9px 14px;font-size:14px" onclick="addOtroTec()">+ Agregar</span></div>`;
+  const listo=`<div style="text-align:right;margin-top:8px"><span class="pill p-w" style="cursor:pointer;font-size:15px;padding:6px 16px" onclick="event.stopPropagation();tglTecLst(false)">Listo</span></div>`;
+  if(!T.length)return '<div class="dim" style="padding:8px">No hay técnicos registrados en esta obra.</div>'+otroHtml+listo;
   return `<div class="eqg">TÉCNICOS · ${esc(S.obra||'TODAS')} <small>(${String(L.length).padStart(2,'0')})</small></div>`+T.map(c=>{const on=S.F.tec.includes(c.codigo);
    return `<div class="tecr ${on?'on':''}" onclick="event.stopPropagation();tglTec('${esc(c.codigo)}')"><span class="ck">${on?'✓':''}</span><div><b>${esc(c.codigo)}</b><small>${esc([String(c.nombres||'').split(' ')[0],c.ap_paterno].filter(Boolean).join(' '))}${c.especialidad?' · '+esc(c.especialidad):''}</small></div></div>`;}).join('')
-   +`<div style="text-align:right;margin-top:8px"><span class="pill p-w" style="cursor:pointer;font-size:15px;padding:6px 16px" onclick="event.stopPropagation();tglTecLst(false)">Listo</span></div>`;}
+   +otroHtml+listo;}
+function addOtroTec(){const i=$('otroTec');if(!i)return;
+  const ns=i.value.split(/[,;\n]/).map(s=>s.trim().replace(/\s+/g,' ').toUpperCase().slice(0,60)).filter(Boolean);
+  if(!ns.length){toast('Escribe el nombre o la empresa');return;}
+  ns.forEach(n=>{const c='OTRO: '+n;if(!S.F.tec.includes(c))S.F.tec.push(c);});
+  i.value='';refrescarTec();const j=$('otroTec');if(j)j.focus();}
+function quitarOtroTec(i){const c=S.F.tec.filter(esOtroTec)[i];if(c!=null)tglTec(c);}
+function refrescarTec(){const l=$('tecLst');if(l){const v=($('otroTec')||{}).value||'';l.innerHTML=tecLista();const n=$('otroTec');if(n&&v)n.value=v;}const s=$('tecSel');if(s)s.innerHTML=tecSelTxt();}
 function tglTecLst(si){const cb=$('tecCb'),l=$('tecLst');if(!cb)return;if(si==null)si=!cb.classList.contains('ab');
   cb.classList.toggle('ab',si);l.style.display=si?'':'none';if(si)l.innerHTML=tecLista();cb.querySelector('i').textContent=si?'▲':'▼';}
 function tecChips(q){const L=S.COL.slice().sort((a,b)=>(S.F.tec.includes(b.codigo)-S.F.tec.includes(a.codigo))||((b.obra===S.obra)-(a.obra===S.obra))||a.ap_paterno.localeCompare(b.ap_paterno));
@@ -617,7 +632,7 @@ function tecChips(q){const L=S.COL.slice().sort((a,b)=>(S.F.tec.includes(b.codig
   return L.filter(c=>!qq||S.F.tec.includes(c.codigo)||nrm(c.codigo+' '+c.nombres+' '+c.ap_paterno+' '+(c.ap_materno||'')).includes(qq)).slice(0,30)
    .map(c=>`<span class="${S.F.tec.includes(c.codigo)?'on':''}" onclick="tglTec('${esc(c.codigo)}')"><b>${esc(c.codigo)}</b> · ${esc(c.nombres.split(' ')[0])} ${esc(c.ap_paterno)}</span>`).join('')||'<span class="dim">Sin colaboradores registrados</span>';}
 function filtrarTec(q){$('tecs').innerHTML=tecChips(q);}
-function tglTec(c){const i=S.F.tec.indexOf(c);if(i>=0)S.F.tec.splice(i,1);else S.F.tec.push(c);const l=$('tecLst');if(l)l.innerHTML=tecLista();$('tecSel').innerHTML=tecSelTxt();}
+function tglTec(c){const i=S.F.tec.indexOf(c);if(i>=0)S.F.tec.splice(i,1);else S.F.tec.push(c);refrescarTec();}
 function elegirEq(v){const c=String(v).split('·')[0].trim().toUpperCase();const e=eqDe(c)||S.EQ.find(x=>nrm(x.cod_sap)===nrm(c));
   guardarCampos(); if(e){S.F.eq=e.cod_sap;S.F.eqTxt=e.cod_sap+' · '+(e.equipo||'');} else {S.F.eq=null;} pintar();}
 function chkHr(){const m=$('hrMsg');if(!m)return;const e=eqDe(S.F.eq),v=Number(val('hr'));S.F.hrConv=null;
@@ -1151,7 +1166,7 @@ function textoWA(r,foto){
   if(B.length){L.push('');B.forEach(x=>L.push(x));}
   L.push('');
   L.push(`*Estado final:* ${r.estado_equipo||'—'}${r.estado_equipo==='OPERATIVO'?' 🟢':r.estado_equipo==='INOPERATIVO'?' 🔴':''}`);
-  L.push(`*Técnicos:* ${(r.tecnicos||[]).join(', ')}`);
+  L.push(`*Técnicos:* ${(r.tecnicos||[]).map(c=>esOtroTec(c)?nombreOtro(c)+' (externo)':c).join(', ')}`);
   const p=d.parada;
   if(p){if(p.fin){const m=Math.max(0,Math.round((new Date(p.fin)-new Date(p.inicio))/60000));L.push(`*Parada:* ${fhTxt(p.inicio)} → ${fhTxt(p.fin)} (${Math.floor(m/60)}:${String(m%60).padStart(2,'0')} h)`);}
     else L.push(`*Parado desde:* ${fhTxt(p.inicio)}`);}
